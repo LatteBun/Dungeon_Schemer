@@ -17,4 +17,7 @@ brainstorming으로 사용자와 합의 → 관련 `docs/` 공식 문서 갱신 
 
 spec과 plan이 모두 없으면 새 기능 또는 동작 변경을 구현하지 않습니다.
 
+AGENTS.md 에서 사용자 이름 설정하기.
+
 세부 실행 규칙은 [AGENTS.md](AGENTS.md)와 [docs/superpowers/](docs/superpowers/)를 참조합니다.
+
