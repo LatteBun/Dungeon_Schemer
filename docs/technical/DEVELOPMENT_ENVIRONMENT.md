@@ -2,7 +2,7 @@
 
 ## 목적
 
-이 문서는 현재 기획에서 선택한 개발 환경과 각 기술의 책임을 공식적으로 정리한다. 구체적인 버전, 패키지 구성, 인증 방식은 실제 프로젝트 초기화 단계에서 별도 결정한다.
+이 문서는 현재 기획에서 선택한 개발 환경, 공통 런타임과 각 기술의 책임을 공식적으로 정리한다. Node.js·npm·pnpm 버전은 고정하며, 나머지 라이브러리 버전, 패키지 구성, 인증 방식은 실제 프로젝트 초기화 단계에서 별도 결정한다.
 
 ## 기술 구성
 
@@ -28,7 +28,81 @@ GitHub Codespaces를 기본 개발 환경으로 사용한다.
 - 프로젝트 의존성과 실행 도구 공유
 - 로컬 환경 차이로 인한 설정 문제 감소
 
-Codespaces 설정 파일과 정확한 도구 버전은 프로젝트 초기화 시 결정한다.
+Codespaces 설정 파일은 프로젝트 초기화 시 만들며, Node.js와 pnpm 버전은 이 문서의 표준 런타임을 따른다.
+
+## 표준 런타임과 패키지 매니저
+
+| 도구 | 고정 버전 | 역할 |
+| --- | --- | --- |
+| Node.js | `24.19.0` LTS | Next.js 애플리케이션과 개발 도구를 실행하는 런타임 |
+| npm | `11.17.0` | Node.js 설치에 포함되며 pnpm 설치에만 사용 |
+| pnpm | `11.21.0` | 프로젝트 의존성 설치와 모든 스크립트 실행에 사용하는 표준 패키지 매니저 |
+
+Next.js는 Node.js `20.9` 이상을 요구한다. Node.js `24.19.0` LTS를 팀의 기준으로 고정해 개발자 PC, Codespaces, 이후 Vercel 배포 환경의 차이를 줄인다. 프로젝트 의존성은 npm이 아니라 pnpm으로 설치하고 실행한다.
+
+## 개발자 PC 설치
+
+Windows PowerShell에서 아래 명령으로 Node.js LTS와 pnpm을 설치한다. `winget`이 없는 경우에는 Node.js 공식 설치 프로그램에서 `24.19.0` LTS를 설치한 뒤 pnpm 설치 명령부터 실행한다.
+
+```powershell
+winget install --id OpenJS.NodeJS.LTS --version 24.19.0 --exact
+node --version
+npm --version
+npm install --global pnpm@11.21.0
+pnpm --version
+```
+
+명령 결과는 다음 버전이어야 한다.
+
+```text
+node --version  → v24.19.0
+npm --version   → 11.17.0
+pnpm --version  → 11.21.0
+```
+
+설치 직후 `node`나 `pnpm`을 찾지 못하면 PowerShell과 VS Code를 완전히 닫은 뒤 새 창에서 버전 확인 명령을 다시 실행한다.
+
+## Codespaces 확인
+
+새 Codespace를 열면 아래 명령으로 런타임을 확인한다. pnpm이 없을 때만 지정한 버전을 설치한다.
+
+```bash
+node --version
+npm --version
+pnpm --version || npm install --global pnpm@11.21.0
+pnpm --version
+```
+
+Codespaces 설정 파일을 추가할 때에도 Node.js `24.19.0`과 pnpm `11.21.0`을 사용하도록 고정한다.
+
+## 프로젝트 초기화 후 버전 고정
+
+프로젝트 초기화 작업에서 아래 값을 저장소에 추가해 개발 환경을 재현 가능하게 만든다.
+
+```text
+.nvmrc                       24.19.0
+package.json engines.node     24.19.0
+package.json packageManager   pnpm@11.21.0
+Codespaces Node.js            24.19.0
+```
+
+`.nvmrc`, `package.json`, Codespaces 설정 파일은 실제 프로젝트 초기화 작업에서 만든다. 이 문서만 수정하는 현재 단계에서는 파일을 새로 만들지 않는다.
+
+## 공통 개발과 검증 명령
+
+프로젝트 초기화 후 팀원은 다음 pnpm 명령을 공통으로 사용한다.
+
+| 명령 | 목적 | 실행 시점 |
+| --- | --- | --- |
+| `pnpm install --frozen-lockfile` | 잠금 파일 기준으로 정확히 같은 의존성 설치 | 새 Codespace, 의존성 변경 뒤 |
+| `pnpm dev` | 개발 서버 실행 | 기능 개발과 수동 확인 |
+| `pnpm lint` | ESLint 검사 | Pull Request 병합 전 |
+| `pnpm typecheck` | TypeScript 타입 검사 | Pull Request 병합 전 |
+| `pnpm test` | Vitest 단위 테스트 | Vitest 도입 뒤, Pull Request 병합 전 |
+| `pnpm build` | Vercel과 같은 Next.js 프로덕션 빌드 | Pull Request 병합 전 |
+| `pnpm start` | `pnpm build` 성공 뒤 로컬 프로덕션 서버 실행 | 배포 전 동작 확인이 필요할 때 |
+
+`pnpm lint`, `pnpm typecheck`, `pnpm build`는 기본 병합 전 검증 기준이다. `pnpm test`는 게임 규칙을 UI에서 분리하고 Vitest를 도입한 뒤 기준에 포함한다. 아직 존재하지 않는 스크립트는 프로젝트 초기화 작업에서 추가하며, 그 전에는 실행한 것처럼 기록하지 않는다.
 
 ## 애플리케이션: Next.js, React, TypeScript
 
@@ -122,6 +196,9 @@ Vercel
 ## 현재 확정된 것
 
 - GitHub Codespaces를 개발 환경으로 사용한다.
+- Node.js `24.19.0` LTS, npm `11.17.0`, pnpm `11.21.0`을 공통 런타임으로 사용한다.
+- 프로젝트 의존성 설치와 스크립트 실행은 pnpm으로 통일한다.
+- 프로젝트 초기화 뒤 `pnpm lint`, `pnpm typecheck`, `pnpm build`를 병합 전 검증 기준으로 사용한다.
 - Next.js, React, TypeScript로 애플리케이션을 구성한다.
 - Tailwind CSS로 UI를 작성한다.
 - Framer Motion으로 애니메이션을 구현한다.
@@ -131,8 +208,7 @@ Vercel
 
 ## 아직 확정하지 않는 것
 
-- 각 도구와 라이브러리의 정확한 버전
-- 패키지 매니저
+- Next.js, React, Tailwind CSS, Framer Motion, Zustand, Supabase의 정확한 버전
 - Next.js 라우터와 렌더링 전략의 세부 구성
 - Supabase 인증과 데이터베이스 스키마
 - 테스트 도구와 배포 승인 절차
