@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  color: #f4f0e6;
+  background: #17130f;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+main {
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+  font-size: 3rem;
+}
+
+p {
+  margin: 1rem 0 0;
+  color: #cbbca5;
+}

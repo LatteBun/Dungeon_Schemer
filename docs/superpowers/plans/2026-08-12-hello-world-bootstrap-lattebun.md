@@ -95,13 +95,13 @@ Expected: 두 파일에 문서 기준 버전이 포함된다.
 
 - [ ] **Step 1: 임시 디렉터리에 표준 Next.js 앱을 생성한다**
 
-Run: `pnpm create next-app@latest .bootstrap --ts --tailwind --eslint --app --use-pnpm --import-alias "@/*" --yes`
+Run: `pnpm create next-app@latest bootstrap-app --ts --tailwind --eslint --app --use-pnpm --import-alias "@/*" --yes`
 
-Expected: `.bootstrap`에 App Router, TypeScript, Tailwind CSS, ESLint, pnpm 잠금 파일이 생성된다.
+Expected: `bootstrap-app`에 App Router, TypeScript, Tailwind CSS, ESLint, pnpm 잠금 파일이 생성된다.
 
 - [ ] **Step 2: 앱 파일을 저장소 루트로 옮긴다**
 
-앱·설정·패키지 파일만 옮긴다. `README.md`, `AGENTS.md`, `docs/`, `.git/`, `.gitignore`는 덮어쓰지 않는다. 생성기의 README와 기본 예제 public 자산은 옮기지 않고, 이동 후 `.bootstrap`을 제거한다.
+앱·설정·패키지 파일만 옮긴다. `README.md`, `AGENTS.md`, `docs/`, `.git/`, `.gitignore`는 덮어쓰지 않는다. 생성기의 README와 기본 예제 public 자산은 옮기지 않고, 이동 후 `bootstrap-app`을 제거한다.
 
 - [ ] **Step 3: 런타임과 검증 스크립트를 고정한다**
 

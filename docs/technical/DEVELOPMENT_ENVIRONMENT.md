@@ -2,7 +2,7 @@
 
 ## 목적
 
-이 문서는 현재 기획에서 선택한 개발 환경, 공통 런타임과 각 기술의 책임을 공식적으로 정리한다. Node.js·npm·pnpm 버전은 고정하며, 나머지 라이브러리 버전, 패키지 구성, 인증 방식은 실제 프로젝트 초기화 단계에서 별도 결정한다.
+이 문서는 현재 기획에서 선택한 개발 환경, 공통 런타임, 초기 애플리케이션 구성과 각 기술의 책임을 공식적으로 정리한다. 런타임과 초기 패키지 구성은 잠금 파일로 재현하며, 인증 방식은 별도 설계에서 결정한다.
 
 ## 기술 구성
 
@@ -28,7 +28,7 @@ GitHub Codespaces를 기본 개발 환경으로 사용한다.
 - 프로젝트 의존성과 실행 도구 공유
 - 로컬 환경 차이로 인한 설정 문제 감소
 
-Codespaces 설정 파일은 프로젝트 초기화 시 만들며, Node.js와 pnpm 버전은 이 문서의 표준 런타임을 따른다.
+`.devcontainer/devcontainer.json`은 Node.js와 pnpm 버전을 이 문서의 표준 런타임으로 고정한다.
 
 ## 표준 런타임과 패키지 매니저
 
@@ -75,9 +75,9 @@ pnpm --version
 
 Codespaces 설정 파일을 추가할 때에도 Node.js `24.19.0`과 pnpm `11.21.0`을 사용하도록 고정한다.
 
-## 프로젝트 초기화 후 버전 고정
+## 저장소의 버전 고정
 
-프로젝트 초기화 작업에서 아래 값을 저장소에 추가해 개발 환경을 재현 가능하게 만든다.
+저장소는 아래 파일과 값으로 개발 환경을 재현 가능하게 만든다.
 
 ```text
 .nvmrc                       24.19.0
@@ -86,7 +86,7 @@ package.json packageManager   pnpm@11.21.0
 Codespaces Node.js            24.19.0
 ```
 
-`.nvmrc`, `package.json`, Codespaces 설정 파일은 실제 프로젝트 초기화 작업에서 만든다. 이 문서만 수정하는 현재 단계에서는 파일을 새로 만들지 않는다.
+`.nvmrc`, `package.json`, `.devcontainer/devcontainer.json`, `pnpm-lock.yaml`은 초기화된 저장소에 포함되며 같은 런타임과 의존성 구성을 재현한다.
 
 ## 공통 개발과 검증 명령
 
@@ -102,7 +102,7 @@ Codespaces Node.js            24.19.0
 | `pnpm build` | Vercel과 같은 Next.js 프로덕션 빌드 | Pull Request 병합 전 |
 | `pnpm start` | `pnpm build` 성공 뒤 로컬 프로덕션 서버 실행 | 배포 전 동작 확인이 필요할 때 |
 
-`pnpm lint`, `pnpm typecheck`, `pnpm build`는 기본 병합 전 검증 기준이다. `pnpm test`는 게임 규칙을 UI에서 분리하고 Vitest를 도입한 뒤 기준에 포함한다. 아직 존재하지 않는 스크립트는 프로젝트 초기화 작업에서 추가하며, 그 전에는 실행한 것처럼 기록하지 않는다.
+`pnpm lint`, `pnpm typecheck`, `pnpm build`는 기본 병합 전 검증 기준이다. `pnpm test`는 게임 규칙을 UI에서 분리하고 Vitest를 도입한 뒤 기준에 포함한다.
 
 ## 애플리케이션: Next.js, React, TypeScript
 
@@ -118,7 +118,7 @@ Codespaces Node.js            24.19.0
 
 파티원, 신뢰도, 정보 카드, 이벤트, 던전 상태, 진행 결과 같은 게임 데이터를 명시적인 타입으로 표현한다. 시스템 사이의 데이터 계약을 코드에서 확인할 수 있도록 한다.
 
-Next.js의 정확한 버전과 라우터 구성은 아직 확정하지 않는다.
+초기 애플리케이션은 Next.js App Router를 사용하며, 라우트·레이아웃·전역 스타일은 저장소 루트의 `app/`에 둔다. 이번 초기화에서는 `src/` 디렉터리를 만들지 않는다. Next.js의 정확한 버전은 초기화 시점의 안정 버전을 사용하되, 잠금 파일로 재현한다.
 
 ## UI와 모션: Tailwind CSS, Framer Motion
 
@@ -198,8 +198,9 @@ Vercel
 - GitHub Codespaces를 개발 환경으로 사용한다.
 - Node.js `24.19.0` LTS, npm `11.17.0`, pnpm `11.21.0`을 공통 런타임으로 사용한다.
 - 프로젝트 의존성 설치와 스크립트 실행은 pnpm으로 통일한다.
-- 프로젝트 초기화 뒤 `pnpm lint`, `pnpm typecheck`, `pnpm build`를 병합 전 검증 기준으로 사용한다.
+- `pnpm lint`, `pnpm typecheck`, `pnpm build`를 병합 전 검증 기준으로 사용한다.
 - Next.js, React, TypeScript로 애플리케이션을 구성한다.
+- Next.js App Router와 루트 `app/` 디렉터리로 초기 화면을 구성한다.
 - Tailwind CSS로 UI를 작성한다.
 - Framer Motion으로 애니메이션을 구현한다.
 - Zustand로 클라이언트 상태를 관리한다.
@@ -209,12 +210,17 @@ Vercel
 ## 아직 확정하지 않는 것
 
 - Next.js, React, Tailwind CSS, Framer Motion, Zustand, Supabase의 정확한 버전
-- Next.js 라우터와 렌더링 전략의 세부 구성
 - Supabase 인증과 데이터베이스 스키마
 - 테스트 도구와 배포 승인 절차
 - 환경 변수 이름과 비밀 정보 관리 규칙
 
 이 항목은 구현 전에 기술 설계와 초기화 계획에서 결정한다.
+
+## Hello World 초기화 범위
+
+초기화 작업은 브라우저에서 `Hello World`와 Dungeon Schemer 식별 문구를 표시하고, `pnpm lint`, `pnpm typecheck`, `pnpm build`를 실행할 수 있는 최소 앱을 만드는 데 한정한다.
+
+이 단계에서는 Supabase, 로그인, 환경 변수, Vercel 프로젝트 연결, Zustand, Framer Motion, 테스트 도구, 게임 규칙과 화면 상호작용을 추가하지 않는다.
 
 ## 관련 문서
 

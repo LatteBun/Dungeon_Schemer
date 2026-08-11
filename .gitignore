@@ -1,1 +1,8 @@
 .superpowers/
+/node_modules
+/.next/
+/out/
+/coverage/
+.env*
+.vercel
+*.tsbuildinfo
