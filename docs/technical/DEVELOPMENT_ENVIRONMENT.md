@@ -75,6 +75,30 @@ pnpm --version
 
 Codespaces 설정 파일을 추가할 때에도 Node.js `24.19.0`과 pnpm `11.21.0`을 사용하도록 고정한다.
 
+## Bash 공통 명령
+
+Codespaces와 Linux Bash에서는 아래 명령을 공통으로 사용한다. pnpm이 없다면 먼저 지정한 버전을 설치한 뒤 버전을 다시 확인한다.
+
+```bash
+node --version
+npm --version
+pnpm --version || npm install --global pnpm@11.21.0
+pnpm --version
+
+pnpm install --frozen-lockfile
+pnpm dev
+pnpm lint
+pnpm typecheck
+pnpm build
+pnpm start
+```
+
+- `pnpm dev`: 개발 서버를 실행한다.
+- `pnpm lint`, `pnpm typecheck`, `pnpm build`: Pull Request 전 실행하는 검증 명령이다.
+- `pnpm start`: `pnpm build`가 성공한 뒤 프로덕션 모드로 앱을 실행한다.
+
+Windows PowerShell에서 실행 정책이 `pnpm.ps1`을 차단하는 경우에만 `pnpm.cmd`를 사용한다. 예를 들어 `pnpm.cmd dev`로 개발 서버를 실행할 수 있다. Codespaces와 Linux Bash에서는 표준 `pnpm` 명령을 사용한다.
+
 ## 저장소의 버전 고정
 
 저장소는 아래 파일과 값으로 개발 환경을 재현 가능하게 만든다.
