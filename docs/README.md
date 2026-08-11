@@ -53,6 +53,7 @@
 ### 기술
 
 - [DEVELOPMENT_ENVIRONMENT.md](technical/DEVELOPMENT_ENVIRONMENT.md): GitHub Codespaces, Next.js, React, TypeScript, Tailwind CSS, Framer Motion, Zustand, Supabase, Vercel의 책임
+- [PROTOTYPE_WORK_ASSIGNMENT.md](technical/PROTOTYPE_WORK_ASSIGNMENT.md): 프로토타입의 큰 구현 영역과 담당자 배정표
 
 ## 기존 원본 자료
 
