@@ -1,5 +1,8 @@
 # Hello World 초기화 설계
 
+**작성자:** LatteBun  
+**작성 도구:** Codex
+
 ## 목적
 
 Dungeon Schemer를 실행 가능한 Next.js 웹 애플리케이션으로 초기화하고, 브라우저에서 최소 Hello World 화면을 확인할 수 있게 한다. 팀의 공통 런타임과 검증 명령도 실제 저장소 구성에 반영한다.
