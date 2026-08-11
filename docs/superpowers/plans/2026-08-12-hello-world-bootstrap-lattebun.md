@@ -23,6 +23,32 @@
 
 ---
 
+### Task 0: 구현 전에 공식 기술 문서를 초기화 결정으로 갱신한다
+
+**Files:**
+- Modify: `docs/technical/DEVELOPMENT_ENVIRONMENT.md`
+- Reference: `docs/superpowers/specs/2026-08-12-hello-world-bootstrap-lattebun-design.md`
+
+**Interfaces:**
+- Consumes: 승인된 Hello World 초기화 설계
+- Produces: App Router, 루트 `app/` 구조, 초기화 범위가 명확한 공식 기술 기준
+
+- [ ] **Step 1: 기술 문서의 미확정 항목을 확인한다**
+
+Run: `rg -n "아직 확정하지 않는 것|라우터|초기화" docs/technical/DEVELOPMENT_ENVIRONMENT.md`
+
+Expected: App Router와 루트 앱 구조가 아직 미확정임을 확인한다.
+
+- [ ] **Step 2: App Router와 초기화 범위를 공식 문서에 반영한다**
+
+`DEVELOPMENT_ENVIRONMENT.md`에 Next.js App Router, 루트 `app/` 구조, 이번 초기화에서 제외할 Supabase·로그인·환경 변수·게임 기능을 기록한다. 현재 문서의 Node.js·pnpm 고정 버전은 바꾸지 않는다.
+
+- [ ] **Step 3: 공식 문서 갱신을 확인한다**
+
+Run: `rg -n "App Router|루트.*app|Supabase|로그인|환경 변수" docs/technical/DEVELOPMENT_ENVIRONMENT.md`
+
+Expected: 구현 전에 참조할 공식 기술 문서에 확정 구성과 제외 범위가 출력된다.
+
 ### Task 1: 기준 런타임과 재현성 파일을 준비한다
 
 **Files:**
