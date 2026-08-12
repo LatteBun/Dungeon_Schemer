@@ -11,5 +11,6 @@ export type ClassId = Brand<string, "ClassId">;
 export type CardId = Brand<string, "CardId">;
 export type EventId = Brand<string, "EventId">;
 export type NodeId = Brand<string, "NodeId">;
+export type ChoiceId = Brand<string, "ChoiceId">;
 export type ClaimId = Brand<string, "ClaimId">;
 export type ItemId = Brand<string, "ItemId">;

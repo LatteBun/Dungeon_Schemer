@@ -129,6 +129,33 @@ Codespaces Node.js            24.19.0
 
 `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`를 병합 전 검증 기준으로 사용한다. 감시 모드가 필요하면 개발 중에만 `pnpm test:watch`를 사용하고, 검증에는 한 번 실행하고 종료하는 `pnpm test`를 사용한다.
 
+## 화면 구조와 import 경계
+
+라우트는 저장소 루트의 `app/`에 둔다.
+
+```text
+app/page.tsx                    /play 로 리다이렉트
+app/play/layout.tsx             게임 셸. 자원 바와 파티 사이드바
+app/play/page.tsx               파티 소개·던전 입장
+app/play/map/page.tsx           던전 분기 지도
+app/play/node/[nodeId]/page.tsx 조우 화면
+app/play/result/page.tsx        결과 화면
+```
+
+컴포넌트는 `components/`에 두고 두 디렉터리로 나눈다.
+
+- `components/ui/` — 게임을 모르는 프리미티브. `Panel`, `StatValue`가 여기 있다.
+- `components/game/` — 도메인 타입을 읽는 컴포넌트.
+
+두 경계를 `eslint.config.mjs`의 `no-restricted-imports`가 강제한다.
+
+- `components/**`는 `@/lib/mock`을 가져오지 않는다. 목 데이터를 읽는 곳은 `app/**`뿐이며 컴포넌트에는 props로 넘긴다. 이 규칙 덕분에 실제 상태를 붙일 때 컴포넌트를 고치지 않는다.
+- `components/ui/**`는 추가로 `@/lib/domain`을 가져오지 않는다. 프리미티브가 게임을 모르게 유지한다.
+
+디자인 토큰은 `app/globals.css`의 `@theme`에 둔다. 새 색을 화면에서 직접 고르지 않고 토큰을 늘린다. 색으로만 뜻을 전달하지 않으며 기호나 텍스트를 함께 쓴다.
+
+Next.js 16에서 `params`는 Promise이므로 `await`해야 한다. `PageProps<'/route'>` 전역 도우미는 `next dev`·`next build`·`next typegen`이 만든 타입에 의존하므로, 빌드 산물 없이 `pnpm typecheck`만 돌려도 통과하도록 `params: Promise<{ ... }>`를 명시한다.
+
 ## 테스트 작성 규약
 
 단위 테스트는 Vitest로 작성한다. 세 사람이 같은 규약을 쓰도록 다음을 지킨다.
@@ -137,6 +164,9 @@ Codespaces Node.js            24.19.0
 - 다른 모듈은 상대 경로가 아니라 `@/`로 가져온다. 예를 들어 `@/lib/domain`이다.
 - `describe`, `it`, `expect`를 `vitest`에서 명시적으로 가져온다. 전역으로 쓰지 않는다.
 - `describe`와 `it`의 설명은 한국어로 쓴다. 커밋 메시지와 문서가 한국어이므로 실패 출력도 같은 언어로 읽히는 편이 낫다.
+- 목 데이터에도 무결성 검사를 붙인다. 목이 도메인 상수의 범위를 어기거나 끊긴 참조를 담고 있으면 그 목을 믿고 만든 화면이 실제 데이터에서 깨진다. `lib/mock/mock.test.ts`가 예다.
+- 검사 대상은 코드만이 아니다. 문서가 스스로 지켜야 할 규약을 담고 있으면 그 문서 옆에 `<문서명>.test.ts`를 두고 규약을 검사한다. [배정표 무결성 검사](PROTOTYPE_WORK_ASSIGNMENT.test.ts)가 그 예다.
+- 위반이 여러 개일 수 있는 검사는 루프 안에서 바로 단정하지 않는다. 첫 위반에서 예외가 나면 나머지가 가려져 여러 번 고쳐야 한다. 위반을 배열로 모아 `expect(위반목록).toEqual([])`로 단정한다.
 
 Vitest 설정은 `vitest.config.mts`에 둔다. 확장자가 `.ts`가 아니라 `.mts`인 이유는 Vite가 `.ts` 설정 파일을 CommonJS로 읽어 ESM 구문 경고를 내기 때문이다. `package.json`에 `type: module`을 넣는 방법은 Next.js 전체 모듈 해석에 영향을 주므로 쓰지 않는다.
 
@@ -281,6 +311,8 @@ Vercel
 이 항목은 구현 전에 기술 설계와 초기화 계획에서 결정한다.
 
 ## Hello World 초기화 범위
+
+이 절은 지난 초기화 작업의 기록이다. 화면 셸 작업에서 `Hello World` 화면은 `/play` 리다이렉트로 대체됐다.
 
 초기화 작업은 브라우저에서 `Hello World`와 Dungeon Schemer 식별 문구를 표시하고, `pnpm lint`, `pnpm typecheck`, `pnpm build`를 실행할 수 있는 최소 앱을 만드는 데 한정한다.
 
