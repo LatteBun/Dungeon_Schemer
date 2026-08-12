@@ -146,6 +146,27 @@ Vitest는 `tsconfig.json`의 `paths`를 읽지 않는다. `@/` 별칭은 `vitest
 
 가장 가까운 예시는 `lib/domain/constants.test.ts`다.
 
+## 난수와 재현성
+
+같은 시드로 같은 판을 다시 만들 수 있어야 한다. 버그를 재현하고 밸런스를 비교하려면 이 성질이 필요하다.
+
+- `Math.random`을 직접 호출하지 않는다. eslint가 오류로 막으며 예외는 없다.
+- 난수는 `@/lib/rng`의 `createRng(seed)`로 만든다.
+- 시스템마다 `derive(스트림 이름)`으로 독립 스트림을 받는다. 한 시스템의 난수 호출 횟수가 바뀌어도 다른 시스템의 결과가 변하지 않는다.
+- 새 스트림이 필요하면 `RngStream` 유니온에 이름을 추가한다. 문자열을 그대로 넘기면 오타가 오류 없이 다른 스트림을 만든다.
+- 새 판의 시드는 `createSeed()`로 만든다. 이 함수도 `Math.random`을 쓰지 않는다.
+
+난수를 쓰는 함수는 `Rng`를 인자로 받는다. 함수 안에서 `createRng`를 직접 부르지 않는다. 그래야 테스트가 고정 시드를 주입할 수 있다.
+
+```ts
+// 이렇게 쓴다
+export function generateParty(rng: Rng): PartyMember[] { ... }
+
+const party = generateParty(createRng(seed).derive("party"));
+```
+
+가장 가까운 예시는 `lib/rng/index.test.ts`다.
+
 ## 애플리케이션: Next.js, React, TypeScript
 
 ### Next.js
