@@ -137,3 +137,53 @@ describe("shuffle", () => {
     );
   });
 });
+
+describe("derive", () => {
+  it("스트림 이름이 다르면 다른 수열을 만든다", () => {
+    const root = createRng("derive-names");
+    const party = root.derive("party");
+    const dungeon = root.derive("dungeon");
+    expect([party.float(), party.float()]).not.toEqual([
+      dungeon.float(),
+      dungeon.float(),
+    ]);
+  });
+
+  it("같은 시드와 같은 스트림은 같은 수열을 만든다", () => {
+    const a = createRng("derive-same").derive("party");
+    const b = createRng("derive-same").derive("party");
+    expect([a.float(), a.float(), a.float()]).toEqual([
+      b.float(),
+      b.float(),
+      b.float(),
+    ]);
+  });
+
+  it("부모에서 난수를 여러 번 뽑은 뒤 파생해도 결과가 같다", () => {
+    const untouched = createRng("derive-order").derive("dungeon");
+
+    const used = createRng("derive-order");
+    for (let i = 0; i < 100; i += 1) {
+      used.float();
+    }
+    const afterUse = used.derive("dungeon");
+
+    expect([afterUse.float(), afterUse.float()]).toEqual([
+      untouched.float(),
+      untouched.float(),
+    ]);
+  });
+
+  it("파생한 생성기의 seed가 부모 시드와 스트림 이름을 담는다", () => {
+    expect(createRng("root").derive("card").seed).toBe("root/card");
+  });
+
+  it("파생을 두 번 거쳐도 결정적이다", () => {
+    const a = createRng("nested").derive("party").derive("trust");
+    const b = createRng("nested").derive("party").derive("trust");
+    expect([a.int(1, 100), a.int(1, 100)]).toEqual([
+      b.int(1, 100),
+      b.int(1, 100),
+    ]);
+  });
+});

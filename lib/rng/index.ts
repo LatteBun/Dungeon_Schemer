@@ -1,3 +1,16 @@
+/**
+ * 난수 스트림 이름. 시스템마다 독립된 스트림을 쓴다.
+ * 문자열을 그대로 받으면 derive("prty") 같은 오타가 오류 없이 다른
+ * 스트림을 만들어 발견하기 가장 어려운 버그가 된다. 유니온으로 두어
+ * 컴파일 시점에 잡는다.
+ *
+ * party   R1 파티 생성 규칙
+ * dungeon R4 이벤트·경로 생성
+ * card    R3 정보 카드 판정의 확률
+ * trust   R2 개인 신뢰 판정의 확률
+ */
+export type RngStream = "party" | "dungeon" | "card" | "trust";
+
 export interface Rng {
   /** 이 생성기를 만든 시드 문자열. 파생의 기준이 된다. */
   readonly seed: string;
@@ -8,6 +21,8 @@ export interface Rng {
   pick<T>(items: readonly T[]): T;
   /** 새 배열을 반환한다. 원본을 바꾸지 않는다. */
   shuffle<T>(items: readonly T[]): T[];
+  /** 이름마다 독립된 스트림. 부모의 호출 횟수와 무관하다. */
+  derive(stream: RngStream): Rng;
 }
 
 /**
@@ -77,7 +92,12 @@ export function createRng(seed: string): Rng {
     return result;
   };
 
-  return { seed, float: nextFloat, int, pick, shuffle };
+  // 파생은 부모의 현재 상태가 아니라 부모의 시드 문자열에서 한다.
+  // 부모 상태를 쓰면 호출 순서가 다시 결과에 영향을 주어
+  // 파생의 의미가 사라진다.
+  const derive = (stream: RngStream): Rng => createRng(`${seed}/${stream}`);
+
+  return { seed, float: nextFloat, int, pick, shuffle, derive };
 }
 
 /**
