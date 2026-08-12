@@ -13,6 +13,7 @@ import {
   MOCK_EVENTS,
   MOCK_PARTY,
   MOCK_RUN,
+  MOCK_SETTLEMENT,
 } from "@/lib/mock";
 
 const nodeById = new Map<string, (typeof MOCK_DUNGEON.nodes)[number]>(
@@ -182,4 +183,24 @@ describe("런 상태 목", () => {
   it("카드가 진실·거짓·중립을 모두 담는다", () => {
     expect([...new Set(MOCK_CARDS.map((card) => card.truthType))].sort()).toEqual(["lie", "neutral", "truth"]);
   });
+});
+
+describe("정산 목", () => {
+  it("생존자와 사망자가 겹치지 않는다", () => {
+    const survivors = new Set(MOCK_SETTLEMENT.survivors.map((entry) => entry.memberId));
+    expect(MOCK_SETTLEMENT.casualties.filter((entry) => survivors.has(entry.memberId)).map((entry) => entry.name), "생존자와 사망자에 함께 있는 사람").toEqual([]);
+  });
+  it("생존자와 사망자를 합치면 파티 전원이다", () => {
+    const listed = [...MOCK_SETTLEMENT.survivors, ...MOCK_SETTLEMENT.casualties].map((entry) => entry.memberId);
+    expect(listed.sort()).toEqual(MOCK_PARTY.map((member) => member.id).sort());
+  });
+  it("정산에 나오는 모든 memberId가 파티에 있다", () => {
+    const known = new Set(MOCK_PARTY.map((member) => member.id));
+    const unknown = [...MOCK_SETTLEMENT.survivors, ...MOCK_SETTLEMENT.casualties, ...MOCK_SETTLEMENT.trustChanges].filter((entry) => !known.has(entry.memberId)).map((entry) => `${entry.name}: ${entry.memberId}`);
+    expect(unknown, "파티에 없는 memberId").toEqual([]);
+  });
+  it("모든 신뢰 변화에 사유가 있다", () => {
+    expect(MOCK_SETTLEMENT.trustChanges.filter((change) => change.reason === "").map((change) => change.name), "사유 없는 신뢰 변화").toEqual([]);
+  });
+  it("영향을 준 선택이 하나 이상 있다", () => expect(MOCK_SETTLEMENT.influentialDecisions.length).toBeGreaterThan(0));
 });

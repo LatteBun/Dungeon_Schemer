@@ -8,6 +8,8 @@ export { MOCK_DUNGEON } from "./dungeon";
 export { MOCK_EVENTS } from "./events";
 export { MOCK_PARTY } from "./party";
 export { MOCK_RUN } from "./run";
+export { MOCK_SETTLEMENT } from "./result";
+export type { MockSettlement } from "./result";
 
 export function findEvent(eventId: EventId): DungeonEvent {
   const found = MOCK_EVENTS.find((event) => event.id === eventId);
