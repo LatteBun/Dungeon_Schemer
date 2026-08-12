@@ -28,6 +28,7 @@ import type {
   RunState,
   TrustChange,
 } from "./run";
+import * as domain from "@/lib/domain";
 
 export const memberId = "m1" as MemberId;
 export const nodeId = "n1" as NodeId;
@@ -148,3 +149,29 @@ export const sampleRunState: RunState = {
 // 목록에 없는 단계는 대입할 수 없다.
 // @ts-expect-error growth는 확정된 진행 단계 여섯에 없다
 export const wrongPhase: RunState["phase"] = "growth";
+
+// 배럴이 모든 공개 타입과 상수를 내보내는지 확인한다.
+// 다른 작업은 개별 파일이 아니라 이 경로에서 가져온다.
+export const barrelHasAllConstants: [5, 4, 3, 6, 3, 5, 0, 100] = [
+  domain.PERSONALITIES.length,
+  domain.EVENT_KINDS.length,
+  domain.TRUTH_TYPES.length,
+  domain.RUN_PHASES.length,
+  domain.PARTY_SIZE_MIN,
+  domain.PARTY_SIZE_MAX,
+  domain.TRUST_MIN,
+  domain.TRUST_MAX,
+];
+
+export const barrelRunState: domain.RunState = sampleRunState;
+export const barrelMember: domain.PartyMember = sampleMember;
+export const barrelCard: domain.InfoCard = sampleCard;
+export const barrelClaim: domain.InfoClaim = sampleClaim;
+export const barrelNode: domain.DungeonNode = entryNode;
+export const barrelRecord: domain.DecisionRecord = sampleRecord;
+export const barrelClassDef: domain.ClassDef = sampleClass;
+export const barrelTarget: domain.Target = sampleTargetBoss;
+export const barrelEvent: domain.DungeonEvent = sampleEvent;
+export const barrelDungeon: domain.DungeonState = sampleDungeon;
+export const barrelResources: domain.Resources = sampleResources;
+export const barrelTrustChange: domain.TrustChange = sampleTrustChange;
