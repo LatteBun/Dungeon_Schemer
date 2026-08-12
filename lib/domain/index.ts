@@ -1,6 +1,7 @@
 export type {
   Brand,
   CardId,
+  ChoiceId,
   ClaimId,
   ClassId,
   EventId,
@@ -26,6 +27,7 @@ export type {
   DungeonEvent,
   DungeonNode,
   DungeonState,
+  EventChoice,
   EventKind,
 } from "./dungeon";
 
