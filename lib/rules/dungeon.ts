@@ -66,11 +66,58 @@ function regularKinds(count: number, rng: Rng): EventKind[] {
   return rng.shuffle([...EVENT_KINDS, ...extras]);
 }
 
+function validateEvent(
+  event: DungeonEvent,
+  expectedKind: EventKind,
+  eventIds: Set<string>,
+  choiceIds: Set<string>,
+): void {
+  if (event.kind !== expectedKind) {
+    throw new Error(`이벤트 분류가 ${expectedKind} 풀이 아니다: ${event.id}`);
+  }
+  if (eventIds.has(event.id)) throw new Error(`이벤트 ID가 중복된다: ${event.id}`);
+  eventIds.add(event.id);
+  if (event.choices.length === 0) throw new Error(`선택지가 없는 이벤트다: ${event.id}`);
+  for (const choice of event.choices) {
+    if (choiceIds.has(choice.id)) throw new Error(`선택지 ID가 중복된다: ${choice.id}`);
+    choiceIds.add(choice.id);
+    if (choice.expectedGain.trim() === "") {
+      throw new Error(`예상 이득이 비어 있다: ${choice.id}`);
+    }
+    if (choice.knownRisk.trim() === "") {
+      throw new Error(`알려진 위험이 비어 있다: ${choice.id}`);
+    }
+    if (choice.target?.kind === "member") {
+      throw new Error(`파티원 대상 선택지는 사용할 수 없다: ${choice.id}`);
+    }
+  }
+}
+
+function validateEventPools(pools: DungeonEventPools): void {
+  const eventIds = new Set<string>();
+  const choiceIds = new Set<string>();
+  for (const kind of EVENT_KINDS) {
+    const events = pools.regular[kind];
+    if (events.length < 2) {
+      throw new Error(`${kind} 이벤트 풀은 최소 2개여야 한다: ${events.length}`);
+    }
+    for (const event of events) validateEvent(event, kind, eventIds, choiceIds);
+  }
+  if (pools.boss.length === 0) throw new Error("보스 이벤트 풀이 비어 있다.");
+  for (const event of pools.boss) {
+    if (event.kind !== "special") {
+      throw new Error(`보스 이벤트는 special이어야 한다: ${event.id}`);
+    }
+    validateEvent(event, "special", eventIds, choiceIds);
+  }
+}
+
 export function generateDungeon(
   rng: Rng,
   options: GenerateDungeonOptions = {},
 ): GeneratedDungeon {
   const pools = options.eventPools ?? DUNGEON_EVENT_POOLS;
+  validateEventPools(pools);
   const shape = rng.pick(DUNGEON_SHAPES);
   const drafts = buildNodeDrafts(shape.branches, shape.pathDepth);
   const kinds = regularKinds(drafts.length - 1, rng);
