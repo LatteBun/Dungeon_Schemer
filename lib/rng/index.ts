@@ -3,6 +3,11 @@ export interface Rng {
   readonly seed: string;
   /** 0 이상 1 미만 */
   float(): number;
+  /** min 이상 max 이하 정수. 양끝을 포함한다. */
+  int(min: number, max: number): number;
+  pick<T>(items: readonly T[]): T;
+  /** 새 배열을 반환한다. 원본을 바꾸지 않는다. */
+  shuffle<T>(items: readonly T[]): T[];
 }
 
 /**
@@ -42,7 +47,37 @@ function mulberry32(state: number): () => number {
 
 export function createRng(seed: string): Rng {
   const nextFloat = mulberry32(hashSeed(seed));
-  return { seed, float: nextFloat };
+
+  const int = (min: number, max: number): number => {
+    if (!Number.isInteger(min) || !Number.isInteger(max)) {
+      throw new Error(`int의 범위는 정수여야 한다: ${min}, ${max}`);
+    }
+    if (min > max) {
+      throw new Error(`int의 최솟값이 최댓값보다 크다: ${min} > ${max}`);
+    }
+    return min + Math.floor(nextFloat() * (max - min + 1));
+  };
+
+  const pick = <T>(items: readonly T[]): T => {
+    if (items.length === 0) {
+      throw new Error("pick에 빈 배열을 넘길 수 없다.");
+    }
+    return items[int(0, items.length - 1)];
+  };
+
+  const shuffle = <T>(items: readonly T[]): T[] => {
+    const result = [...items];
+    // Fisher-Yates. 뒤에서 앞으로 훑으며 자기 이하 위치와 교환한다.
+    for (let i = result.length - 1; i > 0; i -= 1) {
+      const j = int(0, i);
+      const swap = result[i];
+      result[i] = result[j];
+      result[j] = swap;
+    }
+    return result;
+  };
+
+  return { seed, float: nextFloat, int, pick, shuffle };
 }
 
 /**
