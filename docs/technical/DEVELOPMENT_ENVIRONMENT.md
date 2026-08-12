@@ -137,6 +137,8 @@ Codespaces Node.js            24.19.0
 - 다른 모듈은 상대 경로가 아니라 `@/`로 가져온다. 예를 들어 `@/lib/domain`이다.
 - `describe`, `it`, `expect`를 `vitest`에서 명시적으로 가져온다. 전역으로 쓰지 않는다.
 - `describe`와 `it`의 설명은 한국어로 쓴다. 커밋 메시지와 문서가 한국어이므로 실패 출력도 같은 언어로 읽히는 편이 낫다.
+- 검사 대상은 코드만이 아니다. 문서가 스스로 지켜야 할 규약을 담고 있으면 그 문서 옆에 `<문서명>.test.ts`를 두고 규약을 검사한다. [배정표 무결성 검사](PROTOTYPE_WORK_ASSIGNMENT.test.ts)가 그 예다.
+- 위반이 여러 개일 수 있는 검사는 루프 안에서 바로 단정하지 않는다. 첫 위반에서 예외가 나면 나머지가 가려져 여러 번 고쳐야 한다. 위반을 배열로 모아 `expect(위반목록).toEqual([])`로 단정한다.
 
 Vitest 설정은 `vitest.config.mts`에 둔다. 확장자가 `.ts`가 아니라 `.mts`인 이유는 Vite가 `.ts` 설정 파일을 CommonJS로 읽어 ESM 구문 경고를 내기 때문이다. `package.json`에 `type: module`을 넣는 방법은 Next.js 전체 모듈 해석에 영향을 주므로 쓰지 않는다.
 
