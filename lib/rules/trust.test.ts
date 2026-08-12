@@ -95,3 +95,96 @@ describe("개인 신뢰 판정 난수", () => {
     }
   });
 });
+
+describe("개인 신뢰 판정 경계", () => {
+  it("100을 넘지 않고 실제 적용된 상승량을 기록한다", () => {
+    const result = evaluateTrust(
+      member("righteous", 99),
+      "actHonestly",
+      trustRng("upper-bound"),
+    );
+    expect(result.member.trust).toBe(100);
+    expect(result.change.delta).toBe(1);
+    expect(result.exposed).toBe(false);
+  });
+
+  it("0을 넘지 않고 실제 적용된 하락량과 발각을 기록한다", () => {
+    const result = evaluateTrust(
+      member("righteous", 2),
+      "deceptionExposed",
+      trustRng("lower-bound"),
+    );
+    expect(result.member.trust).toBe(0);
+    expect(result.change.delta).toBe(-2);
+    expect(result.exposed).toBe(true);
+  });
+
+  it("이미 0인 신뢰는 긍정 행동으로 회복되지 않는다", () => {
+    const result = evaluateTrust(
+      member("righteous", 0),
+      "actHonestly",
+      trustRng("already-exposed"),
+    );
+    expect(result.member.trust).toBe(0);
+    expect(result.change.delta).toBe(0);
+    expect(result.change.reason).toContain("이미 정체가 발각됨");
+    expect(result.exposed).toBe(true);
+  });
+
+  it("기본값 0은 난수를 소비하지 않는다", () => {
+    const used = trustRng("zero-does-not-consume");
+    evaluateTrust(member("greedy"), "actHonestly", used);
+    const afterZero = evaluateTrust(member("greedy"), "secureReward", used);
+
+    const untouched = trustRng("zero-does-not-consume");
+    const direct = evaluateTrust(
+      member("greedy"),
+      "secureReward",
+      untouched,
+    );
+    expect(afterZero).toEqual(direct);
+  });
+
+  it("이미 0인 입력은 난수를 소비하지 않는다", () => {
+    const used = trustRng("exposed-does-not-consume");
+    evaluateTrust(member("righteous", 0), "actHonestly", used);
+    const afterExposed = evaluateTrust(
+      member("righteous"),
+      "actHonestly",
+      used,
+    );
+
+    const untouched = trustRng("exposed-does-not-consume");
+    const direct = evaluateTrust(
+      member("righteous"),
+      "actHonestly",
+      untouched,
+    );
+    expect(afterExposed).toEqual(direct);
+  });
+
+  it.each([-1, 101, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "유효하지 않은 신뢰 %s는 RangeError를 던진다",
+    (trust) => {
+      expect(() =>
+        evaluateTrust(
+          member("prudent", trust),
+          "avoidRisk",
+          trustRng("invalid"),
+        ),
+      ).toThrow(RangeError);
+    },
+  );
+
+  it("입력 파티원 객체를 변경하지 않는다", () => {
+    const original = member("impulsive", 50);
+    const snapshot = structuredClone(original);
+    const result = evaluateTrust(
+      original,
+      "takeRisk",
+      trustRng("immutable"),
+    );
+    expect(original).toEqual(snapshot);
+    expect(result.member).not.toBe(original);
+  });
+});

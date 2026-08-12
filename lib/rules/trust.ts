@@ -94,6 +94,18 @@ function clampTrust(value: number): number {
   return Math.min(TRUST_MAX, Math.max(TRUST_MIN, value));
 }
 
+function assertValidTrust(trust: number): void {
+  if (
+    !Number.isInteger(trust) ||
+    trust < TRUST_MIN ||
+    trust > TRUST_MAX
+  ) {
+    throw new RangeError(
+      `신뢰도는 ${TRUST_MIN} 이상 ${TRUST_MAX} 이하의 정수여야 한다: ${trust}`,
+    );
+  }
+}
+
 function rollDelta(baseDelta: number, rng: Rng): number {
   if (baseDelta === 0) return 0;
   const spread = Math.max(1, Math.round(Math.abs(baseDelta) * 0.2));
@@ -106,7 +118,21 @@ export function evaluateTrust(
   action: TrustAction,
   rng: Rng,
 ): TrustEvaluation {
+  assertValidTrust(member.trust);
   const trustRule = TRUST_RULES[member.personality][action];
+
+  if (member.trust === TRUST_MIN) {
+    return {
+      member: { ...member },
+      change: {
+        memberId: member.id,
+        delta: 0,
+        reason: `${trustRule.reason} · 이미 정체가 발각됨`,
+      },
+      exposed: true,
+    };
+  }
+
   const nextTrust = clampTrust(member.trust + rollDelta(trustRule.baseDelta, rng));
   const nextMember = { ...member, trust: nextTrust };
   return {
