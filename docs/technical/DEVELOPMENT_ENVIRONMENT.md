@@ -238,6 +238,8 @@ Next.js App Router에서는 모듈 전역 singleton 스토어를 만들지 않�
 
 클라이언트 스토어는 브라우저 저장소나 서버에 영속화하지 않는다. `persist`, `localStorage`, Supabase 저장·복원은 각각의 별도 설계가 승인될 때 도입한다.
 
+`/state-preview`는 Run/UI Store와 R1 파티 생성을 확인하는 공개 기술 검증 라우트다. 홈과 실제 게임 흐름에는 연결하지 않지만 development 환경과 Vercel production에서 접근할 수 있다. seed를 입력하면 같은 파티를 재현할 수 있으며, 고정 던전 fixture만 함께 표시한다. 이 라우트는 사용자 데이터·비밀 값·인증·영속화를 사용하지 않고, 배포 환경에서도 `Development only` 안내를 유지한다.
+
 ## 백엔드와 데이터: Supabase
 
 Supabase는 영구 데이터와 백엔드 기능을 담당한다.
