@@ -2025,7 +2025,7 @@ Run:
 ```bash
 pnpm dev &
 sleep 8
-curl -s http://localhost:3000/play/map | grep -o "깊이 [0-9]" 
+curl -s http://localhost:3000/play/map | grep -o "깊이 [0-9]"
 kill %1
 ```
 Expected: `깊이 3`, `깊이 2`, `깊이 1`, `깊이 0` 순서로 나온다. HTML 순서가 위에서 아래이므로, `깊이 3`(보스방)이 먼저 나오면 보스방이 화면 맨 위에 있다는 뜻이다.
