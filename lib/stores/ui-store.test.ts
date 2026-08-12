@@ -5,7 +5,7 @@ import { createUiStore } from "@/lib/stores/ui-store";
 
 const memberId = "ui-member" as MemberId;
 
-describe("UI Store", () => {
+describe("화면 상태 스토어", () => {
   it("선택된 파티원 없이 시작한다", () => {
     const store = createUiStore();
 

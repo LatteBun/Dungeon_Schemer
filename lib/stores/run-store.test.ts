@@ -70,7 +70,7 @@ function createTestRun(seed: string): RunState {
   };
 }
 
-describe("Run Store", () => {
+describe("런 상태 스토어", () => {
   it("전달한 초기 런을 정확히 보관한다", () => {
     const initialRun = createTestRun("initial-seed");
     const store = createRunStore(initialRun);
