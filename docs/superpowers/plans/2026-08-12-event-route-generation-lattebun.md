@@ -89,7 +89,7 @@ describe("던전 이벤트 기본 콘텐츠", () => {
 
 - [ ] **Step 2: 모듈 부재로 실패하는지 확인한다**
 
-Run: `pnpm test -- lib/rules/dungeon.test.ts`
+Run: `pnpm exec vitest run lib/rules/dungeon.test.ts`
 
 Expected: FAIL with `@/lib/content/events` not found.
 
@@ -155,11 +155,11 @@ function event(
 Run:
 
 ```bash
-pnpm test -- lib/rules/dungeon.test.ts
+pnpm exec vitest run lib/rules/dungeon.test.ts
 pnpm typecheck
 ```
 
-Expected: 3 tests PASS; typecheck exit 0.
+Expected: `dungeon.test.ts`의 모든 테스트 PASS; typecheck exit 0.
 
 - [ ] **Step 5: Task 1을 커밋한다**
 
@@ -268,7 +268,7 @@ describe("던전 경로 생성", () => {
 
 - [ ] **Step 2: 새 규칙 모듈 부재로 실패하는지 확인한다**
 
-Run: `pnpm test -- lib/rules/dungeon.test.ts`
+Run: `pnpm exec vitest run lib/rules/dungeon.test.ts`
 
 Expected: FAIL with `@/lib/rules/dungeon` not found.
 
@@ -428,7 +428,7 @@ describe("던전 이벤트 배치", () => {
 Run:
 
 ```bash
-pnpm test -- lib/rules/dungeon.test.ts
+pnpm exec vitest run lib/rules/dungeon.test.ts
 pnpm typecheck
 ```
 
@@ -544,7 +544,7 @@ describe("던전 이벤트 풀 검증", () => {
 
 - [ ] **Step 3: 빈 검증 함수 때문에 테스트가 실패하는지 확인한다**
 
-Run: `pnpm test -- lib/rules/dungeon.test.ts`
+Run: `pnpm exec vitest run lib/rules/dungeon.test.ts`
 
 Expected: 새 오류 테스트들이 “function did not throw”로 FAIL한다.
 
@@ -591,7 +591,7 @@ function validateEventPools(pools: DungeonEventPools): void {
 Run:
 
 ```bash
-pnpm test -- lib/rules/dungeon.test.ts lib/rng/index.test.ts lib/mock/mock.test.ts
+pnpm exec vitest run lib/rules/dungeon.test.ts lib/rng/index.test.ts lib/mock/mock.test.ts
 pnpm lint
 pnpm typecheck
 pnpm test
@@ -646,7 +646,7 @@ Expected: 충돌 없이 병합. 충돌 시 현재 main의 완료 작업을 되�
 
 - [ ] **Step 3: 배정표 무결성 검사를 실행한다**
 
-Run: `pnpm test -- docs/technical/PROTOTYPE_WORK_ASSIGNMENT.test.ts`
+Run: `pnpm exec vitest run docs/technical/PROTOTYPE_WORK_ASSIGNMENT.test.ts`
 
 Expected: PASS.
 

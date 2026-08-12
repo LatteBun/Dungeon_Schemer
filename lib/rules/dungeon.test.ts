@@ -4,7 +4,74 @@ import type { DungeonEventPools } from "@/lib/content/events";
 import { EVENT_KINDS } from "@/lib/domain";
 import type { DungeonEvent, DungeonNode, MemberId, NodeId } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
+import type { Rng, RngStream } from "@/lib/rng";
 import { DUNGEON_SHAPES, generateDungeon } from "@/lib/rules/dungeon";
+
+const EXPECTED_DUNGEON_SHAPES = [
+  {
+    branches: 2,
+    pathDepth: 2,
+    nodeCount: 7,
+    chains: [
+      ["node-path-1-depth-1", "node-path-1-depth-2"],
+      ["node-path-2-depth-1", "node-path-2-depth-2"],
+    ],
+    adjacency: {
+      "node-entry": ["node-path-1-depth-1", "node-path-2-depth-1"],
+      "node-path-1-depth-1": ["node-path-1-depth-2"],
+      "node-path-1-depth-2": ["node-merge"],
+      "node-path-2-depth-1": ["node-path-2-depth-2"],
+      "node-path-2-depth-2": ["node-merge"],
+      "node-merge": ["node-boss"],
+      "node-boss": [],
+    },
+  },
+  {
+    branches: 3,
+    pathDepth: 2,
+    nodeCount: 9,
+    chains: [
+      ["node-path-1-depth-1", "node-path-1-depth-2"],
+      ["node-path-2-depth-1", "node-path-2-depth-2"],
+      ["node-path-3-depth-1", "node-path-3-depth-2"],
+    ],
+    adjacency: {
+      "node-entry": [
+        "node-path-1-depth-1",
+        "node-path-2-depth-1",
+        "node-path-3-depth-1",
+      ],
+      "node-path-1-depth-1": ["node-path-1-depth-2"],
+      "node-path-1-depth-2": ["node-merge"],
+      "node-path-2-depth-1": ["node-path-2-depth-2"],
+      "node-path-2-depth-2": ["node-merge"],
+      "node-path-3-depth-1": ["node-path-3-depth-2"],
+      "node-path-3-depth-2": ["node-merge"],
+      "node-merge": ["node-boss"],
+      "node-boss": [],
+    },
+  },
+  {
+    branches: 2,
+    pathDepth: 3,
+    nodeCount: 9,
+    chains: [
+      ["node-path-1-depth-1", "node-path-1-depth-2", "node-path-1-depth-3"],
+      ["node-path-2-depth-1", "node-path-2-depth-2", "node-path-2-depth-3"],
+    ],
+    adjacency: {
+      "node-entry": ["node-path-1-depth-1", "node-path-2-depth-1"],
+      "node-path-1-depth-1": ["node-path-1-depth-2"],
+      "node-path-1-depth-2": ["node-path-1-depth-3"],
+      "node-path-1-depth-3": ["node-merge"],
+      "node-path-2-depth-1": ["node-path-2-depth-2"],
+      "node-path-2-depth-2": ["node-path-2-depth-3"],
+      "node-path-2-depth-3": ["node-merge"],
+      "node-merge": ["node-boss"],
+      "node-boss": [],
+    },
+  },
+] as const;
 
 function dungeonOf(seed: string) {
   return generateDungeon(createRng(seed).derive("dungeon"));
@@ -16,6 +83,26 @@ function clonedPools(): DungeonEventPools {
 
 function withPools(pools: DungeonEventPools) {
   return () => generateDungeon(createRng("invalid").derive("dungeon"), { eventPools: pools });
+}
+
+function countingRng(seed: string): { readonly rng: Rng; readonly calls: () => number } {
+  const delegate = createRng(seed).derive("dungeon");
+  let callCount = 0;
+  const count = <T>(operation: () => T): T => {
+    callCount += 1;
+    return operation();
+  };
+  return {
+    rng: {
+      seed: delegate.seed,
+      float: () => count(() => delegate.float()),
+      int: (min, max) => count(() => delegate.int(min, max)),
+      pick: <T>(items: readonly T[]) => count(() => delegate.pick(items)),
+      shuffle: <T>(items: readonly T[]) => count(() => delegate.shuffle(items)),
+      derive: (stream: RngStream) => count(() => delegate.derive(stream)),
+    },
+    calls: () => callCount,
+  };
 }
 
 function replaceEvent(
@@ -149,6 +236,32 @@ describe("던전 이벤트 풀 검증", () => {
     };
     expect(withPools(replaceEvent(pools, "rest", 0, invalid))).toThrow(/파티원 대상/);
   });
+
+  it("잘못된 풀은 난수를 소비하기 전에 거부한다", () => {
+    const pools = clonedPools();
+    const invalid = {
+      ...pools,
+      regular: { ...pools.regular, monster: pools.regular.monster.slice(0, 1) },
+    };
+    const { rng, calls } = countingRng("invalid-before-rng");
+
+    expect(() => generateDungeon(rng, { eventPools: invalid })).toThrow(/monster.*최소 2/);
+    expect(calls()).toBe(0);
+  });
+
+  it("보스 선택지도 일반 선택지와 같이 유효성을 검사한다", () => {
+    const pools = clonedPools();
+    const boss = pools.boss[0];
+    const invalid = {
+      ...pools,
+      boss: [{
+        ...boss,
+        choices: [{ ...boss.choices[0], knownRisk: " " }],
+      }],
+    };
+
+    expect(withPools(invalid)).toThrow(/알려진 위험.*비어/);
+  });
 });
 
 describe("던전 경로 생성", () => {
@@ -156,21 +269,49 @@ describe("던전 경로 생성", () => {
     expect(dungeonOf("same-seed")).toEqual(dungeonOf("same-seed"));
   });
 
-  it("여러 시드에서 허용된 형태와 노드 수만 만든다", () => {
-    const allowed = new Set(DUNGEON_SHAPES.map(({ branches, pathDepth }) =>
-      `${branches}/${pathDepth}`));
+  it("허용된 각 형태의 정확한 노드와 분기 연결만 만든다", () => {
+    expect(DUNGEON_SHAPES).toEqual(EXPECTED_DUNGEON_SHAPES.map(({ branches, pathDepth }) => ({
+      branches,
+      pathDepth,
+    })));
     const seen = new Set<string>();
     for (let index = 0; index < 100; index += 1) {
       const { dungeon } = dungeonOf(`shape-${index}`);
-      expect(dungeon.nodes.length).toBeGreaterThanOrEqual(7);
-      expect(dungeon.nodes.length).toBeLessThanOrEqual(10);
-      const entry = dungeon.nodes.find((node) => node.id === dungeon.entryNodeId)!;
-      const merge = dungeon.nodes.find((node) => node.id === "node-merge")!;
-      const shape = `${entry.nextNodeIds.length}/${merge.depth - 1}`;
-      expect(allowed.has(shape)).toBe(true);
-      seen.add(shape);
+      expect([7, 9]).toContain(dungeon.nodes.length);
+      const actualAdjacency = Object.fromEntries(dungeon.nodes.map((node) => [
+        node.id,
+        node.nextNodeIds,
+      ]));
+      const expected = EXPECTED_DUNGEON_SHAPES.find(({ adjacency }) =>
+        Object.keys(adjacency).every((id) => id in actualAdjacency)
+        && Object.keys(actualAdjacency).every((id) => id in adjacency),
+      );
+      expect(expected).toBeDefined();
+      if (expected === undefined) continue;
+
+      expect(dungeon.nodes).toHaveLength(expected.nodeCount);
+      expect(actualAdjacency).toEqual(expected.adjacency);
+      expect(dungeon.entryNodeId).toBe("node-entry");
+      expect(dungeon.bossNodeId).toBe("node-boss");
+      expect(actualAdjacency["node-entry"]).toEqual(expected.chains.map(([first]) => first));
+      for (const chain of expected.chains) {
+        for (let depth = 0; depth < chain.length; depth += 1) {
+          const nodeId = chain[depth];
+          const expectedNext = depth === chain.length - 1 ? ["node-merge"] : [chain[depth + 1]];
+          expect(actualAdjacency[nodeId]).toEqual(expectedNext);
+          const otherBranchIds = expected.chains
+            .filter((otherChain) => otherChain !== chain)
+            .flat()
+            .map(String);
+          expect(actualAdjacency[nodeId].some((next) => otherBranchIds.includes(next))).toBe(false);
+        }
+      }
+      expect(actualAdjacency["node-merge"]).toEqual(["node-boss"]);
+      expect(actualAdjacency["node-boss"]).toEqual([]);
+      seen.add(`${expected.branches}/${expected.pathDepth}`);
     }
-    expect(seen).toEqual(allowed);
+    expect(seen).toEqual(new Set(EXPECTED_DUNGEON_SHAPES.map(({ branches, pathDepth }) =>
+      `${branches}/${pathDepth}`)));
   });
 
   it("모든 노드가 앞으로 진행해 같은 길이로 보스에 도달한다", () => {
@@ -218,6 +359,10 @@ describe("던전 이벤트 배치", () => {
         .toContain(events[bossIndex].id);
       expect(events[bossIndex].kind).toBe("special");
       const regular = events.filter((_, eventIndex) => eventIndex !== bossIndex);
+      const categoryCounts = EVENT_KINDS
+        .map((kind) => regular.filter((event) => event.kind === kind).length)
+        .sort((left, right) => left - right);
+      expect(categoryCounts).toEqual(regular.length === 6 ? [1, 1, 2, 2] : [2, 2, 2, 2]);
       expect(new Set(regular.map((event) => event.kind)))
         .toEqual(new Set(EVENT_KINDS));
       expect(new Set(events.map((event) => event.id)).size).toBe(events.length);
