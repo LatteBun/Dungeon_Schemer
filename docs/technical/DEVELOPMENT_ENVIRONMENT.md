@@ -89,12 +89,13 @@ pnpm install --frozen-lockfile
 pnpm dev
 pnpm lint
 pnpm typecheck
+pnpm test
 pnpm build
 pnpm start
 ```
 
 - `pnpm dev`: 개발 서버를 실행한다.
-- `pnpm lint`, `pnpm typecheck`, `pnpm build`: Pull Request 전 실행하는 검증 명령이다.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`: Pull Request 전 실행하는 검증 명령이다.
 - `pnpm start`: `pnpm build`가 성공한 뒤 프로덕션 모드로 앱을 실행한다.
 
 Windows PowerShell에서 실행 정책이 `pnpm.ps1`을 차단하는 경우에만 `pnpm.cmd`를 사용한다. 예를 들어 `pnpm.cmd dev`로 개발 서버를 실행할 수 있다. Codespaces와 Linux Bash에서는 표준 `pnpm` 명령을 사용한다.
@@ -122,11 +123,28 @@ Codespaces Node.js            24.19.0
 | `pnpm dev` | 개발 서버 실행 | 기능 개발과 수동 확인 |
 | `pnpm lint` | ESLint 검사 | Pull Request 병합 전 |
 | `pnpm typecheck` | TypeScript 타입 검사 | Pull Request 병합 전 |
-| `pnpm test` | Vitest 단위 테스트 | Vitest 도입 뒤, Pull Request 병합 전 |
+| `pnpm test` | Vitest 단위 테스트 | Pull Request 병합 전 |
 | `pnpm build` | Vercel과 같은 Next.js 프로덕션 빌드 | Pull Request 병합 전 |
 | `pnpm start` | `pnpm build` 성공 뒤 로컬 프로덕션 서버 실행 | 배포 전 동작 확인이 필요할 때 |
 
-`pnpm lint`, `pnpm typecheck`, `pnpm build`는 기본 병합 전 검증 기준이다. `pnpm test`는 게임 규칙을 UI에서 분리하고 Vitest를 도입한 뒤 기준에 포함한다.
+`pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`를 병합 전 검증 기준으로 사용한다. 감시 모드가 필요하면 개발 중에만 `pnpm test:watch`를 사용하고, 검증에는 한 번 실행하고 종료하는 `pnpm test`를 사용한다.
+
+## 테스트 작성 규약
+
+단위 테스트는 Vitest로 작성한다. 세 사람이 같은 규약을 쓰도록 다음을 지킨다.
+
+- 테스트 파일 이름은 `<대상>.test.ts`로 하고 대상 소스와 같은 디렉터리에 둔다. 별도의 `tests/` 디렉터리를 만들지 않는다.
+- 다른 모듈은 상대 경로가 아니라 `@/`로 가져온다. 예를 들어 `@/lib/domain`이다.
+- `describe`, `it`, `expect`를 `vitest`에서 명시적으로 가져온다. 전역으로 쓰지 않는다.
+- `describe`와 `it`의 설명은 한국어로 쓴다. 커밋 메시지와 문서가 한국어이므로 실패 출력도 같은 언어로 읽히는 편이 낫다.
+
+Vitest 설정은 `vitest.config.mts`에 둔다. 확장자가 `.ts`가 아니라 `.mts`인 이유는 Vite가 `.ts` 설정 파일을 CommonJS로 읽어 ESM 구문 경고를 내기 때문이다. `package.json`에 `type: module`을 넣는 방법은 Next.js 전체 모듈 해석에 영향을 주므로 쓰지 않는다.
+
+Vitest는 `tsconfig.json`의 `paths`를 읽지 않는다. `@/` 별칭은 `vitest.config.mts`의 `resolve.alias`가 따로 맞춘다. 새 별칭을 추가할 때는 두 파일을 함께 고쳐야 한다.
+
+현재 테스트 환경은 Node이며 순수 로직 검증을 대상으로 한다. React 컴포넌트를 렌더링하는 테스트가 필요해지면 그 작업에서 `jsdom`과 테스트 라이브러리를 함께 도입하고 이 절을 갱신한다.
+
+가장 가까운 예시는 `lib/domain/constants.test.ts`다.
 
 ## 애플리케이션: Next.js, React, TypeScript
 
@@ -222,7 +240,8 @@ Vercel
 - GitHub Codespaces를 개발 환경으로 사용한다.
 - Node.js `24.19.0` LTS, npm `11.17.0`, pnpm `11.21.0`을 공통 런타임으로 사용한다.
 - 프로젝트 의존성 설치와 스크립트 실행은 pnpm으로 통일한다.
-- `pnpm lint`, `pnpm typecheck`, `pnpm build`를 병합 전 검증 기준으로 사용한다.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`를 병합 전 검증 기준으로 사용한다.
+- Vitest로 단위 테스트를 작성한다.
 - Next.js, React, TypeScript로 애플리케이션을 구성한다.
 - Next.js App Router와 루트 `app/` 디렉터리로 초기 화면을 구성한다.
 - Tailwind CSS로 UI를 작성한다.
@@ -235,7 +254,7 @@ Vercel
 
 - Next.js, React, Tailwind CSS, Framer Motion, Zustand, Supabase의 정확한 버전
 - Supabase 인증과 데이터베이스 스키마
-- 테스트 도구와 배포 승인 절차
+- 배포 승인 절차
 - 환경 변수 이름과 비밀 정보 관리 규칙
 
 이 항목은 구현 전에 기술 설계와 초기화 계획에서 결정한다.
