@@ -1,6 +1,13 @@
 "use client";
 
-import { createPreviewRun } from "@/app/state-preview/preview-run";
+import { type FormEvent, useState } from "react";
+import { CLASSES } from "@/lib/content/classes";
+import {
+  createPreviewRun,
+  PREVIEW_INITIAL_SEED,
+} from "@/app/state-preview/preview-run";
+import { normalizePreviewSeed } from "@/app/state-preview/preview-seed";
+import { createSeed } from "@/lib/rng";
 import {
   useRunStore,
   useUiStore,
@@ -8,6 +15,8 @@ import {
 
 export function StatePreviewPanel() {
   const run = useRunStore((state) => state.run);
+  const [seedInput, setSeedInput] = useState(run.seed);
+  const [seedError, setSeedError] = useState<string | null>(null);
   const startNewRun = useRunStore((state) => state.startNewRun);
   const resetRun = useRunStore((state) => state.resetRun);
   const selectedMemberId = useUiStore((state) => state.selectedMemberId);
@@ -21,14 +30,34 @@ export function StatePreviewPanel() {
     (member) => member.id === selectedMemberId,
   );
 
-  function handleNewPreviewRun() {
-    startNewRun(createPreviewRun);
+  function startPreviewRun(seed: string) {
+    startNewRun(createPreviewRun, seed);
     resetUi();
+    setSeedInput(seed);
+    setSeedError(null);
+  }
+
+  function handleSeedSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const seed = normalizePreviewSeed(seedInput);
+
+    if (seed === null) {
+      setSeedError("seed를 입력해 주세요.");
+      return;
+    }
+
+    startPreviewRun(seed);
+  }
+
+  function handleNewPreviewRun() {
+    startPreviewRun(createSeed());
   }
 
   function handleResetAll() {
     resetRun();
     resetUi();
+    setSeedInput(PREVIEW_INITIAL_SEED);
+    setSeedError(null);
   }
 
   return (
@@ -42,6 +71,31 @@ export function StatePreviewPanel() {
           표시 값은 기술 검증용 예시이며 공식 기본값이 아닙니다.
         </p>
       </header>
+
+      <section
+        aria-labelledby="seed-check-heading"
+        className="space-y-3 rounded border p-4"
+      >
+        <h2 id="seed-check-heading" className="text-2xl font-semibold">
+          R1 파티 생성 재현 확인
+        </h2>
+        <p>같은 seed는 같은 파티를 재현하고, 새 seed는 다른 조합을 생성합니다.</p>
+        <form className="flex flex-wrap gap-3" onSubmit={handleSeedSubmit}>
+          <label className="flex flex-col gap-1" htmlFor="preview-seed">
+            재현할 seed
+            <input
+              id="preview-seed"
+              className="rounded border px-3 py-2"
+              value={seedInput}
+              onChange={(event) => setSeedInput(event.target.value)}
+            />
+          </label>
+          <button className="self-end rounded border px-3 py-2" type="submit">
+            입력한 seed로 생성
+          </button>
+        </form>
+        {seedError === null ? null : <p role="alert">{seedError}</p>}
+      </section>
 
       <section aria-labelledby="run-state-heading" className="space-y-4">
         <h2 id="run-state-heading" className="text-2xl font-semibold">
@@ -100,6 +154,13 @@ export function StatePreviewPanel() {
             <li key={member.id} className="rounded border p-4">
               <h3 className="text-xl font-semibold">{member.name}</h3>
               <dl className="mt-3 space-y-1">
+                <div>
+                  <dt className="inline font-semibold">직업: </dt>
+                  <dd className="inline">
+                    {CLASSES.find((candidate) => candidate.id === member.classId)
+                      ?.name ?? member.classId}
+                  </dd>
+                </div>
                 <div>
                   <dt className="inline font-semibold">class ID: </dt>
                   <dd className="inline">{member.classId}</dd>
