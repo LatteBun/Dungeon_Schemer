@@ -40,7 +40,7 @@ Vercel Hobby의 비공개 저장소 협업 제약 때문에 기능 브랜치별 
 각 팀원은 자신의 Codespaces에서 작업 브랜치를 열어 개발한다.
 
 - 기능을 수정한 뒤 앱을 실행해 변경한 흐름을 직접 확인한다.
-- Pull Request 전 `pnpm lint`, `pnpm typecheck`, `pnpm build`를 실행한다.
+- Pull Request 전 `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`를 실행한다.
 - 검증 명령 또는 실행이 실패하면 원인을 수정한 뒤 Pull Request를 갱신한다.
 
 ## Vercel 데모 배포
@@ -58,7 +58,7 @@ Vercel Hobby 프로젝트는 한 명의 소유자가 관리하며 GitHub 저장�
 
 - 작업이 `feature/<작업명>` 브랜치에 있는가?
 - 변경한 기능을 Codespaces에서 실행해 보았는가?
-- `pnpm lint`, `pnpm typecheck`, `pnpm build`가 통과하는가?
+- `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`가 통과하는가?
 - 다른 팀원 한 명이 Pull Request를 확인했는가?
 
 ### 병합 후
