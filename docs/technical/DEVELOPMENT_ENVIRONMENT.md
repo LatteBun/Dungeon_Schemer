@@ -197,17 +197,16 @@ UI 레이아웃과 스타일링에 사용한다. 화면의 정보 우선순위�
 
 ## 클라이언트 상태: Zustand
 
-Zustand는 화면 간 또는 여러 컴포넌트가 공유하는 클라이언트 게임 상태를 관리한다.
+Zustand `5.0.14`는 현재 세션에서 여러 Client Component가 공유하는 상태를 관리하는 production dependency다. 상태는 책임에 따라 다음 두 스토어로 분리한다.
 
-관리 대상 후보:
+- Run Store: `RunState` 전체와 새 런 시작·교체·초기화 동작
+- UI Store: 선택한 파티원처럼 화면에서만 필요한 임시 상태
 
-- 현재 파티와 파티원 상태
-- 현재 던전 위치와 이벤트
-- 선택 중인 정보 카드와 행동
-- 일시적인 전투·애니메이션 상태
-- 정산 전의 탐험 진행 상태
+Next.js App Router에서는 모듈 전역 singleton 스토어를 만들지 않는다. `zustand/vanilla`의 팩토리로 스토어를 만들고 Client Context Provider가 화면 인스턴스마다 한 번 생성한다. React Server Component는 스토어를 직접 읽거나 쓰지 않으며, 서버에서 준비한 값이 필요하면 직렬화 가능한 props를 Provider의 초기값으로 전달한다. 이 기준은 [Zustand의 Next.js 가이드](https://zustand.docs.pmnd.rs/learn/guides/nextjs)를 따른다.
 
-서버에 영구 저장해야 하는 데이터와 화면에만 필요한 임시 상태를 구분한다. 정확한 스토어 분할은 게임 데이터 모델을 설계할 때 확정한다.
+스토어는 게임 규칙을 소유하지 않는다. 규칙 함수가 만든 다음 `RunState`를 받아 전체 상태를 교체하며 중첩 객체를 제자리에서 변경하지 않는다. 새 런의 시드는 `@/lib/rng`의 `createSeed()`로 만들되, 실제 파티와 던전 생성 규칙은 `R1`과 `R4`가 제공한다.
+
+클라이언트 스토어는 브라우저 저장소나 서버에 영속화하지 않는다. `persist`, `localStorage`, Supabase 저장·복원은 각각의 별도 설계가 승인될 때 도입한다.
 
 ## 백엔드와 데이터: Supabase
 
@@ -267,13 +266,14 @@ Vercel
 - Next.js App Router와 루트 `app/` 디렉터리로 초기 화면을 구성한다.
 - Tailwind CSS로 UI를 작성한다.
 - Framer Motion으로 애니메이션을 구현한다.
-- Zustand로 클라이언트 상태를 관리한다.
+- Zustand `5.0.14`로 클라이언트 상태를 관리한다.
+- Run Store와 UI Store를 분리하고, App Router에서는 vanilla store factory와 Client Context Provider를 사용한다.
 - Supabase를 백엔드와 데이터 계층으로 사용한다.
 - Vercel에 배포한다.
 
 ## 아직 확정하지 않는 것
 
-- Next.js, React, Tailwind CSS, Framer Motion, Zustand, Supabase의 정확한 버전
+- Next.js, React, Tailwind CSS, Framer Motion, Supabase의 정확한 버전
 - Supabase 인증과 데이터베이스 스키마
 - 배포 승인 절차
 - 환경 변수 이름과 비밀 정보 관리 규칙
