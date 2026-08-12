@@ -3,6 +3,7 @@
 // 모든 값을 export하는 이유는 no-unused-vars 규칙을 피하기 위함이다.
 import type {
   CardId,
+  ChoiceId,
   ClaimId,
   ClassId,
   EventId,
@@ -20,7 +21,12 @@ import type { ClassDef, PartyMember, Personality } from "./party";
 import { TRUTH_TYPES } from "./info";
 import type { InfoCard, InfoClaim, Target } from "./info";
 import { EVENT_KINDS } from "./dungeon";
-import type { DungeonEvent, DungeonNode, DungeonState } from "./dungeon";
+import type {
+  DungeonEvent,
+  DungeonNode,
+  DungeonState,
+  EventChoice,
+} from "./dungeon";
 import { RUN_PHASES } from "./run";
 import type {
   DecisionRecord,
@@ -81,12 +87,33 @@ export const sampleClaim: InfoClaim = {
   toldAt: 0,
 };
 
+export const sampleChoice: EventChoice = {
+  id: "choice-help-heroes" as ChoiceId,
+  label: "용사를 지원한다",
+  target: sampleTargetMember,
+  expectedGain: "성직자의 신뢰를 얻는다",
+  knownRisk: "보스와의 관계가 나빠진다",
+};
+
+// target은 선택 사항이다. 파티 전체나 상황 자체를 향하는 행동이 있다.
+export const sampleChoiceWithoutTarget: EventChoice = {
+  id: "choice-watch" as ChoiceId,
+  label: "관망한다",
+  expectedGain: "관계 변화를 줄인다",
+  knownRisk: "기회를 잃는다",
+};
+
 export const sampleEvent: DungeonEvent = {
   id: "event-goblin-ambush" as EventId,
   kind: "monster",
   title: "고블린 매복",
   description: "좁은 길에서 고블린 세 마리가 튀어나온다.",
+  choices: [sampleChoice, sampleChoiceWithoutTarget],
 };
+
+// 브랜드가 동작하면 ChoiceId를 NodeId 자리에 넣을 수 없다.
+// @ts-expect-error ChoiceId는 NodeId에 대입할 수 없다
+export const wrongChoiceId: NodeId = sampleChoice.id;
 
 export const bossNode: DungeonNode = {
   id: "n-boss" as NodeId,
@@ -175,3 +202,5 @@ export const barrelEvent: domain.DungeonEvent = sampleEvent;
 export const barrelDungeon: domain.DungeonState = sampleDungeon;
 export const barrelResources: domain.Resources = sampleResources;
 export const barrelTrustChange: domain.TrustChange = sampleTrustChange;
+export const barrelChoice: domain.EventChoice = sampleChoice;
+export const barrelChoiceId: domain.ChoiceId = sampleChoice.id;

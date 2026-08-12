@@ -1,28 +1,15 @@
 @import "tailwindcss";
 
-:root {
-  color: #f4f0e6;
-  background: #17130f;
-}
-
-body {
-  min-height: 100vh;
-  margin: 0;
-  display: grid;
-  place-items: center;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-main {
-  text-align: center;
-}
-
-h1 {
-  margin: 0;
-  font-size: 3rem;
-}
-
-p {
-  margin: 1rem 0 0;
-  color: #cbbca5;
+/*
+ * 디자인 토큰. U1~U4가 새 패널을 만들 때 색을 새로 고르지 않도록
+ * 여기에 모은다. 아이콘·질감·아트 스타일은 아직 정하지 않는다.
+ */
+@theme {
+  --color-ink: #17130f;
+  --color-parchment: #f4f0e6;
+  --color-muted: #cbbca5;
+  --color-panel: #211a14;
+  --color-edge: #3a2e23;
+  --color-trust-up: #7fa66a;
+  --color-trust-down: #b5654f;
 }
