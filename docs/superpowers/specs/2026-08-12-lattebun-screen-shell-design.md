@@ -1,5 +1,8 @@
 # F5 화면 셸·레이아웃 설계
 
+> 상태: **제품 요구사항 대체됨**
+> 게시판부터 캠페인 엔딩까지의 화면 흐름은 [게임 방향 개편 설계](2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 - 작업 ID: `F5`
 - 작성자: LatteBun
 - 작성 도구: Claude Code

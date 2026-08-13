@@ -1,5 +1,8 @@
 # State Preview R1 연동 설계
 
+> 상태: **제품 요구사항 대체됨**
+> 지속 캠페인 상태와 통합 화면 요구사항은 [게임 방향 개편 설계](2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 **작성자:** SangHwan Yoo
 **작성 도구:** Codex
 **상태:** 제안

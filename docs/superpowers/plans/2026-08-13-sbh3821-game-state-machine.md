@@ -1,5 +1,8 @@
 # P1 게임 상태 머신 실행 계획
 
+> 상태: **제품 요구사항 대체됨**
+> 캠페인 게시판부터 정산·엔딩까지의 상태 전이는 [게임 방향 개편 설계](../specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 - 작성일: 2026-08-13
 - 작성자: sbh3821
 - 근거 spec: [게임 상태 머신 설계](../specs/2026-08-13-sbh3821-game-state-machine-design.md)

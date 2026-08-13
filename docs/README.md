@@ -36,24 +36,24 @@
 
 ### 게임 설계
 
-- [GAME_OVERVIEW.md](design/GAME_OVERVIEW.md): 한 줄 소개, 플레이어 역할, 핵심 재미, 양 진영의 줄타기와 장기 방향
-- [CORE_GAME_LOOP.md](design/CORE_GAME_LOOP.md): 새 파티 등장부터 보스전, 정산, 성장까지 한 판의 진행 구조
+- [GAME_OVERVIEW.md](design/GAME_OVERVIEW.md): 고블린 길잡이의 역할, 던전 15개 캠페인, 생존과 배신의 핵심 재미
+- [CORE_GAME_LOOP.md](design/CORE_GAME_LOOP.md): 게시판부터 탐험, 정산, 다음 공고와 캠페인 엔딩까지의 반복 구조
 
 ### 핵심 시스템
 
-- [PARTY_AND_TRUST.md](systems/PARTY_AND_TRUST.md): 3~5명 랜덤 파티, 직업과 성격, 파티원별 개인 신뢰도
-- [INFORMATION_AND_DECEPTION.md](systems/INFORMATION_AND_DECEPTION.md): 용사와 보스에게 제공하는 진실·거짓·중립 정보와 기만
-- [DUNGEON_EVENTS_AND_BOSSES.md](systems/DUNGEON_EVENTS_AND_BOSSES.md): 길 선택, 몬스터·휴식·상인·특수 사건, 보스 거래와 보스전 개입
-- [PROGRESSION_AND_ENDINGS.md](systems/PROGRESSION_AND_ENDINGS.md): 플레이어 능력, 던전 강화·약화, 영웅·마왕·지배자·상인 왕 경로
+- [PARTY_AND_TRUST.md](systems/PARTY_AND_TRUST.md): 지속 3인 파티, 예비 인원, 자동 재편, 회복과 개인 신뢰
+- [INFORMATION_AND_DECEPTION.md](systems/INFORMATION_AND_DECEPTION.md): 용사 파티에게 제공하는 진실·거짓·중립 정보와 사후 검증
+- [DUNGEON_EVENTS_AND_BOSSES.md](systems/DUNGEON_EVENTS_AND_BOSSES.md): 등급별 지도, 정보 전달 기회, 사건 행동과 자동 보스전
+- [PROGRESSION_AND_ENDINGS.md](systems/PROGRESSION_AND_ENDINGS.md): 정산 보상, 명성·골드 승급 점수, 던전 상승과 캠페인 엔딩
 
 ### 사용자 경험
 
-- [ONBOARDING_AND_INTERFACE.md](experience/ONBOARDING_AND_INTERFACE.md): 30초 온보딩 목표, 화면 정보 구조, 결과 피드백, 초기 와이어프레임 해석
+- [ONBOARDING_AND_INTERFACE.md](experience/ONBOARDING_AND_INTERFACE.md): 게시판부터 엔딩까지 화면 정보 구조, 30초 온보딩과 결과 피드백
 
 ### 기술
 
 - [DEVELOPMENT_ENVIRONMENT.md](technical/DEVELOPMENT_ENVIRONMENT.md): GitHub Codespaces, Next.js, React, TypeScript, Tailwind CSS, Framer Motion, Zustand, Supabase, Vercel의 책임
-- [PROTOTYPE_WORK_ASSIGNMENT.md](technical/PROTOTYPE_WORK_ASSIGNMENT.md): 프로토타입의 구현 영역 20개와 선행 관계, 구현 순서, 담당자 배정표
+- [PROTOTYPE_WORK_ASSIGNMENT.md](technical/PROTOTYPE_WORK_ASSIGNMENT.md): 캠페인 개편의 3개 구현 트랙, 선행 관계와 담당자 배정표
 
 ## 기존 원본 자료
 
@@ -75,5 +75,8 @@
 
 ## 설계 및 실행 기록
 
+- [게임 방향 개편 설계](superpowers/specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)
+- [게임 방향 개편 구현 계획](superpowers/plans/2026-08-13-sanghwan-yoo-game-direction-rework.md)
+- [게임 방향 개편 질문지](superpowers/2026-08-13-game-direction-brainstorming-questionnaire.md)
 - [문서 구조 설계](superpowers/specs/2026-08-11-documentation-architecture-design.md)
 - [문서 구조 실행 계획](superpowers/plans/2026-08-11-documentation-architecture.md)

@@ -1,5 +1,8 @@
 # F5 화면 셸·레이아웃 구현 계획
 
+> 상태: **제품 요구사항 대체됨**
+> 게시판부터 캠페인 엔딩까지의 화면 흐름은 [게임 방향 개편 설계](../specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 인터페이스 문서의 6개 화면 영역을 목 데이터로 배치한 라우트 5개를 만들고, `U1`~`U4`가 공유할 셸·디자인 토큰·경계 규칙을 세운다.

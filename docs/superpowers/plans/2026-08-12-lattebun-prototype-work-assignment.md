@@ -1,5 +1,8 @@
 # 프로토타입 작업 배정표 재설계 실행 계획
 
+> 상태: **제품 요구사항 대체됨**
+> 새 캠페인 작업 구조는 [게임 방향 개편 설계](../specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)와 현행 작업 배정표를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `docs/technical/PROTOTYPE_WORK_ASSIGNMENT.md`를 8행 배정표에서 의존성과 완료 기준을 담은 20행 배정표로 바꾸고, 이를 참조하는 상위 문서의 설명을 맞춘다.

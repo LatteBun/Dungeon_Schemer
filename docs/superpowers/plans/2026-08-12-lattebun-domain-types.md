@@ -1,5 +1,8 @@
 # F1 도메인 타입 정의 실행 계획
 
+> 상태: **제품 요구사항 대체됨**
+> 던전 15개 캠페인의 상태 계약은 [게임 방향 개편 설계](../specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Dungeon Schemer 프로토타입의 게임 데이터를 `lib/domain/` 아래 다섯 개 파일의 TypeScript 타입과 상수로 정의한다.
