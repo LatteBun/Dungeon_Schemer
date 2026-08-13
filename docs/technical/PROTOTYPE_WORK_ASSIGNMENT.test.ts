@@ -15,7 +15,8 @@ import { describe, expect, it } from "vitest";
  */
 
 const DOC_PATH = join(import.meta.dirname, "PROTOTYPE_WORK_ASSIGNMENT.md");
-const doc = readFileSync(DOC_PATH, "utf8");
+// Windows에서 core.autocrlf가 CRLF로 체크아웃해도 검사가 동작하도록 통일한다.
+const doc = readFileSync(DOC_PATH, "utf8").replace(/\r\n/g, "\n");
 
 const ID_PATTERN = /^[A-Z]\d+$/;
 const STATUSES = ["⬜", "🟡", "✅"] as const;
