@@ -15,6 +15,9 @@ export const TRUST_ACTIONS = [
   "denyReward",
   "takeRisk",
   "avoidRisk",
+  "deceptionAccepted",
+  "suspicionWasCostly",
+  "suspicionWasCorrect",
 ] as const;
 
 export type TrustAction = (typeof TRUST_ACTIONS)[number];
@@ -39,6 +42,9 @@ export const TRUST_RULES = {
     denyReward: rule(-5, "의심 많은 성격: 약속된 이익이 사라져 의심함"),
     takeRisk: rule(-5, "의심 많은 성격: 근거 없는 위험 감수를 경계함"),
     avoidRisk: rule(7, "의심 많은 성격: 위험을 피한 신중한 판단을 신뢰함"),
+    deceptionAccepted: rule(4, "의심 많은 성격: 믿을 만해 보인 정보에 조심스럽게 신뢰를 보냄"),
+    suspicionWasCostly: rule(10, "의심 많은 성격: 근거 없는 의심으로 입은 손해에서 신뢰할 이유를 배움"),
+    suspicionWasCorrect: rule(-5, "의심 많은 성격: 의심이 이득이 되어 플레이어를 더 경계함"),
   },
   righteous: {
     actHonestly: rule(12, "정의로운 성격: 정직한 행동을 높이 평가함"),
@@ -49,6 +55,9 @@ export const TRUST_RULES = {
     denyReward: rule(-6, "정의로운 성격: 마땅한 몫을 빼앗긴 일을 부당하게 여김"),
     takeRisk: rule(-3, "정의로운 성격: 불필요한 위험으로 동료를 위태롭게 한 점을 걱정함"),
     avoidRisk: rule(3, "정의로운 성격: 동료의 안전을 고려한 판단을 긍정적으로 봄"),
+    deceptionAccepted: rule(6, "정의로운 성격: 믿은 정보가 성실한 안내라고 받아들임"),
+    suspicionWasCostly: rule(8, "정의로운 성격: 불신으로 동료가 손해 본 일을 반성하며 신뢰함"),
+    suspicionWasCorrect: rule(-8, "정의로운 성격: 의심이 옳았다는 결과로 플레이어를 강하게 불신함"),
   },
   greedy: {
     actHonestly: rule(0, "탐욕스러운 성격: 이익과 무관한 정직에는 반응하지 않음"),
@@ -59,6 +68,9 @@ export const TRUST_RULES = {
     denyReward: rule(-16, "탐욕스러운 성격: 자신의 이익을 빼앗겨 크게 분노함"),
     takeRisk: rule(3, "탐욕스러운 성격: 더 큰 이익을 노린 위험 감수를 긍정적으로 봄"),
     avoidRisk: rule(0, "탐욕스러운 성격: 이익과 무관한 위험 회피에는 반응하지 않음"),
+    deceptionAccepted: rule(2, "탐욕스러운 성격: 정보가 이익으로 이어질 가능성을 조금 신뢰함"),
+    suspicionWasCostly: rule(4, "탐욕스러운 성격: 의심으로 잃은 이익을 보고 신뢰를 조금 회복함"),
+    suspicionWasCorrect: rule(-5, "탐욕스러운 성격: 의심 덕분에 이득을 얻어 플레이어를 경계함"),
   },
   prudent: {
     actHonestly: rule(5, "신중한 성격: 예측 가능한 정직한 태도를 신뢰함"),
@@ -69,6 +81,9 @@ export const TRUST_RULES = {
     denyReward: rule(-7, "신중한 성격: 확보할 수 있던 이익을 잃은 판단을 나쁘게 봄"),
     takeRisk: rule(-12, "신중한 성격: 무모한 위험 감수를 강하게 반대함"),
     avoidRisk: rule(12, "신중한 성격: 위험을 피한 안전한 판단을 높이 평가함"),
+    deceptionAccepted: rule(3, "신중한 성격: 수용한 정보가 당장은 신뢰할 근거가 됨"),
+    suspicionWasCostly: rule(9, "신중한 성격: 과도한 경계가 손해를 낳았음을 확인하고 신뢰함"),
+    suspicionWasCorrect: rule(-7, "신중한 성격: 의심이 위험을 피하게 해 플레이어를 덜 신뢰함"),
   },
   impulsive: {
     actHonestly: rule(3, "충동적 성격: 솔직하고 즉각적인 태도를 긍정적으로 봄"),
@@ -79,6 +94,9 @@ export const TRUST_RULES = {
     denyReward: rule(-8, "충동적 성격: 눈앞의 보상을 잃어 강하게 불만을 느낌"),
     takeRisk: rule(12, "충동적 성격: 과감한 위험 감수를 높이 평가함"),
     avoidRisk: rule(-10, "충동적 성격: 위험을 피한 소극적인 판단을 답답해함"),
+    deceptionAccepted: rule(5, "충동적 성격: 믿은 정보를 즉시 긍정적으로 받아들임"),
+    suspicionWasCostly: rule(7, "충동적 성격: 의심으로 기회를 놓친 일을 보고 신뢰를 회복함"),
+    suspicionWasCorrect: rule(-6, "충동적 성격: 의심이 이득이 되어 플레이어를 즉시 불신함"),
   },
 } as const satisfies Readonly<
   Record<Personality, Readonly<Record<TrustAction, TrustRule>>>

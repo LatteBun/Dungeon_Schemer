@@ -35,6 +35,8 @@ R2는 정보 카드, 던전 이벤트, 상태 스토어를 직접 알지 않는�
 
 ## 공개 계약
 
+> 2026-08-13 후속 설계: 이 문서는 최초 R2 구현의 여덟 공통 행동 계약을 기록한다. 현재 R3는 거짓 수용과 의심 사후 검증을 위해 `deceptionAccepted`, `suspicionWasCostly`, `suspicionWasCorrect`를 추가로 요구한다. 세 행동은 R3 spec 승인 후 별도 R2 확장 plan에서 갱신한다.
+
 ### 공통 행동
 
 행동은 닫힌 유니온 `TrustAction`으로 둔다.

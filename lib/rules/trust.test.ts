@@ -28,7 +28,7 @@ function trustRng(seed: string) {
 
 describe("개인 신뢰 판정표", () => {
   it("행동 여덟과 모든 성격의 규칙이 빠짐없이 존재한다", () => {
-    expect(TRUST_ACTIONS).toHaveLength(8);
+    expect(TRUST_ACTIONS).toHaveLength(11);
     expect(Object.keys(TRUST_RULES).sort()).toEqual(
       [...PERSONALITIES].sort(),
     );
@@ -37,6 +37,24 @@ describe("개인 신뢰 판정표", () => {
         [...TRUST_ACTIONS].sort(),
       );
     }
+  });
+
+  it("R3 신뢰 행동 세 개가 성격별 확정 수치로 존재한다", () => {
+    expect(
+      PERSONALITIES.map(
+        (personality) => TRUST_RULES[personality].deceptionAccepted.baseDelta,
+      ),
+    ).toEqual([4, 6, 2, 3, 5]);
+    expect(
+      PERSONALITIES.map(
+        (personality) => TRUST_RULES[personality].suspicionWasCostly.baseDelta,
+      ),
+    ).toEqual([10, 8, 4, 9, 7]);
+    expect(
+      PERSONALITIES.map(
+        (personality) => TRUST_RULES[personality].suspicionWasCorrect.baseDelta,
+      ),
+    ).toEqual([-5, -8, -5, -7, -6]);
   });
 
   it("같은 행동에서 성격에 따른 의미 있는 차이가 난다", () => {

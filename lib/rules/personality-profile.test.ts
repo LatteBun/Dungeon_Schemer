@@ -60,11 +60,11 @@ describe("성격 프로필 강도 구간", () => {
     expect(new Set(strengths).size).toBeGreaterThan(1);
   });
 
-  it("의심 많음은 최고 단계 호감 반응을 갖지 않는다", () => {
-    // 최고가 +8이다. PARTY_AND_TRUST.md의 "높은 신뢰에 도달하기 어렵다"와 맞다.
+  it("의심 많음은 잘못된 의심에서 강한 교훈을 얻는다", () => {
+    // R3의 잘못된 의심 보상(+10)은 강한 반응으로 표시한다.
     const likes = describePersonality("suspicious").likes;
     expect(likes.length).toBeGreaterThan(0);
-    expect(likes.every((reaction) => reaction.strength < 3)).toBe(true);
+    expect(find("suspicious", "suspicionWasCostly")?.strength).toBe(3);
   });
 });
 
@@ -77,7 +77,7 @@ describe("성격 프로필 구성", () => {
     expect(actions).not.toContain("actHonestly");
     expect(actions).not.toContain("protectAlly");
     expect(actions).not.toContain("avoidRisk");
-    expect(actions).toHaveLength(5);
+    expect(actions).toHaveLength(8);
   });
 
   it("모든 성격에서 기본 변화량 0인 행동만 빠진다", () => {
