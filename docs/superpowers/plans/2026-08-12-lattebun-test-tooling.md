@@ -574,8 +574,8 @@ gh pr create --base main --title "기능: F4 테스트 도구 도입" --body "$(
 
 ## 관련 문서
 
-- spec: `docs/superpowers/specs/2026-08-12-test-tooling-lattebun-design.md`
-- plan: `docs/superpowers/plans/2026-08-12-test-tooling-lattebun.md`
+- spec: `docs/superpowers/specs/2026-08-12-lattebun-test-tooling-design.md`
+- plan: `docs/superpowers/plans/2026-08-12-lattebun-test-tooling.md`
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 PRBODY

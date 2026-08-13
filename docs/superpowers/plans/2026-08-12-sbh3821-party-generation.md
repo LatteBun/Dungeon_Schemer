@@ -2,7 +2,7 @@
 
 - 작성일: 2026-08-12
 - 작성자: sbh3821
-- 근거 spec: [파티 생성 규칙 설계](../specs/2026-08-12-party-generation-sbh3821-design.md)
+- 근거 spec: [파티 생성 규칙 설계](../specs/2026-08-12-sbh3821-party-generation-design.md)
 
 ## 단계
 

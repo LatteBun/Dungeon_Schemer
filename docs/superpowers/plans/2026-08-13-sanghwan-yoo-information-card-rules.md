@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 근거 설계는 `docs/superpowers/specs/2026-08-13-information-card-rules-sanghwan-yoo-design.md`, 공식 규칙은 `docs/systems/INFORMATION_AND_DECEPTION.md`와 `docs/systems/PARTY_AND_TRUST.md`다.
+- 근거 설계는 `docs/superpowers/specs/2026-08-13-sanghwan-yoo-information-card-rules-design.md`, 공식 규칙은 `docs/systems/INFORMATION_AND_DECEPTION.md`와 `docs/systems/PARTY_AND_TRUST.md`다.
 - R3는 이미 선택된 `InfoCard` 한 장만 받는다. 카드 세 장의 생성·선택은 Q1/U2의 책임이다.
 - 파티 대상은 살아 있는 파티원을 입력 순서대로 모두 판정한다. 보스 대상은 기본 확률만 사용해 한 번 판정한다.
 - 반응은 `accepted`, `suspected`, `exposed`다. 여기서 `exposed`는 거짓 카드 적발이고, `TrustEvaluation.exposed`는 신뢰 0 도달 상태다.
@@ -42,8 +42,8 @@ R3 설계는 세 R2 행동의 방향만 확정했다. 아래 표는 이 계획�
 | `lib/rules/info.ts` | 카드 유형·파티원 신뢰/성격 보정, 반응 굴림, R2 연동, 공개 결과 타입을 소유하는 순수 규칙 |
 | `lib/rules/info.test.ts` | 파티/보스 × 진실·중립·거짓, 혼합 반응, 확률 경계, 플래그, 난수 분리, 불변성 검증 |
 | `docs/systems/PARTY_AND_TRUST.md` | 확정된 세 R2 행동의 성격별 수치와 의미를 공식 규칙으로 기록 |
-| `docs/superpowers/specs/2026-08-13-information-card-rules-sanghwan-yoo-design.md` | 설계 승인 상태를 보관 |
-| `docs/superpowers/plans/2026-08-13-information-card-rules-sanghwan-yoo.md` | 이 구현 순서와 검증 명령을 보관 |
+| `docs/superpowers/specs/2026-08-13-sanghwan-yoo-information-card-rules-design.md` | 설계 승인 상태를 보관 |
+| `docs/superpowers/plans/2026-08-13-sanghwan-yoo-information-card-rules.md` | 이 구현 순서와 검증 명령을 보관 |
 
 ---
 
@@ -584,8 +584,8 @@ git commit -m "기능: 정보 카드 반응 규칙 추가" -m "선택된 정보 
 ### Task 4: 전체 회귀 검증과 문서 상태를 확인한다
 
 **Files:**
-- Modify: `docs/superpowers/specs/2026-08-13-information-card-rules-sanghwan-yoo-design.md`
-- Modify: `docs/superpowers/plans/2026-08-13-information-card-rules-sanghwan-yoo.md`
+- Modify: `docs/superpowers/specs/2026-08-13-sanghwan-yoo-information-card-rules-design.md`
+- Modify: `docs/superpowers/plans/2026-08-13-sanghwan-yoo-information-card-rules.md`
 
 **Interfaces:**
 - Consumes: Task 1의 R2 행동과 Task 3의 `evaluateInfoCard`
@@ -593,7 +593,7 @@ git commit -m "기능: 정보 카드 반응 규칙 추가" -m "선택된 정보 
 
 - [x] **Step 1: 설계서와 실제 공개 계약을 대조한다**
 
-`docs/superpowers/specs/2026-08-13-information-card-rules-sanghwan-yoo-design.md`의 섹션 2~5와 `lib/rules/info.ts`를 대조한다. 다음 항목이 모두 일치해야 한다.
+`docs/superpowers/specs/2026-08-13-sanghwan-yoo-information-card-rules-design.md`의 섹션 2~5와 `lib/rules/info.ts`를 대조한다. 다음 항목이 모두 일치해야 한다.
 
 ```text
 party: alive 구성원 전원, 입력 순서, 각자 cardRng 1회
@@ -636,7 +636,7 @@ Expected: 앞의 네 명령은 exit code 0이다. 마지막 명령에는 이번 
 - [x] **Step 4: 계획과 설계 승인 기록을 커밋한다**
 
 ```bash
-git add docs/superpowers/specs/2026-08-13-information-card-rules-sanghwan-yoo-design.md docs/superpowers/plans/2026-08-13-information-card-rules-sanghwan-yoo.md
+git add docs/superpowers/specs/2026-08-13-sanghwan-yoo-information-card-rules-design.md docs/superpowers/plans/2026-08-13-sanghwan-yoo-information-card-rules.md
 git commit -m "문서: R3 정보 카드 구현 계획 기록" -m "정보 카드 반응과 R2 신뢰 확장의 구현 순서 및 검증 기준을 남긴다.
 선택된 한 장의 정보 전달과 사후 검증 책임 경계를 명확히 한다."
 ```

@@ -933,8 +933,8 @@ gh pr create --base main --title "기능: F3 랜덤 시드와 재현성" --body 
 
 ## 관련 문서
 
-- spec: `docs/superpowers/specs/2026-08-12-random-seed-lattebun-design.md`
-- plan: `docs/superpowers/plans/2026-08-12-random-seed-lattebun.md`
+- spec: `docs/superpowers/specs/2026-08-12-lattebun-random-seed-design.md`
+- plan: `docs/superpowers/plans/2026-08-12-lattebun-random-seed.md`
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 PRBODY

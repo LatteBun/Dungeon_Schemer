@@ -27,7 +27,7 @@
 
 **Files:**
 - Modify: `docs/technical/DEVELOPMENT_ENVIRONMENT.md`
-- Reference: `docs/superpowers/specs/2026-08-12-hello-world-bootstrap-lattebun-design.md`
+- Reference: `docs/superpowers/specs/2026-08-12-lattebun-hello-world-bootstrap-design.md`
 
 **Interfaces:**
 - Consumes: 승인된 Hello World 초기화 설계
