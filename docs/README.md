@@ -76,6 +76,7 @@
 ## 설계 및 실행 기록
 
 - [게임 방향 개편 설계](superpowers/specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)
+- [게임 방향 개편 구현 계획](superpowers/plans/2026-08-13-sanghwan-yoo-game-direction-rework.md)
 - [게임 방향 개편 질문지](superpowers/2026-08-13-game-direction-brainstorming-questionnaire.md)
 - [문서 구조 설계](superpowers/specs/2026-08-11-documentation-architecture-design.md)
 - [문서 구조 실행 계획](superpowers/plans/2026-08-11-documentation-architecture.md)
