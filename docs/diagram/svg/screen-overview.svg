@@ -12,35 +12,35 @@
 
   <g>
     <rect x="40" y="130" width="1220" height="900" rx="22" class="card"/>
-    <a href="screen-01-campaign-board.svg"><image href="../png/screen-01-campaign-board.png" x="60" y="150" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/></a>
+    <image href="screen-01-campaign-board.svg" x="60" y="150" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/>
     <text x="70" y="880" class="label">01 · 공고 게시판과 계약·파티 확인</text>
     <text x="70" y="934" class="meta">최대 5개 공고 비교 · 잠긴 공고 표시 · 개인 신뢰</text>
     <text x="70" y="982" class="meta">캠페인 게시판 → 파티 소개</text>
   </g>
   <g>
     <rect x="1310" y="130" width="1220" height="900" rx="22" class="card"/>
-    <a href="screen-02-dungeon-map.svg"><image href="../png/screen-02-dungeon-map.png" x="1330" y="150" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/></a>
+    <image href="screen-02-dungeon-map.svg" x="1330" y="150" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/>
     <text x="1340" y="880" class="label">02 · 던전 분기 지도</text>
     <text x="1340" y="934" class="meta">입구 아래 · 보스 위 · 전체 연결과 위험 공개</text>
     <text x="1340" y="982" class="meta">경로 선택 → 정보 기회 또는 사건</text>
   </g>
   <g>
     <rect x="2580" y="130" width="1220" height="900" rx="22" class="card"/>
-    <a href="screen-03-info-event.svg"><image href="../png/screen-03-info-event.png" x="2600" y="150" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/></a>
+    <image href="screen-03-info-event.svg" x="2600" y="150" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/>
     <text x="2610" y="880" class="label">03 · 정보 전달과 사건 조우</text>
     <text x="2610" y="934" class="meta">관람 / 조작 분리 · 개인별 수용·의심·적발</text>
     <text x="2610" y="982" class="meta">정보 반응 뒤 별도 사건 행동</text>
   </g>
   <g>
     <rect x="675" y="1090" width="1220" height="900" rx="22" class="card"/>
-    <a href="screen-04-boss-settlement.svg"><image href="../png/screen-04-boss-settlement.png" x="695" y="1110" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/></a>
+    <image href="screen-04-boss-settlement.svg" x="695" y="1110" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/>
     <text x="705" y="1840" class="label">04 · 자동 보스전과 정산</text>
     <text x="705" y="1894" class="meta">파티원별 피해 원인 · 정산 순서 · 원인 사슬</text>
     <text x="705" y="1942" class="meta">보스 전투 → 정산 → 다음 게시판</text>
   </g>
   <g>
     <rect x="1945" y="1090" width="1220" height="900" rx="22" class="card"/>
-    <a href="screen-05-campaign-ending.svg"><image href="../png/screen-05-campaign-ending.png" x="1965" y="1110" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/></a>
+    <image href="screen-05-campaign-ending.svg" x="1965" y="1110" width="1180" height="664" preserveAspectRatio="xMidYMid meet"/>
     <text x="1975" y="1840" class="label">05 · 캠페인 엔딩</text>
     <text x="1975" y="1894" class="meta">엔딩 원인 · 최종 영구 등급 · 선택 회고</text>
     <text x="1975" y="1942" class="meta">정상 완주와 조기 종료를 같은 구조로 설명</text>

@@ -57,4 +57,3 @@ sequenceDiagram
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
 - [성장과 엔딩](../systems/PROGRESSION_AND_ENDINGS.md)
 - [대표 화면 와이어프레임](screen-wireframes.md)
-
