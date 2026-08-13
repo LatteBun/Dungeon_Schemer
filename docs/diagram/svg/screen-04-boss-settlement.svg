@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">자동 보스전과 정산 와이어프레임</title>
+  <desc id="desc">자동 보스전 결과와 선택부터 캠페인 변화까지의 정산 원인 사슬</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d9cbb8"/></marker></defs>
+  <style>
+    text{font-family:"Noto Sans CJK KR","Noto Sans KR","Malgun Gothic",sans-serif;fill:#f4f0e6;font-size:24px}
+    .title{font-size:42px;font-weight:700}.section{font-size:30px;font-weight:700}.muted{fill:#cbbca5}.good{fill:#a9d39b}.warn{fill:#f0c76b}.bad{fill:#f09380}
+    .panel{fill:#211a14;stroke:#cbbca5;stroke-width:3}.inset{fill:#2b241d;stroke:#8f806c;stroke-width:3}
+    .step{fill:#2b241d;stroke:#cbbca5;stroke-width:4}.cause{fill:none;stroke:#d9cbb8;stroke-width:5;marker-end:url(#arrow)}
+  </style>
+  <rect width="1920" height="1080" fill="#17130f"/>
+  <rect x="30" y="24" width="1860" height="92" rx="16" class="panel"/>
+  <text x="58" y="82" class="title">자동 보스전 결과 · 기록관의 망령</text>
+  <text x="1080" y="79">현재 명성 38 → 44</text><text x="1435" y="79">남은 던전 9 → 8</text>
+
+  <rect x="30" y="136" width="1860" height="352" rx="18" class="panel"/>
+  <text x="58" y="184" class="section">보스전 · 새 카드와 직접 개입 없이 누적 상태로 자동 해결</text>
+  <g transform="translate(58 214)">
+    <rect width="560" height="236" rx="16" fill="#293526" stroke="#a9d39b" stroke-width="5"/>
+    <text x="26" y="48" class="section">✓ 에다 · 생존</text><text x="26" y="94">HP 10 → 4  · 피해 6</text>
+    <text x="26" y="140">원인: 선두 방어 + 붕괴 충격</text><text x="26" y="184" class="good">신뢰 78 → 82 · 거짓 검증 수용</text>
+    <text x="26" y="222" class="muted">유품 없음 · 다음 탐험 회복 대상</text>
+  </g>
+  <g transform="translate(650 214)">
+    <rect width="560" height="236" rx="16" fill="#412522" stroke="#d06d5c" stroke-width="5"/>
+    <text x="26" y="48" class="section">× 니오 · 사망</text><text x="26" y="94">HP 7 → 0  · 피해 9</text>
+    <text x="26" y="140">원인: 거짓 기억 + 중앙 통로 선택</text><text x="26" y="184" class="bad">신뢰 47 · 사후 거짓 적발</text>
+    <text x="26" y="222" class="muted">유품 26G + 정찰 도구 회수</text>
+  </g>
+  <g transform="translate(1242 214)">
+    <rect width="620" height="236" rx="16" fill="#293526" stroke="#a9d39b" stroke-width="5"/>
+    <text x="26" y="48" class="section">✓ 라사 · 생존</text><text x="26" y="94">HP 8 → 3  · 피해 5</text>
+    <text x="26" y="140">원인: 적발 성공 + 해독제 사용</text><text x="26" y="184" class="good">신뢰 53 → 69 · 원인 확인</text>
+    <text x="26" y="222" class="muted">해독제 소모 · 회복 기여 기록</text>
+  </g>
+
+  <rect x="30" y="514" width="1860" height="536" rx="18" class="panel"/>
+  <text x="58" y="562" class="section">정산 · 생존/신뢰 → 보상/유품 → 던전/승급 → 파티/회복 → 다음 상태</text>
+  <g>
+    <rect x="58" y="596" width="328" height="176" rx="16" class="step"/><circle cx="94" cy="634" r="24" fill="#3c5a35"/><text x="86" y="643" class="section">1</text>
+    <text x="128" y="644" class="section">생존 · 신뢰</text><text x="82" y="696">생존 2 / 사망 1</text><text x="82" y="738" class="good">평균 신뢰 75</text>
+    <path d="M386 684H438" class="cause"/>
+    <rect x="442" y="596" width="328" height="176" rx="16" class="step"/><circle cx="478" cy="634" r="24" fill="#3c5a35"/><text x="470" y="643" class="section">2</text>
+    <text x="512" y="644" class="section">보상 · 유품</text><text x="466" y="696">44G + 유품 26G</text><text x="466" y="738">정찰 도구 회수</text>
+    <path d="M770 684H822" class="cause"/>
+    <rect x="826" y="596" width="328" height="176" rx="16" class="step"/><circle cx="862" cy="634" r="24" fill="#3c5a35"/><text x="854" y="643" class="section">3</text>
+    <text x="896" y="644" class="section">던전 · 승급</text><text x="850" y="696">던전 제거  9 → 8</text><text x="850" y="738" class="good">승급 7 → 9 / 10</text>
+    <path d="M1154 684H1206" class="cause"/>
+    <rect x="1210" y="596" width="328" height="176" rx="16" class="step"/><circle cx="1246" cy="634" r="24" fill="#3c5a35"/><text x="1238" y="643" class="section">4</text>
+    <text x="1280" y="644" class="section">파티 · 회복</text><text x="1234" y="696">2인 유지 + 예비 충원</text><text x="1234" y="738">생존자 HP 일부 회복</text>
+    <path d="M1538 684H1590" class="cause"/>
+    <rect x="1594" y="596" width="268" height="176" rx="16" fill="#3c5a35" stroke="#a9d39b" stroke-width="5"/><circle cx="1630" cy="634" r="24" fill="#17130f"/><text x="1622" y="643" class="section">5</text>
+    <text x="1664" y="644" class="section">다음 상태</text><text x="1618" y="696">엔딩 없음</text><text x="1618" y="738" class="good">게시판 계속 →</text>
+  </g>
+  <rect x="58" y="810" width="1804" height="210" rx="16" class="inset"/>
+  <text x="84" y="856" class="section">원인 사슬</text>
+  <g text-anchor="middle">
+    <rect x="84" y="884" width="270" height="88" rx="14" fill="#342b22"/><text x="219" y="936">거짓 카드 선택</text>
+    <text x="376" y="936" class="section">→</text><rect x="414" y="884" width="296" height="88" rx="14" fill="#342b22"/><text x="562" y="936">니오 의심 · 미검증</text>
+    <text x="732" y="936" class="section">→</text><rect x="770" y="884" width="250" height="88" rx="14" fill="#412522"/><text x="895" y="936">보스 피해 +9</text>
+    <text x="1042" y="936" class="section">→</text><rect x="1080" y="884" width="270" height="88" rx="14" fill="#342b22"/><text x="1215" y="936">유품 26G 회수</text>
+    <text x="1372" y="936" class="section">→</text><rect x="1410" y="884" width="426" height="88" rx="14" fill="#293526"/><text x="1623" y="936">명성 +6 · 새 공고 지원 가능</text>
+  </g>
+</svg>

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">던전 분기 지도 와이어프레임</title>
+  <desc id="desc">입구가 아래, 보스방이 위인 공개 분기 지도와 범례 및 개인 상태</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#d9cbb8"/></marker>
+  </defs>
+  <style>
+    text{font-family:"Noto Sans CJK KR","Noto Sans KR","Malgun Gothic",sans-serif;fill:#f4f0e6;font-size:24px}
+    .title{font-size:42px;font-weight:700}.section{font-size:30px;font-weight:700}.muted{fill:#cbbca5}.good{fill:#a9d39b}.warn{fill:#f0c76b}.bad{fill:#f09380}
+    .panel{fill:#211a14;stroke:#cbbca5;stroke-width:3}.inset{fill:#2b241d;stroke:#8f806c;stroke-width:3}
+    .path{fill:none;stroke:#d9cbb8;stroke-width:5;marker-end:url(#arrow)}.visitedPath{fill:none;stroke:#7fa76f;stroke-width:7}.lockedPath{fill:none;stroke:#6f6253;stroke-width:4;stroke-dasharray:15 12}
+    .node{fill:#2b241d;stroke:#cbbca5;stroke-width:4}.visited{fill:#293526;stroke:#7fa76f;stroke-width:5}.current{fill:#3c5a35;stroke:#f4f0e6;stroke-width:7}
+    .next{fill:#392f21;stroke:#f0c76b;stroke-width:6}.locked{fill:#211a14;stroke:#6f6253;stroke-width:4;stroke-dasharray:12 10}.boss{fill:#4b2521;stroke:#f09380;stroke-width:6}
+  </style>
+  <rect width="1920" height="1080" fill="#17130f"/>
+  <rect x="30" y="24" width="1860" height="92" rx="16" class="panel"/>
+  <text x="58" y="82" class="title">잿빛 기록보관소 · 공개 분기 지도</text>
+  <text x="1030" y="79">현재 명성 38</text><text x="1260" y="79">승급 7 / 10</text><text x="1510" y="79">남은 던전 9 / 15</text>
+
+  <rect x="30" y="136" width="300" height="914" rx="18" class="panel"/>
+  <text x="58" y="184" class="section">범례</text>
+  <circle cx="78" cy="236" r="22" class="current"/><text x="118" y="244">◎ 현재 위치</text>
+  <circle cx="78" cy="302" r="22" class="visited"/><text x="118" y="310">✓ 방문 완료</text>
+  <circle cx="78" cy="368" r="22" class="next"/><text x="118" y="376">→ 선택 가능</text>
+  <circle cx="78" cy="434" r="22" class="locked"/><text x="118" y="442">× 비활성</text>
+  <rect x="52" y="500" width="246" height="224" rx="14" class="inset"/>
+  <text x="72" y="542" class="section">지점 분류</text>
+  <text x="72" y="590">! 전투 / 함정</text>
+  <text x="72" y="636">? 정보 기회</text>
+  <text x="72" y="682">$ 거래 / 자원</text>
+  <rect x="52" y="758" width="246" height="246" rx="14" class="inset"/>
+  <text x="72" y="800" class="section">공개 원칙</text>
+  <text x="72" y="848">전체 연결 공개</text>
+  <text x="72" y="892">대략 위험 공개</text>
+  <text x="72" y="936">보스 위치 공개</text>
+  <text x="72" y="980" class="muted">색 + 기호 + 선</text>
+
+  <rect x="354" y="136" width="1128" height="914" rx="18" class="panel"/>
+  <text x="386" y="184" class="section">다음 지점을 선택하세요 · 연결된 미방문 지점만 가능</text>
+  <g>
+    <path d="M918 930L720 790" class="visitedPath"/><path d="M918 930L1110 790" class="path"/>
+    <path d="M720 790L590 620" class="visitedPath"/><path d="M720 790L880 620" class="path"/>
+    <path d="M1110 790L880 620" class="path"/><path d="M1110 790L1250 620" class="lockedPath"/>
+    <path d="M590 620L700 445" class="path"/><path d="M880 620L700 445" class="path"/><path d="M880 620L1030 445" class="path"/>
+    <path d="M1250 620L1030 445" class="lockedPath"/><path d="M1250 620L1280 445" class="lockedPath"/>
+    <path d="M700 445L918 270" class="path"/><path d="M1030 445L918 270" class="path"/><path d="M1280 445L918 270" class="lockedPath"/>
+  </g>
+  <g text-anchor="middle">
+    <circle cx="918" cy="930" r="58" class="visited"/><text x="918" y="922">입구</text><text x="918" y="954" class="good">✓ 완료</text>
+    <circle cx="720" cy="790" r="60" class="current"/><text x="720" y="782">함정</text><text x="720" y="816">◎ 현재</text>
+    <circle cx="1110" cy="790" r="60" class="next"/><text x="1110" y="782">정보</text><text x="1110" y="816" class="warn">? 다음</text>
+    <circle cx="590" cy="620" r="58" class="next"/><text x="590" y="612">전투</text><text x="590" y="646" class="warn">! 중</text>
+    <circle cx="880" cy="620" r="58" class="next"/><text x="880" y="612">거래</text><text x="880" y="646" class="warn">$ 하</text>
+    <circle cx="1250" cy="620" r="58" class="locked"/><text x="1250" y="612">함정</text><text x="1250" y="646" class="muted">× 고</text>
+    <circle cx="700" cy="445" r="58" class="node"/><text x="700" y="437">정보</text><text x="700" y="471">? 중</text>
+    <circle cx="1030" cy="445" r="58" class="node"/><text x="1030" y="437">전투</text><text x="1030" y="471">! 고</text>
+    <circle cx="1280" cy="445" r="58" class="locked"/><text x="1280" y="437">자원</text><text x="1280" y="471" class="muted">× 하</text>
+    <path d="M918 198l24 46 52 8-38 36 9 51-47-24-47 24 9-51-38-36 52-8z" class="boss"/>
+    <text x="918" y="270">보스방</text><text x="918" y="304" class="bad">자동 전투</text>
+  </g>
+  <rect x="394" y="976" width="1048" height="48" rx="12" fill="#342b22"/><text x="420" y="1009" class="muted">공개 지도는 선택의 결과를 숨기지 않지만, 사건의 정확한 수치는 숨긴다.</text>
+
+  <rect x="1506" y="136" width="384" height="914" rx="18" class="panel"/>
+  <text x="1534" y="184" class="section">개인 파티 상태</text>
+  <g transform="translate(1534 210)">
+    <rect width="328" height="202" rx="14" class="inset"/><text x="22" y="42" class="section">에다 · 수호자</text>
+    <text x="22" y="86">HP 10 / 12</text><text x="22" y="126" class="good">신뢰 74  ↑2</text><text x="22" y="166">소지 18G</text><text x="22" y="194" class="muted">✓ 방문 피해 흡수</text>
+  </g>
+  <g transform="translate(1534 432)">
+    <rect width="328" height="202" rx="14" class="inset"/><text x="22" y="42" class="section">니오 · 정찰자</text>
+    <text x="22" y="86">HP 7 / 9</text><text x="22" y="126" class="warn">신뢰 50  ↓4</text><text x="22" y="166">소지 26G</text><text x="22" y="194" class="muted">? 미검증 기억 1</text>
+  </g>
+  <g transform="translate(1534 654)">
+    <rect width="328" height="202" rx="14" class="inset"/><text x="22" y="42" class="section">라사 · 연금술사</text>
+    <text x="22" y="86">HP 8 / 8</text><text x="22" y="126" class="good">신뢰 61  ↑4</text><text x="22" y="166">소지 11G</text><text x="22" y="194" class="muted">회복약 1 · 해독제 1</text>
+  </g>
+  <rect x="1534" y="884" width="328" height="116" rx="14" fill="#3c5a35" stroke="#a9d39b" stroke-width="4"/>
+  <text x="1584" y="932" class="section">선택 지점 입장</text><text x="1612" y="970">정보 기회  →</text>
+</svg>

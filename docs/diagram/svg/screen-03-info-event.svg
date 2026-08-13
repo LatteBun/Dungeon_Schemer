@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">정보 전달과 사건 조우 와이어프레임</title>
+  <desc id="desc">위쪽 관람 장면, 아래 정보 카드와 사건 행동, 오른쪽 파티원별 반응</desc>
+  <style>
+    text{font-family:"Noto Sans CJK KR","Noto Sans KR","Malgun Gothic",sans-serif;fill:#f4f0e6;font-size:24px}
+    .title{font-size:42px;font-weight:700}.section{font-size:30px;font-weight:700}.huge{font-size:56px;font-weight:700}.muted{fill:#cbbca5}.good{fill:#a9d39b}.warn{fill:#f0c76b}.bad{fill:#f09380}
+    .panel{fill:#211a14;stroke:#cbbca5;stroke-width:3}.inset{fill:#2b241d;stroke:#8f806c;stroke-width:3}
+    .truth{fill:#28362b;stroke:#8fbd84;stroke-width:5}.lie{fill:#412522;stroke:#d06d5c;stroke-width:5;stroke-dasharray:14 9}
+    .neutral{fill:#342f26;stroke:#d4a853;stroke-width:5}.action{fill:#2b241d;stroke:#cbbca5;stroke-width:4}.active{fill:#3c5a35;stroke:#a9d39b;stroke-width:6}
+  </style>
+  <rect width="1920" height="1080" fill="#17130f"/>
+  <rect x="30" y="24" width="1860" height="92" rx="16" class="panel"/>
+  <text x="58" y="82" class="title">정보 전달 · 무너지는 서고</text>
+  <text x="1000" y="79">현재 명성 38</text><text x="1240" y="79">골드 86 / 314</text><text x="1510" y="79">남은 던전 9 / 15</text>
+
+  <rect x="30" y="136" width="1320" height="376" rx="18" class="panel"/>
+  <text x="58" y="184" class="section">관람 영역 · 사건 상황</text>
+  <rect x="58" y="210" width="1264" height="274" rx="14" class="inset"/>
+  <g text-anchor="middle">
+    <circle cx="250" cy="300" r="54" fill="#293526" stroke="#a9d39b" stroke-width="4"/><text x="250" y="308" class="section">에다</text>
+    <circle cx="465" cy="300" r="54" fill="#392f21" stroke="#f0c76b" stroke-width="4"/><text x="465" y="308" class="section">니오</text>
+    <circle cx="680" cy="300" r="54" fill="#293526" stroke="#a9d39b" stroke-width="4"/><text x="680" y="308" class="section">라사</text>
+    <path d="M790 300H940" stroke="#d9cbb8" stroke-width="5" stroke-dasharray="14 10"/>
+    <path d="M1055 236l32 62 70 10-51 49 12 69-63-32-63 32 12-69-51-49 70-10z" fill="#4b2521" stroke="#f09380" stroke-width="5"/>
+    <text x="1055" y="316" class="section">붕괴</text>
+  </g>
+  <text x="128" y="430" class="muted">세 용사는 낡은 서가의 균열 앞에 멈췄다.</text>
+  <text x="770" y="430" class="warn">공개 위험: 낙석 · 제한 시간 · 숨겨진 통로</text>
+
+  <rect x="1378" y="136" width="512" height="914" rx="18" class="panel"/>
+  <text x="1406" y="184" class="section">개인별 정보 반응</text>
+  <g transform="translate(1406 214)">
+    <rect width="456" height="210" rx="14" class="inset"/><text x="22" y="44" class="section">에다 · 수호자</text>
+    <text x="22" y="88" class="good">✓ 수용 · 신뢰 +4</text><text x="22" y="132">효과: 선두 방어 준비</text><text x="22" y="174">HP 10 / 12 · 신뢰 78</text><text x="22" y="202" class="muted">이유: 신중 성격 + 검증 단서</text>
+  </g>
+  <g transform="translate(1406 444)">
+    <rect width="456" height="210" rx="14" class="inset"/><text x="22" y="44" class="section">니오 · 정찰자</text>
+    <text x="22" y="88" class="warn">? 의심 · 신뢰 -3</text><text x="22" y="132">효과: 미검증 기억 1</text><text x="22" y="174">HP 7 / 9 · 신뢰 47</text><text x="22" y="202" class="muted">이유: 이전 거짓 기억과 충돌</text>
+  </g>
+  <g transform="translate(1406 674)">
+    <rect width="456" height="210" rx="14" class="inset"/><text x="22" y="44" class="section">라사 · 연금술사</text>
+    <text x="22" y="88" class="bad">! 적발 · 신뢰 -8</text><text x="22" y="132">효과: 카드 진위 기록</text><text x="22" y="174">HP 8 / 8 · 신뢰 53</text><text x="22" y="202" class="muted">이유: 관찰 특성과 단서 일치</text>
+  </g>
+  <rect x="1406" y="910" width="456" height="104" rx="14" fill="#342b22" stroke="#d4a853" stroke-width="4"/>
+  <text x="1440" y="952" class="warn">정보 반응 완료</text><text x="1440" y="990">다음: 별도 사건 행동 선택</text>
+
+  <rect x="30" y="536" width="1320" height="514" rx="18" class="panel"/>
+  <text x="58" y="584" class="section">조작 영역 1 · 정보 카드 한 장</text>
+  <g transform="translate(58 610)">
+    <rect width="392" height="194" rx="16" class="truth"/><text x="28" y="50" class="section good">✓ 진실 카드</text>
+    <text x="28" y="96">“왼쪽 기둥이 먼저 무너진다”</text><text x="28" y="140">예상: 함정 피해 감소</text><text x="28" y="178" class="muted">실선 테두리 · 검증 가능</text>
+  </g>
+  <g transform="translate(478 610)">
+    <rect width="392" height="194" rx="16" class="lie"/><text x="28" y="50" class="section bad">! 거짓 카드 · 선택됨</text>
+    <text x="28" y="96">“중앙 통로가 가장 안전하다”</text><text x="28" y="140">예상: 빠른 통과</text><text x="28" y="178" class="muted">점선 테두리 · 사후 검증</text>
+  </g>
+  <g transform="translate(898 610)">
+    <rect width="392" height="194" rx="16" class="neutral"/><text x="28" y="50" class="section warn">? 중립 카드</text>
+    <text x="28" y="96">“바람은 위층으로 흐른다”</text><text x="28" y="140">예상: 숨은 길 단서</text><text x="28" y="178" class="muted">이중 단서 · 직접 효과 없음</text>
+  </g>
+  <text x="58" y="858" class="section">조작 영역 2 · 사건 행동은 별도로 선택</text>
+  <g text-anchor="middle">
+    <rect x="58" y="886" width="214" height="112" rx="14" class="active"/><text x="165" y="934" class="section">지원</text><text x="165" y="970">✓ 선택</text>
+    <rect x="288" y="886" width="214" height="112" rx="14" class="action"/><text x="395" y="950" class="section">방해</text>
+    <rect x="518" y="886" width="214" height="112" rx="14" class="action"/><text x="625" y="950" class="section">아이템</text>
+    <rect x="748" y="886" width="214" height="112" rx="14" class="action"/><text x="855" y="950" class="section">거래</text>
+    <rect x="978" y="886" width="214" height="112" rx="14" class="action"/><text x="1085" y="950" class="section">관망</text>
+    <rect x="1208" y="886" width="114" height="112" rx="14" fill="#3c5a35" stroke="#a9d39b" stroke-width="5"/><text x="1265" y="950" class="section">→</text>
+  </g>
+</svg>

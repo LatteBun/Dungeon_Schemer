@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">공고 게시판과 계약·파티 확인 와이어프레임</title>
+  <desc id="desc">왼쪽 공고 다섯 개와 오른쪽 선택 던전 및 세 파티원 상세를 보여주는 화면</desc>
+  <style>
+    text{font-family:"Noto Sans CJK KR","Noto Sans KR","Malgun Gothic",sans-serif;fill:#f4f0e6;font-size:24px}
+    .title{font-size:42px;font-weight:700}.section{font-size:30px;font-weight:700}.small{font-size:24px}
+    .muted{fill:#cbbca5}.good{fill:#a9d39b}.warn{fill:#f0c76b}.bad{fill:#f09380}
+    .panel{fill:#211a14;stroke:#cbbca5;stroke-width:3}.inset{fill:#2b241d;stroke:#8f806c;stroke-width:3}
+    .selected{fill:#2d3b28;stroke:#a9d39b;stroke-width:5}.locked{fill:#2b2020;stroke:#d06d5c;stroke-width:4;stroke-dasharray:14 10}
+    .pill{fill:#342b22;stroke:#8f806c;stroke-width:3}.rule{stroke:#8f806c;stroke-width:3}
+  </style>
+  <rect width="1920" height="1080" fill="#17130f"/>
+  <rect x="30" y="24" width="1860" height="92" rx="16" class="panel"/>
+  <text x="58" y="82" class="title">캠페인 게시판</text>
+  <g>
+    <rect x="480" y="42" width="220" height="56" rx="28" class="pill"/><text x="508" y="79">영구 등급  B</text>
+    <rect x="720" y="42" width="250" height="56" rx="28" class="pill"/><text x="748" y="79">현재 명성  38</text>
+    <rect x="990" y="42" width="260" height="56" rx="28" class="pill"/><text x="1018" y="79">골드  86 / 314</text>
+    <rect x="1270" y="42" width="280" height="56" rx="28" class="pill"/><text x="1298" y="79">승급  7 / 10</text>
+    <rect x="1570" y="42" width="285" height="56" rx="28" class="pill"/><text x="1598" y="79">남은 던전  9 / 15</text>
+  </g>
+
+  <rect x="30" y="136" width="1110" height="914" rx="18" class="panel"/>
+  <text x="60" y="184" class="section">원정 공고 · 최대 5개 비교</text>
+  <text x="817" y="181" class="small muted">지원 조건 / 보상 / 위험</text>
+
+  <g transform="translate(58 210)">
+    <rect width="1054" height="142" rx="14" class="selected"/>
+    <text x="26" y="44" class="section">01  잿빛 기록보관소</text><text x="780" y="42" class="good">✓ 지원 가능</text>
+    <text x="26" y="86">권장 C · 필요 명성 30</text><text x="370" y="86">보상 44G + 승급 2</text><text x="770" y="86" class="warn">위험: 함정 / 정보</text>
+    <text x="26" y="122" class="muted">파티: 철의 서약 · 생존 3 · 평균 신뢰 61</text>
+  </g>
+  <g transform="translate(58 368)">
+    <rect width="1054" height="128" rx="14" class="inset"/>
+    <text x="26" y="42" class="section">02  이끼 낀 수문</text><text x="820" y="40" class="good">✓ 지원 가능</text>
+    <text x="26" y="82">권장 B · 필요 명성 35</text><text x="370" y="82">보상 51G + 유물</text><text x="770" y="82" class="warn">위험: 독 / 거래</text>
+    <text x="26" y="116" class="muted">파티: 새벽의 손 · 생존 3 · 평균 신뢰 54</text>
+  </g>
+  <g transform="translate(58 512)">
+    <rect width="1054" height="128" rx="14" class="locked"/>
+    <text x="26" y="42" class="section">03  붉은 종루</text><text x="762" y="40" class="bad">× 지원 불가 · 명성 7 부족</text>
+    <text x="26" y="82">권장 A · 필요 명성 45</text><text x="370" y="82">보상 72G + 승급 3</text><text x="770" y="82" class="bad">위험: 전투 / 배신</text>
+    <text x="26" y="116" class="muted">잠긴 공고도 숨기지 않음</text>
+  </g>
+  <g transform="translate(58 656)">
+    <rect width="1054" height="128" rx="14" class="inset"/>
+    <text x="26" y="42" class="section">04  유리 광산</text><text x="820" y="40" class="good">✓ 지원 가능</text>
+    <text x="26" y="82">권장 B · 필요 명성 36</text><text x="370" y="82">보상 55G + 장비</text><text x="770" y="82" class="warn">위험: 붕괴 / 정보</text>
+    <text x="26" y="116" class="muted">파티: 세 갈래 길 · 생존 3 · 평균 신뢰 49</text>
+  </g>
+  <g transform="translate(58 800)">
+    <rect width="1054" height="128" rx="14" class="locked"/>
+    <text x="26" y="42" class="section">05  검은 성가대</text><text x="748" y="40" class="bad">× 지원 불가 · 명성 18 부족</text>
+    <text x="26" y="82">권장 S · 필요 명성 56</text><text x="370" y="82">보상 96G + 승급 4</text><text x="770" y="82" class="bad">위험: 공포 / 보스</text>
+    <text x="26" y="116" class="muted">현재 명성은 지원만 제한 · 영구 등급은 유지</text>
+  </g>
+  <rect x="58" y="948" width="1054" height="76" rx="14" fill="#3c5a35" stroke="#a9d39b" stroke-width="4"/>
+  <text x="432" y="997" class="section">선택한 공고 계약하기  →</text>
+
+  <rect x="1170" y="136" width="720" height="914" rx="18" class="panel"/>
+  <text x="1200" y="184" class="section">선택 상세 · 잿빛 기록보관소</text>
+  <rect x="1200" y="210" width="660" height="152" rx="14" class="inset"/>
+  <text x="1226" y="252">등급 C · 필요 명성 30 · 보상 44G</text>
+  <text x="1226" y="294" class="warn">공개 위험: 함정 2 / 정보 2 / 전투 1</text>
+  <text x="1226" y="336" class="muted">지도: 분기 3 · 보스방 공개 · 재추첨 없음</text>
+  <text x="1200" y="414" class="section">출전 파티 · 철의 서약</text>
+  <g transform="translate(1200 438)">
+    <rect width="660" height="154" rx="14" class="inset"/>
+    <text x="24" y="42" class="section">에다 · 수호자</text><text x="438" y="42">성격: 신중</text>
+    <text x="24" y="86">HP  12 / 12</text><text x="220" y="86" class="good">개인 신뢰  72</text><text x="470" y="86">소지 18G</text>
+    <text x="24" y="126" class="muted">역할: 피해 흡수 · 거짓 적발 +</text>
+  </g>
+  <g transform="translate(1200 610)">
+    <rect width="660" height="154" rx="14" class="inset"/>
+    <text x="24" y="42" class="section">니오 · 정찰자</text><text x="438" y="42">성격: 충동</text>
+    <text x="24" y="86">HP  9 / 9</text><text x="220" y="86" class="warn">개인 신뢰  54</text><text x="470" y="86">소지 26G</text>
+    <text x="24" y="126" class="muted">역할: 경로 탐색 · 정보 수용 +</text>
+  </g>
+  <g transform="translate(1200 782)">
+    <rect width="660" height="154" rx="14" class="inset"/>
+    <text x="24" y="42" class="section">라사 · 연금술사</text><text x="438" y="42">성격: 회의</text>
+    <text x="24" y="86">HP  8 / 8</text><text x="220" y="86" class="warn">개인 신뢰  57</text><text x="470" y="86">소지 11G</text>
+    <text x="24" y="126" class="muted">역할: 회복 · 의심 판정 +</text>
+  </g>
+  <line x1="1200" y1="962" x2="1860" y2="962" class="rule"/>
+  <text x="1200" y="1008" class="muted">구조 참고용 와이어프레임 · 최종 아트 아님</text>
+</svg>
