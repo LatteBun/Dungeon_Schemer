@@ -1,5 +1,8 @@
 # F2 상태 스토어 골격 Implementation Plan
 
+> 상태: **제품 요구사항 대체됨**
+> `CampaignState`와 `ExpeditionState` 경계는 [게임 방향 개편 설계](../specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Zustand로 현재 `RunState`와 UI 선택 상태를 분리해 관리하고, 개발 전용 `/state-preview`에서 초기 상태와 action 동작을 검증한다.

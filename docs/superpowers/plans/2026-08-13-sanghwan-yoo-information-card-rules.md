@@ -1,5 +1,8 @@
 # R3 정보 카드 판정과 R2 신뢰 확장 Implementation Plan
 
+> 상태: **제품 요구사항 대체됨**
+> 용사 전용 정보 전달과 보스 정보 효과는 [게임 방향 개편 설계](../specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 기존 개인 반응 구현의 역사 기록으로 보존한다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 플레이어가 선택한 정보 카드 한 장에 대해 파티 또는 보스의 재현 가능한 반응과 즉시 신뢰 변화를 순수 함수로 반환한다.

@@ -1,5 +1,8 @@
 # F2 상태 스토어 골격 설계
 
+> 상태: **제품 요구사항 대체됨**
+> `CampaignState`와 `ExpeditionState` 경계는 [게임 방향 개편 설계](2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 **작성자:** SangHwan Yoo
 **작성 도구:** Codex
 

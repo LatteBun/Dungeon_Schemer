@@ -1,5 +1,8 @@
 # R1 파티 생성 규칙 실행 계획
 
+> 상태: **제품 요구사항 대체됨**
+> 지속 파티 15팀과 예비 인원·재편 요구사항은 [게임 방향 개편 설계](../specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 - 작성일: 2026-08-12
 - 작성자: sbh3821
 - 근거 spec: [파티 생성 규칙 설계](../specs/2026-08-12-sbh3821-party-generation-design.md)

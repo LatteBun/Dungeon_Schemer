@@ -1,5 +1,8 @@
 # State Preview R1 연동 Implementation Plan
 
+> 상태: **제품 요구사항 대체됨**
+> 지속 캠페인 상태와 통합 화면 요구사항은 [게임 방향 개편 설계](../specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `/state-preview`가 실제 R1 파티 생성 결과를 production에서도 표시하고, 동료가 입력한 seed로 생성 결과를 재현하게 한다.
@@ -561,4 +564,3 @@ Expected: 첫 diff 출력은 비어 있고 worktree는 깨끗하다.
 - [ ] **Step 5: 최종 코드 리뷰를 요청한다**
 
 `superpowers:requesting-code-review`로 새 follow-up spec, 구현 diff, 전체 검증 결과를 대조한다. 지적 사항이 있으면 `superpowers:receiving-code-review`로 검증한 후 해당 task의 테스트와 전체 검증을 다시 실행한다.
-

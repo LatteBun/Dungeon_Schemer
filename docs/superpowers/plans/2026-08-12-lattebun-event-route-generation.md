@@ -1,5 +1,8 @@
 # R4 이벤트·경로 생성 구현 계획
 
+> 상태: **제품 요구사항 대체됨**
+> 등급별 지도와 정보 전달 기회는 [게임 방향 개편 설계](../specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 시드로 7~9개 노드의 동일 길이 분기 경로와 중복 없는 이벤트 배치를 생성한다.

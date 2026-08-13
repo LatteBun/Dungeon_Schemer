@@ -1,6 +1,9 @@
 # F1 도메인 타입 정의 설계
 
-**작성자:** LatteBun  
+> 상태: **제품 요구사항 대체됨**
+> 던전 15개 캠페인의 상태 계약은 [게임 방향 개편 설계](2026-08-13-sanghwan-yoo-game-direction-rework-design.md)를 따른다. 이 문서는 기존 구현의 역사 기록으로 보존한다.
+
+**작성자:** LatteBun
 **작성 도구:** Claude Code
 
 ## 목적
