@@ -25,7 +25,7 @@
 **Files:**
 - Modify: `README.md`
 - Reference: `docs/README.md`
-- Reference: `docs/superpowers/specs/2026-08-12-ai-document-workflow-lattebun-design.md`
+- Reference: `docs/superpowers/specs/2026-08-12-lattebun-ai-document-workflow-design.md`
 
 **Interfaces:**
 - Consumes: 문서 우선순위와 AI 문서 작업 흐름 설계
@@ -95,7 +95,7 @@ git commit -m "docs: define AI workflow entry point"
 **Files:**
 - Create: `AGENTS.md`
 - Reference: `README.md`
-- Reference: `docs/superpowers/specs/2026-08-12-ai-document-workflow-lattebun-design.md`
+- Reference: `docs/superpowers/specs/2026-08-12-lattebun-ai-document-workflow-design.md`
 
 **Interfaces:**
 - Consumes: README의 요약 규칙과 spec의 상세 요구사항

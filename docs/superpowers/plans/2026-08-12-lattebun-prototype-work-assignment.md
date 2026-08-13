@@ -23,7 +23,7 @@
 배정표 20행의 표 내용과 mermaid 그래프는 **이미 커밋된 spec 문서**에 확정된 형태로 들어 있다.
 
 ```text
-docs/superpowers/specs/2026-08-12-prototype-work-assignment-lattebun-design.md
+docs/superpowers/specs/2026-08-12-lattebun-prototype-work-assignment-design.md
 ```
 
 계획서에 같은 표를 다시 옮겨 적지 않는다. 두 벌이 되면 서로 어긋날 수 있기 때문이다. 아래 태스크에서 "spec의 `## 배정표` 섹션"이라고 지시하면 위 파일의 해당 섹션을 그대로 사용한다는 뜻이다.
@@ -55,7 +55,7 @@ docs/superpowers/specs/2026-08-12-prototype-work-assignment-lattebun-design.md
 
 ```bash
 cat docs/technical/PROTOTYPE_WORK_ASSIGNMENT.md
-cat docs/superpowers/specs/2026-08-12-prototype-work-assignment-lattebun-design.md
+cat docs/superpowers/specs/2026-08-12-lattebun-prototype-work-assignment-design.md
 ```
 
 기존 문서의 `## 관리 원칙` 4개 항목 중 다음 두 가지는 새 문서에서도 유지한다는 점을 확인한다.
@@ -96,7 +96,7 @@ cat docs/superpowers/specs/2026-08-12-prototype-work-assignment-lattebun-design.
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
 - [팀 개발 워크플로](TEAM_DEVELOPMENT_WORKFLOW.md)
 - [개발 환경](DEVELOPMENT_ENVIRONMENT.md)
-- [배정표 재설계 spec](../superpowers/specs/2026-08-12-prototype-work-assignment-lattebun-design.md)
+- [배정표 재설계 spec](../superpowers/specs/2026-08-12-lattebun-prototype-work-assignment-design.md)
 ```
 
 - [ ] **Step 3: 행 개수와 섹션을 눈으로 확인한다**
@@ -405,8 +405,8 @@ gh pr create --base main --title "문서: 프로토타입 작업 배정표에 �
 
 ## 관련 문서
 
-- spec: `docs/superpowers/specs/2026-08-12-prototype-work-assignment-lattebun-design.md`
-- plan: `docs/superpowers/plans/2026-08-12-prototype-work-assignment-lattebun.md`
+- spec: `docs/superpowers/specs/2026-08-12-lattebun-prototype-work-assignment-design.md`
+- plan: `docs/superpowers/plans/2026-08-12-lattebun-prototype-work-assignment.md`
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 PRBODY

@@ -17,7 +17,7 @@
 
 - [게임 원칙](../../GAME_PRINCIPLES.md): 신뢰는 파티 평균이 아니라 파티원 개인별로 관리하고 표시한다.
 - [핵심 게임 루프](../../design/CORE_GAME_LOOP.md): F2는 게임 규칙을 구현하지 않고 현재 런을 담을 자리만 제공한다.
-- [F1 도메인 타입 설계](2026-08-12-domain-types-lattebun-design.md): 런 데이터 계약으로 기존 `RunState`를 사용하고 별도 타입을 만들지 않는다.
+- [F1 도메인 타입 설계](2026-08-12-lattebun-domain-types-design.md): 런 데이터 계약으로 기존 `RunState`를 사용하고 별도 타입을 만들지 않는다.
 - [개발 환경](../../technical/DEVELOPMENT_ENVIRONMENT.md): App Router용 스토어 생성 방식과 Run/UI 분리 원칙을 따른다.
 - [프로토타입 작업 배정표](../../technical/PROTOTYPE_WORK_ASSIGNMENT.md): F2는 `P1`의 직접 선행이며 `R1`, `R4`, `F5`의 책임을 가져오지 않는다.
 - [Zustand Next.js 가이드](https://zustand.docs.pmnd.rs/learn/guides/nextjs): 요청 간 공유되는 전역 스토어를 피하고 vanilla store를 Context Provider에서 생성한다.

@@ -29,8 +29,8 @@ spec과 plan 파일명에는 작업 요청자의 식별자를 포함한다. 기�
 파일명에 쓰는 식별자는 소문자 영문, 숫자, 하이픈만 사용하도록 슬러그로 정규화한다. 예를 들어 `LatteBun`은 `lattebun`, `Kim Daeyeon`은 `kim-daeyeon`이다. AI 도구 이름은 파일명 대신 문서 본문의 작성 정보에 기록한다.
 
 ```text
-docs/superpowers/specs/YYYY-MM-DD-<topic>-<author>-design.md
-docs/superpowers/plans/YYYY-MM-DD-<feature>-<author>.md
+docs/superpowers/specs/YYYY-MM-DD-<author>-<topic>-design.md
+docs/superpowers/plans/YYYY-MM-DD-<author>-<feature>.md
 ```
 
 ## 문서 책임

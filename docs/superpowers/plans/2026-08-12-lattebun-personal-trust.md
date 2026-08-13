@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 근거 spec은 `docs/superpowers/specs/2026-08-12-personal-trust-lattebun-design.md`다.
+- 근거 spec은 `docs/superpowers/specs/2026-08-12-lattebun-personal-trust-design.md`다.
 - 공식 규칙은 `docs/systems/PARTY_AND_TRUST.md`의 「프로토타입 신뢰 판정」을 따른다.
 - 행동은 `actHonestly`, `deceptionExposed`, `protectAlly`, `betrayAlly`, `secureReward`, `denyReward`, `takeRisk`, `avoidRisk` 여덟으로 닫는다.
 - 기본 변화량이 0이 아니면 절댓값의 20%를 반올림하고 최소 1로 만든 변동 폭을 사용한다. 변화의 부호는 뒤집지 않는다.

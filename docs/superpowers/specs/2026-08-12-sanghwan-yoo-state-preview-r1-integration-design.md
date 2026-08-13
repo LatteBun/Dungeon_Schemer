@@ -16,8 +16,8 @@ F2의 `/state-preview`가 고정된 예시 파티 대신 병합된 R1 파티 생
 - [파티와 신뢰](../../systems/PARTY_AND_TRUST.md): 파티는 3~5명이고 직업·성격이 중복되지 않는다.
 - [개발 환경](../../technical/DEVELOPMENT_ENVIRONMENT.md): 난수는 `Rng`를 인자로 받고 시스템별 독립 스트림을 사용한다.
 - [프로토타입 작업 배정표](../../technical/PROTOTYPE_WORK_ASSIGNMENT.md): R1과 F2 완료 상태 및 P1의 남은 선행을 갱신한다.
-- [R1 파티 생성 규칙 설계](2026-08-12-party-generation-sbh3821-design.md): `generateParty(rng)`의 생성 계약과 잠정 초기 신뢰 값을 따른다.
-- [F2 상태 스토어 골격 설계](2026-08-12-state-store-sanghwan-yoo-design.md): Run/UI Store 분리와 preview의 기술 검증 책임을 유지한다.
+- [R1 파티 생성 규칙 설계](2026-08-12-sbh3821-party-generation-design.md): `generateParty(rng)`의 생성 계약과 잠정 초기 신뢰 값을 따른다.
+- [F2 상태 스토어 골격 설계](2026-08-12-sanghwan-yoo-state-store-design.md): Run/UI Store 분리와 preview의 기술 검증 책임을 유지한다.
 
 ## 설계 결정
 

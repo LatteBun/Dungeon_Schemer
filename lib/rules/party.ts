@@ -14,7 +14,7 @@ import type { Rng } from "@/lib/rng";
  * 성격별 초기 신뢰 기본값. 프로토타입 잠정값이다.
  * 의심 많음은 높은 신뢰에 도달하기 어렵다는 방향을 시작값에 반영하고,
  * 충동적은 쉽게 믿는 성격으로 두어 대비를 만든다.
- * docs/superpowers/specs/2026-08-12-party-generation-sbh3821-design.md
+ * docs/superpowers/specs/2026-08-12-sbh3821-party-generation-design.md
  */
 export const INITIAL_TRUST_BASE: Readonly<Record<Personality, number>> = {
   suspicious: 35,
