@@ -27,18 +27,29 @@ interface GameStoreProviderProps {
   children: ReactNode;
 }
 
+/**
+ * UI 상태만 필요한 화면을 위해 런 스토어와 떼어 놓는다.
+ * app/play 는 아직 런을 스토어에 넣지 않는다. 그 배선은 P1의 몫이다.
+ */
+export function UiStoreProvider({ children }: { children: ReactNode }) {
+  const [uiStore] = useState<UiStoreApi>(() => createUiStore());
+
+  return (
+    <UiStoreContext.Provider value={uiStore}>
+      {children}
+    </UiStoreContext.Provider>
+  );
+}
+
 export function GameStoreProvider({
   initialRun,
   children,
 }: GameStoreProviderProps) {
   const [runStore] = useState<RunStoreApi>(() => createRunStore(initialRun));
-  const [uiStore] = useState<UiStoreApi>(() => createUiStore());
 
   return (
     <RunStoreContext.Provider value={runStore}>
-      <UiStoreContext.Provider value={uiStore}>
-        {children}
-      </UiStoreContext.Provider>
+      <UiStoreProvider>{children}</UiStoreProvider>
     </RunStoreContext.Provider>
   );
 }
@@ -60,7 +71,7 @@ export function useUiStore<T>(selector: (state: UiStore) => T): T {
 
   if (store === null) {
     throw new Error(
-      "useUiStore는 GameStoreProvider 안에서 호출해야 합니다.",
+      "useUiStore는 UiStoreProvider 또는 GameStoreProvider 안에서 호출해야 합니다.",
     );
   }
 
