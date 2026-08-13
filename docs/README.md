@@ -26,7 +26,8 @@
 3. [핵심 게임 루프](design/CORE_GAME_LOOP.md)
 4. 작업하려는 기능과 관련된 시스템 문서
 5. UI 작업이면 [온보딩과 인터페이스](experience/ONBOARDING_AND_INTERFACE.md)
-6. 프로젝트 설정 작업이면 [개발 환경](technical/DEVELOPMENT_ENVIRONMENT.md)
+6. 흐름을 그림으로 확인하려면 [시각 자료](diagram/README.md)
+7. 프로젝트 설정 작업이면 [개발 환경](technical/DEVELOPMENT_ENVIRONMENT.md)
 
 ## 공식 문서
 
@@ -49,6 +50,11 @@
 ### 사용자 경험
 
 - [ONBOARDING_AND_INTERFACE.md](experience/ONBOARDING_AND_INTERFACE.md): 게시판부터 엔딩까지 화면 정보 구조, 30초 온보딩과 결과 피드백
+
+### 시각 자료
+
+- [diagram/README.md](diagram/README.md): 캠페인·탐험 시퀀스, 상태 전이, 대표 화면 5개의 Markdown·SVG·PNG 인덱스
+- [대표 화면 전체 모음](diagram/svg/screen-overview.svg): 공고 게시판부터 캠페인 엔딩까지의 5개 화면 와이어프레임
 
 ### 기술
 
@@ -75,6 +81,8 @@
 
 ## 설계 및 실행 기록
 
+- [게임 흐름 다이어그램 설계](superpowers/specs/2026-08-13-sanghwan-yoo-game-flow-diagrams-design.md)
+- [게임 흐름 다이어그램 구현 계획](superpowers/plans/2026-08-13-sanghwan-yoo-game-flow-diagrams.md)
 - [게임 방향 개편 설계](superpowers/specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md)
 - [게임 방향 개편 구현 계획](superpowers/plans/2026-08-13-sanghwan-yoo-game-direction-rework.md)
 - [게임 방향 개편 질문지](superpowers/2026-08-13-game-direction-brainstorming-questionnaire.md)
