@@ -22,6 +22,7 @@ export const PERSONALITIES = [
 
 export const PARTY_SIZE_MIN = 3;
 export const PARTY_SIZE_MAX = 5;
+export const CAMPAIGN_PARTY_SIZE = 3;
 
 /** 신뢰도 0은 정체가 발각된 상태이며 처형으로 이어진다. */
 export const TRUST_MIN = 0;

@@ -1,16 +1,20 @@
 export type {
+  BoardOfferId,
   Brand,
   CardId,
   ChoiceId,
   ClaimId,
   ClassId,
+  DungeonId,
   EventId,
   ItemId,
   MemberId,
   NodeId,
+  PartyId,
 } from "./ids";
 
 export {
+  CAMPAIGN_PARTY_SIZE,
   PARTY_SIZE_MAX,
   PARTY_SIZE_MIN,
   PERSONALITIES,
@@ -19,8 +23,15 @@ export {
 } from "./party";
 export type { ClassDef, PartyMember, Personality } from "./party";
 
-export { TRUTH_TYPES } from "./info";
-export type { InfoCard, InfoClaim, Target, TruthType } from "./info";
+export { INFO_SUBJECTS, TRUTH_TYPES } from "./info";
+export type {
+  EventTarget,
+  InfoCard,
+  InfoClaim,
+  InfoSubject,
+  Target,
+  TruthType,
+} from "./info";
 
 export { EVENT_KINDS } from "./dungeon";
 export type {
@@ -39,3 +50,36 @@ export type {
   RunState,
   TrustChange,
 } from "./run";
+
+export { CAMPAIGN_PHASES, GRADES } from "./campaign";
+export type {
+  BoardLockReason,
+  BoardOffer,
+  CampaignDungeon,
+  CampaignEnding,
+  CampaignEndingId,
+  CampaignLogRecord,
+  CampaignMember,
+  CampaignParty,
+  CampaignPhase,
+  CampaignState,
+  DungeonStatus,
+  Grade,
+  MemoryRecord,
+} from "./campaign";
+
+export type {
+  BossResult,
+  ExpeditionLogRecord,
+  ExpeditionResult,
+  ExpeditionResultStatus,
+  ExpeditionState,
+  GeneratedMap,
+  MapNode,
+  MapPath,
+  PendingEvent,
+  PendingInfo,
+} from "./expedition";
+
+export { RuleError } from "./errors";
+export type { RuleErrorCode, RuleErrorDetails } from "./errors";

@@ -9,7 +9,21 @@
  * card    R3 정보 카드 판정의 확률
  * trust   R2 개인 신뢰 판정의 확률
  */
-export type RngStream = "party" | "dungeon" | "card" | "trust";
+export const RNG_STREAMS = [
+  "dungeon",
+  "party",
+  "reserve",
+  "carriedGold",
+  "board",
+  "map",
+  "card",
+  "trust",
+  "event",
+  "boss",
+  "regroup",
+] as const;
+
+export type RngStream = (typeof RNG_STREAMS)[number];
 
 export interface Rng {
   /** 이 생성기를 만든 시드 문자열. 파생의 기준이 된다. */

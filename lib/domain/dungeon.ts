@@ -1,5 +1,5 @@
 import type { ChoiceId, EventId, NodeId } from "./ids";
-import type { Target } from "./info";
+import type { EventTarget } from "./info";
 
 /**
  * 이벤트 분류는 닫힌 목록이다. 분류마다 제시하는 행동과 처리가 다르다.
@@ -27,7 +27,7 @@ export interface EventChoice {
   id: ChoiceId;
   label: string;
   /** 행동 대상. 없으면 파티 전체나 상황 자체를 향한다. */
-  target?: Target;
+  target?: EventTarget;
   /** "성직자의 신뢰를 얻는다"처럼 플레이어에게 알려주는 기대치다. */
   expectedGain: string;
   /** "발각되면 처형"처럼 플레이어가 아는 위험이다. */
