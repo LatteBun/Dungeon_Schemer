@@ -9,6 +9,14 @@
 
 ```mermaid
 stateDiagram-v2
+    state "캠페인 게시판" as campaignBoard
+    state "파티 소개" as partyIntro
+    state "경로 선택" as pathChoice
+    state "정보 기회" as infoOpportunity
+    state "사건" as event
+    state "보스 전투" as bossFight
+    state "정산" as settlement
+    state "캠페인 종료" as campaignEnded
     [*] --> campaignBoard
     campaignBoard --> partyIntro: 공고 계약
     partyIntro --> pathChoice: 탐험 입장
@@ -50,4 +58,3 @@ stateDiagram-v2
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
 - [탐험 시퀀스](expedition-sequence.md)
 - [던전 이벤트와 보스](../systems/DUNGEON_EVENTS_AND_BOSSES.md)
-

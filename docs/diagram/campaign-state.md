@@ -9,18 +9,27 @@
 
 ```mermaid
 stateDiagram-v2
+    state "캠페인 게시판" as campaignBoard
+    state "파티 소개" as partyIntro
+    state "정산" as settlement
+    state "불신의 대가" as distrust
+    state "원정 종료" as completed
+    state "길잡이 자격 박탈" as disqualified
+    state "용사들의 시대가 끝나다" as exhausted
+    state "캠페인 종료" as campaignEnded
     [*] --> campaignBoard: 캠페인 생성
     campaignBoard --> partyIntro: 지원 가능한 공고 계약
     partyIntro --> expedition: 파티·지도 확인 후 입장
-    state expedition {
+    state "탐험" as expedition {
+        state "경로 선택" as pathChoice
         [*] --> pathChoice
         pathChoice --> [*]: 보스 해결 또는 전멸
     }
     expedition --> settlement: 탐험 결과
-    settlement --> distrust: 1. 생존 출전자 전원 신뢰 0
-    settlement --> completed: 2. 던전 15개 클리어
-    settlement --> disqualified: 3. 생성 공고 전부 명성 잠금
-    settlement --> exhausted: 4. 완성 가능 파티 0
+    settlement --> distrust: 1. 전원 신뢰 0
+    settlement --> completed: 2. 15개 클리어
+    settlement --> disqualified: 3. 공고 전부 잠금
+    settlement --> exhausted: 4. 완성 파티 0
     settlement --> campaignBoard: 엔딩 없음 · 다음 게시판
     distrust --> campaignEnded: 불신의 대가
     completed --> campaignEnded: 원정 종료 · 최종 C/B/A/S
@@ -44,4 +53,3 @@ stateDiagram-v2
 - [게임 개요](../design/GAME_OVERVIEW.md)
 - [성장과 엔딩](../systems/PROGRESSION_AND_ENDINGS.md)
 - [캠페인 시퀀스](campaign-sequence.md)
-
