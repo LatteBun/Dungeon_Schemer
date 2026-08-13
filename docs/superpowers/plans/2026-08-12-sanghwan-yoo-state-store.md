@@ -12,7 +12,7 @@
 
 - 커밋 메시지는 제목과 본문을 포함해 항상 한글로 작성한다. (`AGENTS.md`)
 - 작업 브랜치는 `feature/state-store`이며 `main`에 직접 커밋하거나 push하지 않는다.
-- 승인된 spec은 `docs/superpowers/specs/2026-08-12-state-store-sanghwan-yoo-design.md`다.
+- 승인된 spec은 `docs/superpowers/specs/2026-08-12-sanghwan-yoo-state-store-design.md`다.
 - production dependency는 정확히 `zustand@5.0.14` 하나만 추가한다. `jsdom`과 React Testing Library는 추가하지 않는다.
 - `app/page.tsx`, `app/layout.tsx`, `app/globals.css`, `lib/domain/*`, `lib/rng/*`를 수정하지 않는다.
 - Run Store와 UI Store를 분리하고 모듈 전역 singleton 스토어를 만들지 않는다.

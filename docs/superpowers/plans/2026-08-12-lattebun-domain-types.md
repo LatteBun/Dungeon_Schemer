@@ -878,8 +878,8 @@ gh pr create --base main --title "기능: F1 도메인 타입 정의" --body "$(
 
 ## 관련 문서
 
-- spec: `docs/superpowers/specs/2026-08-12-domain-types-lattebun-design.md`
-- plan: `docs/superpowers/plans/2026-08-12-domain-types-lattebun.md`
+- spec: `docs/superpowers/specs/2026-08-12-lattebun-domain-types-design.md`
+- plan: `docs/superpowers/plans/2026-08-12-lattebun-domain-types.md`
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 PRBODY

@@ -179,4 +179,4 @@ graph LR
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
 - [팀 개발 워크플로](TEAM_DEVELOPMENT_WORKFLOW.md)
 - [개발 환경](DEVELOPMENT_ENVIRONMENT.md)
-- [배정표 재설계 spec](../superpowers/specs/2026-08-12-prototype-work-assignment-lattebun-design.md)
+- [배정표 재설계 spec](../superpowers/specs/2026-08-12-lattebun-prototype-work-assignment-design.md)

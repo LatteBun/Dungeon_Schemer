@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 근거 spec은 `docs/superpowers/specs/2026-08-12-event-route-generation-lattebun-design.md`다.
+- 근거 spec은 `docs/superpowers/specs/2026-08-12-lattebun-event-route-generation-design.md`다.
 - 공식 규칙은 `docs/systems/DUNGEON_EVENTS_AND_BOSSES.md`의 「프로토타입 경로 생성」과 「프로토타입 이벤트 배치」를 따른다.
 - 허용 형태는 `(갈래 2, 깊이 2)`, `(갈래 3, 깊이 2)`, `(갈래 2, 깊이 3)`뿐이다. 총 노드는 각각 7, 9, 9개다.
 - 입구→갈래→공통 합류→보스 구조이며 모든 경로 길이는 같고 보스방만 막다른 길이다.
