@@ -6,6 +6,7 @@ import type { TrustAction } from "@/lib/rules/trust";
 import {
   describePersonality,
   PERSONALITY_PROFILES,
+  strengthOf,
   TRUST_ACTION_LABELS,
 } from "@/lib/rules/personality-profile";
 
@@ -32,6 +33,23 @@ describe("성격 프로필 강도 구간", () => {
     expect(find("righteous", "denyReward")?.strength).toBe(2);
     // 의심 많음 본인 이익 박탈 -5 → 최소 단계
     expect(find("suspicious", "denyReward")?.strength).toBe(1);
+  });
+
+  it("strengthOf가 데이터와 무관하게 경계값을 직접 판정한다", () => {
+    // 상위 경계(10) 포함 → 3단계. 양수와 음수 둘 다.
+    expect(strengthOf(10)).toBe(3);
+    expect(strengthOf(-10)).toBe(3);
+    // 상위 경계 바로 아래(9) → 2단계.
+    expect(strengthOf(9)).toBe(2);
+    expect(strengthOf(-9)).toBe(2);
+    // 중간 경계(6) 포함 → 2단계.
+    expect(strengthOf(6)).toBe(2);
+    expect(strengthOf(-6)).toBe(2);
+    // 중간 경계 바로 아래(5) → 1단계.
+    expect(strengthOf(5)).toBe(1);
+    expect(strengthOf(-5)).toBe(1);
+    // 상위 경계를 크게 넘는 값도 3단계에 머문다.
+    expect(strengthOf(16)).toBe(3);
   });
 
   it("충동적 파티원의 경계 행동이 한 단계로 뭉치지 않는다", () => {

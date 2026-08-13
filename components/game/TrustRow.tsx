@@ -30,7 +30,7 @@ export function TrustRow({ member, classLabel, change, expanded, onToggle, detai
       {/* button 은 구문 콘텐츠만 담을 수 있으므로 div 와 p 대신 span 을 쓴다. */}
       <span className="flex items-baseline justify-between gap-2">
         <span className="text-sm text-parchment">
-          <span aria-hidden="true" className="mr-1 text-xs text-muted">{expanded ? "▼" : "▶"}</span>
+          <span aria-hidden="true" className="mr-1 text-xs text-muted">{expanded ? "▾" : "▸"}</span>
           {member.name}<span className="ml-1 text-xs text-muted">{classLabel}</span>
         </span>
         <span className="text-sm font-semibold tabular-nums text-parchment">{member.trust}</span>

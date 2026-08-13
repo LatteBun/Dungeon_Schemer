@@ -36,7 +36,7 @@ function ReactionList({
   if (reactions.length === 0) return null;
   return (
     <>
-      <h4 className="mt-2 text-xs font-semibold text-muted">{title}</h4>
+      <h3 className="mt-2 text-xs font-semibold text-muted">{title}</h3>
       <ul>
         {reactions.map((reaction) => (
           <li key={reaction.action} className="flex gap-2 text-xs text-parchment">
@@ -74,7 +74,7 @@ export function MemberDetail({ profile, history }: MemberDetailProps) {
         markClassName="text-trust-down"
         srLabels={GUARD_LABELS}
       />
-      <h4 className="mt-2 text-xs font-semibold text-muted">최근 변화</h4>
+      <h3 className="mt-2 text-xs font-semibold text-muted">최근 변화</h3>
       {history.length === 0 ? (
         <p className="text-xs text-muted">아직 기록이 없다.</p>
       ) : (

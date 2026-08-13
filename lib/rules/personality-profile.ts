@@ -41,7 +41,7 @@ export interface PersonalityProfile {
   guards: TrustReaction[];
 }
 
-function strengthOf(baseDelta: number): ReactionStrength {
+export function strengthOf(baseDelta: number): ReactionStrength {
   const size = Math.abs(baseDelta);
   if (size >= STRONG_THRESHOLD) return 3;
   if (size >= MEDIUM_THRESHOLD) return 2;
