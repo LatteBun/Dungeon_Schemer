@@ -56,6 +56,7 @@ function card(truthType: InfoCard["truthType"]): InfoCard {
   return {
     id: "card-" + truthType as CardId,
     truthType,
+    subject: "event",
     topic: "테스트 정보",
     text: truthType + " 카드",
   };

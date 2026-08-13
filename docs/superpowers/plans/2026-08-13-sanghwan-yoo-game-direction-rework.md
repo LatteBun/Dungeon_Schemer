@@ -68,7 +68,7 @@
 - Produces `RuleErrorCode`와 `RuleError`에 `code`, `message`, `details`를 포함한다. 최소 코드는 `INVALID_TRANSITION`, `UNKNOWN_ID`, `DUPLICATE_ID`, `INVALID_GENERATION`, `INSUFFICIENT_GOLD`, `INVALID_SETTLEMENT`이다.
 - Produces `MemoryRecord` and test fixture helpers `createFixtureCampaignState`, `createFixtureExpeditionState`, `createMemberWithHp` for later rule tests; each helper returns a fresh deep-cloned fixture.
 
-- [ ] **Step 1: 실패하는 타입 계약 테스트를 작성한다.**
+- [x] **Step 1: 실패하는 타입 계약 테스트를 작성한다.**
 
 ```ts
 it("캠페인 상태는 현재 명성·두 골드·영구 등급을 분리한다", () => {
@@ -87,23 +87,23 @@ it("보드 등급 단계와 정보 전이 단계는 닫힌 목록이다", () => 
 });
 ```
 
-- [ ] **Step 2: 테스트를 실행해 새 타입과 fixture가 없어서 실패하는지 확인한다.**
+- [x] **Step 2: 테스트를 실행해 새 타입과 fixture가 없어서 실패하는지 확인한다.**
 
 Run: `pnpm test lib/domain/campaign.test.ts lib/domain/expedition.test.ts`
 
 Expected: `CampaignState`, `createFixtureCampaignState`, `CAMPAIGN_PHASES`가 없어 실패한다.
 
-- [ ] **Step 3: 새 타입과 ID를 구현하고 기존 타입을 새 규칙과 맞춘다.**
+- [x] **Step 3: 새 타입과 ID를 구현하고 기존 타입을 새 규칙과 맞춘다.**
 
 `Target`에서 보스 수신자 분기를 제거하고 카드 주제는 `InfoSubject = "route" | "event" | "monster" | "rest" | "merchant" | "boss"`로 표현한다. `PartyMember`의 기존 소비자가 깨지지 않도록 캠페인 인물은 새 `CampaignMember`로 분리하며, `InfoCard`는 항상 파티 수신을 전제로 한다. `lib/rules/fixtures.ts`에는 이후 테스트가 공유할 빈 캠페인·탐험 fixture와 HP fixture를 만든다. 모든 프로토타입 인물의 `maxHp`는 우선 100으로 두고 `lib/content/classes.ts`의 조정 가능한 상수로 관리한다.
 
-- [ ] **Step 4: 타입·도메인 테스트와 기존 타입 검사를 통과시킨다.**
+- [x] **Step 4: 타입·도메인 테스트와 기존 타입 검사를 통과시킨다.**
 
 Run: `pnpm test lib/domain && pnpm typecheck`
 
 Expected: 새 테스트와 기존 도메인 상수·브랜드 ID 검사가 모두 통과한다.
 
-- [ ] **Step 5: 커밋한다.**
+- [x] **Step 5: 커밋한다.**
 
 ```bash
 git add lib/domain

@@ -6,11 +6,14 @@ import type {
   ChoiceId,
   ClaimId,
   ClassId,
+  DungeonId,
   EventId,
   MemberId,
   NodeId,
+  PartyId,
 } from "./ids";
 import {
+  CAMPAIGN_PARTY_SIZE,
   PARTY_SIZE_MAX,
   PARTY_SIZE_MIN,
   PERSONALITIES,
@@ -19,7 +22,7 @@ import {
 } from "./party";
 import type { ClassDef, PartyMember, Personality } from "./party";
 import { TRUTH_TYPES } from "./info";
-import type { InfoCard, InfoClaim, Target } from "./info";
+import type { EventTarget, InfoCard, InfoClaim, Target } from "./info";
 import { EVENT_KINDS } from "./dungeon";
 import type {
   DungeonEvent,
@@ -71,11 +74,12 @@ export const truthTypeCount: 3 = TRUTH_TYPES.length;
 export const eventKindCount: 4 = EVENT_KINDS.length;
 
 export const sampleTargetMember: Target = { kind: "member", id: memberId };
-export const sampleTargetBoss: Target = { kind: "boss" };
+export const sampleTargetBoss: EventTarget = { kind: "boss" };
 
 export const sampleCard: InfoCard = {
   id: "card-boss-weakness-fire" as CardId,
   truthType: "truth",
+  subject: "boss",
   topic: "보스 약점",
   text: "보스는 화염에 약하다.",
 };
@@ -94,6 +98,15 @@ export const sampleChoice: EventChoice = {
   expectedGain: "성직자의 신뢰를 얻는다",
   knownRisk: "보스와의 관계가 나빠진다",
 };
+
+export const sampleDungeonId = "dungeon-001" as DungeonId;
+export const samplePartyId = "party-001" as PartyId;
+
+// 브랜드가 동작하면 서로 다른 캠페인 ID를 섞을 수 없다.
+// @ts-expect-error PartyId는 DungeonId에 대입할 수 없다
+export const wrongDungeonId: DungeonId = samplePartyId;
+// @ts-expect-error 보스는 정보 카드 수신자가 아니다
+export const wrongInfoTarget: Target = { kind: "boss" };
 
 // target은 선택 사항이다. 파티 전체나 상황 자체를 향하는 행동이 있다.
 export const sampleChoiceWithoutTarget: EventChoice = {
@@ -197,10 +210,11 @@ export const barrelClaim: domain.InfoClaim = sampleClaim;
 export const barrelNode: domain.DungeonNode = entryNode;
 export const barrelRecord: domain.DecisionRecord = sampleRecord;
 export const barrelClassDef: domain.ClassDef = sampleClass;
-export const barrelTarget: domain.Target = sampleTargetBoss;
+export const barrelTarget: domain.Target = sampleTargetMember;
 export const barrelEvent: domain.DungeonEvent = sampleEvent;
 export const barrelDungeon: domain.DungeonState = sampleDungeon;
 export const barrelResources: domain.Resources = sampleResources;
 export const barrelTrustChange: domain.TrustChange = sampleTrustChange;
 export const barrelChoice: domain.EventChoice = sampleChoice;
 export const barrelChoiceId: domain.ChoiceId = sampleChoice.id;
+export const campaignPartySize: 3 = CAMPAIGN_PARTY_SIZE;
