@@ -13,14 +13,14 @@ export default function PlayLayout({ children }: { children: ReactNode }) {
   const history = Object.fromEntries(
     MOCK_RUN.party.map((member) => [member.id, recentTrustChanges(MOCK_RUN.log, member.id)] as const),
   );
-  return <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-3 p-3">
-    <ResourceBar resources={MOCK_RUN.resources} phase={MOCK_RUN.phase} depth={currentDepth} />
-    <div className="flex flex-1 flex-col gap-3 lg:flex-row">
-      <main className="flex flex-1 flex-col gap-3">{children}</main>
-      <UiStoreProvider>
+  return <UiStoreProvider>
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-3 p-3">
+      <ResourceBar resources={MOCK_RUN.resources} phase={MOCK_RUN.phase} depth={currentDepth} />
+      <div className="flex flex-1 flex-col gap-3 lg:flex-row">
+        <main className="flex flex-1 flex-col gap-3">{children}</main>
         <PartySidebar party={MOCK_RUN.party} classes={MOCK_CLASSES} latestChanges={latestChanges}
           profiles={PERSONALITY_PROFILES} history={history} className="lg:w-72 lg:shrink-0" />
-      </UiStoreProvider>
+      </div>
     </div>
-  </div>;
+  </UiStoreProvider>;
 }
