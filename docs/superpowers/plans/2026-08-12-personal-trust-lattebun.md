@@ -6,13 +6,15 @@
 
 **Architecture:** `lib/rules/trust.ts`가 닫힌 행동 유니온과 완전한 성격×행동 판정표를 소유한다. `evaluateTrust(member, action, rng)`는 주입받은 `trust` 난수 스트림만 사용하며 입력 객체를 변경하지 않고 실제 적용된 변화량을 반환한다. 정보 카드 판정, 상태 변경, 게임 종료는 이 모듈 밖에 둔다.
 
+> 2026-08-13 설계 갱신: 이 문서는 최초 R2 구현 당시의 여덟 행동을 위한 계획이다. 현재 R3 설계는 `deceptionAccepted`, `suspicionWasCostly`, `suspicionWasCorrect` 세 행동을 추가로 요구한다. 세 행동의 확장 구현은 R3 spec 승인 후 별도 plan에서 다룬다.
+
 **Tech Stack:** TypeScript 5.9.3 strict, Vitest 4.1.10, 기존 `@/lib/domain` 타입과 `@/lib/rng` API, pnpm 11.21.0, Node.js 24.19.0
 
 ## Global Constraints
 
 - 근거 spec은 `docs/superpowers/specs/2026-08-12-personal-trust-lattebun-design.md`다.
 - 공식 규칙은 `docs/systems/PARTY_AND_TRUST.md`의 「프로토타입 신뢰 판정」을 따른다.
-- 행동은 `actHonestly`, `deceptionExposed`, `protectAlly`, `betrayAlly`, `secureReward`, `denyReward`, `takeRisk`, `avoidRisk` 여덟으로 닫는다.
+- 이 문서의 최초 구현 대상 행동은 `actHonestly`, `deceptionExposed`, `protectAlly`, `betrayAlly`, `secureReward`, `denyReward`, `takeRisk`, `avoidRisk` 여덟이다. 현재 R3 확장에서는 `deceptionAccepted`, `suspicionWasCostly`, `suspicionWasCorrect`를 추가한다.
 - 기본 변화량이 0이 아니면 절댓값의 20%를 반올림하고 최소 1로 만든 변동 폭을 사용한다. 변화의 부호는 뒤집지 않는다.
 - 기본 변화량 0과 이미 신뢰 0인 입력은 난수를 소비하지 않는다.
 - `TrustChange.delta`는 0~100 제한 후 실제 적용된 차이다. `reason`은 항상 비어 있지 않다.
