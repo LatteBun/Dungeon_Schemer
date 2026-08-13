@@ -1,6 +1,13 @@
 import type { ClassDef, ClassId } from "@/lib/domain";
 
 /**
+ * 모든 인물의 최대 HP. 프로토타입에서는 직업과 무관하게 같은 값을 쓰고,
+ * 밸런스 조정은 이 상수를 바꿔서 한다.
+ * docs/superpowers/plans/2026-08-13-sanghwan-yoo-game-direction-rework.md
+ */
+export const MEMBER_MAX_HP = 100;
+
+/**
  * 초기 직업 5종. 직업은 열린 목록이므로 여기에 행을 추가하면
  * 규칙 수정 없이 새 직업이 파티 생성에 포함된다.
  * docs/systems/PARTY_AND_TRUST.md
