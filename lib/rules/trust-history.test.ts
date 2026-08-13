@@ -77,6 +77,20 @@ describe("최근 신뢰 변화 추출", () => {
     expect(entries.map((entry) => entry.reason)).toEqual(["앞", "뒤"]);
   });
 
+  it("한 기록 안에서 제한에 걸리면 그 자리에서 멈춘다", () => {
+    const straddling: DecisionRecord[] = [
+      record(0, [{ memberId: ALPHA, delta: 1, reason: "오래된" }]),
+      record(1, [
+        { memberId: ALPHA, delta: 10, reason: "A" },
+        { memberId: ALPHA, delta: 20, reason: "B" },
+        { memberId: ALPHA, delta: 30, reason: "C" },
+      ]),
+    ];
+    const entries = recentTrustChanges(straddling, ALPHA, 2);
+    expect(entries).toHaveLength(2);
+    expect(entries.map((entry) => entry.reason)).toEqual(["A", "B"]);
+  });
+
   it("로그 순번과 사건 요약을 함께 싣는다", () => {
     const entries = recentTrustChanges(LOG, ALPHA, 1);
     expect(entries[0].at).toBe(4);
