@@ -354,6 +354,7 @@ describe("탐험 기록", () => {
     expect(records).toHaveLength(2);
     expect(records[0]).toMatchObject({
       cardId: bossLie.id,
+      truthType: "lie",
       subject: "boss",
       reaction: "accepted",
       modifier: 0.25,
@@ -371,6 +372,7 @@ describe("탐험 기록", () => {
     const snapshot = structuredClone(expedition);
     const record = {
       cardId: "card-truth-boss" as CardId,
+      truthType: "truth" as const,
       subject: "boss" as const,
       memberId: "member-001" as MemberId,
       reaction: "accepted" as const,

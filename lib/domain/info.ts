@@ -53,6 +53,8 @@ export type InfoReaction = "accepted" | "suspected" | "exposed";
  */
 export interface InfoRecord {
   cardId: CardId;
+  /** 카드가 실제로 진실이었는지. 보스전 뒤 의심을 검증할 때 쓴다. */
+  truthType: TruthType;
   subject: InfoSubject;
   memberId: MemberId;
   reaction: InfoReaction;
