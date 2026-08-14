@@ -254,6 +254,15 @@ describe("보스 피해 보정", () => {
     }
   });
 
+  it("실제 콘텐츠의 중립 보스 카드가 -10% 보정을 만든다", () => {
+    const neutralBoss = INFO_CARDS.find(
+      (entry) => entry.subject === "boss" && entry.truthType === "neutral",
+    );
+
+    expect(neutralBoss, "중립 보스 카드가 콘텐츠에 없다").toBeDefined();
+    expect(bossDamageModifier(neutralBoss!, "accepted")).toBe(-0.1);
+  });
+
   it("판정 결과의 보정이 카드 한 장 기준으로 기록된다", () => {
     const result = evaluatePartyInfoCard({
       card: card("truth", "boss"),
@@ -277,6 +286,18 @@ describe("정보 기회 카드 후보", () => {
     expect(pending.nodeId).toBe("node-path-1-depth-1");
     expect(new Set(subjectsOf(pending))).toEqual(new Set(["boss"]));
     expect(pending.bossRelatedCardCount).toBe(pending.cardIds.length);
+  });
+
+  it("보장 지점도 진실·거짓·중립 세 유형을 한 장씩 제시한다", () => {
+    const byId = new Map(INFO_CARDS.map((entry) => [entry.id as string, entry]));
+    const pending = createInfoOpportunity(
+      infoNode({ bossRelatedInfoCount: 1 }),
+      createRng("세유형").derive("card"),
+    );
+
+    expect(pending.cardIds).toHaveLength(3);
+    expect(pending.cardIds.map((id) => byId.get(id as string)!.truthType))
+      .toEqual([...TRUTH_TYPES]);
   });
 
   it("일반 정보 지점은 보스 주제를 제외하고 세 유형을 한 장씩 제시한다", () => {

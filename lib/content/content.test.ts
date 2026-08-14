@@ -31,6 +31,22 @@ describe("F2 콘텐츠 정상 풀", () => {
     expect(ITEMS.map((item) => item.kind)).toEqual(expect.arrayContaining([...ITEM_KINDS]));
     expect(BOSSES.map((boss) => boss.grade)).toEqual([...GRADES]);
   });
+
+  // 보스 주제에 진위가 하나라도 빠지면 그 진위의 보스 피해 보정이 실제
+  // 플레이에서 한 번도 발생하지 않는다. 규칙만 있고 도달할 수 없는 상태가 된다.
+  it("보스 주제 카드가 진실·거짓·중립을 모두 갖는다", () => {
+    const bossCards = INFO_CARDS.filter((card) => card.subject === "boss");
+
+    expect(new Set(bossCards.map((card) => card.truthType)))
+      .toEqual(new Set(TRUTH_TYPES));
+  });
+
+  it("보스가 아닌 주제도 세 진위를 모두 갖는다", () => {
+    const otherCards = INFO_CARDS.filter((card) => card.subject !== "boss");
+
+    expect(new Set(otherCards.map((card) => card.truthType)))
+      .toEqual(new Set(TRUTH_TYPES));
+  });
 });
 
 function validPools() {
