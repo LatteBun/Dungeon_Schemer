@@ -5,13 +5,27 @@ export interface CampaignGradeConfig {
   readonly baseReputationReward: number;
   readonly baseGoldReward: number;
   readonly nodeCount: number;
+  /** 한쪽 갈래의 지점 수. 전체 지점은 입구·합류·보스를 더해 2 × 이 값 + 3이다. */
+  readonly branchLength: number;
+  /** 실제 경로 하나에서 지나는 정보 전달 기회 수. */
+  readonly infoOpportunityCount: number;
+  /** 실제 경로 하나에서 보장하는 보스 주제 카드 수. */
+  readonly bossRelatedInfoCount: number;
 }
 
+/**
+ * 등급별 프로토타입 상수다.
+ *
+ * `infoOpportunityCount`가 지금은 `branchLength`와 같지만 유도하지 않는다. 두
+ * 값이 같은 것은 현재 밸런스 표의 우연이고, 정보 횟수만 조정하는 일이 지도
+ * 크기를 함께 바꾸어서는 안 된다.
+ * docs/superpowers/specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md
+ */
 export const CAMPAIGN_GRADE_CONFIG: Readonly<Record<Grade, CampaignGradeConfig>> = {
-  C: { requiredReputation: 0, baseReputationReward: 10, baseGoldReward: 20, nodeCount: 7 },
-  B: { requiredReputation: 30, baseReputationReward: 15, baseGoldReward: 35, nodeCount: 9 },
-  A: { requiredReputation: 60, baseReputationReward: 25, baseGoldReward: 55, nodeCount: 11 },
-  S: { requiredReputation: 100, baseReputationReward: 40, baseGoldReward: 80, nodeCount: 13 },
+  C: { requiredReputation: 0, baseReputationReward: 10, baseGoldReward: 20, nodeCount: 7, branchLength: 2, infoOpportunityCount: 2, bossRelatedInfoCount: 1 },
+  B: { requiredReputation: 30, baseReputationReward: 15, baseGoldReward: 35, nodeCount: 9, branchLength: 3, infoOpportunityCount: 3, bossRelatedInfoCount: 1 },
+  A: { requiredReputation: 60, baseReputationReward: 25, baseGoldReward: 55, nodeCount: 11, branchLength: 4, infoOpportunityCount: 4, bossRelatedInfoCount: 2 },
+  S: { requiredReputation: 100, baseReputationReward: 40, baseGoldReward: 80, nodeCount: 13, branchLength: 5, infoOpportunityCount: 5, bossRelatedInfoCount: 2 },
 };
 
 export interface InitialDungeonDefinition {

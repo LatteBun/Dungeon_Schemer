@@ -60,6 +60,7 @@ function fixtureMap(): GeneratedMap {
     nodeIds: [entry.id, boss.id],
     regularEventCount: 1,
     infoCount: 1,
+    bossRelatedInfoCount: 1,
   };
 
   return {
