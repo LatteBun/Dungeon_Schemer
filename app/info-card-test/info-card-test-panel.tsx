@@ -5,12 +5,12 @@ import { type FormEvent, useMemo, useState } from "react";
 import { Panel } from "@/components/ui/Panel";
 import { MOCK_CARDS } from "@/lib/mock";
 import {
-  createR3HarnessResult,
+  createInfoCardHarnessResult,
   type HarnessAudience,
 } from "@/lib/dev-tools/test-snapshots";
 import type { InfoCardEvaluation, InfoReaction } from "@/lib/rules/info";
 
-const DEFAULT_SEED = "r3-ui-seed";
+const DEFAULT_SEED = "info-card-ui-seed";
 const TRUTH_LABELS = {
   truth: "진실",
   lie: "거짓",
@@ -41,7 +41,7 @@ function PartyResults({
   party,
 }: {
   evaluation: Extract<InfoCardEvaluation, { audience: "party" }>;
-  party: ReturnType<typeof createR3HarnessResult>["party"];
+  party: ReturnType<typeof createInfoCardHarnessResult>["party"];
 }) {
   return (
     <div className="grid gap-3 lg:grid-cols-2">
@@ -123,12 +123,12 @@ function BossResult({
           <dd>{formatFlag(evaluation.pendingSuspicionEvaluation)}</dd>
         </div>
       </dl>
-      <p className="mt-3 text-xs text-muted">보스는 이번 R3에서 신뢰도 판정을 사용하지 않습니다.</p>
+      <p className="mt-3 text-xs text-muted">보스 정보 카드 판정은 신뢰도 판정을 사용하지 않습니다.</p>
     </article>
   );
 }
 
-export function R3TestPanel() {
+export function InfoCardTestPanel() {
   const [draftSeed, setDraftSeed] = useState(DEFAULT_SEED);
   const [draftAudience, setDraftAudience] = useState<HarnessAudience>("party");
   const [draftCardIndex, setDraftCardIndex] = useState(0);
@@ -139,7 +139,7 @@ export function R3TestPanel() {
   });
   const [error, setError] = useState<string | null>(null);
   const result = useMemo(
-    () => createR3HarnessResult(selection),
+    () => createInfoCardHarnessResult(selection),
     [selection],
   );
   const selectedCard = MOCK_CARDS[selection.cardIndex];
@@ -163,7 +163,7 @@ export function R3TestPanel() {
     <main className="mx-auto min-h-screen max-w-6xl space-y-6 p-6 sm:p-10">
       <header className="space-y-3">
         <p className="font-mono text-xs uppercase tracking-widest text-muted">
-          Development test harness · R3
+          Development test harness · Info Card Evaluation
         </p>
         <h1 className="text-3xl font-bold text-parchment">정보 카드 판정 테스트</h1>
         <p className="max-w-3xl text-sm text-muted">
@@ -210,7 +210,7 @@ export function R3TestPanel() {
             <label className="flex items-center gap-2">
               <input
                 type="radio"
-                name="r3-audience"
+                name="info-card-audience"
                 value="party"
                 checked={draftAudience === "party"}
                 onChange={() => setDraftAudience("party")}
@@ -220,7 +220,7 @@ export function R3TestPanel() {
             <label className="flex items-center gap-2">
               <input
                 type="radio"
-                name="r3-audience"
+                name="info-card-audience"
                 value="boss"
                 checked={draftAudience === "boss"}
                 onChange={() => setDraftAudience("boss")}
@@ -230,10 +230,10 @@ export function R3TestPanel() {
           </fieldset>
 
           <div className="flex flex-wrap items-end gap-3">
-            <label className="flex min-w-64 flex-col gap-1 text-sm" htmlFor="r3-seed">
+            <label className="flex min-w-64 flex-col gap-1 text-sm" htmlFor="info-card-seed">
               재현할 seed
               <input
-                id="r3-seed"
+                id="info-card-seed"
                 className="rounded border border-edge bg-ink px-3 py-2 text-parchment"
                 value={draftSeed}
                 onChange={(event) => setDraftSeed(event.target.value)}
@@ -270,7 +270,7 @@ export function R3TestPanel() {
           <li>진실 수용은 actHonestly, 거짓 수용은 deceptionAccepted를 즉시 적용합니다.</li>
           <li>중립 수용과 의심은 즉시 신뢰를 바꾸지 않으며, 의심한 정보의 효과도 적용하지 않습니다.</li>
           <li>거짓 적발은 deceptionExposed를 적용하고, 수용된 거짓은 나중에 검증할 수 있도록 남깁니다.</li>
-          <li>신뢰도 0의 게임 오버 실행과 사후 의심 결과 반영은 P2 범위입니다.</li>
+          <li>신뢰도 0의 게임 오버 실행과 사후 의심 결과 반영은 후속 게임 흐름 범위입니다.</li>
         </ul>
       </Panel>
     </main>
