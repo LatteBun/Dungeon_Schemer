@@ -1,0 +1,212 @@
+import { CLASSES } from "@/lib/content/classes";
+import { canAcceptOffer } from "@/lib/rules/board";
+import {
+  calculatePromotionScore,
+  nextGradeTarget,
+} from "@/lib/rules/promotion";
+import type {
+  BoardLockReason,
+  BoardOfferId,
+  CampaignMember,
+  CampaignState,
+  ClassId,
+  Grade,
+} from "@/lib/domain";
+import { PERSONALITY_LABELS } from "./labels";
+
+/** 지도는 항상 두 갈래다(상위 spec). 갈래별 지점 수는 E1 소관이다. */
+const TOTAL_BRANCHES = 2;
+
+export interface CampaignHeaderView {
+  rank: Grade;
+  currentReputation: number;
+  currentGold: number;
+  cumulativeGold: number;
+  promotionScore: number;
+  nextGrade: { grade: Grade; threshold: number } | null;
+  remainingDungeons: number;
+  totalDungeons: number;
+}
+
+export interface BoardOfferView {
+  offerId: BoardOfferId;
+  order: number;
+  dungeonLabel: string;
+  grade: Grade;
+  failureCount: number;
+  requiredReputation: number;
+  reputationReward: number;
+  goldReward: number;
+  nodeCount: number;
+  partyLabel: string;
+  survivorCount: number;
+  averageTrust: number;
+  locked: boolean;
+  shortfall: number | null;
+  lockReason: BoardLockReason;
+  // riskSummary?: ... — E1 지도 통합 때 추가한다. U1에서는 없음.
+}
+
+export interface ContractMemberView {
+  memberId: string;
+  name: string;
+  className: string;
+  personalityLabel: string;
+  currentHp: number;
+  maxHp: number;
+  trust: number;
+  carriedGold: number;
+  memorySummary: string;
+}
+
+export interface ContractView {
+  offerId: BoardOfferId;
+  dungeonLabel: string;
+  grade: Grade;
+  requiredReputation: number;
+  reputationReward: number;
+  goldReward: number;
+  nodeCount: number;
+  branchCount: number;
+  bossRevealed: boolean;
+  partyLabel: string;
+  members: ContractMemberView[];
+  acceptable: boolean;
+  acceptBlockReason: "insufficientReputation" | "partyUnavailable" | null;
+}
+
+/** "dungeon-001" 또는 "party-007" 같은 id 끝의 숫자를 읽는다. */
+function numericSuffix(id: string): number {
+  const match = /(\d+)\s*$/.exec(id);
+  return match === null ? 0 : Number(match[1]);
+}
+
+function classNameOf(classId: ClassId): string {
+  return CLASSES.find((klass) => klass.id === classId)?.name ?? "직업 미정";
+}
+
+function memorySummaryOf(member: CampaignMember): string {
+  if (member.memory.length === 0) {
+    return "최근 변화 없음";
+  }
+  return member.memory[member.memory.length - 1].summary;
+}
+
+function membersOfParty(state: CampaignState, partyId: string): CampaignMember[] {
+  const party = state.parties.find((candidate) => candidate.id === partyId);
+  if (party === undefined) {
+    return [];
+  }
+  return party.memberIds
+    .map((memberId) => state.members.find((member) => member.id === memberId))
+    .filter((member): member is CampaignMember => member !== undefined);
+}
+
+export function toCampaignHeaderView(state: CampaignState): CampaignHeaderView {
+  return {
+    rank: state.rank,
+    currentReputation: state.currentReputation,
+    currentGold: state.currentGold,
+    cumulativeGold: state.cumulativeGold,
+    promotionScore: calculatePromotionScore(
+      state.currentReputation,
+      state.cumulativeGold,
+    ),
+    nextGrade: nextGradeTarget(state.rank),
+    remainingDungeons: state.dungeons.filter(
+      (dungeon) => dungeon.status === "remaining",
+    ).length,
+    totalDungeons: state.dungeons.length,
+  };
+}
+
+export function toBoardView(state: CampaignState): BoardOfferView[] {
+  return state.board.map((offer, index) => {
+    const dungeon = state.dungeons.find(
+      (candidate) => candidate.id === offer.dungeonId,
+    );
+    const grade: Grade = dungeon?.grade ?? "C";
+    const members = membersOfParty(state, offer.partyId);
+    const alive = members.filter((member) => member.alive);
+    const averageTrust =
+      alive.length === 0
+        ? 0
+        : Math.round(
+            alive.reduce((sum, member) => sum + member.trust, 0) / alive.length,
+          );
+    const shortfall =
+      offer.locked && offer.lockReason === "insufficientReputation"
+        ? offer.requiredReputation - state.currentReputation
+        : null;
+
+    return {
+      offerId: offer.id,
+      order: index + 1,
+      dungeonLabel:
+        dungeon === undefined
+          ? "알 수 없는 던전"
+          : `${grade}급 ${numericSuffix(dungeon.id)}번`,
+      grade,
+      failureCount: dungeon?.failureCount ?? 0,
+      requiredReputation: offer.requiredReputation,
+      reputationReward: offer.baseReputationReward,
+      goldReward: offer.baseGoldReward,
+      nodeCount: offer.nodeCount,
+      partyLabel: `${numericSuffix(offer.partyId)}팀`,
+      survivorCount: alive.length,
+      averageTrust,
+      locked: offer.locked,
+      shortfall,
+      lockReason: offer.lockReason,
+    };
+  });
+}
+
+export function toContractView(
+  state: CampaignState,
+  offerId: BoardOfferId,
+): ContractView | null {
+  const offer = state.board.find((candidate) => candidate.id === offerId);
+  if (offer === undefined) {
+    return null;
+  }
+  const dungeon = state.dungeons.find(
+    (candidate) => candidate.id === offer.dungeonId,
+  );
+  const party = state.parties.find(
+    (candidate) => candidate.id === offer.partyId,
+  );
+  if (dungeon === undefined || party === undefined) {
+    return null;
+  }
+
+  const members = membersOfParty(state, offer.partyId).map((member) => ({
+    memberId: member.id,
+    name: member.name,
+    className: classNameOf(member.classId),
+    personalityLabel: PERSONALITY_LABELS[member.personality],
+    currentHp: member.currentHp,
+    maxHp: member.maxHp,
+    trust: member.trust,
+    carriedGold: member.carriedGold,
+    memorySummary: memorySummaryOf(member),
+  }));
+
+  const acceptance = canAcceptOffer(state, offer);
+
+  return {
+    offerId: offer.id,
+    dungeonLabel: `${dungeon.grade}급 ${numericSuffix(dungeon.id)}번`,
+    grade: dungeon.grade,
+    requiredReputation: offer.requiredReputation,
+    reputationReward: offer.baseReputationReward,
+    goldReward: offer.baseGoldReward,
+    nodeCount: offer.nodeCount,
+    branchCount: TOTAL_BRANCHES,
+    bossRevealed: true,
+    partyLabel: `${numericSuffix(party.id)}팀`,
+    members,
+    acceptable: acceptance.accepted,
+    acceptBlockReason: acceptance.accepted ? null : acceptance.reason,
+  };
+}
