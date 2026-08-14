@@ -152,3 +152,11 @@ A·S급에서 보스 카드 두 장을 수용하면 보정을 합산한다. 피�
 - [파티와 신뢰](PARTY_AND_TRUST.md)
 - [던전 이벤트와 보스](DUNGEON_EVENTS_AND_BOSSES.md)
 - [성장과 엔딩](PROGRESSION_AND_ENDINGS.md)
+
+## F2 카드 콘텐츠 계약
+
+F2의 `INFO_CARDS` 풀은 총 12개이며 `truth`, `lie`, `neutral`을 각각 4개씩 제공한다. `subject === "boss"`인 카드는 최소 2개이며, 보스에게 전달하는 카드가 아니라 살아 있는 용사 개인에게 보스의 약점·공격 방식·함정을 알려주는 콘텐츠다.
+
+카드 ID·주제·본문은 중복되거나 비어 있을 수 없다. F2 validator는 카드 수량과 문구를 검증하지만 진실성 판정, 수용·의심·적발 확률, 개인별 반응, 보스 피해 modifier는 계산하지 않는다. 이 데이터 계약과 선언적 태그를 실제 결과로 해석하는 작업은 Task 6~7에서 정한다.
+
+카드 풀이 계약을 만족하지 않으면 조용히 재추첨하지 않고 `RuleError("INVALID_GENERATION")`으로 보고한다. `/f2-test`의 `f2-cards`와 의도적 실패 fixture에서 이 경계를 확인할 수 있다.

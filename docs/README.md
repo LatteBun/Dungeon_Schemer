@@ -88,3 +88,9 @@
 - [게임 방향 개편 질문지](superpowers/2026-08-13-game-direction-brainstorming-questionnaire.md)
 - [문서 구조 설계](superpowers/specs/2026-08-11-documentation-architecture-design.md)
 - [문서 구조 실행 계획](superpowers/plans/2026-08-11-documentation-architecture.md)
+
+## F2 실행 기록
+
+- [F2 콘텐츠 계약 설계](superpowers/specs/2026-08-13-sanghwan-yoo-event-card-item-content-design.md)
+- [F2 콘텐츠 구현 계획](superpowers/plans/2026-08-13-sanghwan-yoo-event-card-item-content.md)
+- [F2 자동·브라우저 테스트](technical/F2_TESTING.md)

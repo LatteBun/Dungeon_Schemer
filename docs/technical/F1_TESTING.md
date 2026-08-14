@@ -62,3 +62,7 @@ git diff --check
 ~~~
 
 타입 오류는 CampaignState와 ExpeditionState의 계약이 기존 단일 런 타입과 섞였는지 먼저 확인한다. F1은 기존 RunState를 삭제하지 않고 다음 이행 작업을 위해 보존한다.
+
+## F2 연동 화면
+
+F1 fixture를 F2 콘텐츠 풀과 함께 확인하려면 `/f2-test?seed=alpha`를 연다. `f2-f1-campaign`과 `f2-f1-expedition`의 seed·phase·rank·fixture 수량이 이 페이지의 값과 같아야 하며, F2의 콘텐츠 검증·음성 fixture·재현성은 [F2 콘텐츠 계약 테스트 안내](F2_TESTING.md)를 따른다. 기존 `/f1-test`의 계약 값과 화면은 F2 연동 링크 추가 외에 바뀌지 않아야 한다.
