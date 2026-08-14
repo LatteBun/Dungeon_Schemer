@@ -4,7 +4,6 @@ import type {
   BoardOfferId,
   CampaignState,
   DungeonId,
-  PartyId,
 } from "@/lib/domain";
 import {
   toBoardView,
