@@ -82,6 +82,7 @@ export function createFixtureExpeditionState(): ExpeditionState {
     visitedNodeIds: [],
     pendingInfo: null,
     pendingEvent: null,
+    infoRecords: [],
     bossResult: null,
     result: null,
     log: [],

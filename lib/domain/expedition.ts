@@ -1,4 +1,5 @@
 import type { Grade } from "./campaign";
+import type { InfoRecord } from "./info";
 import type {
   CardId,
   ChoiceId,
@@ -80,6 +81,8 @@ export interface ExpeditionState {
   visitedNodeIds: NodeId[];
   pendingInfo: PendingInfo | null;
   pendingEvent: PendingEvent | null;
+  /** 전달한 카드에 대한 파티원별 반응. 보스전과 사후 검증의 입력이다. */
+  infoRecords: InfoRecord[];
   bossResult: BossResult | null;
   result: ExpeditionResult | null;
   log: ExpeditionLogRecord[];
