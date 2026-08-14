@@ -250,6 +250,7 @@ export function toInfoRecords(
 ): InfoRecord[] {
   return evaluation.memberResults.map((result) => ({
     cardId: card.id,
+    truthType: card.truthType,
     subject: card.subject,
     memberId: result.member.id,
     reaction: result.reaction,
