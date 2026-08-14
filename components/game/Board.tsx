@@ -49,7 +49,7 @@ export function Board({
             <li key={offer.offerId}>
               <button
                 type="button"
-                aria-selected={isSelected}
+                aria-pressed={isSelected}
                 aria-disabled={offer.locked}
                 onClick={() => onSelectOffer(offer.offerId)}
                 className={cardClassName(offer, isSelected)}
