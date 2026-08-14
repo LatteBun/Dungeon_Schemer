@@ -30,6 +30,8 @@
      우선한다. 동률은 `regroup` 스트림으로 고른다.
    - `maintainPartiesAfterExpedition`: spec의 7단계 순서를 그대로 따른다.
      출전자 명단은 `result`에서만 읽는다.
+   - 충원·재편·대기가 일어나면 `CampaignState.log`에 추가 전용 기록을
+     남긴다. `at`은 기존 `log.length`부터 이어간다.
    - 검증은 상태를 만들기 전에 실행하고 `RuleError`를 던진다.
 4. **통과 확인 (Task 4 Step 4)**
    - Run: `pnpm test lib/rules/party-lifecycle.test.ts lib/rules/party.test.ts`

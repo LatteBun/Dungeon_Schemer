@@ -420,6 +420,105 @@ describe("비출전 회복", () => {
   });
 });
 
+describe("변화 기록", () => {
+  it("충원이 일어나면 파티와 합류자가 담긴 기록이 남는다", () => {
+    const state = baseState();
+    const next = maintainPartiesAfterExpedition(
+      state,
+      clearWithTwoSurvivors,
+      rngFor("log-fill"),
+    );
+    const filled = next.log.find((record) =>
+      record.summary.includes("충원"),
+    );
+    expect(filled).toBeDefined();
+    expect(filled?.summary).toMatch(/^party-001 충원 · /);
+  });
+
+  it("재편이 일어나면 해체한 팀 수와 만든 팀 수가 남는다", () => {
+    const members = [
+      member("s1", 0),
+      member("s2", 1),
+      member("s3", 2),
+      member("s4", 3),
+      member("s5", 4),
+      member("s6", 0),
+    ];
+    const state = baseState({
+      members,
+      parties: [
+        party("party-001", ["s1", "s2"]),
+        party("party-002", ["s3", "s4"]),
+        party("party-003", ["s5", "s6"]),
+      ],
+      reserveMemberIds: [],
+    });
+    const result: ExpeditionResult = {
+      status: "cleared",
+      survivorIds: [asId<MemberId>("s1"), asId<MemberId>("s2")],
+      casualtyIds: [],
+      reason: "복귀",
+    };
+    const next = maintainPartiesAfterExpedition(state, result, rngFor("log-regroup"));
+    const regrouped = next.log.find((record) =>
+      record.summary.startsWith("재편 · "),
+    );
+    expect(regrouped).toBeDefined();
+    expect(regrouped?.summary).toBe("재편 · 손상 3팀에서 완성 2팀");
+  });
+
+  it("대기자가 생기면 이름이 담긴 기록이 남는다", () => {
+    const state = baseState({ reserveMemberIds: [] });
+    const next = maintainPartiesAfterExpedition(
+      state,
+      clearWithTwoSurvivors,
+      rngFor("log-waiting"),
+    );
+    const waitingRecord = next.log.find((record) =>
+      record.summary.startsWith("대기 · "),
+    );
+    expect(waitingRecord).toBeDefined();
+    expect(waitingRecord?.summary).toContain("m-a2");
+    expect(waitingRecord?.summary).toContain("m-a3");
+  });
+
+  it("변화가 없으면 로그가 늘지 않는다", () => {
+    const state = baseState();
+    const allSurvive: ExpeditionResult = {
+      status: "cleared",
+      survivorIds: [
+        asId<MemberId>("m-a1"),
+        asId<MemberId>("m-a2"),
+        asId<MemberId>("m-a3"),
+      ],
+      casualtyIds: [],
+      reason: "전원 생존",
+    };
+    const next = maintainPartiesAfterExpedition(
+      state,
+      allSurvive,
+      rngFor("log-quiet"),
+    );
+    expect(next.log).toEqual(state.log);
+  });
+
+  it("순번은 기존 로그 길이부터 이어지고 기존 기록은 보존된다", () => {
+    const state = baseState({
+      log: [{ at: 0, summary: "이전 기록" }],
+    });
+    const next = maintainPartiesAfterExpedition(
+      state,
+      clearWithTwoSurvivors,
+      rngFor("log-order"),
+    );
+    expect(next.log[0]).toEqual({ at: 0, summary: "이전 기록" });
+    expect(next.log.length).toBeGreaterThan(1);
+    for (const [index, record] of next.log.entries()) {
+      expect(record.at).toBe(index);
+    }
+  });
+});
+
 describe("오류와 불변성", () => {
   it("캠페인에 없는 인물 ID를 거부한다", () => {
     const state = baseState();

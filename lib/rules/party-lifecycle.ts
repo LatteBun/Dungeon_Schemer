@@ -215,6 +215,7 @@ export function maintainPartiesAfterExpedition(
   );
 
   const filled = new Map<string, MemberId[]>();
+  const joinersByParty = new Map<string, MemberId[]>();
   for (const { party, survivors } of fillOrder) {
     const roster = [...survivors];
     if (roster.length === 0 || roster.length >= CAMPAIGN_PARTY_SIZE) {
@@ -225,16 +226,19 @@ export function maintainPartiesAfterExpedition(
     const taken = new Set(
       roster.map((id) => memberById.get(id)?.classId as string),
     );
+    const joiners: MemberId[] = [];
     for (const reserveId of rng.shuffle(reserves)) {
       if (roster.length >= CAMPAIGN_PARTY_SIZE) break;
       if (usedReserves.has(reserveId)) continue;
       const classId = memberById.get(reserveId)?.classId as string;
       if (taken.has(classId)) continue;
       roster.push(reserveId);
+      joiners.push(reserveId);
       taken.add(classId);
       usedReserves.add(reserveId);
     }
     filled.set(party.id, roster);
+    if (joiners.length > 0) joinersByParty.set(party.id, joiners);
   }
 
   let parties: CampaignParty[] = state.parties.map((party) => {
@@ -254,6 +258,7 @@ export function maintainPartiesAfterExpedition(
   const damaged = parties.filter((party) => !party.complete);
   let waiting = aliveIn(state.waitingMemberIds);
   let remainingReserves = leftoverReserves;
+  let rebuiltCount = 0;
 
   if (damaged.length > 0) {
     const reserveSet = new Set<string>(leftoverReserves);
@@ -278,6 +283,7 @@ export function maintainPartiesAfterExpedition(
     );
 
     parties = [...parties.filter((party) => party.complete), ...rebuilt];
+    rebuiltCount = rebuilt.length;
 
     // 배치되지 못한 사람 중 예비였던 사람은 예비로 돌아간다. 예비와 대기는
     // 다른 명단이므로 재편에 참여했다는 이유로 섞지 않는다.
@@ -286,11 +292,32 @@ export function maintainPartiesAfterExpedition(
     remainingReserves = unplaced.filter((id) => reserveSet.has(id));
   }
 
+  // 파티가 왜 바뀌었는지는 바뀌는 순간에만 안다. 정산이 나중에 앞뒤 상태를
+  // 비교하면 무엇이 바뀌었는지는 알아도 충원인지 재편인지는 복원할 수 없다.
+  const nameOf = (id: MemberId): string => memberById.get(id)?.name ?? id;
+  const summaries: string[] = [];
+  for (const [partyId, joiners] of joinersByParty) {
+    summaries.push(`${partyId} 충원 · ${joiners.map(nameOf).join(", ")}`);
+  }
+  if (damaged.length > 0) {
+    summaries.push(`재편 · 손상 ${damaged.length}팀에서 완성 ${rebuiltCount}팀`);
+    if (waiting.length > 0) {
+      summaries.push(`대기 · ${waiting.map(nameOf).join(", ")}`);
+    }
+  }
+
   return {
     ...state,
     members: healNonParticipants(members, participantIds),
     parties,
     reserveMemberIds: remainingReserves,
     waitingMemberIds: waiting,
+    log: [
+      ...state.log,
+      ...summaries.map((summary, index) => ({
+        at: state.log.length + index,
+        summary,
+      })),
+    ],
   };
 }
