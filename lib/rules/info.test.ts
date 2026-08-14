@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { CAMPAIGN_GRADE_CONFIG } from "@/lib/content/dungeons";
+import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
 import { INFO_CARDS } from "@/lib/content/info-cards";
-import { GRADES, RuleError, TRUTH_TYPES } from "@/lib/domain";
+import {
+  EVENT_KINDS,
+  GRADES,
+  INFO_SUBJECTS,
+  RuleError,
+  TRUTH_TYPES,
+} from "@/lib/domain";
 import type {
   CampaignMember,
   CardId,
   ClassId,
+  EventKind,
   ExpeditionState,
   InfoCard,
   MapNode,
@@ -99,6 +107,20 @@ function infoNode(overrides: Partial<MapNode> = {}): MapNode {
     bossRelatedInfoCount: 0,
     ...overrides,
   };
+}
+
+function opportunity(options: {
+  node?: MapNode;
+  eventKind?: EventKind;
+  seed?: string;
+  cards?: readonly InfoCard[];
+}) {
+  return createInfoOpportunity({
+    node: options.node ?? infoNode(),
+    eventKind: options.eventKind ?? "monster",
+    rng: createRng(options.seed ?? "기회").derive("card"),
+    cards: options.cards,
+  });
 }
 
 function subjectsOf(pending: { cardIds: readonly CardId[] }): string[] {
@@ -254,6 +276,17 @@ describe("보스 피해 보정", () => {
     }
   });
 
+  it("실제 콘텐츠에 세 진위의 보스 카드가 모두 있어 보정이 다 도달한다", () => {
+    const bossCards = INFO_CARDS.filter((entry) => entry.subject === "boss");
+
+    for (const truthType of TRUTH_TYPES) {
+      const found = bossCards.find((entry) => entry.truthType === truthType);
+      expect(found, `${truthType} 보스 카드가 콘텐츠에 없다`).toBeDefined();
+      expect(bossDamageModifier(found!, "accepted"))
+        .toBe(BOSS_DAMAGE_MODIFIERS[truthType]);
+    }
+  });
+
   it("판정 결과의 보정이 카드 한 장 기준으로 기록된다", () => {
     const result = evaluatePartyInfoCard({
       card: card("truth", "boss"),
@@ -269,56 +302,100 @@ describe("보스 피해 보정", () => {
 
 describe("정보 기회 카드 후보", () => {
   it("보스 보장 지점은 보스 주제 카드만 제시한다", () => {
-    const pending = createInfoOpportunity(
-      infoNode({ bossRelatedInfoCount: 1 }),
-      createRng("보장").derive("card"),
-    );
+    const pending = opportunity({ node: infoNode({ bossRelatedInfoCount: 1 }) });
 
     expect(pending.nodeId).toBe("node-path-1-depth-1");
     expect(new Set(subjectsOf(pending))).toEqual(new Set(["boss"]));
     expect(pending.bossRelatedCardCount).toBe(pending.cardIds.length);
   });
 
-  it("일반 정보 지점은 보스 주제를 제외하고 세 유형을 한 장씩 제시한다", () => {
-    const byId = new Map(INFO_CARDS.map((entry) => [entry.id as string, entry]));
-    const pending = createInfoOpportunity(infoNode(), createRng("일반").derive("card"));
+  it("입구는 경로 주제를 제시한다", () => {
+    const pending = opportunity({ node: infoNode({ id: "node-entry" as NodeId, depth: 0 }) });
 
-    expect(pending.cardIds).toHaveLength(3);
-    expect(subjectsOf(pending)).not.toContain("boss");
-    expect(pending.bossRelatedCardCount).toBe(0);
-    expect(pending.cardIds.map((id) => byId.get(id as string)!.truthType))
-      .toEqual([...TRUTH_TYPES]);
+    expect(new Set(subjectsOf(pending))).toEqual(new Set(["route"]));
+  });
+
+  it("보장 지점이면 입구여도 보스 주제가 이긴다", () => {
+    const pending = opportunity({
+      node: infoNode({ id: "node-entry" as NodeId, depth: 0, bossRelatedInfoCount: 1 }),
+    });
+
+    expect(new Set(subjectsOf(pending))).toEqual(new Set(["boss"]));
+  });
+
+  it.each([
+    ["monster", "monster"],
+    ["rest", "rest"],
+    ["merchant", "merchant"],
+    ["special", "event"],
+  ] as const)("%s 사건 지점은 %s 주제를 제시한다", (eventKind, subject) => {
+    const pending = opportunity({ eventKind });
+
+    expect(new Set(subjectsOf(pending))).toEqual(new Set([subject]));
+  });
+
+  it("어느 지점이든 진실·거짓·중립을 한 장씩 제시한다", () => {
+    const byId = new Map(INFO_CARDS.map((entry) => [entry.id as string, entry]));
+    const nodes = [
+      opportunity({ node: infoNode({ bossRelatedInfoCount: 1 }) }),
+      opportunity({ node: infoNode({ id: "node-entry" as NodeId, depth: 0 }) }),
+      ...EVENT_KINDS.map((eventKind) => opportunity({ eventKind })),
+    ];
+
+    for (const pending of nodes) {
+      expect(pending.cardIds).toHaveLength(3);
+      expect(pending.cardIds.map((id) => byId.get(id as string)!.truthType))
+        .toEqual([...TRUTH_TYPES]);
+    }
   });
 
   it("정보 기회가 없는 지점은 거부한다", () => {
-    const error = generationErrorOf(() => createInfoOpportunity(
-      infoNode({ hasInfoOpportunity: false }),
-      createRng("없음").derive("card"),
-    ));
+    const error = generationErrorOf(() =>
+      opportunity({ node: infoNode({ hasInfoOpportunity: false }) }));
 
     expect(error.code).toBe("INVALID_GENERATION");
     expect(error.message).toMatch(/정보 기회/);
   });
 
   it("후보가 두 장 미만이면 거부한다", () => {
-    const error = generationErrorOf(() => createInfoOpportunity(
-      infoNode({ bossRelatedInfoCount: 1 }),
-      createRng("한장").derive("card"),
-      { cards: [card("truth", "boss")] },
-    ));
+    const error = generationErrorOf(() => opportunity({
+      node: infoNode({ bossRelatedInfoCount: 1 }),
+      cards: [card("truth", "boss")],
+    }));
 
     expect(error.code).toBe("INVALID_GENERATION");
     expect(error.message).toMatch(/두 장|2장/);
   });
 
-  it("같은 시드는 같은 후보를 만든다", () => {
-    const create = () => createInfoOpportunity(infoNode(), createRng("재현").derive("card"));
+  it("같은 시드는 같은 후보를 만들고 다른 시드는 달라질 수 있다", () => {
+    expect(opportunity({ seed: "재현" })).toEqual(opportunity({ seed: "재현" }));
 
-    expect(create()).toEqual(create());
+    const signatures = new Set(
+      Array.from({ length: 20 }, (_, index) =>
+        opportunity({ seed: `변화-${index}` }).cardIds.join("|")),
+    );
+    expect(signatures.size).toBeGreaterThan(1);
+  });
+
+  it("보스 보장 두 기회가 서로 다른 카드를 낼 수 있다", () => {
+    const pairs = Array.from({ length: 20 }, (_, index) => [
+      opportunity({ node: infoNode({ bossRelatedInfoCount: 1 }), seed: `A-${index}` }),
+      opportunity({ node: infoNode({ bossRelatedInfoCount: 1 }), seed: `B-${index}` }),
+    ]);
+    const differing = pairs.filter(
+      ([first, second]) => first.cardIds.join("|") !== second.cardIds.join("|"),
+    );
+
+    expect(differing.length, "두 보장 기회가 항상 같은 카드를 낸다").toBeGreaterThan(0);
   });
 });
 
 describe("E1 지도와의 연결", () => {
+  const eventKindById = new Map(
+    EVENT_KINDS.flatMap((kind) =>
+      DUNGEON_EVENT_POOLS.regular[kind].map((event) => [event.id as string, kind])),
+  );
+
   it("경로에서 보스 카드만 제시하는 기회 수가 등급 보장과 같다", () => {
     for (const grade of GRADES) {
       const map = generateGradeMap(grade, createRng(`보장-${grade}`).derive("map"));
@@ -328,13 +405,39 @@ describe("E1 지도와의 연결", () => {
         const opportunities = path.nodeIds
           .map((id) => byId.get(id as string)!)
           .filter((node) => node.hasInfoOpportunity)
-          .map((node) => createInfoOpportunity(node, createRng(`${grade}/${node.id}`).derive("card")));
+          .map((node) => createInfoOpportunity({
+            node,
+            eventKind: eventKindById.get(node.eventId as string) ?? "special",
+            rng: createRng(`${grade}/${node.id}`).derive("card"),
+          }));
 
         expect(opportunities).toHaveLength(CAMPAIGN_GRADE_CONFIG[grade].infoOpportunityCount);
         expect(opportunities.filter((pending) => pending.bossRelatedCardCount > 0))
           .toHaveLength(CAMPAIGN_GRADE_CONFIG[grade].bossRelatedInfoCount);
       }
     }
+  });
+
+  it("한 캠페인 분량의 기회에서 여섯 주제가 모두 등장한다", () => {
+    const byId = new Map(INFO_CARDS.map((entry) => [entry.id as string, entry]));
+    const seen = new Set<string>();
+
+    for (const grade of GRADES) {
+      for (let index = 0; index < 10; index += 1) {
+        const map = generateGradeMap(grade, createRng(`주제-${grade}-${index}`).derive("map"));
+        for (const node of map.nodes) {
+          if (!node.hasInfoOpportunity) continue;
+          const pending = createInfoOpportunity({
+            node,
+            eventKind: eventKindById.get(node.eventId as string) ?? "special",
+            rng: createRng(`${grade}/${index}/${node.id}`).derive("card"),
+          });
+          for (const id of pending.cardIds) seen.add(byId.get(id as string)!.subject);
+        }
+      }
+    }
+
+    expect(seen).toEqual(new Set(INFO_SUBJECTS));
   });
 });
 

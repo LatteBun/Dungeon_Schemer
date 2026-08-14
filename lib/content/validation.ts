@@ -1,4 +1,4 @@
-import { EVENT_EFFECT_TAGS, GRADES, ITEM_EFFECT_TAGS, ITEM_KINDS, RuleError, TRUTH_TYPES } from "@/lib/domain";
+import { EVENT_EFFECT_TAGS, GRADES, INFO_SUBJECTS, ITEM_EFFECT_TAGS, ITEM_KINDS, RuleError, TRUTH_TYPES } from "@/lib/domain";
 import type { BossDef, DungeonEvent, EventKind, InfoCard, ItemDef } from "@/lib/domain";
 import type { DungeonEventPools } from "@/lib/content/events";
 
@@ -100,23 +100,42 @@ function validateEventPools(
   }
 }
 
+/**
+ * 주제와 진위의 한 조합에 있어야 하는 카드 수.
+ *
+ * 조합마다 같은 장수를 요구하면 전체 수량과 진위별 수량이 거기서 따라 나오고,
+ * 주제 쪽 빈칸까지 한 규칙으로 막힌다. 조합이 비면 그 지점에서 제시할 카드가
+ * 없어지고, 보스 주제의 진위가 비면 그 진위의 피해 보정이 실제 플레이에서
+ * 발생하지 않는다.
+ * docs/superpowers/specs/2026-08-15-sbh3821-info-card-expansion-design.md
+ */
+export const CARDS_PER_COMBINATION = 2;
+
 function validateCards(cards: readonly InfoCard[]): void {
   const ids = new Set<string>();
+  const texts = new Set<string>();
   const counts = new Map<string, number>();
-  let bossCount = 0;
   for (const card of cards) {
     if (ids.has(card.id)) invalid(`정보 카드 ID가 중복된다: ${card.id}`, { contentType: "card", id: card.id });
     ids.add(card.id);
     requireText(card.topic, `정보 카드 주제가 비어 있다: ${card.id}`, { contentType: "card", id: card.id });
     requireText(card.text, `정보 카드 본문이 비어 있다: ${card.id}`, { contentType: "card", id: card.id });
-    counts.set(card.truthType, (counts.get(card.truthType) ?? 0) + 1);
-    if (card.subject === "boss") bossCount += 1;
+    if (texts.has(card.text)) invalid(`정보 카드 본문이 중복된다: ${card.id}`, { contentType: "card", id: card.id });
+    texts.add(card.text);
+    const key = `${card.subject}/${card.truthType}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
   }
-  for (const truthType of TRUTH_TYPES) {
-    const actual = counts.get(truthType) ?? 0;
-    if (actual !== 4) invalid(`정보 카드 ${truthType} 수량이 4개가 아니다: ${actual}`, { contentType: "card", kind: truthType, expected: 4, actual });
+  for (const subject of INFO_SUBJECTS) {
+    for (const truthType of TRUTH_TYPES) {
+      const actual = counts.get(`${subject}/${truthType}`) ?? 0;
+      if (actual !== CARDS_PER_COMBINATION) {
+        invalid(
+          `정보 카드 ${subject}/${truthType} 수량이 ${CARDS_PER_COMBINATION}개가 아니다: ${actual}`,
+          { contentType: "card", kind: `${subject}/${truthType}`, expected: CARDS_PER_COMBINATION, actual },
+        );
+      }
+    }
   }
-  if (bossCount < 2) invalid(`보스 주제 정보 카드가 2개 미만이다: ${bossCount}`, { contentType: "card", kind: "boss", expected: 2, actual: bossCount });
 }
 
 function validateItems(items: readonly ItemDef[]): void {
@@ -159,7 +178,8 @@ export function validateDungeonEventPools(pools: DungeonEventPools): void {
 
 export function validateContentPools(pools: ContentPools): void {
   validateEventPools(pools.events, 3, 2, true);
-  if (pools.cards.length !== 12) invalid(`정보 카드 풀은 12개여야 한다: ${pools.cards.length}`, { contentType: "card", expected: 12, actual: pools.cards.length });
+  // 전체 수량은 조합 규칙에서 따라 나오므로 따로 세지 않는다. 여분 카드가
+  // 들어오면 그 조합의 장수가 어긋나 아래 검사가 잡는다.
   validateCards(pools.cards);
   validateItems(pools.items);
   validateBosses(pools.bosses);
