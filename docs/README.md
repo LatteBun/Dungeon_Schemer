@@ -99,3 +99,4 @@
 
 - [C1 캠페인 초기화·게시판 설계](superpowers/specs/2026-08-14-sanghwan-yoo-c1-campaign-initialization-board-design.md)
 - [C1 캠페인 초기화·게시판 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-c1-campaign-initialization-board.md)
+- [C1·F1·F2 통합 검증 하네스 설계](superpowers/specs/2026-08-14-sanghwan-yoo-c1-f1-f2-integration-harness-design.md)
