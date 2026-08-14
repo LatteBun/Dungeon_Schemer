@@ -32,6 +32,34 @@ export interface GeneratePartyOptions {
   classes?: readonly ClassDef[];
   /** 이름 풀. 기본값은 콘텐츠 데이터의 MEMBER_NAMES. */
   names?: readonly string[];
+  /** 고정 인원. 생략하면 기존처럼 3~5명을 시드로 선택한다. */
+  size?: number;
+}
+
+export interface MemberProfile {
+  name: string;
+  classId: ClassDef["id"];
+  personality: Personality;
+  trust: number;
+}
+
+export function generateMemberProfile(
+  rng: Rng,
+  options: GeneratePartyOptions = {},
+): MemberProfile {
+  const classPool = options.classes ?? CLASSES;
+  const namePool = options.names ?? MEMBER_NAMES;
+  const classDef = rng.pick(classPool);
+  const personality = rng.pick(PERSONALITIES);
+  const name = rng.pick(namePool);
+  const base = INITIAL_TRUST_BASE[personality];
+
+  return {
+    classId: classDef.id,
+    name,
+    personality,
+    trust: clampTrust(base + rng.int(-INITIAL_TRUST_JITTER, INITIAL_TRUST_JITTER)),
+  };
 }
 
 function clampTrust(value: number): number {
@@ -54,7 +82,10 @@ export function generateParty(
   const classPool = options.classes ?? CLASSES;
   const namePool = options.names ?? MEMBER_NAMES;
 
-  const size = rng.int(PARTY_SIZE_MIN, PARTY_SIZE_MAX);
+  const size = options.size ?? rng.int(PARTY_SIZE_MIN, PARTY_SIZE_MAX);
+  if (!Number.isInteger(size) || size < PARTY_SIZE_MIN || size > PARTY_SIZE_MAX) {
+    throw new Error(`파티 인원은 ${PARTY_SIZE_MIN}~${PARTY_SIZE_MAX}명이어야 한다: ${size}`);
+  }
 
   if (classPool.length < size) {
     throw new Error(
