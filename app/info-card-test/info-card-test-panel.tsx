@@ -4,11 +4,9 @@ import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";
 import { Panel } from "@/components/ui/Panel";
 import { MOCK_CARDS } from "@/lib/mock";
-import {
-  createInfoCardHarnessResult,
-  type HarnessAudience,
-} from "@/lib/dev-tools/test-snapshots";
-import type { InfoCardEvaluation, InfoReaction } from "@/lib/rules/info";
+import { createInfoCardHarnessResult } from "@/lib/dev-tools/test-snapshots";
+import type { InfoReaction, PartyInfoCardEvaluation } from "@/lib/rules/info";
+import type { PartyMember } from "@/lib/domain";
 
 const DEFAULT_SEED = "info-card-ui-seed";
 const TRUTH_LABELS = {
@@ -36,11 +34,15 @@ function formatFlag(value: boolean): string {
   return value ? "활성" : "없음";
 }
 
+function formatModifier(value: number): string {
+  return value === 0 ? "없음" : signed(Math.round(value * 100)) + "%";
+}
+
 function PartyResults({
   evaluation,
   party,
 }: {
-  evaluation: Extract<InfoCardEvaluation, { audience: "party" }>;
+  evaluation: PartyInfoCardEvaluation<PartyMember>;
   party: ReturnType<typeof createInfoCardHarnessResult>["party"];
 }) {
   return (
@@ -85,6 +87,10 @@ function PartyResults({
                 <dt className="text-muted">의심 검증</dt>
                 <dd>{formatFlag(entry.pendingSuspicionEvaluation)}</dd>
               </div>
+              <div>
+                <dt className="text-muted">보스 피해 보정</dt>
+                <dd>{formatModifier(entry.bossDamageModifier)}</dd>
+              </div>
             </dl>
             <p className="mt-3 text-xs text-muted">
               {trustChange?.reason ?? "즉시 신뢰 변화 없음"}
@@ -96,45 +102,11 @@ function PartyResults({
   );
 }
 
-function BossResult({
-  evaluation,
-}: {
-  evaluation: Extract<InfoCardEvaluation, { audience: "boss" }>;
-}) {
-  return (
-    <article className="rounded border border-edge p-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 className="font-semibold text-parchment">보스</h3>
-        <span className={reactionStyle(evaluation.reaction)}>
-          {REACTION_LABELS[evaluation.reaction]}
-        </span>
-      </div>
-      <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-        <div>
-          <dt className="text-muted">반응</dt>
-          <dd>{REACTION_LABELS[evaluation.reaction]}</dd>
-        </div>
-        <div>
-          <dt className="text-muted">미검증 거짓</dt>
-          <dd>{formatFlag(evaluation.pendingVerification)}</dd>
-        </div>
-        <div>
-          <dt className="text-muted">의심 검증</dt>
-          <dd>{formatFlag(evaluation.pendingSuspicionEvaluation)}</dd>
-        </div>
-      </dl>
-      <p className="mt-3 text-xs text-muted">보스 정보 카드 판정은 신뢰도 판정을 사용하지 않습니다.</p>
-    </article>
-  );
-}
-
 export function InfoCardTestPanel() {
   const [draftSeed, setDraftSeed] = useState(DEFAULT_SEED);
-  const [draftAudience, setDraftAudience] = useState<HarnessAudience>("party");
   const [draftCardIndex, setDraftCardIndex] = useState(0);
   const [selection, setSelection] = useState({
     seed: DEFAULT_SEED,
-    audience: "party" as HarnessAudience,
     cardIndex: 0,
   });
   const [error, setError] = useState<string | null>(null);
@@ -151,11 +123,7 @@ export function InfoCardTestPanel() {
       setError("seed를 입력해 주세요.");
       return;
     }
-    setSelection({
-      seed,
-      audience: draftAudience,
-      cardIndex: draftCardIndex,
-    });
+    setSelection({ seed, cardIndex: draftCardIndex });
     setError(null);
   }
 
@@ -167,8 +135,9 @@ export function InfoCardTestPanel() {
         </p>
         <h1 className="text-3xl font-bold text-parchment">정보 카드 판정 테스트</h1>
         <p className="max-w-3xl text-sm text-muted">
-          이미 선택한 카드 한 장을 파티 또는 보스에게 전달했을 때의 순수 판정 결과를
-          확인합니다. 같은 seed와 선택은 같은 결과를 재현합니다.
+          이미 선택한 카드 한 장을 살아 있는 파티원 전체에게 전달했을 때의 순수 판정
+          결과를 확인합니다. 보스는 카드의 주제일 수 있지만 수신자가 아닙니다. 같은
+          seed와 선택은 같은 결과를 재현합니다.
         </p>
         <nav className="flex flex-wrap gap-3 text-sm">
           <Link className="rounded border border-edge px-3 py-2 hover:bg-edge" href="/integration-test">
@@ -205,30 +174,6 @@ export function InfoCardTestPanel() {
             </div>
           </fieldset>
 
-          <fieldset className="flex flex-wrap gap-5">
-            <legend className="sr-only">정보 대상</legend>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="info-card-audience"
-                value="party"
-                checked={draftAudience === "party"}
-                onChange={() => setDraftAudience("party")}
-              />
-              살아 있는 파티원 전체
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="info-card-audience"
-                value="boss"
-                checked={draftAudience === "boss"}
-                onChange={() => setDraftAudience("boss")}
-              />
-              보스
-            </label>
-          </fieldset>
-
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex min-w-64 flex-col gap-1 text-sm" htmlFor="info-card-seed">
               재현할 seed
@@ -250,7 +195,7 @@ export function InfoCardTestPanel() {
       <Panel title="선택된 카드" aside={<span className="text-xs text-muted">{selection.seed}</span>}>
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-wide text-muted">
-            {TRUTH_LABELS[selectedCard.truthType]} · {selection.audience === "party" ? "파티" : "보스"}
+            {TRUTH_LABELS[selectedCard.truthType]} · 주제 {selectedCard.subject}
           </p>
           <h2 className="text-xl font-semibold">{selectedCard.topic}</h2>
           <p className="text-sm text-muted">{selectedCard.text}</p>
@@ -258,11 +203,7 @@ export function InfoCardTestPanel() {
       </Panel>
 
       <Panel title="판정 결과">
-        {result.evaluation.audience === "party" ? (
-          <PartyResults evaluation={result.evaluation} party={result.party} />
-        ) : (
-          <BossResult evaluation={result.evaluation} />
-        )}
+        <PartyResults evaluation={result.evaluation} party={result.party} />
       </Panel>
 
       <Panel title="규칙 해석">
@@ -270,6 +211,7 @@ export function InfoCardTestPanel() {
           <li>진실 수용은 actHonestly, 거짓 수용은 deceptionAccepted를 즉시 적용합니다.</li>
           <li>중립 수용과 의심은 즉시 신뢰를 바꾸지 않으며, 의심한 정보의 효과도 적용하지 않습니다.</li>
           <li>거짓 적발은 deceptionExposed를 적용하고, 수용된 거짓은 나중에 검증할 수 있도록 남깁니다.</li>
+          <li>보스 피해 보정은 주제가 boss인 카드를 수용했을 때만 생깁니다. 여러 장의 합산과 -30%~+50% 상한은 보스전이 처리합니다.</li>
           <li>신뢰도 0의 게임 오버 실행과 사후 의심 결과 반영은 후속 게임 흐름 범위입니다.</li>
         </ul>
       </Panel>
