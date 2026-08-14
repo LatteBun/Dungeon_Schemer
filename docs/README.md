@@ -94,3 +94,10 @@
 - [F2 콘텐츠 계약 설계](superpowers/specs/2026-08-13-sanghwan-yoo-event-card-item-content-design.md)
 - [F2 콘텐츠 구현 계획](superpowers/plans/2026-08-13-sanghwan-yoo-event-card-item-content.md)
 - [F2 자동·브라우저 테스트](technical/F2_TESTING.md)
+
+## C1 실행 기록
+
+- [C1 캠페인 초기화·게시판 설계](superpowers/specs/2026-08-14-sanghwan-yoo-c1-campaign-initialization-board-design.md)
+- [C1 캠페인 초기화·게시판 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-c1-campaign-initialization-board.md)
+- [C1·F1·F2 통합 검증 하네스 설계](superpowers/specs/2026-08-14-sanghwan-yoo-c1-f1-f2-integration-harness-design.md)
+- [F1·F2·C1 통합 검증 하네스 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-f1-f2-c1-integration-harness.md)
