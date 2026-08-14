@@ -50,6 +50,10 @@ export default async function F1TestPage({
           >
             프로토타입 화면으로 돌아가기
           </Link>
+          <Link
+            href="/f2-test"
+            className="rounded border border-trust-up/50 px-3 py-2 text-sm text-trust-up hover:bg-trust-up/10"
+          >F2 콘텐츠 테스트</Link>
         </div>
         <p className="max-w-3xl text-sm leading-6 text-muted">
           이 페이지는 F1의 상태 계약, 브랜드 ID, 구조화 오류, 목적별 난수 스트림을

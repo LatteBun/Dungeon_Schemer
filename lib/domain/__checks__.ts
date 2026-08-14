@@ -3,15 +3,18 @@
 // 모든 값을 export하는 이유는 no-unused-vars 규칙을 피하기 위함이다.
 import type {
   CardId,
+  BossId,
   ChoiceId,
   ClaimId,
   ClassId,
   DungeonId,
   EventId,
+  ItemId,
   MemberId,
   NodeId,
   PartyId,
 } from "./ids";
+import type { BossDef, ItemDef } from "./content";
 import {
   CAMPAIGN_PARTY_SIZE,
   PARTY_SIZE_MAX,
@@ -97,6 +100,24 @@ export const sampleChoice: EventChoice = {
   target: sampleTargetMember,
   expectedGain: "성직자의 신뢰를 얻는다",
   knownRisk: "보스와의 관계가 나빠진다",
+  effectTags: ["support"],
+};
+
+export const sampleItem: ItemDef = {
+  id: "item-healing-potion" as ItemId,
+  kind: "healing",
+  name: "치유 물약",
+  description: "상처를 회복한다.",
+  price: 12,
+  effectTags: ["restoreHp"],
+};
+
+export const sampleBoss: BossDef = {
+  id: "boss-a" as BossId,
+  grade: "A",
+  name: "심연의 감시자",
+  description: "던전의 입구를 지키는 보스다.",
+  baseDamage: 8,
 };
 
 export const sampleDungeonId = "dungeon-001" as DungeonId;
@@ -114,6 +135,7 @@ export const sampleChoiceWithoutTarget: EventChoice = {
   label: "관망한다",
   expectedGain: "관계 변화를 줄인다",
   knownRisk: "기회를 잃는다",
+  effectTags: ["observe"],
 };
 
 export const sampleEvent: DungeonEvent = {

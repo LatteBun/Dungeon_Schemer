@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
 import type { DungeonEventPools } from "@/lib/content/events";
+import { RuleError } from "@/lib/domain";
 import { EVENT_KINDS } from "@/lib/domain";
 import type { DungeonEvent, DungeonNode, MemberId, NodeId } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
@@ -261,6 +262,22 @@ describe("던전 이벤트 풀 검증", () => {
     };
 
     expect(withPools(invalid)).toThrow(/알려진 위험.*비어/);
+  });
+
+  it("사건 풀 오류는 INVALID_GENERATION 구조화 오류다", () => {
+    const pools = clonedPools();
+    const invalid = {
+      ...pools,
+      regular: { ...pools.regular, monster: pools.regular.monster.slice(0, 1) },
+    };
+    let error: unknown;
+    try {
+      generateDungeon(createRng("invalid-structured").derive("dungeon"), { eventPools: invalid });
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(RuleError);
+    expect((error as RuleError).code).toBe("INVALID_GENERATION");
   });
 });
 
