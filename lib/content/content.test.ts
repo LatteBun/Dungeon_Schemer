@@ -4,6 +4,9 @@ import { INFO_CARDS } from "@/lib/content/info-cards";
 import { ITEMS } from "@/lib/content/items";
 import { BOSSES } from "@/lib/content/bosses";
 import { EVENT_KINDS, GRADES, ITEM_KINDS, TRUTH_TYPES } from "@/lib/domain";
+import { RuleError } from "@/lib/domain";
+import type { BossDef, DungeonEvent, EventKind, InfoCard, ItemDef } from "@/lib/domain";
+import { validateContentPools } from "@/lib/content/validation";
 
 describe("F2 콘텐츠 정상 풀", () => {
   it("일반 사건 12개를 네 분류별 3개로 제공한다", () => {
@@ -29,3 +32,67 @@ describe("F2 콘텐츠 정상 풀", () => {
     expect(BOSSES.map((boss) => boss.grade)).toEqual([...GRADES]);
   });
 });
+
+function validPools() {
+  return {
+    events: structuredClone(DUNGEON_EVENT_POOLS),
+    cards: structuredClone(INFO_CARDS),
+    items: structuredClone(ITEMS),
+    bosses: structuredClone(BOSSES),
+  };
+}
+
+type MutablePools = {
+  events: { regular: Record<EventKind, DungeonEvent[]>; boss: DungeonEvent[] };
+  cards: InfoCard[];
+  items: ItemDef[];
+  bosses: BossDef[];
+};
+
+function mutablePools(): MutablePools {
+  return structuredClone(validPools()) as MutablePools;
+}
+
+function expectInvalid(pools: MutablePools) {
+  try {
+    validateContentPools(pools);
+    throw new Error("검증이 실패해야 한다.");
+  } catch (error) {
+    expect(error).toBeInstanceOf(RuleError);
+    expect((error as RuleError).code).toBe("INVALID_GENERATION");
+    return error as RuleError;
+  }
+}
+
+describe("F2 콘텐츠 validator", () => {
+  it("사건 ID 중복을 구조화 오류로 거부한다", () => {
+    const pools = mutablePools();
+    pools.events.regular.rest[0].id = pools.events.regular.monster[0].id;
+    expectInvalid(pools);
+  });
+
+  it("부족한 사건·보스 카드·아이템 종류를 거부하고 입력을 바꾸지 않는다", () => {
+    const pools = mutablePools();
+    const snapshot = structuredClone(pools);
+    pools.events.regular.special = pools.events.regular.special.slice(0, 2);
+    pools.cards = pools.cards.filter((card) => card.subject !== "boss");
+    pools.items = pools.items.filter((item) => item.kind !== "lure");
+    expectInvalid(pools);
+    expect(pools.events.regular.monster).toEqual(snapshot.events.regular.monster);
+  });
+
+  it("보스 대상 선택지와 잘못된 수치를 거부한다", () => {
+    const pools = mutablePools();
+    pools.events.regular.special[0].choices[0].target = { kind: "boss" };
+    pools.items[0].price = -1;
+    pools.bosses[0].baseDamage = 0;
+    const error = expectInvalid(pools);
+    expect(error.details).toHaveProperty("contentType");
+  });
+});
+  it("정상 콘텐츠 풀을 통과시키며 입력을 변형하지 않는다", () => {
+    const pools = mutablePools();
+    const snapshot = structuredClone(pools);
+    expect(() => validateContentPools(pools)).not.toThrow();
+    expect(pools).toEqual(snapshot);
+  });
