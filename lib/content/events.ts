@@ -17,8 +17,9 @@ function choice(
   expectedGain: string,
   knownRisk: string,
   target?: EventChoice["target"],
+  effectTags: EventChoice["effectTags"] = ["observe"],
 ): EventChoice {
-  return { id: id as ChoiceId, label, expectedGain, knownRisk, target };
+  return { id: id as ChoiceId, label, expectedGain, knownRisk, target, effectTags };
 }
 
 function event(

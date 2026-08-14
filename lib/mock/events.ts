@@ -1,6 +1,7 @@
 import type { ChoiceId, DungeonEvent, EventId, MemberId } from "@/lib/domain";
+import type { EventEffectTag } from "@/lib/domain";
 
-export const MOCK_EVENTS: DungeonEvent[] = [
+const RAW_MOCK_EVENTS = [
   {
     id: "e-entry" as EventId, kind: "rest", title: "던전 입구의 마지막 점검",
     description: "파티가 장비를 다시 묶는다. 리엔이 이 층의 소문을 당신에게 묻는다.",
@@ -61,4 +62,26 @@ export const MOCK_EVENTS: DungeonEvent[] = [
       { id: "ch-boss-watch" as ChoiceId, label: "끝까지 지켜본다", expectedGain: "어느 쪽과도 등지지 않는다", knownRisk: "이긴 쪽이 당신에게 줄 것이 없다" },
     ],
   },
-];
+] as const;
+
+function historicalEffectTag(choiceId: string): EventEffectTag {
+  if (choiceId.includes("watch")) return "observe";
+  if (choiceId.includes("tell") || choiceId.includes("info")) return "information";
+  if (choiceId.includes("buy") || choiceId.includes("sell")) return "trade";
+  if (choiceId.includes("betray") || choiceId.includes("boss") || choiceId.includes("steal")) {
+    return "sabotage";
+  }
+  if (choiceId.includes("support") || choiceId.includes("report") || choiceId.includes("detour")) {
+    return "support";
+  }
+  if (choiceId.includes("food")) return "rest";
+  return "observe";
+}
+
+export const MOCK_EVENTS: DungeonEvent[] = RAW_MOCK_EVENTS.map((event) => ({
+  ...event,
+  choices: event.choices.map((choice) => ({
+    ...choice,
+    effectTags: [historicalEffectTag(choice.id)],
+  })),
+}));

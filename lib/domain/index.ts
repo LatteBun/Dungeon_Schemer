@@ -1,6 +1,7 @@
 export type {
   BoardOfferId,
   Brand,
+  BossId,
   CardId,
   ChoiceId,
   ClaimId,
@@ -22,6 +23,15 @@ export {
   TRUST_MIN,
 } from "./party";
 export type { ClassDef, PartyMember, Personality } from "./party";
+
+export { EVENT_EFFECT_TAGS, ITEM_EFFECT_TAGS, ITEM_KINDS } from "./content";
+export type {
+  BossDef,
+  EventEffectTag,
+  ItemDef,
+  ItemEffectTag,
+  ItemKind,
+} from "./content";
 
 export { INFO_SUBJECTS, TRUTH_TYPES } from "./info";
 export type {

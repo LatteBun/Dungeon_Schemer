@@ -14,6 +14,7 @@ export type NodeId = Brand<string, "NodeId">;
 export type ChoiceId = Brand<string, "ChoiceId">;
 export type ClaimId = Brand<string, "ClaimId">;
 export type ItemId = Brand<string, "ItemId">;
+export type BossId = Brand<string, "BossId">;
 export type DungeonId = Brand<string, "DungeonId">;
 export type PartyId = Brand<string, "PartyId">;
 export type BoardOfferId = Brand<string, "BoardOfferId">;
