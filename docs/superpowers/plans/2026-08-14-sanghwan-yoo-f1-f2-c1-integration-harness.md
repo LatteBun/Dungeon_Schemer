@@ -82,7 +82,12 @@ describe("F1·F2·C1 통합 snapshot", () => {
     });
     expect(snapshot.c1.dungeonCounts).toEqual({ C: 6, B: 4, A: 3, S: 2 });
     expect(snapshot.c1.board).toHaveLength(5);
-    expect(snapshot.c1.board.some((offer) => offer.locked)).toBe(true);
+    expect(snapshot.c1.board.every((offer) => offer.dungeonGrade === "C")).toBe(true);
+    expect(snapshot.c1.board.every((offer) =>
+      offer.requiredReputation === 0
+      && !offer.locked
+      && offer.lockReason === null,
+    )).toBe(true);
   });
 
   it("다른 seed는 C1 결과를 바꾼다", () => {
@@ -300,7 +305,7 @@ pnpm dev
 1. F1·F2·C1 섹션만 존재한다.
 2. 이전 R1/R2/R3/R4 heading과 F2 `RunState` 섹션이 존재하지 않는다.
 3. C1에 C/B/A/S = 6/4/3/2, 파티 15, 예비 6, board 5개가 표시된다.
-4. 초기 명성 0에서 B/A/S 공고가 잠기고 C 공고가 지원 가능하다.
+4. 초기 게시판의 C등급 공고 5개가 지원 가능하고, B/A/S 잠금은 기존 board 순수 규칙 테스트로 검증한다.
 5. seed를 바꿔 실행하면 F1·F2·C1 결과가 함께 바뀌며 같은 seed는 재현된다.
 6. `/f1-test`, `/f2-test`, `/r3-test` 링크가 동작하고 콘솔 오류가 없다.
 
