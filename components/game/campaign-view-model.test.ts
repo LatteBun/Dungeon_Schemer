@@ -30,6 +30,7 @@ function lockedState(): CampaignState {
   };
   return {
     ...base,
+    currentReputation: 10,
     dungeons: [dungeon],
     board: [offer],
   };
@@ -73,7 +74,7 @@ describe("toBoardView", () => {
     const view = toBoardView(lockedState());
     expect(view[0].locked).toBe(true);
     expect(view[0].dungeonLabel).toBe("B급 7번");
-    expect(view[0].shortfall).toBe(30);
+    expect(view[0].shortfall).toBe(20);
   });
 });
 
