@@ -11,6 +11,23 @@ export interface DungeonEventPools {
   readonly boss: readonly DungeonEvent[];
 }
 
+/**
+ * 입장 전에 공개하는 지점별 위험 성격이다.
+ *
+ * 개별 사건이 아니라 분류에서 문구를 얻는다. 사건마다 다른 문구를 쓰면 제목을
+ * 가려도 위험 문구가 어떤 사건인지 알려주게 되어, 정확한 피해와 보상은 도착할
+ * 때까지 숨긴다는 규칙이 깨진다.
+ * docs/superpowers/specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md
+ */
+export const EVENT_KIND_RISK_SUMMARY: Readonly<Record<EventKind, string>> = {
+  monster: "전투 위험 높음",
+  rest: "위험 낮음",
+  merchant: "자원 손실 위험",
+  special: "위험 예측 어려움",
+};
+
+export const BOSS_RISK_SUMMARY = "보스전 위험";
+
 function choice(
   id: string,
   label: string,
