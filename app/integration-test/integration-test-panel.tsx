@@ -264,7 +264,7 @@ export function IntegrationTestPanel() {
         <nav className="flex flex-wrap gap-3 text-sm" aria-label="단독 검증 화면">
           <Link className="rounded border border-edge px-3 py-2 hover:bg-edge" href="/f1-test">F1 테스트</Link>
           <Link className="rounded border border-edge px-3 py-2 hover:bg-edge" href="/f2-test">F2 테스트</Link>
-          <Link className="rounded border border-edge px-3 py-2 hover:bg-edge" href="/r3-test">R3 단독 테스트</Link>
+          <Link className="rounded border border-edge px-3 py-2 hover:bg-edge" href="/info-card-test">정보 카드 단독 테스트</Link>
         </nav>
       </header>
 

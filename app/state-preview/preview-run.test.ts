@@ -3,8 +3,8 @@ import { createPreviewRun } from "@/app/state-preview/preview-run";
 import { createRng } from "@/lib/rng";
 import { generateParty } from "@/lib/rules/party";
 
-describe("R1 연동 상태 미리보기", () => {
-  it("party 독립 stream의 R1 파티를 RunState에 담는다", () => {
+describe("파티 생성 연동 상태 미리보기", () => {
+  it("party 독립 stream의 파티를 RunState에 담는다", () => {
     const seed = "manual-seed";
 
     expect(createPreviewRun(seed).party).toEqual(

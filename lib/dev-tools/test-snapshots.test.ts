@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { MOCK_CARDS, MOCK_PARTY } from "@/lib/mock";
-import { createR3HarnessResult } from "@/lib/dev-tools/test-snapshots";
+import { createInfoCardHarnessResult } from "@/lib/dev-tools/test-snapshots";
 
-describe("개발 테스트 하네스 스냅샷", () => {
+describe("정보 카드 개발 테스트 하네스 스냅샷", () => {
   it("같은 정보 카드 입력과 seed를 완전히 재현한다", () => {
     const options = {
-      seed: "r3-harness-seed",
+      seed: "info-card-harness-seed",
       audience: "party" as const,
       cardIndex: 0,
     };
-    const first = createR3HarnessResult(options);
-    const second = createR3HarnessResult(options);
+    const first = createInfoCardHarnessResult(options);
+    const second = createInfoCardHarnessResult(options);
 
     expect(first).toEqual(second);
     expect(first.card).toEqual(MOCK_CARDS[0]);

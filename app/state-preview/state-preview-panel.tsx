@@ -66,7 +66,7 @@ export function StatePreviewPanel() {
         <p className="font-mono text-sm uppercase tracking-widest">
           Development only
         </p>
-        <h1 className="text-3xl font-bold">F2 상태 스토어 개발 미리보기</h1>
+        <h1 className="text-3xl font-bold">상태 스토어 개발 미리보기</h1>
         <p className="rounded border border-amber-500 p-4">
           표시 값은 기술 검증용 예시이며 공식 기본값이 아닙니다.
         </p>
@@ -77,7 +77,7 @@ export function StatePreviewPanel() {
         className="space-y-3 rounded border p-4"
       >
         <h2 id="seed-check-heading" className="text-2xl font-semibold">
-          R1 파티 생성 재현 확인
+          파티 생성 재현 확인
         </h2>
         <p>같은 seed는 같은 파티를 재현하고, 새 seed는 다른 조합을 생성합니다.</p>
         <form className="flex flex-wrap gap-3" onSubmit={handleSeedSubmit}>

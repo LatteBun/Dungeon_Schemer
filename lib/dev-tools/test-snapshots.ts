@@ -8,13 +8,13 @@ import { evaluateInfoCard } from "@/lib/rules/info";
 
 export type HarnessAudience = "party" | "boss";
 
-export interface R3HarnessOptions {
+export interface InfoCardHarnessOptions {
   readonly seed: string;
   readonly audience: HarnessAudience;
   readonly cardIndex: number;
 }
 
-export interface R3HarnessResult {
+export interface InfoCardHarnessResult {
   readonly seed: string;
   readonly audience: HarnessAudience;
   readonly card: InfoCard;
@@ -34,7 +34,7 @@ function selectedCard(cardIndex: number): InfoCard {
 }
 
 function evaluatePartyOrBoss(
-  options: R3HarnessOptions,
+  options: InfoCardHarnessOptions,
   card: InfoCard,
   party: readonly PartyMember[],
 ) {
@@ -55,9 +55,9 @@ function evaluatePartyOrBoss(
   });
 }
 
-export function createR3HarnessResult(
-  options: R3HarnessOptions,
-): R3HarnessResult {
+export function createInfoCardHarnessResult(
+  options: InfoCardHarnessOptions,
+): InfoCardHarnessResult {
   const card = selectedCard(options.cardIndex);
   const party = MOCK_PARTY.map((member) => ({ ...member }));
   return {
