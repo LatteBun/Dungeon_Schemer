@@ -234,11 +234,11 @@ Zustand `5.0.14`는 현재 세션에서 여러 Client Component가 공유하는 
 
 Next.js App Router에서는 모듈 전역 singleton 스토어를 만들지 않는다. `zustand/vanilla`의 팩토리로 스토어를 만들고 Client Context Provider가 화면 인스턴스마다 한 번 생성한다. React Server Component는 스토어를 직접 읽거나 쓰지 않으며, 서버에서 준비한 값이 필요하면 직렬화 가능한 props를 Provider의 초기값으로 전달한다. 이 기준은 [Zustand의 Next.js 가이드](https://zustand.docs.pmnd.rs/learn/guides/nextjs)를 따른다.
 
-스토어는 게임 규칙을 소유하지 않는다. 규칙 함수가 만든 다음 `RunState`를 받아 전체 상태를 교체하며 중첩 객체를 제자리에서 변경하지 않는다. 새 런의 시드는 `@/lib/rng`의 `createSeed()`로 만들되, 실제 파티와 던전 생성 규칙은 `R1`과 `R4`가 제공한다.
+스토어는 게임 규칙을 소유하지 않는다. 규칙 함수가 만든 다음 `RunState`를 받아 전체 상태를 교체하며 중첩 객체를 제자리에서 변경하지 않는다. 새 런의 시드는 `@/lib/rng`의 `createSeed()`로 만들되, 실제 파티와 던전 생성 규칙은 파티 생성 규칙과 던전 생성 규칙이 제공한다.
 
 클라이언트 스토어는 브라우저 저장소나 서버에 영속화하지 않는다. `persist`, `localStorage`, Supabase 저장·복원은 각각의 별도 설계가 승인될 때 도입한다.
 
-`/state-preview`는 Run/UI Store와 R1 파티 생성을 확인하는 공개 기술 검증 라우트다. 홈과 실제 게임 흐름에는 연결하지 않지만 development 환경과 Vercel production에서 접근할 수 있다. seed를 입력하면 같은 파티를 재현할 수 있으며, 고정 던전 fixture만 함께 표시한다. 이 라우트는 사용자 데이터·비밀 값·인증·영속화를 사용하지 않고, 배포 환경에서도 `Development only` 안내를 유지한다.
+`/state-preview`는 Run/UI Store와 파티 생성을 확인하는 공개 기술 검증 라우트다. 홈과 실제 게임 흐름에는 연결하지 않지만 development 환경과 Vercel production에서 접근할 수 있다. seed를 입력하면 같은 파티를 재현할 수 있으며, 고정 던전 fixture만 함께 표시한다. 이 라우트는 사용자 데이터·비밀 값·인증·영속화를 사용하지 않고, 배포 환경에서도 `Development only` 안내를 유지한다.
 
 ## 백엔드와 데이터: Supabase
 

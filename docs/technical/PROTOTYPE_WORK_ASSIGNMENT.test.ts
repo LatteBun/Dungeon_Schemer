@@ -36,7 +36,7 @@ interface TaskRow {
   status: Status;
 }
 
-/** `**F2 F3 R1**` 또는 `—` 형태의 칸을 ID 목록으로 바꾼다. */
+/** `**F2 C1 E1**` 또는 `—` 형태의 칸을 ID 목록으로 바꾼다. */
 function parseIdList(cell: string): string[] {
   const bare = cell.replaceAll("*", "").trim();
   if (bare === "" || bare === "—") return [];
@@ -83,7 +83,7 @@ interface Graph {
 
 /**
  * mermaid 블록에서 노드 선언과 간선을 읽는다.
- * 노드는 `F1["F1 도메인 타입"]`, 간선은 `F1 --> F2 & F3` 형태다.
+ * 노드는 `F1["F1 도메인 타입"]`, 간선은 `F1 --> F2 & C1` 형태다.
  */
 function parseGraph(markdown: string): Graph {
   const block = /```mermaid\n([\s\S]*?)```/.exec(markdown);
