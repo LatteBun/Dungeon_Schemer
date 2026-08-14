@@ -1,18 +1,10 @@
 import type {
   InfoCard,
   PartyMember,
-  RunState,
 } from "@/lib/domain";
 import { MOCK_CARDS, MOCK_PARTY } from "@/lib/mock";
 import { createRng } from "@/lib/rng";
-import type { TrustAction, TrustEvaluation } from "@/lib/rules/trust";
 import { evaluateInfoCard } from "@/lib/rules/info";
-import { evaluateTrust } from "@/lib/rules/trust";
-import {
-  generateDungeon,
-  type GeneratedDungeon,
-} from "@/lib/rules/dungeon";
-import { generateParty } from "@/lib/rules/party";
 
 export type HarnessAudience = "party" | "boss";
 
@@ -30,23 +22,6 @@ export interface R3HarnessResult {
   readonly evaluation: ReturnType<typeof evaluateInfoCard>;
 }
 
-export interface IntegrationSnapshotOptions extends R3HarnessOptions {
-  readonly memberIndex: number;
-  readonly trustAction: TrustAction;
-}
-
-export interface IntegrationSnapshot {
-  readonly seed: string;
-  readonly audience: HarnessAudience;
-  readonly card: InfoCard;
-  readonly party: readonly PartyMember[];
-  readonly dungeon: GeneratedDungeon;
-  readonly selectedMemberIndex: number;
-  readonly trustAction: TrustAction;
-  readonly trustEvaluation: TrustEvaluation;
-  readonly infoEvaluation: ReturnType<typeof evaluateInfoCard>;
-  readonly run: RunState;
-}
 
 function boundedIndex(index: number, length: number): number {
   if (length === 0) throw new RangeError("빈 목록에는 인덱스를 적용할 수 없다.");
@@ -91,56 +66,5 @@ export function createR3HarnessResult(
     card,
     party,
     evaluation: evaluatePartyOrBoss(options, card, party),
-  };
-}
-
-function createRunState(
-  seed: string,
-  party: PartyMember[],
-  dungeon: GeneratedDungeon,
-): RunState {
-  return {
-    seed,
-    phase: "event",
-    party,
-    dungeon: dungeon.dungeon,
-    currentNodeId: dungeon.dungeon.entryNodeId,
-    resources: { gold: 42, food: 7, reputation: 3 },
-    pendingClaims: [],
-    log: [],
-  };
-}
-
-export function createIntegrationSnapshot(
-  options: IntegrationSnapshotOptions,
-): IntegrationSnapshot {
-  const rng = createRng(options.seed);
-  const party = generateParty(rng.derive("party"));
-  const dungeon = generateDungeon(rng.derive("dungeon"));
-  const selectedMemberIndex = boundedIndex(options.memberIndex, party.length);
-  const card = selectedCard(options.cardIndex);
-  const evaluationOptions: R3HarnessOptions = {
-    seed: options.seed,
-    audience: options.audience,
-    cardIndex: options.cardIndex,
-  };
-  const infoEvaluation = evaluatePartyOrBoss(evaluationOptions, card, party);
-  const trustEvaluation = evaluateTrust(
-    party[selectedMemberIndex],
-    options.trustAction,
-    rng.derive("trust"),
-  );
-
-  return {
-    seed: options.seed,
-    audience: options.audience,
-    card,
-    party,
-    dungeon,
-    selectedMemberIndex,
-    trustAction: options.trustAction,
-    trustEvaluation,
-    infoEvaluation,
-    run: createRunState(options.seed, party, dungeon),
   };
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CLASSES } from "@/lib/content/classes";
 import {
+  CAMPAIGN_PARTY_SIZE,
   PARTY_SIZE_MAX,
   PARTY_SIZE_MIN,
   TRUST_MAX,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
 import {
+  generateMemberProfile,
   generateParty,
   INITIAL_TRUST_BASE,
   INITIAL_TRUST_JITTER,
@@ -20,6 +22,30 @@ function partyOf(seed: string) {
 }
 
 describe("파티 생성 규칙", () => {
+  it("size 옵션으로 3인 파티를 고정 생성한다", () => {
+    const party = generateParty(createRng("campaign-party").derive("party"), {
+      size: CAMPAIGN_PARTY_SIZE,
+    });
+
+    expect(party).toHaveLength(3);
+    expect(new Set(party.map((member) => member.classId)).size).toBe(3);
+    expect(new Set(party.map((member) => member.personality)).size).toBe(3);
+  });
+
+  it("예비 인원용 단일 프로필도 같은 신뢰 계약을 사용한다", () => {
+    const profile = generateMemberProfile(createRng("reserve-profile"));
+
+    expect(profile.name).not.toBe("");
+    expect(profile.trust).toBeGreaterThanOrEqual(TRUST_MIN);
+    expect(profile.trust).toBeLessThanOrEqual(TRUST_MAX);
+  });
+
+  it("size가 파티 범위를 벗어나면 거부한다", () => {
+    expect(() =>
+      generateParty(createRng("invalid-party"), { size: 2 }),
+    ).toThrow(/파티 인원/);
+  });
+
   it("같은 시드는 같은 파티를 재현한다", () => {
     for (const seed of SEEDS) {
       expect(partyOf(seed)).toEqual(partyOf(seed));
