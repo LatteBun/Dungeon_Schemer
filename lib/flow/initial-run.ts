@@ -20,7 +20,7 @@ export interface InitialRun {
 }
 
 /**
- * R1 파티 생성과 R4 던전 생성을 묶어 partyIntro 시작 상태를 만든다.
+ * 파티 생성과 던전 생성을 묶어 partyIntro 시작 상태를 만든다.
  * 같은 시드는 같은 시작 상태를 재현한다. events는 transitionRun의
  * RunMachineContext로 그대로 넘긴다.
  */

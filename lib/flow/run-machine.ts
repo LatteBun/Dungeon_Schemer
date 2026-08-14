@@ -9,9 +9,9 @@ import type {
 } from "@/lib/domain";
 
 /**
- * P1이 다루는 세 행동이다. partyIntro → 입구 이벤트 → 경로 선택과 이벤트의
- * 반복 → 보스방 도달 시 bossFight 진입까지 관리한다. bossFight 이후의
- * 행동은 P2가 이 유니온을 확장해 추가한다.
+ * 상태 머신이 다루는 세 행동이다. partyIntro → 입구 이벤트 → 경로 선택과
+ * 이벤트의 반복 → 보스방 도달 시 bossFight 진입까지 관리한다. bossFight
+ * 이후의 행동은 보스전·종료 작업이 이 유니온을 확장해 추가한다.
  * docs/superpowers/specs/2026-08-13-sbh3821-game-state-machine-design.md
  */
 export type RunAction =
@@ -36,7 +36,7 @@ function findEvent(context: RunMachineContext, node: DungeonNode): DungeonEvent 
   const event = context.events.find((candidate) => candidate.id === node.eventId);
   if (event === undefined) {
     throw new Error(
-      `노드 ${node.id}의 이벤트 ${node.eventId}가 이벤트 목록에 없다. R4 생성 결과의 events를 그대로 넘겨야 한다.`,
+      `노드 ${node.id}의 이벤트 ${node.eventId}가 이벤트 목록에 없다. 던전 생성 결과의 events를 그대로 넘겨야 한다.`,
     );
   }
   return event;

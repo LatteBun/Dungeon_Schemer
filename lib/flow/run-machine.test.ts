@@ -137,7 +137,7 @@ describe("게임 상태 머신 거부", () => {
   const stateOf = (phase: RunPhase): RunState => {
     const found = journey.states.find((state) => state.phase === phase);
     if (found === undefined) {
-      // settlement·ended는 P2 전이가 아직 없으므로 단계만 바꿔 만든다.
+      // settlement·ended는 보스전·종료 전이가 아직 없으므로 단계만 바꿔 만든다.
       return { ...journey.final, phase };
     }
     return found;

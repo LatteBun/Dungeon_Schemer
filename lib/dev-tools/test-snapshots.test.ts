@@ -3,7 +3,7 @@ import { MOCK_CARDS, MOCK_PARTY } from "@/lib/mock";
 import { createR3HarnessResult } from "@/lib/dev-tools/test-snapshots";
 
 describe("개발 테스트 하네스 스냅샷", () => {
-  it("같은 R3 입력과 seed를 완전히 재현한다", () => {
+  it("같은 정보 카드 입력과 seed를 완전히 재현한다", () => {
     const options = {
       seed: "r3-harness-seed",
       audience: "party" as const,

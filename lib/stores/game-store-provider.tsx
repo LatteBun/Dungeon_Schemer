@@ -29,7 +29,8 @@ interface GameStoreProviderProps {
 
 /**
  * UI 상태만 필요한 화면을 위해 런 스토어와 떼어 놓는다.
- * app/play 는 아직 런을 스토어에 넣지 않는다. 그 배선은 P1의 몫이다.
+ * GameStoreProvider 가 내부에서 이 provider 를 쓰므로, 런과 UI 를 함께
+ * 읽는 화면은 GameStoreProvider 하나만 감싸면 된다.
  */
 export function UiStoreProvider({ children }: { children: ReactNode }) {
   const [uiStore] = useState<UiStoreApi>(() => createUiStore());

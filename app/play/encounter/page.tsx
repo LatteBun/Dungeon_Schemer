@@ -39,7 +39,7 @@ export default function EncounterPage() {
         />
         {isBoss ? (
           <p className="mt-3 text-xs text-muted">
-            보스전 진행과 종료 조건은 P2에서 구현한다. 여기까지가 이번 판의
+            보스전 진행과 종료 조건은 아직 구현 전이다. 여기까지가 이번 판의
             끝이다.
           </p>
         ) : null}

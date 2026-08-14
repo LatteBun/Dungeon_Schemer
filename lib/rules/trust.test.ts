@@ -39,7 +39,7 @@ describe("개인 신뢰 판정표", () => {
     }
   });
 
-  it("R3 신뢰 행동 세 개가 성격별 확정 수치로 존재한다", () => {
+  it("정보 카드 판정이 더한 신뢰 행동 세 개가 성격별 확정 수치로 존재한다", () => {
     expect(
       PERSONALITIES.map(
         (personality) => TRUST_RULES[personality].deceptionAccepted.baseDelta,

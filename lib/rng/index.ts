@@ -4,10 +4,10 @@
  * 스트림을 만들어 발견하기 가장 어려운 버그가 된다. 유니온으로 두어
  * 컴파일 시점에 잡는다.
  *
- * party   R1 파티 생성 규칙
- * dungeon R4 이벤트·경로 생성
- * card    R3 정보 카드 판정의 확률
- * trust   R2 개인 신뢰 판정의 확률
+ * party   파티 생성 규칙
+ * dungeon 이벤트·경로 생성
+ * card    정보 카드 판정의 확률
+ * trust   개인 신뢰 판정의 확률
  */
 export const RNG_STREAMS = [
   "dungeon",
