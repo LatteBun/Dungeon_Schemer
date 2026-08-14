@@ -7,7 +7,7 @@ import {
 } from "@/lib/dev-tools/test-snapshots";
 
 describe("개발 테스트 하네스 스냅샷", () => {
-  it("같은 R3 입력과 seed를 완전히 재현한다", () => {
+  it("같은 정보 카드 입력과 seed를 완전히 재현한다", () => {
     const options = {
       seed: "r3-harness-seed",
       audience: "party" as const,
@@ -28,7 +28,7 @@ describe("개발 테스트 하네스 스냅샷", () => {
     );
   });
 
-  it("통합 스냅샷이 R1·R2·R3·R4·F2 결과를 함께 가진다", () => {
+  it("통합 스냅샷이 파티·신뢰·정보 카드·던전·RunState 결과를 함께 가진다", () => {
     const snapshot = createIntegrationSnapshot({
       seed: "integration-seed",
       audience: "party",

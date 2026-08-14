@@ -1,6 +1,6 @@
 import type { ClassDef, ClassId } from "@/lib/domain";
 
-/** 직업은 열린 목록이므로 콘텐츠 데이터다. Q1이 실제 데이터 파일로 옮긴다. */
+/** 직업은 열린 목록이므로 콘텐츠 데이터다. 콘텐츠 작업이 실제 데이터 파일로 옮긴다. */
 export const MOCK_CLASSES: ClassDef[] = [
   { id: "c-warrior" as ClassId, name: "전사", description: "앞에서 버티며 파티의 피해를 받아낸다." },
   { id: "c-cleric" as ClassId, name: "성직자", description: "치유를 맡고 파티의 규율을 따진다." },

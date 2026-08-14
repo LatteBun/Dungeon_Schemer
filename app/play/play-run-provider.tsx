@@ -63,7 +63,7 @@ export function useRunEvents(): readonly DungeonEvent[] {
 }
 
 /**
- * 화면의 모든 상태 변경이 지나는 단일 통로다. P1 transitionRun을 적용해
+ * 화면의 모든 상태 변경이 지나는 단일 통로다. 상태 머신의 transitionRun을 적용해
  * 스토어에 반영한다. 화면은 유효한 행동만 제시하므로 여기서 던져진
  * Error는 화면 버그다. 삼키지 않고 그대로 드러낸다.
  */

@@ -61,7 +61,7 @@ describe("성격 프로필 강도 구간", () => {
   });
 
   it("의심 많음은 잘못된 의심에서 강한 교훈을 얻는다", () => {
-    // R3의 잘못된 의심 보상(+10)은 강한 반응으로 표시한다.
+    // 잘못된 의심 보상(+10)은 강한 반응으로 표시한다.
     const likes = describePersonality("suspicious").likes;
     expect(likes.length).toBeGreaterThan(0);
     expect(find("suspicious", "suspicionWasCostly")?.strength).toBe(3);

@@ -11,7 +11,8 @@ interface ChoiceListProps {
 
 /**
  * 이벤트 설명과 선택지 목록이다. 각 선택지는 대상·예상 이득·알려진
- * 위험을 함께 보여준다. 정보 카드 패널은 R3 판정과 함께 U2가 붙인다.
+ * 위험을 함께 보여준다. 정보 카드 패널은 카드 판정과 함께 선택·카드 패널
+ * 작업이 붙인다.
  */
 export function ChoiceList({ event, party, onChoose, disabled }: ChoiceListProps) {
   const nameByMemberId = new Map(party.map((member) => [member.id, member.name]));
