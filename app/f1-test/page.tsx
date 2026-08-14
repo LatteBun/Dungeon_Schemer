@@ -38,7 +38,7 @@ export default async function F1TestPage({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-muted">
-              F1 / Foundation Contract
+              F1 / Campaign Domain & State Contract
             </p>
             <h1 className="mt-2 text-3xl font-semibold text-parchment">
               캠페인·탐험 도메인 검증
