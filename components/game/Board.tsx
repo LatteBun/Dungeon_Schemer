@@ -2,6 +2,8 @@ import { Panel } from "@/components/ui/Panel";
 import type { BoardOfferId } from "@/lib/domain";
 import type { BoardOfferView } from "./campaign-view-model";
 
+const MAX_BOARD_OFFERS = 5;
+
 interface BoardProps {
   offers: BoardOfferView[];
   selectedOfferId: BoardOfferId | null;
@@ -41,7 +43,7 @@ export function Board({
   const canAccept = selected !== undefined && !selected.locked;
 
   return (
-    <Panel title={`원정 공고 · 최대 ${offers.length}개 비교`} aside={<span className="text-xs text-muted">지원 조건 / 보상</span>}>
+    <Panel title={`원정 공고 · 최대 ${MAX_BOARD_OFFERS}개 비교`} aside={<span className="text-xs text-muted">지원 조건 / 보상</span>}>
       <ul className="flex flex-col gap-2">
         {offers.map((offer) => {
           const isSelected = offer.offerId === selectedOfferId;

@@ -24,6 +24,19 @@ export function ContractPanel({ contract }: ContractPanelProps) {
       <p className="mt-1 text-xs text-muted">
         지도: 전체 {contract.nodeCount}지점 · 두 갈래 · 보스방 공개
       </p>
+      <p
+        className={`mt-1 text-xs ${contract.acceptable ? "text-trust-up" : "text-trust-down"}`}
+      >
+        {contract.acceptable
+          ? "✓ 지원 가능"
+          : `× 지원 불가 · ${
+              contract.acceptBlockReason === "insufficientReputation"
+                ? "명성 부족"
+                : contract.acceptBlockReason === "partyUnavailable"
+                  ? "파티 지원 불가"
+                  : ""
+            }`}
+      </p>
 
       <h3 className="mt-3 text-sm font-semibold text-muted">
         출전 파티 · {contract.partyLabel}

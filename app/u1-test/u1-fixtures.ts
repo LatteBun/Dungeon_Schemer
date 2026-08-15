@@ -2,14 +2,14 @@ import { generateBoard } from "@/lib/rules/board";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import type { CampaignState } from "@/lib/domain";
 
-/** 초기 상황: 등급 C·명성 0이라 B/A/S 공고가 잠긴다. */
+/** 초기 상황: 등급 C·명성 0. 게시판은 C 공고로 채워져 전부 지원 가능(잠금 데모는 mid fixture). */
 export function initialBoardState(): CampaignState {
   const base = initializeCampaign("u1-demo-initial");
   return { ...base, board: generateBoard(base) };
 }
 
 /**
- * 중반 상황: 등급 B·명성 38·던전 6개 클리어·던전 1개 실패 상승,
+ * 중반 상황: 등급 B·명성 38·던전 6개 클리어·던전 1개는 실패 횟수 표시,
  * 첫 파티 인물 상태를 다양하게 바꿔 계약 패널을 확인한다.
  */
 export function midCampaignState(): CampaignState {
@@ -22,7 +22,6 @@ export function midCampaignState(): CampaignState {
     if (index === 6) {
       return {
         ...dungeon,
-        grade: "B" as const,
         failureCount: 1,
       };
     }
