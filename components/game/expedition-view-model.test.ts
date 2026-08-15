@@ -8,14 +8,17 @@ import { INFO_CARDS } from "@/lib/content/info-cards";
 import { ITEMS } from "@/lib/content/items";
 import type {
   CampaignMember,
+  CardId,
   ChoiceId,
   DungeonEvent,
   EventId,
   EventKind,
+  InfoCard,
   ItemId,
 } from "@/lib/domain";
 import {
   toEventView,
+  toInfoOpportunityView,
   toInfoReactionsView,
   toMapView,
   toPartyStatusView,
@@ -31,6 +34,12 @@ const eventById = (id: EventId): DungeonEvent => {
   return found;
 };
 const eventKindById = (id: EventId): EventKind => eventById(id).kind;
+
+const cardById = (id: CardId): InfoCard => {
+  const found = INFO_CARDS.find((card) => card.id === id);
+  if (found === undefined) throw new Error(`no card ${id}`);
+  return found;
+};
 
 function party(): CampaignMember[] {
   const state = initializeCampaign("u2-vm");
@@ -111,6 +120,31 @@ describe("toInfoReactionsView", () => {
     for (const row of view) {
       expect(["수용", "의심", "적발"]).toContain(row.reactionLabel);
       expect(["✓", "?", "!"]).toContain(row.reactionMark);
+    }
+  });
+});
+
+describe("toInfoOpportunityView", () => {
+  it("카드 후보를 진위 라벨·기호·점선 여부로 파생하고 장면 정보를 담는다", () => {
+    const map = generateGradeMap("C", createRng("u2-vm-opportunity").derive("map"));
+    const infoNode = map.nodes.find((node) => node.hasInfoOpportunity)!;
+    const event = eventById(infoNode.eventId);
+    const pending = createInfoOpportunity({
+      node: infoNode,
+      eventKind: eventKindById(infoNode.eventId),
+      rng: createRng("u2-vm-opportunity").derive("card"),
+    });
+    const members = party();
+
+    const view = toInfoOpportunityView(pending, cardById, infoNode, event, members);
+
+    expect(view.scene.sceneText).toBe(event.title);
+    expect(view.scene.riskSummary).toContain(infoNode.riskSummary);
+    expect(view.scene.memberNames).toHaveLength(members.length);
+    expect(view.cards.length).toBeGreaterThanOrEqual(2);
+    for (const card of view.cards) {
+      expect(["✓", "!", "?"]).toContain(card.truthMark);
+      expect(card.dashed).toBe(card.truthType === "lie");
     }
   });
 });
