@@ -3,22 +3,27 @@
 import { useState } from "react";
 import { EventActions } from "@/components/game/EventActions";
 import { InfoOpportunityPanel } from "@/components/game/InfoOpportunityPanel";
+import { PartyReactionSidebar } from "@/components/game/PartyReactionSidebar";
 import {
   toEventView,
   toInfoOpportunityView,
+  type MemberReactionView,
 } from "@/components/game/expedition-view-model";
-import type { ChoiceId } from "@/lib/domain";
+import type { CardId, ChoiceId } from "@/lib/domain";
 import { useCampaignStore } from "@/lib/stores/campaign-store-provider";
 import { usePhaseGuard } from "../phase-route";
 import {
   CAMPAIGN_CONTEXT,
   useCampaignDispatch,
 } from "../play-campaign-provider";
+import { prepareInfoCardReview } from "./info-review";
 
 /** 항상 스토어의 현재 노드 이벤트를 보여준다. URL에 노드를 담지 않는다. */
 export default function EncounterPage() {
   const campaign = useCampaignStore((store) => store.campaign);
   const dispatch = useCampaignDispatch();
+  const [selectedCardId, setSelectedCardId] = useState<CardId | null>(null);
+  const [reactions, setReactions] = useState<MemberReactionView[]>([]);
   const [selectedChoiceId, setSelectedChoiceId] = useState<ChoiceId | null>(null);
   const matches = usePhaseGuard(["infoOpportunity", "event"]);
   const expedition = campaign.expedition;
@@ -45,27 +50,52 @@ export default function EncounterPage() {
     }
 
     return (
-      <InfoOpportunityPanel
-        view={toInfoOpportunityView(
-          pending,
-          (cardId) => {
-            const card = CAMPAIGN_CONTEXT.cards.find(
-              (candidate) => candidate.id === cardId,
-            );
-            if (card === undefined) {
-              throw new Error(`콘텐츠에 없는 카드입니다: ${cardId}`);
-            }
-            return card;
-          },
-          node,
-          event,
-          participants,
-        )}
-        selectedCardId={null}
-        onSelectCard={(cardId) =>
-          dispatch({ type: "chooseInfoCard", cardId })
-        }
-      />
+      <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
+        <div className="flex flex-col gap-3">
+          <InfoOpportunityPanel
+            view={toInfoOpportunityView(
+              pending,
+              (cardId) => {
+                const card = CAMPAIGN_CONTEXT.cards.find(
+                  (candidate) => candidate.id === cardId,
+                );
+                if (card === undefined) {
+                  throw new Error(`콘텐츠에 없는 카드입니다: ${cardId}`);
+                }
+                return card;
+              },
+              node,
+              event,
+              participants,
+            )}
+            selectedCardId={selectedCardId}
+            onSelectCard={(cardId) => {
+              const review = prepareInfoCardReview(
+                campaign,
+                cardId,
+                CAMPAIGN_CONTEXT,
+              );
+              setSelectedCardId(review.selectedCardId);
+              setReactions(review.reactions);
+            }}
+          />
+          {selectedCardId === null ? null : (
+            <button
+              type="button"
+              onClick={() => {
+                const cardId = selectedCardId;
+                setSelectedCardId(null);
+                setReactions([]);
+                dispatch({ type: "chooseInfoCard", cardId });
+              }}
+              className="rounded border border-edge px-3 py-2 text-sm text-parchment hover:bg-edge"
+            >
+              정보 반응 확인 완료 · 사건 행동으로 →
+            </button>
+          )}
+        </div>
+        <PartyReactionSidebar reactions={reactions} />
+      </div>
     );
   }
 
