@@ -192,6 +192,61 @@ F2는 `lib/content/events.ts`에 일반 사건 12개와 보스 사건 풀을 제
 
 조정은 이 보고서를 근거로 **별도 커밋**에서 한다. 상위 plan이 `수치가 목표와 다르면 코드를 임의로 맞추지 말고 보고서를 먼저 남긴 뒤 공식 밸런스 상수 변경을 별도 커밋으로 수행한다`고 정했다.
 
+## 밸런스 조정과 재측정
+
+전체 보고서는 [BACKTEST_REPORT.md](BACKTEST_REPORT.md)에 있다. `pnpm backtest`가 만드는 파일이므로 **직접 고치지 않는다.**
+
+### 절차
+
+1. 보고서를 근거로 **무엇을 왜 바꾸는지** 먼저 정한다
+2. 상수만 바꾸는 커밋을 만든다. 규칙 구조 변경과 섞지 않는다
+3. `pnpm backtest`로 보고서를 다시 만든다
+4. `git diff docs/technical/BACKTEST_REPORT.md`로 무엇이 얼마나 달라졌는지 확인한다
+5. 같은 커밋에 갱신된 보고서를 넣는다
+
+보고서를 파일로 떨어뜨리는 이유가 4단계다. 콘솔로만 보면 패치 전후를 사람이 눈으로 맞춰야 한다.
+
+### 명령
+
+```bash
+pnpm backtest                      # 10,000 시드 × 3전략, 약 80초
+BACKTEST_SEEDS=200 pnpm backtest   # 빠르게 확인할 때
+```
+
+`pnpm test`에는 잡히지 않는다. 실행기 파일이 `*.run.ts`이고 [전용 설정](../../vitest.backtest.config.ts)으로만 돈다. 1분 넘게 도는 작업을 매 테스트 실행에 넣지 않기 위해서다. 대신 `pnpm test`의 백테스트 테스트는 60시드로 규약만 확인한다.
+
+### 조정할 수 있는 상수
+
+| 파일 | 상수 | 무엇을 바꾸나 |
+| --- | --- | --- |
+| `lib/content/effects.ts` | `EVENT_KIND_BASE_HP` | 개입하지 않아도 깎이는 분류별 HP |
+| | `EVENT_EFFECT_HP` | 지원·방해 등 행동의 보정 |
+| | `ITEM_EFFECT_HP` | 상품을 사서 썼을 때의 보정 |
+| | `GRADE_EFFECT_SCALE` | 등급이 사건 효과에 주는 배율 |
+| | `BOSS_MODIFIER_MIN` · `MAX` | 보스 피해 보정의 누적 상하한 |
+| `lib/content/dungeons.ts` | `CAMPAIGN_GRADE_CONFIG` | 등급별 지원 명성·보상·지도 크기 |
+| | `INITIAL_DUNGEON_DEFINITIONS` | 시작 던전 15개의 등급 구성 |
+| `lib/content/bosses.ts` | `BOSSES` | 등급별 보스 기본 피해 |
+| `lib/content/items.ts` | `ITEMS` | 상품 가격 |
+| `lib/rules/promotion.ts` | `PROMOTION_THRESHOLDS` | B·A·S 승급 점수 기준 |
+| `lib/rules/settlement.ts` | `CLEAR_REWARD_RATIO` | 생존 인원별 보상 비율 |
+| `lib/rules/info.ts` | `BOSS_DAMAGE_MODIFIERS` | 진위별 보스 피해 보정 |
+| `lib/rules/party-lifecycle.ts` | `REST_HEAL_RATIO` | 비출전 생존자 회복률 |
+
+### 상수를 바꾸면 함께 깨지는 것
+
+이 셋은 상수를 그대로 단정하고 있으므로 조정과 같은 커밋에서 함께 고친다. **테스트가 깨지는 것이 정상이고, 깨지지 않으면 그 상수가 어디에도 쓰이지 않는다는 뜻이다.**
+
+| 무엇 | 어디 |
+| --- | --- |
+| 기준 승급 시나리오 | `lib/backtest/campaign-simulator.test.ts`의 checkpoint 120·274·370 |
+| 승급 기준 상수 | `lib/rules/promotion.test.ts` |
+| 사건 효과 계산 | `lib/rules/event.test.ts` |
+| 정산 보상 | `lib/rules/settlement.test.ts` |
+| 문서의 수치표 | [성장과 엔딩](../systems/PROGRESSION_AND_ENDINGS.md), [던전 사건과 보스](../systems/DUNGEON_EVENTS_AND_BOSSES.md) |
+
+문서를 함께 고치는 것이 중요하다. 상수의 근거는 코드가 아니라 그 문서에 먼저 적혀 있다.
+
 ## 배정표
 
 | ID | 구현 영역 | 완료 기준 | 선행 | 풀리는 것 | 담당 | 상태 |
