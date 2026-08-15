@@ -96,7 +96,7 @@ describe("toBossResultView", () => {
     const view = toBossResultView(resolution, membersBefore);
 
     expect(view.members).toHaveLength(membersBefore.length);
-    expect(["클리어", "전멸"]).toContain(view.outcomeLabel);
+    expect(view.outcomeLabel).toBe("클리어");
     for (const member of view.members) {
       const before = membersBefore.find((candidate) => candidate.id === member.memberId)!;
       expect(member.hpBefore).toBe(before.currentHp);
@@ -260,7 +260,7 @@ export interface BossMemberView {
   survived: boolean;
   survivalMark: string;
   survivalLabel: string;
-  hpBefore: number;
+  hpBefore: number | null;
   hpAfter: number;
   damage: number;
   modifierNote: string;
@@ -295,9 +295,13 @@ export function toBossResultView(
 
   const members = resolution.members.map((entry): BossMemberView => {
     const member = entry.member;
-    // 스냅샷이 어긋나도 파티원을 화면에서 지우지 않는다. 사라진 사람은
-    // 잘못된 숫자보다 나쁘다.
-    const hpBefore = beforeById.get(member.id as string)?.currentHp ?? member.currentHp;
+    // BossMemberResult.member는 피해가 반영된 사후 상태다. 누락된 생존자의
+    // 전투 전 HP만 역산하고, 사망자는 0 clamp 전 값을 알 수 없어 null로 둔다.
+    const snapshot = beforeById.get(member.id as string);
+    const hpBefore = snapshot?.currentHp
+      ?? (member.currentHp === 0
+        ? null
+        : Math.min(member.maxHp, member.currentHp + entry.damage));
     const survived = survivors.has(member.id as string);
     const verification = resolution.verifications.find(
       (candidate) => candidate.memberId === member.id,
@@ -311,7 +315,7 @@ export function toBossResultView(
       survivalMark: survived ? "✓" : "×",
       survivalLabel: survived ? "생존" : "사망",
       hpBefore,
-      hpAfter: Math.max(0, hpBefore - entry.damage),
+      hpAfter: member.currentHp,
       damage: entry.damage,
       modifierNote: modifierNoteOf(entry.damageModifier),
       verificationNote: verification?.change.reason ?? null,
@@ -484,7 +488,7 @@ export function BossResultPanel({ view }: BossResultPanelProps) {
               <span className="ml-1 text-xs text-muted">{member.className}</span>
             </p>
             <p className="mt-1 text-xs text-muted">
-              HP {member.hpBefore} → {member.hpAfter} · 피해 {member.damage}
+              HP {member.hpBefore ?? "미상"} → {member.hpAfter} · 피해 {member.damage}
             </p>
             <p className="mt-1 text-xs text-muted">원인: {member.modifierNote}</p>
             {member.verificationNote === null ? null : (

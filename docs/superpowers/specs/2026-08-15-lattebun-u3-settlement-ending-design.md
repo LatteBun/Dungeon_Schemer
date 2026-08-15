@@ -127,7 +127,7 @@ export interface BossMemberView {
   survived: boolean;
   survivalMark: string;        // "✓" | "×"
   survivalLabel: string;       // "생존" | "사망"
-  hpBefore: number;
+  hpBefore: number | null;     // clamp로 복원 불가한 누락 스냅샷은 null
   hpAfter: number;
   damage: number;
   modifierNote: string;        // "보스 피해 +25%" | "보스 피해 -20%" | "보정 없음"
@@ -147,7 +147,7 @@ export function toBossResultView(
 ): BossResultView;
 ```
 
-- `hpBefore`는 `membersBefore`(보스전 입력 시점 스냅샷)에서 읽는다. `hpAfter = Math.max(0, hpBefore - damage)`.
+- `hpBefore`는 `membersBefore`(보스전 입력 시점 스냅샷)에서 읽고, `hpAfter`는 이미 피해가 반영된 `resolution.members[].member.currentHp`를 그대로 쓴다. 스냅샷이 없는 생존자는 `min(maxHp, hpAfter + damage)`로 전투 전 HP를 복원한다. 사망자는 HP 0 clamp로 원래 값이 소실되므로 `null`로 두고 화면에 `미상`을 표시한다.
 - `survived`는 `resolution.survivorIds` 포함 여부로 정한다.
 - `modifierNote`는 `damageModifier`를 백분율로 포맷한다. `0`이면 `"보정 없음"`, 양수면 `+`를 붙인다. 소수 오차를 피하려 `Math.round(modifier * 100)`을 쓴다.
 - `verificationNote`·`trustDelta`는 `resolution.verifications`에서 `memberId`가 같은 첫 항목의 `change.reason`·`change.delta`를 쓴다. 없으면 `null`·`0`.
@@ -271,7 +271,7 @@ export function completedCampaignOutcome(seed: string): ExpeditionOutcome;
 
 - 4단계 진행 루프는 최대 반복 횟수를 두고, 초과하면 명시적으로 오류를 던진다. 규칙이 예상과 다르게 동작할 때 무한 루프로 브라우저를 멈추지 않기 위함이다.
 - `toEndingView`는 `ending`이 `null`이면 `null`을 돌려주고, 하네스는 "캠페인이 계속된다" 안내를 보여준다.
-- `toBossResultView`는 `membersBefore`에서 `memberId`가 같은 멤버를 찾아 `hpBefore`로 쓴다. 찾지 못하면 `resolution.members[].member.currentHp`를 폴백으로 쓴다. 어느 쪽이든 항목을 건너뛰지 않는다. 파티원이 화면에서 조용히 사라지는 것이 잘못된 HP를 보이는 것보다 나쁘기 때문이다. 폴백 경로를 테스트로 고정한다.
+- `toBossResultView`는 `membersBefore`에서 `memberId`가 같은 멤버를 찾아 `hpBefore`로 쓴다. 찾지 못한 생존자는 `BossMemberResult.member.currentHp`가 사후 HP라는 계약에 따라 `min(maxHp, currentHp + damage)`로 전투 전 HP를 복원하고, 사망자는 clamp 전 값을 알 수 없으므로 `null`로 둔다. `hpAfter`는 항상 규칙의 사후 HP를 쓰므로 피해를 두 번 차감하지 않는다. 어느 쪽이든 항목을 건너뛰지 않으며 두 폴백 경로를 테스트로 고정한다.
 - view-model은 입력 배열을 복사·파생만 하고 변경하지 않는다.
 
 ## 테스트
@@ -279,7 +279,7 @@ export function completedCampaignOutcome(seed: string): ExpeditionOutcome;
 ### 단위 테스트(Vitest, node 환경, DOM 없음)
 
 `settlement-view-model.test.ts`:
-- `toBossResultView`: `hpAfter = max(0, hpBefore - damage)`, 사망자 판정(`survivorIds` 미포함), `modifierNote` 포맷(`+25%`·`-20%`·`보정 없음`), `verifications`의 `reason`·`delta`가 해당 멤버에 매칭, 검증 없는 멤버는 `null`·`0`
+- `toBossResultView`: 사후 HP 원문과 스냅샷 누락 복원, 사망자 판정(`survivorIds` 미포함), 정확한 결과 라벨, `modifierNote` 포맷(`+25%`·`-20%`·`보정 없음`), `verifications`의 `reason`·`delta`가 해당 멤버에 매칭, 검증 없는 멤버는 `null`·`0`
 - `toSettlementTimelineView`: `order`가 1부터, 입력 순서 유지, `summary` 원문 보존, 단계가 6개 미만이어도 동작
 - `toEndingView`: 네 엔딩 이름 매핑, `ending === null`이면 `null`, 최종 등급·승급 점수, 생존률 반올림, 요약 수치가 `CampaignState`와 일치
 

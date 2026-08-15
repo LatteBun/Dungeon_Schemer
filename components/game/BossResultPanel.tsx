@@ -27,7 +27,7 @@ export function BossResultPanel({ view }: BossResultPanelProps) {
               <span className="ml-1 text-xs text-muted">{member.className}</span>
             </p>
             <p className="mt-1 text-xs text-muted">
-              HP {member.hpBefore} → {member.hpAfter} · 피해 {member.damage}
+              HP {member.hpBefore ?? "미상"} → {member.hpAfter} · 피해 {member.damage}
             </p>
             <p className="mt-1 text-xs text-muted">원인: {member.modifierNote}</p>
             {member.verificationNote === null ? null : (

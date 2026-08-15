@@ -28,7 +28,7 @@ export interface BossMemberView {
   survived: boolean;
   survivalMark: string;
   survivalLabel: string;
-  hpBefore: number;
+  hpBefore: number | null;
   hpAfter: number;
   damage: number;
   modifierNote: string;
@@ -63,9 +63,13 @@ export function toBossResultView(
 
   const members = resolution.members.map((entry): BossMemberView => {
     const member = entry.member;
-    // 스냅샷이 어긋나도 파티원을 화면에서 지우지 않는다. 사라진 사람은
-    // 잘못된 숫자보다 나쁘다.
-    const hpBefore = beforeById.get(member.id as string)?.currentHp ?? member.currentHp;
+    // BossMemberResult.member는 피해가 반영된 사후 상태다. 스냅샷이 없으면
+    // 사후 HP에 피해를 되더해 전투 전 HP를 복원하고, 사후 HP는 규칙 값을 쓴다.
+    const snapshot = beforeById.get(member.id as string);
+    const hpBefore = snapshot?.currentHp
+      ?? (member.currentHp === 0
+        ? null
+        : Math.min(member.maxHp, member.currentHp + entry.damage));
     const survived = survivors.has(member.id as string);
     const verification = resolution.verifications.find(
       (candidate) => candidate.memberId === member.id,
@@ -79,7 +83,7 @@ export function toBossResultView(
       survivalMark: survived ? "✓" : "×",
       survivalLabel: survived ? "생존" : "사망",
       hpBefore,
-      hpAfter: Math.max(0, hpBefore - entry.damage),
+      hpAfter: member.currentHp,
       damage: entry.damage,
       modifierNote: modifierNoteOf(entry.damageModifier),
       verificationNote: verification?.change.reason ?? null,

@@ -4,7 +4,16 @@ import { createRng } from "@/lib/rng";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { resolveBossFight } from "@/lib/rules/boss";
 import { resolveEnding } from "@/lib/rules/ending";
-import type { CampaignMember, CampaignState } from "@/lib/domain";
+import { BOSS_DAMAGE_MODIFIERS } from "@/lib/rules/info";
+import { runOneExpedition } from "@/app/u3-test/u3-fixtures";
+import type {
+  CampaignMember,
+  CampaignState,
+  CardId,
+  InfoRecord,
+  MemberId,
+  TruthType,
+} from "@/lib/domain";
 import type { SettlementStep } from "@/lib/rules/settlement";
 import {
   toBossResultView,
@@ -19,8 +28,24 @@ function firstParty(state: CampaignState): CampaignMember[] {
   );
 }
 
+function bossRecord(
+  memberId: MemberId,
+  truthType: TruthType,
+  reaction: InfoRecord["reaction"],
+): InfoRecord {
+  return {
+    cardId: `u3-${truthType}-${memberId}` as CardId,
+    truthType,
+    subject: "boss",
+    memberId,
+    reaction,
+    modifier: reaction === "accepted" ? BOSS_DAMAGE_MODIFIERS[truthType] : 0,
+    pendingVerification: truthType === "lie" && reaction === "accepted",
+  };
+}
+
 describe("toBossResultView", () => {
-  it("실제 보스전 결과에서 생존 여부와 HP 변화를 파생한다", () => {
+  it("실제 클리어 결과를 정확한 라벨과 HP 변화로 파생한다", () => {
     const state = initializeCampaign("u3-boss");
     const membersBefore = firstParty(state).map((member, index) => ({
       ...member,
@@ -36,35 +61,123 @@ describe("toBossResultView", () => {
 
     const view = toBossResultView(resolution, membersBefore);
 
+    expect(view.outcome).toBe("clear");
+    expect(view.outcomeLabel).toBe("클리어");
     expect(view.members).toHaveLength(membersBefore.length);
-    expect(["클리어", "전멸"]).toContain(view.outcomeLabel);
     for (const member of view.members) {
       const before = membersBefore.find((candidate) => candidate.id === member.memberId)!;
       expect(member.hpBefore).toBe(before.currentHp);
-      expect(member.hpAfter).toBe(Math.max(0, member.hpBefore - member.damage));
+      expect(member.hpAfter).toBe(Math.max(0, before.currentHp - member.damage));
       expect(member.survivalMark).toBe(member.survived ? "✓" : "×");
       expect(member.survivalLabel).toBe(member.survived ? "생존" : "사망");
     }
   });
 
-  it("피해 보정을 백분율 문구로 바꾸고 0이면 보정 없음으로 쓴다", () => {
+  it("실제 전멸 결과를 정확한 라벨로 파생한다", () => {
+    const state = initializeCampaign("u3-wipe-label");
+    const membersBefore = firstParty(state).map((member) => ({
+      ...member,
+      currentHp: 1,
+    }));
+    const resolution = resolveBossFight({
+      boss: BOSSES.find((boss) => boss.grade === "S")!,
+      members: membersBefore,
+      infoRecords: [],
+      rng: createRng("u3-wipe-label").derive("boss"),
+    });
+
+    const view = toBossResultView(resolution, membersBefore);
+
+    expect(view.outcome).toBe("wipe");
+    expect(view.outcomeLabel).toBe("전멸");
+  });
+
+  it("양·음수 피해 보정과 사후 검증을 해당 파티원에게 조인한다", () => {
     const state = initializeCampaign("u3-modifier");
+    const membersBefore = firstParty(state).map((member) => ({ ...member }));
+    const [truthMember, deceivedMember, suspiciousMember] = membersBefore;
+    const infoRecords = [
+      bossRecord(truthMember.id, "truth", "accepted"),
+      bossRecord(deceivedMember.id, "lie", "accepted"),
+      bossRecord(suspiciousMember.id, "lie", "suspected"),
+    ];
+    const resolution = resolveBossFight({
+      boss: BOSSES.find((boss) => boss.grade === "C")!,
+      members: membersBefore,
+      infoRecords,
+      rng: createRng("u3-modifier").derive("boss"),
+    });
+
+    const view = toBossResultView(resolution, membersBefore);
+    const truthView = view.members.find((member) => member.memberId === truthMember.id)!;
+    const deceivedView = view.members.find(
+      (member) => member.memberId === deceivedMember.id,
+    )!;
+    const suspiciousView = view.members.find(
+      (member) => member.memberId === suspiciousMember.id,
+    )!;
+    const deceivedVerification = resolution.verifications.find(
+      (verification) => verification.memberId === deceivedMember.id,
+    )!;
+    const suspiciousVerification = resolution.verifications.find(
+      (verification) => verification.memberId === suspiciousMember.id,
+    )!;
+
+    expect(truthView.modifierNote).toBe("보스 피해 -20%");
+    expect(truthView.verificationNote).toBeNull();
+    expect(truthView.trustDelta).toBe(0);
+    expect(deceivedView.modifierNote).toBe("보스 피해 +25%");
+    expect(deceivedView.verificationNote).toBe(deceivedVerification.change.reason);
+    expect(deceivedView.trustDelta).toBe(deceivedVerification.change.delta);
+    expect(suspiciousView.modifierNote).toBe("보정 없음");
+    expect(suspiciousView.verificationNote).toBe(suspiciousVerification.change.reason);
+    expect(suspiciousView.trustDelta).toBe(suspiciousVerification.change.delta);
+  });
+
+  it("보스 전 스냅샷이 없으면 사후 HP와 피해로 전후 HP를 복원한다", () => {
+    const state = initializeCampaign("u3-fallback");
     const membersBefore = firstParty(state).map((member) => ({ ...member }));
     const resolution = resolveBossFight({
       boss: BOSSES.find((boss) => boss.grade === "C")!,
       members: membersBefore,
       infoRecords: [],
-      rng: createRng("u3-modifier").derive("boss"),
+      rng: createRng("u3-fallback").derive("boss"),
     });
+    const missingEntry = resolution.members[0];
 
-    const view = toBossResultView(resolution, membersBefore);
+    const view = toBossResultView(resolution, membersBefore.slice(1));
+    const missingView = view.members.find(
+      (member) => member.memberId === missingEntry.member.id,
+    )!;
 
-    // 정보 카드를 전달하지 않았으므로 모든 보정이 0이다.
-    for (const member of view.members) {
-      expect(member.modifierNote).toBe("보정 없음");
-      expect(member.verificationNote).toBeNull();
-      expect(member.trustDelta).toBe(0);
-    }
+    expect(missingView.hpBefore).toBe(
+      missingEntry.member.currentHp + missingEntry.damage,
+    );
+    expect(missingView.hpAfter).toBe(missingEntry.member.currentHp);
+  });
+
+  it("사망자의 누락된 전투 전 HP는 clamp 뒤 복원할 수 없으므로 null이다", () => {
+    const state = initializeCampaign("u3-dead-fallback");
+    const membersBefore = firstParty(state).map((member) => ({
+      ...member,
+      currentHp: 1,
+    }));
+    const resolution = resolveBossFight({
+      boss: BOSSES.find((boss) => boss.grade === "S")!,
+      members: membersBefore,
+      infoRecords: [],
+      rng: createRng("u3-dead-fallback").derive("boss"),
+    });
+    const missingEntry = resolution.members[0];
+
+    const view = toBossResultView(resolution, membersBefore.slice(1));
+    const missingView = view.members.find(
+      (member) => member.memberId === missingEntry.member.id,
+    )!;
+
+    expect(missingEntry.member.currentHp).toBe(0);
+    expect(missingView.hpBefore).toBeNull();
+    expect(missingView.hpAfter).toBe(0);
   });
 });
 
@@ -86,6 +199,32 @@ describe("toSettlementTimelineView", () => {
       "엔딩 없음",
     ]);
     expect(view[0].label).toBe("생존·신뢰");
+  });
+
+  it("실제 정산 규칙의 6단계 원문과 라벨을 보존한다", () => {
+    const steps = runOneExpedition("u3-real-settlement").steps;
+
+    const view = toSettlementTimelineView(steps);
+
+    expect(view.map((step) => step.kind)).toEqual([
+      "survival",
+      "reward",
+      "dungeon",
+      "promotion",
+      "party",
+      "ending",
+    ]);
+    expect(view.map((step) => step.label)).toEqual([
+      "생존·신뢰",
+      "계약 보상",
+      "던전",
+      "승급",
+      "파티·회복",
+      "다음 상태",
+    ]);
+    expect(view.map((step) => step.summary)).toEqual(
+      steps.map((step) => step.summary),
+    );
   });
 });
 
@@ -118,5 +257,75 @@ describe("toEndingView", () => {
     expect(view.summary.cumulativeGold).toBe(200);
     expect(view.summary.seed).toBe("u3-complete");
     expect(view.summary.survivalRate).toBe(100);
+  });
+
+  it("나머지 세 엔딩을 규칙 결과와 정확한 화면 이름으로 매핑한다", () => {
+    const base = initializeCampaign("u3-ending-labels");
+    const survivorIds = base.parties[0].memberIds.slice(0, 2);
+    const distrustState: CampaignState = {
+      ...base,
+      members: base.members.map((member) =>
+        survivorIds.includes(member.id) ? { ...member, trust: 0 } : member),
+    };
+    const supportUnavailableState: CampaignState = {
+      ...base,
+      currentReputation: -100,
+    };
+    const partyExhaustedState: CampaignState = {
+      ...base,
+      parties: base.parties.map((party) => ({ ...party, complete: false })),
+    };
+    const cases = [
+      {
+        state: distrustState,
+        survivors: survivorIds,
+        endingId: "distrust",
+        label: "불신의 대가",
+      },
+      {
+        state: supportUnavailableState,
+        survivors: [] as MemberId[],
+        endingId: "supportUnavailable",
+        label: "길잡이 자격 박탈",
+      },
+      {
+        state: partyExhaustedState,
+        survivors: [] as MemberId[],
+        endingId: "partyExhausted",
+        label: "용사들의 시대가 끝나다",
+      },
+    ] as const;
+
+    for (const testCase of cases) {
+      const ending = resolveEnding(testCase.state, testCase.survivors)!;
+      const view = toEndingView(testCase.state, ending)!;
+
+      expect(ending.id).toBe(testCase.endingId);
+      expect(view.endingLabel).toBe(testCase.label);
+      expect(view.reason).toBe(ending.reason);
+    }
+  });
+
+  it("생존률을 가장 가까운 정수로 반올림한다", () => {
+    const base = initializeCampaign("u3-survival-rounding");
+    const state: CampaignState = {
+      ...base,
+      dungeons: base.dungeons.map((dungeon) => ({
+        ...dungeon,
+        status: "cleared" as const,
+      })),
+      members: base.members.slice(0, 3).map((member, index) => ({
+        ...member,
+        alive: index < 2,
+        currentHp: index < 2 ? member.currentHp : 0,
+      })),
+    };
+    const ending = resolveEnding(state, [])!;
+
+    const view = toEndingView(state, ending)!;
+
+    expect(view.summary.aliveMembers).toBe(2);
+    expect(view.summary.deadMembers).toBe(1);
+    expect(view.summary.survivalRate).toBe(67);
   });
 });
