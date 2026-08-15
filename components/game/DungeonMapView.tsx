@@ -77,7 +77,18 @@ export function DungeonMapView({
                 key={node.id}
                 transform={`translate(${node.x}, ${node.y + 30})`}
                 onClick={clickable ? () => onSelectNode(node.id) : undefined}
+                onKeyDown={
+                  clickable
+                    ? (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onSelectNode(node.id);
+                        }
+                      }
+                    : undefined
+                }
                 role={clickable ? "button" : undefined}
+                tabIndex={clickable ? 0 : undefined}
                 aria-disabled={node.state === "inactive"}
                 aria-pressed={selected}
                 style={{ cursor: clickable ? "pointer" : "default" }}
