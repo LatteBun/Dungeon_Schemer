@@ -17,6 +17,7 @@ import {
   affordableChoiceIds,
   createCampaignMachineContext,
   transitionCampaign,
+  transitionCampaignDetailed,
 } from "@/lib/flow/campaign-machine";
 import type { CampaignAction } from "@/lib/flow/campaign-machine";
 
@@ -365,5 +366,106 @@ describe("재현성과 완주", () => {
       finished.currentReputation !== start.currentReputation
       || finished.cumulativeGold !== start.cumulativeGold,
     ).toBe(true);
+  });
+});
+
+describe("transitionCampaignDetailed", () => {
+  /** 보스 단계까지 진행한 상태를 만든다. 첫 유효 선택만 고른다. */
+  function stateAtBoss(seed: string): CampaignState {
+    let state = transitionCampaign(
+      initializeCampaign(seed),
+      { type: "openBoard" },
+      CONTEXT,
+    );
+    const offer = state.board.find((candidate) => !candidate.locked)!;
+    state = transitionCampaign(
+      state,
+      { type: "acceptContract", offerId: offer.id },
+      CONTEXT,
+    );
+
+    for (let guard = 0; state.phase !== "boss"; guard += 1) {
+      if (guard > 100) throw new Error("보스 단계에 닿지 않는다");
+      const expedition = state.expedition!;
+
+      if (state.phase === "map") {
+        const current = expedition.map.nodes.find(
+          (node) => node.id === expedition.currentNodeId,
+        )!;
+        state = transitionCampaign(
+          state,
+          { type: "selectNode", nodeId: current.nextNodeIds[0] },
+          CONTEXT,
+        );
+      } else if (state.phase === "infoOpportunity") {
+        state = transitionCampaign(
+          state,
+          { type: "chooseInfoCard", cardId: expedition.pendingInfo!.cardIds[0] },
+          CONTEXT,
+        );
+      } else if (state.phase === "event") {
+        const choiceId =
+          affordableChoiceIds(state, CONTEXT)[0] ?? expedition.pendingEvent!.choiceIds[0];
+        state = transitionCampaign(state, { type: "chooseEvent", choiceId }, CONTEXT);
+      } else {
+        throw new Error(`예상 밖 단계: ${state.phase}`);
+      }
+    }
+
+    return state;
+  }
+
+  it("resolveBoss는 상태와 함께 보스 결과를 돌려준다", () => {
+    const transition = transitionCampaignDetailed(
+      stateAtBoss("detailed-boss"),
+      { type: "resolveBoss" },
+      CONTEXT,
+    );
+
+    expect(transition.state.phase).toBe("settlement");
+    expect(transition.bossResolution).toBeDefined();
+    expect(transition.bossResolution!.members.length).toBeGreaterThan(0);
+    expect(transition.settlementSteps).toBeUndefined();
+  });
+
+  it("applySettlement은 상태와 함께 정산 단계를 돌려준다", () => {
+    const beforeSettlement = transitionCampaign(
+      stateAtBoss("detailed-settlement"),
+      { type: "resolveBoss" },
+      CONTEXT,
+    );
+    const transition = transitionCampaignDetailed(
+      beforeSettlement,
+      { type: "applySettlement" },
+      CONTEXT,
+    );
+
+    expect(transition.settlementSteps).toBeDefined();
+    expect(transition.settlementSteps!.length).toBeGreaterThan(0);
+    expect(transition.settlementSteps![0].kind).toBe("survival");
+    expect(transition.bossResolution).toBeUndefined();
+  });
+
+  it("결과가 없는 행동은 상태만 돌려준다", () => {
+    const transition = transitionCampaignDetailed(
+      initializeCampaign("detailed-open"),
+      { type: "openBoard" },
+      CONTEXT,
+    );
+
+    expect(transition.bossResolution).toBeUndefined();
+    expect(transition.settlementSteps).toBeUndefined();
+  });
+
+  it("transitionCampaign은 detailed의 state와 같다", () => {
+    const board = initializeCampaign("detailed-wrapper");
+    const viaWrapper = transitionCampaign(board, { type: "openBoard" }, CONTEXT);
+    const viaDetailed = transitionCampaignDetailed(
+      board,
+      { type: "openBoard" },
+      CONTEXT,
+    ).state;
+
+    expect(viaWrapper).toEqual(viaDetailed);
   });
 });

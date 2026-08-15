@@ -23,6 +23,7 @@ import { createRng } from "@/lib/rng";
 import type { Rng } from "@/lib/rng";
 import { canAcceptOffer, generateBoard } from "@/lib/rules/board";
 import { resolveBossFight } from "@/lib/rules/boss";
+import type { BossResolution } from "@/lib/rules/boss";
 import { resolveEventChoice } from "@/lib/rules/event";
 import {
   applyInfoRecord,
@@ -32,6 +33,7 @@ import {
 } from "@/lib/rules/info";
 import { generateGradeMap } from "@/lib/rules/map";
 import { settleExpedition } from "@/lib/rules/settlement";
+import type { SettlementStep } from "@/lib/rules/settlement";
 
 export type CampaignAction =
   | { readonly type: "openBoard" }
@@ -41,6 +43,20 @@ export type CampaignAction =
   | { readonly type: "chooseEvent"; readonly choiceId: ChoiceId }
   | { readonly type: "resolveBoss" }
   | { readonly type: "applySettlement" };
+
+/**
+ * 전이 결과. 규칙이 만든 설명을 상태 밖으로 함께 내보낸다.
+ *
+ * `CampaignState`에는 보스 피해 보정과 정산 원인 사슬이 남지 않아, 상태만
+ * 돌려주면 화면이 "왜 그렇게 됐는지"를 영영 알 수 없다.
+ */
+export interface CampaignTransition {
+  readonly state: CampaignState;
+  /** `resolveBoss`일 때만 있다. */
+  readonly bossResolution?: BossResolution;
+  /** `applySettlement`일 때만 있다. */
+  readonly settlementSteps?: SettlementStep[];
+}
 
 export interface CampaignContentPools {
   readonly events: DungeonEventPools;
@@ -448,7 +464,7 @@ function chooseEvent(
 function resolveBoss(
   state: CampaignState,
   context: CampaignMachineContext,
-): CampaignState {
+): CampaignTransition {
   const expedition = requireExpedition(state);
   const dungeon = findDungeon(state, expedition);
   const boss = context.bossByGrade.get(dungeon.grade);
@@ -467,29 +483,32 @@ function resolveBoss(
   const afterBoss = mergeMembers(participants, fought);
 
   return {
-    ...state,
-    phase: "settlement",
-    members: mergeMembers(state.members, fought),
-    expedition: {
-      ...expedition,
-      bossResult: {
-        survivorIds: resolution.survivorIds,
-        casualtyIds: resolution.casualtyIds,
-        damageByMember: Object.fromEntries(
-          resolution.members.map((entry) => [entry.member.id as string, entry.damage]),
+    state: {
+      ...state,
+      phase: "settlement",
+      members: mergeMembers(state.members, fought),
+      expedition: {
+        ...expedition,
+        bossResult: {
+          survivorIds: resolution.survivorIds,
+          casualtyIds: resolution.casualtyIds,
+          damageByMember: Object.fromEntries(
+            resolution.members.map((entry) => [entry.member.id as string, entry.damage]),
+          ),
+        },
+        result: resultFor(
+          afterBoss,
+          resolution.outcome === "clear" ? "보스를 넘고 살아 돌아왔다" : "보스전에서 전멸",
         ),
+        log: [...expedition.log, {
+          at: expedition.log.length,
+          kind: "boss",
+          summary: `${boss.name} · ${resolution.outcome === "clear" ? "클리어" : "전멸"}`,
+          memberIds: resolution.casualtyIds,
+        }],
       },
-      result: resultFor(
-        afterBoss,
-        resolution.outcome === "clear" ? "보스를 넘고 살아 돌아왔다" : "보스전에서 전멸",
-      ),
-      log: [...expedition.log, {
-        at: expedition.log.length,
-        kind: "boss",
-        summary: `${boss.name} · ${resolution.outcome === "clear" ? "클리어" : "전멸"}`,
-        memberIds: resolution.casualtyIds,
-      }],
     },
+    bossResolution: resolution,
   };
 }
 
@@ -499,31 +518,31 @@ function resolveBoss(
  * 검증을 상태를 만들기 전에 끝내므로 실패한 행동 뒤에도 원래 상태가 그대로다.
  * docs/superpowers/specs/2026-08-15-sbh3821-campaign-machine-backtest-design.md
  */
-export function transitionCampaign(
+export function transitionCampaignDetailed(
   state: CampaignState,
   action: CampaignAction,
   context: CampaignMachineContext,
-): CampaignState {
+): CampaignTransition {
   switch (action.type) {
     case "openBoard":
       if (state.phase !== "board") invalidTransition(state, action);
-      return { ...state, board: generateBoard(state) };
+      return { state: { ...state, board: generateBoard(state) } };
 
     case "acceptContract":
       if (state.phase !== "board") invalidTransition(state, action);
-      return acceptContract(state, action.offerId, context);
+      return { state: acceptContract(state, action.offerId, context) };
 
     case "selectNode":
       if (state.phase !== "map") invalidTransition(state, action);
-      return selectNode(state, action.nodeId, context);
+      return { state: selectNode(state, action.nodeId, context) };
 
     case "chooseInfoCard":
       if (state.phase !== "infoOpportunity") invalidTransition(state, action);
-      return chooseInfoCard(state, action.cardId, context);
+      return { state: chooseInfoCard(state, action.cardId, context) };
 
     case "chooseEvent":
       if (state.phase !== "event") invalidTransition(state, action);
-      return chooseEvent(state, action.choiceId, context);
+      return { state: chooseEvent(state, action.choiceId, context) };
 
     case "resolveBoss":
       if (state.phase !== "boss") invalidTransition(state, action);
@@ -533,13 +552,23 @@ export function transitionCampaign(
       if (state.phase !== "settlement") invalidTransition(state, action);
       const expedition = requireExpedition(state);
       const dungeon = findDungeon(state, expedition);
-      return settleExpedition({
+      const settled = settleExpedition({
         state,
         expedition,
         rng: createRng(expeditionKey(state, dungeon)).derive("regroup"),
-      }).state;
+      });
+      return { state: settled.state, settlementSteps: settled.steps };
     }
   }
+}
+
+/** 결과가 필요 없는 호출부를 위한 편의 함수다. */
+export function transitionCampaign(
+  state: CampaignState,
+  action: CampaignAction,
+  context: CampaignMachineContext,
+): CampaignState {
+  return transitionCampaignDetailed(state, action, context).state;
 }
 
 export type { MemberId };
