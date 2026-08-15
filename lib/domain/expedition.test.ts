@@ -38,6 +38,7 @@ describe("탐험 도메인 계약", () => {
         nodeIds: ["node-entry", "node-boss"],
         regularEventCount: 1,
         infoCount: 1,
+        bossRelatedInfoCount: 1,
       },
     ]);
   });

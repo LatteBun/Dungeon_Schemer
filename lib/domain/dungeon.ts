@@ -1,4 +1,4 @@
-import type { ChoiceId, EventId, NodeId } from "./ids";
+import type { ChoiceId, EventId, ItemId, NodeId } from "./ids";
 import type { EventEffectTag } from "./content";
 import type { EventTarget } from "./info";
 
@@ -34,6 +34,8 @@ export interface EventChoice {
   /** "발각되면 처형"처럼 플레이어가 아는 위험이다. */
   knownRisk: string;
   effectTags: readonly EventEffectTag[];
+  /** `trade` 태그가 사는 상품. 거래 선택지가 아니면 없다. */
+  itemId?: ItemId;
 }
 
 export interface DungeonEvent {

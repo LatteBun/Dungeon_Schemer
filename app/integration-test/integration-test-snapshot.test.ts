@@ -18,7 +18,7 @@ describe("F1·F2·C1 통합 snapshot", () => {
 
     expect(snapshot.f1.campaign.dungeonCount).toBeGreaterThan(0);
     expect(snapshot.f2.events.total).toBe(12);
-    expect(snapshot.f2.cards.total).toBe(12);
+    expect(snapshot.f2.cards.total).toBe(36);
     expect(snapshot.c1).toMatchObject({
       phase: "board",
       rank: "C",

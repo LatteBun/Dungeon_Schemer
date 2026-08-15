@@ -40,6 +40,30 @@ export interface InfoCard {
   text: string;
 }
 
+/** 카드를 받은 파티원 한 명의 반응. 보스는 수신자가 아니라 주제일 뿐이다. */
+export type InfoReaction = "accepted" | "suspected" | "exposed";
+
+/**
+ * 한 파티원에게 카드 한 장을 전달한 결과다.
+ *
+ * 보스전과 사후 검증이 `누가 무엇을 믿었는지`를 알아야 하므로 그 순간에 남긴다.
+ * 정산이 나중에 앞뒤 상태를 비교하면 신뢰가 얼마나 움직였는지는 알아도 어느
+ * 카드 때문인지는 복원할 수 없다.
+ * docs/superpowers/specs/2026-08-15-sbh3821-party-info-evaluation-design.md
+ */
+export interface InfoRecord {
+  cardId: CardId;
+  /** 카드가 실제로 진실이었는지. 보스전 뒤 의심을 검증할 때 쓴다. */
+  truthType: TruthType;
+  subject: InfoSubject;
+  memberId: MemberId;
+  reaction: InfoReaction;
+  /** 이 카드 한 장이 만드는 보스 피해 보정. 합산과 상한은 보스전이 한다. */
+  modifier: number;
+  /** 수용된 거짓이라 보스전 뒤 검증할 대상이다. */
+  pendingVerification: boolean;
+}
+
 /**
  * 전달했지만 아직 사실 여부가 드러나지 않은 정보다.
  * docs/systems/INFORMATION_AND_DECEPTION.md

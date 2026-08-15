@@ -102,8 +102,15 @@ export const TRUST_RULES = {
   Record<Personality, Readonly<Record<TrustAction, TrustRule>>>
 >;
 
-export interface TrustEvaluation {
-  member: PartyMember;
+/**
+ * 넘긴 인물 타입을 그대로 돌려준다.
+ *
+ * `PartyMember`로 못박으면 `CampaignMember`를 넣었을 때 HP·소지 골드·기억이
+ * 결과 타입에서 사라진다. 호출자가 단언으로 되돌리게 되고, 그 단언이 실제로
+ * 필드를 잃은 자리까지 가려버린다.
+ */
+export interface TrustEvaluation<M extends PartyMember = PartyMember> {
+  member: M;
   change: TrustChange;
   exposed: boolean;
 }
@@ -131,11 +138,11 @@ function rollDelta(baseDelta: number, rng: Rng): number {
   return baseDelta > 0 ? Math.max(1, rolled) : Math.min(-1, rolled);
 }
 
-export function evaluateTrust(
-  member: PartyMember,
+export function evaluateTrust<M extends PartyMember>(
+  member: M,
   action: TrustAction,
   rng: Rng,
-): TrustEvaluation {
+): TrustEvaluation<M> {
   assertValidTrust(member.trust);
   const trustRule = TRUST_RULES[member.personality][action];
 

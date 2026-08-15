@@ -14,9 +14,9 @@ describe("F2 검증 snapshot", () => {
     expect(snapshot.events.total).toBe(12);
     expect(snapshot.events.byKind).toEqual({ monster: 3, rest: 3, merchant: 3, special: 3 });
     expect(snapshot.events.minimumChoices).toBeGreaterThanOrEqual(2);
-    expect(snapshot.cards.total).toBe(12);
-    expect(snapshot.cards.byTruthType).toEqual({ truth: 4, lie: 4, neutral: 4 });
-    expect(snapshot.cards.bossSubjectCount).toBeGreaterThanOrEqual(2);
+    expect(snapshot.cards.total).toBe(36);
+    expect(snapshot.cards.byTruthType).toEqual({ truth: 12, lie: 12, neutral: 12 });
+    expect(snapshot.cards.bossSubjectCount).toBe(6);
     expect(snapshot.items.kinds).toEqual(expect.arrayContaining(["healing", "poison", "food", "information", "lure"]));
     expect(snapshot.items.hasFakeMap).toBe(false);
     expect(snapshot.bosses.grades).toEqual(["C", "B", "A", "S"]);

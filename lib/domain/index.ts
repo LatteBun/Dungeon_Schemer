@@ -38,6 +38,8 @@ export type {
   EventTarget,
   InfoCard,
   InfoClaim,
+  InfoReaction,
+  InfoRecord,
   InfoSubject,
   Target,
   TruthType,

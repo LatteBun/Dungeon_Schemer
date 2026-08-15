@@ -1,6 +1,16 @@
+import { INFO_CARDS } from "@/lib/content/info-cards";
+import { RuleError, TRUTH_TYPES } from "@/lib/domain";
 import type {
+  CardId,
+  EventKind,
+  ExpeditionState,
   InfoCard,
+  InfoReaction,
+  InfoRecord,
+  InfoSubject,
+  MapNode,
   PartyMember,
+  PendingInfo,
   Personality,
   TruthType,
 } from "@/lib/domain";
@@ -8,46 +18,73 @@ import type { Rng } from "@/lib/rng";
 import { evaluateTrust } from "@/lib/rules/trust";
 import type { TrustAction, TrustEvaluation } from "@/lib/rules/trust";
 
-export type InfoAudience = "party" | "boss";
-export type InfoReaction = "accepted" | "suspected" | "exposed";
+export type { InfoReaction } from "@/lib/domain";
 
-export interface MemberInfoCardResult {
-  readonly member: PartyMember;
+export interface MemberInfoCardResult<M extends PartyMember = PartyMember> {
+  readonly member: M;
   readonly reaction: InfoReaction;
-  readonly trustEvaluation: TrustEvaluation | null;
+  readonly trustEvaluation: TrustEvaluation<M> | null;
   readonly pendingVerification: boolean;
   readonly pendingSuspicionEvaluation: boolean;
+  /** 이 카드 한 장이 이 파티원에게 만드는 보스 피해 보정. */
+  readonly bossDamageModifier: number;
 }
 
-export interface PartyInfoCardEvaluation {
+/**
+ * `audience`는 파티 하나뿐이지만 필드를 남긴다. 보스 수신 계약을 지운 결과를
+ * 소비자 코드가 명시적으로 확인할 수 있게 하려는 것이다.
+ */
+export interface PartyInfoCardEvaluation<M extends PartyMember = PartyMember> {
   readonly audience: "party";
-  readonly memberResults: readonly MemberInfoCardResult[];
+  readonly memberResults: readonly MemberInfoCardResult<M>[];
 }
 
-export interface BossInfoCardEvaluation {
-  readonly audience: "boss";
-  readonly reaction: InfoReaction;
-  readonly pendingVerification: boolean;
-  readonly pendingSuspicionEvaluation: boolean;
-}
-
-export type InfoCardEvaluation =
-  | PartyInfoCardEvaluation
-  | BossInfoCardEvaluation;
-
-export interface PartyInfoCardOptions {
-  readonly audience: "party";
+export interface PartyInfoCardOptions<M extends PartyMember> {
   readonly card: InfoCard;
-  readonly party: readonly PartyMember[];
+  readonly party: readonly M[];
   readonly cardRng: Rng;
   readonly trustRng: Rng;
 }
 
-export interface BossInfoCardOptions {
-  readonly audience: "boss";
-  readonly card: InfoCard;
-  readonly cardRng: Rng;
+export interface CreateInfoOpportunityInput {
+  readonly node: MapNode;
+  /** 이 지점의 사건 분류. `MapNode`에는 없으므로 호출자가 풀에서 찾아 넘긴다. */
+  readonly eventKind: EventKind;
+  readonly rng: Rng;
+  readonly cards?: readonly InfoCard[];
 }
+
+/**
+ * 사건 분류가 정하는 카드 주제다.
+ *
+ * 도착한 지점이 무엇인지가 카드 내용에 반영되어야 거짓말이 상황에 붙는다. 주제가
+ * 상황과 무관하면 목록에서 하나 고르는 일이 된다.
+ */
+const SUBJECT_BY_EVENT_KIND: Readonly<Record<EventKind, InfoSubject>> = {
+  monster: "monster",
+  rest: "rest",
+  merchant: "merchant",
+  special: "event",
+};
+
+/**
+ * 수용한 보스 주제 카드가 그 파티원의 보스 피해에 주는 보정이다.
+ * docs/superpowers/specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md
+ */
+export const BOSS_DAMAGE_MODIFIERS: Readonly<Record<TruthType, number>> = {
+  truth: -0.2,
+  neutral: -0.1,
+  lie: 0.25,
+};
+
+/** 정보 기회 하나가 제시해야 하는 최소 후보 수. */
+export const MIN_INFO_CARD_CANDIDATES = 2;
+
+const REACTION_LABELS: Readonly<Record<InfoReaction, string>> = {
+  accepted: "수용",
+  suspected: "의심",
+  exposed: "적발",
+};
 
 interface ChanceModifiers {
   readonly accept: number;
@@ -96,26 +133,18 @@ function personalityModifier(
 
 function reactionFor(
   card: InfoCard,
+  member: PartyMember,
   rng: Rng,
-  member?: PartyMember,
 ): InfoReaction {
   const base = BASE_CHANCES[card.truthType];
-  const trust = member
-    ? trustModifier(member.trust)
-    : { accept: 0, expose: 0 };
-  const personality = member
-    ? personalityModifier(member.personality, card.truthType)
-    : { accept: 0, expose: 0 };
-  const expose =
-    member !== undefined && card.truthType === "lie"
-      ? clamp(base.expose + trust.expose + personality.expose, 5, 80)
-      : base.expose;
-  const accept =
-    member === undefined
-      ? base.accept
-      : card.truthType === "lie"
-        ? clamp(base.accept + trust.accept + personality.accept, 5, 95 - expose)
-        : clamp(base.accept + trust.accept + personality.accept, 5, 95);
+  const trust = trustModifier(member.trust);
+  const personality = personalityModifier(member.personality, card.truthType);
+  const expose = card.truthType === "lie"
+    ? clamp(base.expose + trust.expose + personality.expose, 5, 80)
+    : base.expose;
+  const accept = card.truthType === "lie"
+    ? clamp(base.accept + trust.accept + personality.accept, 5, 95 - expose)
+    : clamp(base.accept + trust.accept + personality.accept, 5, 95);
   const roll = rng.int(1, 100);
 
   if (card.truthType === "lie" && roll <= expose) return "exposed";
@@ -131,62 +160,163 @@ function immediateTrustAction(
   "actHonestly" | "deceptionAccepted" | "deceptionExposed"
 > | null {
   if (truthType === "truth" && reaction === "accepted") return "actHonestly";
-  if (truthType === "lie" && reaction === "accepted") {
-    return "deceptionAccepted";
-  }
-  if (truthType === "lie" && reaction === "exposed") {
-    return "deceptionExposed";
-  }
+  if (truthType === "lie" && reaction === "accepted") return "deceptionAccepted";
+  if (truthType === "lie" && reaction === "exposed") return "deceptionExposed";
   return null;
 }
 
-function resultForMember(
+/**
+ * 카드 한 장이 만드는 보스 피해 보정이다.
+ *
+ * 보스 주제를 수용했을 때만 값이 생긴다. 여러 장의 합산과 `-30%~+50%` 상한은
+ * 보스전이 한다. 여기서 합산하면 아직 만나지 않은 카드까지 포함한 값을 미리
+ * 만들게 된다.
+ */
+export function bossDamageModifier(
   card: InfoCard,
-  member: PartyMember,
+  reaction: InfoReaction,
+): number {
+  if (card.subject !== "boss" || reaction !== "accepted") return 0;
+  return BOSS_DAMAGE_MODIFIERS[card.truthType];
+}
+
+function resultForMember<M extends PartyMember>(
+  card: InfoCard,
+  member: M,
   cardRng: Rng,
   trustRng: Rng,
-): MemberInfoCardResult {
-  const reaction = reactionFor(card, cardRng, member);
+): MemberInfoCardResult<M> {
+  const reaction = reactionFor(card, member, cardRng);
   const action = immediateTrustAction(card.truthType, reaction);
-  const trustEvaluation = action
-    ? evaluateTrust(member, action, trustRng)
-    : null;
+  const trustEvaluation = action ? evaluateTrust(member, action, trustRng) : null;
 
   return {
     member: trustEvaluation?.member ?? { ...member },
     reaction,
     trustEvaluation,
-    pendingVerification:
-      card.truthType === "lie" && reaction === "accepted",
+    pendingVerification: card.truthType === "lie" && reaction === "accepted",
     pendingSuspicionEvaluation: reaction === "suspected",
+    bossDamageModifier: bossDamageModifier(card, reaction),
   };
 }
 
-export function evaluateInfoCard(
-  options: PartyInfoCardOptions | BossInfoCardOptions,
-): InfoCardEvaluation {
-  if (options.audience === "boss") {
-    const reaction = reactionFor(options.card, options.cardRng);
-    return {
-      audience: "boss",
-      reaction,
-      pendingVerification:
-        options.card.truthType === "lie" && reaction === "accepted",
-      pendingSuspicionEvaluation: reaction === "suspected",
-    };
-  }
-
+/**
+ * 살아 있는 파티원 각자가 카드 한 장에 독립으로 반응한다.
+ *
+ * 보스는 카드 수신자가 아니다. 보스 관련 여부는 `InfoCard.subject`로만 나타낸다.
+ * docs/superpowers/specs/2026-08-15-sbh3821-party-info-evaluation-design.md
+ */
+export function evaluatePartyInfoCard<M extends PartyMember>(
+  options: PartyInfoCardOptions<M>,
+): PartyInfoCardEvaluation<M> {
   return {
     audience: "party",
     memberResults: options.party
       .filter((member) => member.alive)
       .map((member) =>
-        resultForMember(
-          options.card,
-          member,
-          options.cardRng,
-          options.trustRng,
-        ),
-      ),
+        resultForMember(options.card, member, options.cardRng, options.trustRng)),
+  };
+}
+
+/**
+ * 이 지점에서 제시할 카드 주제를 정한다.
+ *
+ * 보장 여부가 먼저다. E1이 지도에 표시한 약속이기 때문이다. 그다음이 입구인데,
+ * 갈래를 고르기 직전이라 경로 정보가 결정에 개입하는 유일한 자리다. 합류 지점도
+ * 공유 지점이지만 그때는 갈래 선택이 끝나 경로 정보가 쓸모없다.
+ *
+ * 입구는 깊이 0으로 판별한다. `validateGeneratedMap`이 입구 깊이가 0이고 모든
+ * 간선이 깊이를 늘린다는 것을 보장하므로 깊이 0인 지점은 입구뿐이다.
+ */
+function subjectFor(node: MapNode, eventKind: EventKind): InfoSubject {
+  if (node.bossRelatedInfoCount > 0) return "boss";
+  if (node.depth === 0) return "route";
+  return SUBJECT_BY_EVENT_KIND[eventKind];
+}
+
+/**
+ * 도착한 지점에서 고를 수 있는 카드 후보를 만든다.
+ *
+ * 한 지점은 한 주제만 제시하고 그 안에서 진실·거짓·중립을 한 장씩 고른다.
+ * 플레이어가 정하는 것은 `무엇에 대해 말할지`가 아니라 `어떻게 말할지`다.
+ *
+ * 보장 지점이 보스 주제만 제시하는 것은 무엇을 고르든 보스 정보가 전달되게 하려는
+ * 것이다. 반대로 다른 지점에서 보스 주제가 나오지 않아야 E1이 경로마다 고정한
+ * 보장 수가 실제 전달 수와 같게 유지된다.
+ */
+export function createInfoOpportunity(
+  input: CreateInfoOpportunityInput,
+): PendingInfo {
+  const { node, rng } = input;
+  if (!node.hasInfoOpportunity) {
+    throw new RuleError(
+      "INVALID_GENERATION",
+      `정보 기회가 없는 지점이다: ${node.id}`,
+      { nodeId: node.id },
+    );
+  }
+
+  const subject = subjectFor(node, input.eventKind);
+  const eligible = (input.cards ?? INFO_CARDS)
+    .filter((card) => card.subject === subject);
+  const cards = TRUTH_TYPES
+    .map((truthType) => eligible.filter((card) => card.truthType === truthType))
+    .filter((group) => group.length > 0)
+    .map((group) => rng.pick(group));
+
+  if (cards.length < MIN_INFO_CARD_CANDIDATES) {
+    throw new RuleError(
+      "INVALID_GENERATION",
+      `정보 기회의 후보가 두 장 미만이다: ${node.id}에 ${cards.length}장`,
+      { nodeId: node.id, expected: MIN_INFO_CARD_CANDIDATES, actual: cards.length },
+    );
+  }
+
+  return {
+    nodeId: node.id,
+    cardIds: cards.map((card) => card.id as CardId),
+    bossRelatedCardCount: cards.filter((card) => card.subject === "boss").length,
+  };
+}
+
+/** 판정 결과를 파티원별 기록으로 바꾼다. 한 번의 기회가 인원수만큼 기록을 만든다. */
+export function toInfoRecords(
+  card: InfoCard,
+  evaluation: PartyInfoCardEvaluation<PartyMember>,
+): InfoRecord[] {
+  return evaluation.memberResults.map((result) => ({
+    cardId: card.id,
+    truthType: card.truthType,
+    subject: card.subject,
+    memberId: result.member.id,
+    reaction: result.reaction,
+    modifier: result.bossDamageModifier,
+    pendingVerification: result.pendingVerification,
+  }));
+}
+
+/**
+ * 기록과 탐험 로그를 덧붙인다.
+ *
+ * `pendingInfo`를 지우지 않는 이유는 한 번의 정보 기회가 파티원 수만큼 기록을
+ * 만들어 어느 것이 마지막인지 여기서 알 수 없기 때문이다. 비우는 것은 단계
+ * 전이의 몫이다.
+ */
+export function applyInfoRecord(
+  expedition: ExpeditionState,
+  record: InfoRecord,
+): ExpeditionState {
+  return {
+    ...expedition,
+    infoRecords: [...expedition.infoRecords, record],
+    log: [
+      ...expedition.log,
+      {
+        at: expedition.log.length,
+        kind: "info",
+        summary: `${record.cardId} · ${REACTION_LABELS[record.reaction]}`,
+        memberIds: [record.memberId],
+      },
+    ],
   };
 }
