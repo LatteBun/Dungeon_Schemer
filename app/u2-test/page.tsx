@@ -16,7 +16,7 @@ import {
 } from "@/components/game/expedition-view-model";
 import { createRng } from "@/lib/rng";
 import { createInfoOpportunity, evaluatePartyInfoCard } from "@/lib/rules/info";
-import type { CardId, ChoiceId, NodeId } from "@/lib/domain";
+import type { CardId, ChoiceId, NodeId, PendingInfo } from "@/lib/domain";
 import type { MemberReactionView } from "@/components/game/expedition-view-model";
 import { u2Fixture } from "./u2-fixtures";
 
@@ -31,6 +31,7 @@ export default function U2TestPage() {
   const [selectedCardId, setSelectedCardId] = useState<CardId | null>(null);
   const [reactions, setReactions] = useState<MemberReactionView[]>([]);
   const [selectedChoiceId, setSelectedChoiceId] = useState<ChoiceId | null>(null);
+  const [pendingInfo, setPendingInfo] = useState<PendingInfo | null>(null);
 
   const activeNode = fx.map.nodes.find((node) => node.id === (selectedNodeId ?? currentNodeId))!;
   const event = fx.eventById(activeNode.eventId);
@@ -45,21 +46,37 @@ export default function U2TestPage() {
     setSelectedCardId(null);
     setReactions([]);
     setSelectedChoiceId(null);
-    setStep(node.hasInfoOpportunity ? "info" : "event");
+    if (node.hasInfoOpportunity) {
+      setPendingInfo(
+        createInfoOpportunity({
+          node,
+          eventKind: fx.eventKindById(node.eventId),
+          rng: createRng(node.id).derive("card"),
+        }),
+      );
+      setStep("info");
+    } else {
+      setPendingInfo(null);
+      setStep("event");
+    }
   }
 
   function selectCard(cardId: CardId) {
     setSelectedCardId(cardId);
     const card = fx.cardById(cardId);
+    const nodeId = selectedNodeId ?? currentNodeId;
     const evaluation = evaluatePartyInfoCard({
       card,
       party: fx.party,
-      cardRng: createRng(fx.map.grade).derive("card"),
-      trustRng: createRng(fx.map.grade).derive("trust"),
+      cardRng: createRng(nodeId).derive("card"),
+      trustRng: createRng(nodeId).derive("trust"),
     });
     setReactions(toInfoReactionsView(evaluation));
   }
 
+  // I1 전까지 resolveEventChoice의 HP·골드·신뢰 결과는 적용하지 않는다.
+  // docs/superpowers/specs/2026-08-15-lattebun-u2-map-info-event-design.md
+  // "범위 > 제외": 실제 전이·정산 반영은 I1 소관이다.
   function advanceEvent() {
     if (selectedNodeId !== null) {
       setVisited((prev) => (prev.includes(selectedNodeId) ? prev : [...prev, selectedNodeId]));
@@ -85,19 +102,9 @@ export default function U2TestPage() {
       ) : (
         <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
           <div className="flex flex-col gap-3">
-            {step === "info" && activeNode.hasInfoOpportunity ? (
+            {step === "info" && pendingInfo !== null ? (
               <InfoOpportunityPanel
-                view={toInfoOpportunityView(
-                  createInfoOpportunity({
-                    node: activeNode,
-                    eventKind: fx.eventKindById(activeNode.eventId),
-                    rng: createRng(fx.map.grade).derive("card"),
-                  }),
-                  fx.cardById,
-                  activeNode,
-                  event,
-                  fx.party,
-                )}
+                view={toInfoOpportunityView(pendingInfo, fx.cardById, activeNode, event, fx.party)}
                 selectedCardId={selectedCardId}
                 onSelectCard={selectCard}
               />

@@ -1,6 +1,7 @@
 import { Panel } from "@/components/ui/Panel";
 import type { NodeId } from "@/lib/domain";
 import type { MapNodeView, MapView } from "./expedition-view-model";
+import { EVENT_KIND_MARKS } from "./labels";
 
 interface DungeonMapViewProps {
   view: MapView;
@@ -39,9 +40,12 @@ export function DungeonMapView({
           <li>✓ 방문 완료</li>
           <li>→ 선택 가능</li>
           <li>× 비활성</li>
-          <li className="mt-2">! 몬스터 / 특수</li>
+          <li className="mt-2">{EVENT_KIND_MARKS.monster} 몬스터</li>
+          <li>{EVENT_KIND_MARKS.rest} 휴식</li>
+          <li>{EVENT_KIND_MARKS.merchant} 상인</li>
+          <li>{EVENT_KIND_MARKS.special} 특수 사건</li>
           <li>? 정보 전달 기회</li>
-          <li>$ 상인 · + 휴식</li>
+          <li>★ 보스방</li>
           <li className="mt-2">전체 연결·대략 위험·보스 위치 공개</li>
           <li>색 + 기호 + 선으로 구분</li>
         </ul>
@@ -101,7 +105,7 @@ export function DungeonMapView({
                   strokeDasharray={node.state === "inactive" ? "4 3" : undefined}
                 />
                 <text textAnchor="middle" y={-2} fontSize={11} fill="var(--color-parchment)">
-                  {node.categoryLabel}
+                  {node.categoryMark} {node.categoryLabel}
                 </text>
                 <text textAnchor="middle" y={14} fontSize={10} fill="var(--color-muted)">
                   {node.hasInfo ? "? " : ""}{stateMark(node)}
