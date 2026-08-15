@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { RuleError } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
 import { generateGradeMap } from "@/lib/rules/map";
 import { layoutMap } from "./map-layout";
@@ -47,5 +48,29 @@ describe("layoutMap", () => {
     ).sort();
     const actual = layout.edges.map((edge) => `${edge.fromId}->${edge.toId}`).sort();
     expect(actual).toEqual(expected);
+  });
+
+  it("갈래 노드 ID가 규약과 다르면 RuleError를 던진다", () => {
+    const map = mapFor("C");
+    const incoming = new Map<string, number>();
+    for (const node of map.nodes) {
+      for (const next of node.nextNodeIds) {
+        incoming.set(next, (incoming.get(next) ?? 0) + 1);
+      }
+    }
+    const badNode = map.nodes.find(
+      (node) =>
+        node.id !== map.entryNodeId &&
+        node.id !== map.bossNodeId &&
+        (incoming.get(node.id) ?? 0) < 2,
+    )!;
+    expect(badNode).toBeDefined();
+    const broken = {
+      ...map,
+      nodes: map.nodes.map((node) =>
+        node.id === badNode.id ? { ...node, id: "node-path-bad-format" as typeof node.id } : node,
+      ),
+    };
+    expect(() => layoutMap(broken)).toThrow(RuleError);
   });
 });
