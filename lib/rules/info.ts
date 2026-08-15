@@ -2,10 +2,12 @@ import { INFO_CARDS } from "@/lib/content/info-cards";
 import { RuleError, TRUTH_TYPES } from "@/lib/domain";
 import type {
   CardId,
+  EventKind,
   ExpeditionState,
   InfoCard,
   InfoReaction,
   InfoRecord,
+  InfoSubject,
   MapNode,
   PartyMember,
   PendingInfo,
@@ -44,9 +46,26 @@ export interface PartyInfoCardOptions<M extends PartyMember> {
   readonly trustRng: Rng;
 }
 
-export interface CreateInfoOpportunityOptions {
+export interface CreateInfoOpportunityInput {
+  readonly node: MapNode;
+  /** 이 지점의 사건 분류. `MapNode`에는 없으므로 호출자가 풀에서 찾아 넘긴다. */
+  readonly eventKind: EventKind;
+  readonly rng: Rng;
   readonly cards?: readonly InfoCard[];
 }
+
+/**
+ * 사건 분류가 정하는 카드 주제다.
+ *
+ * 도착한 지점이 무엇인지가 카드 내용에 반영되어야 거짓말이 상황에 붙는다. 주제가
+ * 상황과 무관하면 목록에서 하나 고르는 일이 된다.
+ */
+const SUBJECT_BY_EVENT_KIND: Readonly<Record<EventKind, InfoSubject>> = {
+  monster: "monster",
+  rest: "rest",
+  merchant: "merchant",
+  special: "event",
+};
 
 /**
  * 수용한 보스 주제 카드가 그 파티원의 보스 피해에 주는 보정이다.
@@ -200,18 +219,35 @@ export function evaluatePartyInfoCard<M extends PartyMember>(
 }
 
 /**
+ * 이 지점에서 제시할 카드 주제를 정한다.
+ *
+ * 보장 여부가 먼저다. E1이 지도에 표시한 약속이기 때문이다. 그다음이 입구인데,
+ * 갈래를 고르기 직전이라 경로 정보가 결정에 개입하는 유일한 자리다. 합류 지점도
+ * 공유 지점이지만 그때는 갈래 선택이 끝나 경로 정보가 쓸모없다.
+ *
+ * 입구는 깊이 0으로 판별한다. `validateGeneratedMap`이 입구 깊이가 0이고 모든
+ * 간선이 깊이를 늘린다는 것을 보장하므로 깊이 0인 지점은 입구뿐이다.
+ */
+function subjectFor(node: MapNode, eventKind: EventKind): InfoSubject {
+  if (node.bossRelatedInfoCount > 0) return "boss";
+  if (node.depth === 0) return "route";
+  return SUBJECT_BY_EVENT_KIND[eventKind];
+}
+
+/**
  * 도착한 지점에서 고를 수 있는 카드 후보를 만든다.
  *
- * 보스 보장 지점은 보스 주제만 제시해 무엇을 고르든 보스 정보가 전달되게 한다.
- * 반대로 일반 지점에서 보스 주제를 빼는 이유는 E1이 경로마다 고정한 보장 수를
- * 실제 전달 수와 같게 유지하기 위해서다. 일반 지점에서도 보스 카드가 나오면
- * 지도가 선언한 값이 실제를 설명하지 못한다.
+ * 한 지점은 한 주제만 제시하고 그 안에서 진실·거짓·중립을 한 장씩 고른다.
+ * 플레이어가 정하는 것은 `무엇에 대해 말할지`가 아니라 `어떻게 말할지`다.
+ *
+ * 보장 지점이 보스 주제만 제시하는 것은 무엇을 고르든 보스 정보가 전달되게 하려는
+ * 것이다. 반대로 다른 지점에서 보스 주제가 나오지 않아야 E1이 경로마다 고정한
+ * 보장 수가 실제 전달 수와 같게 유지된다.
  */
 export function createInfoOpportunity(
-  node: MapNode,
-  rng: Rng,
-  options: CreateInfoOpportunityOptions = {},
+  input: CreateInfoOpportunityInput,
 ): PendingInfo {
+  const { node, rng } = input;
   if (!node.hasInfoOpportunity) {
     throw new RuleError(
       "INVALID_GENERATION",
@@ -220,9 +256,9 @@ export function createInfoOpportunity(
     );
   }
 
-  const wantsBoss = node.bossRelatedInfoCount > 0;
-  const eligible = (options.cards ?? INFO_CARDS)
-    .filter((card) => (card.subject === "boss") === wantsBoss);
+  const subject = subjectFor(node, input.eventKind);
+  const eligible = (input.cards ?? INFO_CARDS)
+    .filter((card) => card.subject === subject);
   const cards = TRUTH_TYPES
     .map((truthType) => eligible.filter((card) => card.truthType === truthType))
     .filter((group) => group.length > 0)
