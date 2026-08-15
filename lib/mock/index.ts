@@ -7,7 +7,6 @@ export { MOCK_CLASSES } from "./classes";
 export { MOCK_DUNGEON } from "./dungeon";
 export { MOCK_EVENTS } from "./events";
 export { MOCK_PARTY } from "./party";
-export { MOCK_RUN } from "./run";
 export { MOCK_SETTLEMENT } from "./result";
 export type { MockSettlement } from "./result";
 

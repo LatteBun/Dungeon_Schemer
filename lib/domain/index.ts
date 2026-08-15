@@ -22,7 +22,7 @@ export {
   TRUST_MAX,
   TRUST_MIN,
 } from "./party";
-export type { ClassDef, PartyMember, Personality } from "./party";
+export type { ClassDef, PartyMember, Personality, TrustChange } from "./party";
 
 export { EVENT_EFFECT_TAGS, ITEM_EFFECT_TAGS, ITEM_KINDS } from "./content";
 export type {
@@ -53,15 +53,6 @@ export type {
   EventChoice,
   EventKind,
 } from "./dungeon";
-
-export { RUN_PHASES } from "./run";
-export type {
-  DecisionRecord,
-  Resources,
-  RunPhase,
-  RunState,
-  TrustChange,
-} from "./run";
 
 export { CAMPAIGN_PHASES, GRADES } from "./campaign";
 export type {

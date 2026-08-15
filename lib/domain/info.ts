@@ -72,6 +72,6 @@ export interface InfoClaim {
   id: ClaimId;
   cardId: CardId;
   target: Target;
-  /** 전달한 시점의 로그 순번. DecisionRecord.at과 같은 축이다. */
+  /** 전달한 시점의 로그 순번. 캠페인 로그와 같은 순번 축이다. */
   toldAt: number;
 }

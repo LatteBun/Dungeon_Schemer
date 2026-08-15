@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   EVENT_KINDS,
   PERSONALITIES,
-  RUN_PHASES,
   TRUST_MAX,
   TRUST_MIN,
   TRUTH_TYPES,
@@ -19,10 +18,6 @@ describe("도메인 상수", () => {
 
   it("진실 유형은 셋이다", () => {
     expect(TRUTH_TYPES).toHaveLength(3);
-  });
-
-  it("진행 단계는 여섯이다", () => {
-    expect(RUN_PHASES).toHaveLength(6);
   });
 
   it("신뢰 척도는 0 이상 100 이하다", () => {
