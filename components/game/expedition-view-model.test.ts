@@ -153,6 +153,7 @@ describe("toPartyStatusView", () => {
   it("신뢰 변화량과 빈 기억 문구를 파생한다", () => {
     const members = party();
     const view = toPartyStatusView(members, { [members[0].id]: 2 });
+    expect(view[0].alive).toBe(members[0].alive);
     expect(view[0].trustDelta).toBe(2);
     expect(view[1].trustDelta).toBe(0);
     expect(view[0].memoryNote).toBe("최근 변화 없음");

@@ -1,28 +1,25 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { RunPhase } from "@/lib/domain";
-import { useRunStore } from "@/lib/stores/game-store-provider";
+import type { CampaignPhase } from "@/lib/domain";
+import { useCampaignStore } from "@/lib/stores/campaign-store-provider";
 
 /**
- * 단계가 화면을 결정한다. 인터페이스 문서의 화면 매핑을 코드로 고정한다.
- * docs/experience/ONBOARDING_AND_INTERFACE.md
+ * 단계가 화면을 결정한다. URL을 직접 입력해도 현재 단계의 화면만 보이므로
+ * 지도에서 정산으로 건너뛰는 우회가 라우팅 수준에서 막힌다.
  */
-export const ROUTE_BY_PHASE: Record<RunPhase, string> = {
-  partyIntro: "/play",
-  pathChoice: "/play/map",
+export const ROUTE_BY_PHASE: Record<CampaignPhase, string> = {
+  board: "/play",
+  contract: "/play",
+  map: "/play/map",
+  infoOpportunity: "/play/encounter",
   event: "/play/encounter",
-  bossFight: "/play/encounter",
+  boss: "/play/result",
   settlement: "/play/result",
   ended: "/play/result",
 };
 
-/**
- * 현재 단계가 이 화면의 것이 아니면 단계에 맞는 화면으로 보낸다.
- * URL을 직접 입력해도 현재 단계의 화면만 보이므로, 지도에서 보스방으로
- * 건너뛰는 우회가 라우팅 수준에서 막힌다.
- */
-export function usePhaseGuard(allowed: readonly RunPhase[]): boolean {
-  const phase = useRunStore((store) => store.run.phase);
+export function usePhaseGuard(allowed: readonly CampaignPhase[]): boolean {
+  const phase = useCampaignStore((store) => store.campaign.phase);
   const router = useRouter();
   const matches = allowed.includes(phase);
 
