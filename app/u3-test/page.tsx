@@ -49,7 +49,7 @@ export default function U3TestPage() {
         </button>
       </div>
 
-      <CampaignHeader view={outcome.headerView} />
+      <CampaignHeader title="U3 하네스 · 정산·엔딩" view={outcome.headerView} />
 
       {tab === "settlement" ? (
         <>
@@ -66,7 +66,7 @@ export default function U3TestPage() {
       ) : endingView === null ? (
         <p className="text-sm text-muted">엔딩을 만들지 못했다.</p>
       ) : (
-        <EndingPanel view={endingView} />
+        <EndingPanel view={endingView} onRestart={() => {}} />
       )}
     </main>
   );

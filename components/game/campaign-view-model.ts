@@ -210,3 +210,40 @@ export function toContractView(
     acceptBlockReason: acceptance.accepted ? null : acceptance.reason,
   };
 }
+
+/**
+ * 화면 제목은 phase와 현재 탐험에서 전부 파생된다.
+ * 페이지가 layout 위쪽 HUD에 제목을 올리려면 context가 필요하므로
+ * 셸이 상태에서 파생하게 두어 그 비용을 없앤다.
+ */
+export function toScreenTitle(state: CampaignState): string {
+  const expedition = state.expedition;
+  const dungeon =
+    expedition === null
+      ? undefined
+      : state.dungeons.find((candidate) => candidate.id === expedition.dungeonId);
+  const dungeonLabel =
+    dungeon === undefined
+      ? null
+      : `${dungeon.grade}급 ${numericSuffix(dungeon.id)}번`;
+
+  const withDungeon = (suffix: string): string =>
+    dungeonLabel === null ? suffix : `${dungeonLabel} · ${suffix}`;
+
+  switch (state.phase) {
+    case "board":
+    case "contract":
+      return "캠페인 게시판";
+    case "map":
+      return withDungeon("공개 분기 지도");
+    case "infoOpportunity":
+      return withDungeon("정보 전달");
+    case "event":
+      return withDungeon("사건");
+    case "boss":
+    case "settlement":
+      return withDungeon("자동 보스전 결과");
+    case "ended":
+      return "캠페인 엔딩";
+  }
+}

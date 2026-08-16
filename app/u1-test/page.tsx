@@ -49,7 +49,7 @@ export default function U1TestPage() {
         ))}
       </div>
 
-      <CampaignHeader view={toCampaignHeaderView(state)} />
+      <CampaignHeader title="캠페인 게시판" view={toCampaignHeaderView(state)} />
 
       <div className="grid gap-3 md:grid-cols-2">
         <Board

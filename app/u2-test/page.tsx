@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import { CampaignHeader } from "@/components/game/CampaignHeader";
 import { DungeonMapView } from "@/components/game/DungeonMapView";
+import { EncounterScenePanel } from "@/components/game/EncounterScenePanel";
 import { EventActions } from "@/components/game/EventActions";
-import { InfoOpportunityPanel } from "@/components/game/InfoOpportunityPanel";
+import { InfoCardChoices } from "@/components/game/InfoCardChoices";
+import { MapLegend } from "@/components/game/MapLegend";
 import { PartyReactionSidebar } from "@/components/game/PartyReactionSidebar";
 import { PartyStatusSidebar } from "@/components/game/PartyStatusSidebar";
 import {
@@ -38,6 +40,11 @@ export default function U2TestPage() {
 
   const mapView = toMapView(fx.map, currentNodeId, visited, fx.eventKindById);
   const partyStatus = toPartyStatusView(fx.party);
+  const infoView =
+    pendingInfo === null
+      ? null
+      : toInfoOpportunityView(pendingInfo, fx.cardById, activeNode, event, fx.party);
+  const eventView = toEventView(event, fx.headerView.currentGold, fx.itemById);
 
   function enterNode() {
     if (selectedNodeId === null) return;
@@ -87,27 +94,47 @@ export default function U2TestPage() {
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-3 p-4 text-parchment">
-      <CampaignHeader view={fx.headerView} />
+      <CampaignHeader title="U2 하네스 · 지도·정보·사건" view={fx.headerView} />
 
       {step === "map" ? (
-        <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-3 lg:grid-cols-[13rem_1fr_18rem]">
+          <MapLegend />
           <DungeonMapView
             view={mapView}
             selectedNodeId={selectedNodeId}
             onSelectNode={setSelectedNodeId}
-            onEnterNode={enterNode}
           />
-          <PartyStatusSidebar members={partyStatus} />
+          <PartyStatusSidebar
+            members={partyStatus}
+            footer={
+              <button
+                type="button"
+                disabled={selectedNodeId === null}
+                onClick={enterNode}
+                className="w-full rounded border border-edge px-3 py-2 text-sm text-parchment enabled:hover:bg-edge disabled:opacity-40"
+              >
+                선택 지점 입장 · 정보 기회 →
+              </button>
+            }
+          />
         </div>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_20rem]">
           <div className="flex flex-col gap-3">
-            {step === "info" && pendingInfo !== null ? (
-              <InfoOpportunityPanel
-                view={toInfoOpportunityView(pendingInfo, fx.cardById, activeNode, event, fx.party)}
-                selectedCardId={selectedCardId}
-                onSelectCard={selectCard}
-              />
+            {step === "info" && infoView !== null ? (
+              <>
+                <EncounterScenePanel
+                  title={event.title}
+                  sceneText={infoView.scene.sceneText}
+                  riskSummary={infoView.scene.riskSummary}
+                  memberNames={infoView.scene.memberNames}
+                />
+                <InfoCardChoices
+                  cards={infoView.cards}
+                  selectedCardId={selectedCardId}
+                  onSelectCard={selectCard}
+                />
+              </>
             ) : null}
             {step === "info" && selectedCardId !== null ? (
               <button
@@ -119,12 +146,24 @@ export default function U2TestPage() {
               </button>
             ) : null}
             {step === "event" ? (
-              <EventActions
-                view={toEventView(event, fx.headerView.currentGold, fx.itemById)}
-                selectedChoiceId={selectedChoiceId}
-                onSelectChoice={setSelectedChoiceId}
-                onAdvance={advanceEvent}
-              />
+              <>
+                <EncounterScenePanel
+                  title={eventView.title}
+                  sceneText={eventView.description}
+                  riskSummary={eventView.riskSummary}
+                  memberNames={fx.party.map((member) => ({
+                    id: member.id,
+                    name: member.name,
+                    alive: member.alive,
+                  }))}
+                />
+                <EventActions
+                  view={eventView}
+                  selectedChoiceId={selectedChoiceId}
+                  onSelectChoice={setSelectedChoiceId}
+                  onAdvance={advanceEvent}
+                />
+              </>
             ) : null}
           </div>
           {step === "event"

@@ -11,7 +11,7 @@ interface SettlementTimelineProps {
 export function SettlementTimeline({ steps }: SettlementTimelineProps) {
   return (
     <Panel title="정산 · 원인 사슬">
-      <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
         {steps.map((step) => (
           <li
             key={step.kind}

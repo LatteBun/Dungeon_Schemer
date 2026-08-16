@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createFixtureCampaignState } from "@/lib/rules/fixtures";
+import {
+  createFixtureCampaignState,
+  createFixtureExpeditionState,
+} from "@/lib/rules/fixtures";
 import type {
   BoardOfferId,
   CampaignState,
@@ -9,6 +12,7 @@ import {
   toBoardView,
   toCampaignHeaderView,
   toContractView,
+  toScreenTitle,
 } from "./campaign-view-model";
 
 // createFixtureCampaignState: 등급 C, 명성 0, 던전 1개(dungeon-001),
@@ -107,5 +111,50 @@ describe("toContractView", () => {
   it("없는 공고 id는 null을 돌려준다", () => {
     const state = createFixtureCampaignState();
     expect(toContractView(state, "no-such-offer" as BoardOfferId)).toBeNull();
+  });
+});
+
+function stateWithExpedition(phase: CampaignState["phase"]): CampaignState {
+  return {
+    ...createFixtureCampaignState(),
+    phase,
+    expedition: createFixtureExpeditionState(),
+  };
+}
+
+describe("toScreenTitle", () => {
+  it("게시판과 계약 단계는 같은 제목을 쓴다", () => {
+    const base = createFixtureCampaignState();
+    expect(toScreenTitle({ ...base, phase: "board" })).toBe("캠페인 게시판");
+    expect(toScreenTitle({ ...base, phase: "contract" })).toBe("캠페인 게시판");
+  });
+
+  it("엔딩 단계는 고정 제목을 쓴다", () => {
+    const base = createFixtureCampaignState();
+    expect(toScreenTitle({ ...base, phase: "ended" })).toBe("캠페인 엔딩");
+  });
+
+  it("지도 단계는 던전 이름을 앞에 붙인다", () => {
+    expect(toScreenTitle(stateWithExpedition("map"))).toBe(
+      "C급 1번 · 공개 분기 지도",
+    );
+  });
+
+  it("단계마다 다른 제목을 낸다", () => {
+    const titles = (
+      ["map", "infoOpportunity", "event", "boss"] as const
+    ).map((phase) => toScreenTitle(stateWithExpedition(phase)));
+    expect(new Set(titles).size).toBe(titles.length);
+  });
+
+  it("보스와 정산은 같은 제목을 쓴다", () => {
+    expect(toScreenTitle(stateWithExpedition("boss"))).toBe(
+      toScreenTitle(stateWithExpedition("settlement")),
+    );
+  });
+
+  it("탐험이 없으면 던전 이름 없이도 문장이 성립한다", () => {
+    const base = createFixtureCampaignState();
+    expect(toScreenTitle({ ...base, phase: "map" })).toBe("공개 분기 지도");
   });
 });

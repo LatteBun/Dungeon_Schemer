@@ -136,3 +136,32 @@ describe("createCampaignStore", () => {
     expect(store.getState().membersBeforeBoss).toBeNull();
   });
 });
+
+describe("lastTrustDeltas", () => {
+  it("처음에는 비어 있다", () => {
+    const store = createCampaignStore(initializeCampaign("u4-deltas"), CONTEXT);
+    expect(store.getState().lastTrustDeltas).toBeNull();
+  });
+
+  it("기억한 값을 그대로 돌려준다", () => {
+    const store = createCampaignStore(initializeCampaign("u4-deltas"), CONTEXT);
+    store.getState().rememberTrustDeltas({ "member-001": 3, "member-002": -14 });
+    expect(store.getState().lastTrustDeltas).toEqual({
+      "member-001": 3,
+      "member-002": -14,
+    });
+  });
+
+  it("새 계약을 수락하면 지난 신뢰 변화를 비운다", () => {
+    const store = createCampaignStore(initializeCampaign("u4-deltas"), CONTEXT);
+    store.getState().dispatch({ type: "openBoard" });
+    store.getState().rememberTrustDeltas({ "member-001": 3 });
+
+    const offer = store
+      .getState()
+      .campaign.board.find((candidate) => !candidate.locked)!;
+    store.getState().dispatch({ type: "acceptContract", offerId: offer.id });
+
+    expect(store.getState().lastTrustDeltas).toBeNull();
+  });
+});

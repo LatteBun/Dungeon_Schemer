@@ -15,10 +15,17 @@ export interface CampaignStoreState {
   lastSettlementSteps: SettlementStep[] | null;
   /** 보스전 직전 출전 파티. 전투 전 HP를 화면에 보여주려면 여기서만 얻을 수 있다. */
   membersBeforeBoss: CampaignMember[] | null;
+  /**
+   * 마지막 정보 카드가 만든 개인별 신뢰 증감.
+   * MemberReactionView 는 components 의 타입이므로 숫자 맵만 담아
+   * lib 이 components 를 가져오는 방향 역전을 막는다.
+   */
+  lastTrustDeltas: Record<string, number> | null;
 }
 
 export interface CampaignStoreActions {
   dispatch(action: CampaignAction): void;
+  rememberTrustDeltas(deltas: Record<string, number>): void;
   startCampaign(seed: string): void;
   resetCampaign(): void;
 }
@@ -30,6 +37,7 @@ const EMPTY_RESULTS = {
   lastBossResolution: null,
   lastSettlementSteps: null,
   membersBeforeBoss: null,
+  lastTrustDeltas: null,
 } as const;
 
 /** 출전 파티원을 상태에서 뽑아 복사한다. */
@@ -72,6 +80,10 @@ export function createCampaignStore(
         lastBossResolution: transition.bossResolution ?? get().lastBossResolution,
         lastSettlementSteps: transition.settlementSteps ?? get().lastSettlementSteps,
       });
+    },
+
+    rememberTrustDeltas: (deltas) => {
+      set({ lastTrustDeltas: deltas });
     },
 
     startCampaign: (seed) => {
