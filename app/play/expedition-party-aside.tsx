@@ -11,6 +11,7 @@ import { useCampaignStore } from "@/lib/stores/campaign-store-provider";
  */
 export function ExpeditionPartyAside({ footer }: { footer?: ReactNode }) {
   const campaign = useCampaignStore((store) => store.campaign);
+  const trustDeltas = useCampaignStore((store) => store.lastTrustDeltas);
   const expedition = campaign.expedition;
   const party = expedition === null
     ? undefined
@@ -24,7 +25,7 @@ export function ExpeditionPartyAside({ footer }: { footer?: ReactNode }) {
 
   return (
     <PartyStatusSidebar
-      members={toPartyStatusView(participants)}
+      members={toPartyStatusView(participants, trustDeltas ?? {})}
       footer={footer}
     />
   );

@@ -23,6 +23,9 @@ import { prepareInfoCardReview } from "./info-review";
 /** 항상 스토어의 현재 노드 이벤트를 보여준다. URL에 노드를 담지 않는다. */
 export default function EncounterPage() {
   const campaign = useCampaignStore((store) => store.campaign);
+  const rememberTrustDeltas = useCampaignStore(
+    (store) => store.rememberTrustDeltas,
+  );
   const dispatch = useCampaignDispatch();
   const [selectedCardId, setSelectedCardId] = useState<CardId | null>(null);
   const [reactions, setReactions] = useState<MemberReactionView[]>([]);
@@ -87,6 +90,14 @@ export default function EncounterPage() {
               );
               setSelectedCardId(review.selectedCardId);
               setReactions(review.reactions);
+              rememberTrustDeltas(
+                Object.fromEntries(
+                  review.reactions.map((reaction) => [
+                    reaction.memberId as string,
+                    reaction.trustDelta,
+                  ]),
+                ),
+              );
             }}
           />
           {selectedCardId === null ? null : (
