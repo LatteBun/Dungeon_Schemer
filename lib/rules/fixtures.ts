@@ -14,6 +14,7 @@ import type {
   NodeId,
   PartyId,
 } from "@/lib/domain";
+import { emptyStatistics } from "@/lib/rules/statistics";
 
 const asId = <T extends string>(value: string): T => value as T;
 
@@ -153,5 +154,6 @@ export function createFixtureCampaignState(seed = "f1-fixture"): CampaignState {
     expedition: null,
     ending: null,
     log: [],
+    statistics: emptyStatistics(),
   };
 }

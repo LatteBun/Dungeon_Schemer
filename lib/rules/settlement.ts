@@ -9,6 +9,8 @@ import type {
   ExpeditionState,
   Grade,
   MemberId,
+  SettlementStep,
+  SettlementStepKind,
 } from "@/lib/domain";
 import type { Rng } from "@/lib/rng";
 import { generateBoard } from "@/lib/rules/board";
@@ -16,23 +18,13 @@ import { resolveEnding } from "@/lib/rules/ending";
 import { maintainPartiesAfterExpedition } from "@/lib/rules/party-lifecycle";
 import { calculatePromotionScore, promote } from "@/lib/rules/promotion";
 
+/** 타입은 도메인으로 옮겼다. 기존 import 경로를 깨지 않기 위해 다시 내보낸다. */
+export type { SettlementStep, SettlementStepKind };
+
 export interface SettleExpeditionInput {
   readonly state: CampaignState;
   readonly expedition: ExpeditionState;
   readonly rng: Rng;
-}
-
-export type SettlementStepKind =
-  | "survival"
-  | "reward"
-  | "dungeon"
-  | "promotion"
-  | "party"
-  | "ending";
-
-export interface SettlementStep {
-  readonly kind: SettlementStepKind;
-  readonly summary: string;
 }
 
 export interface SettlementResult {

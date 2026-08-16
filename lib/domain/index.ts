@@ -66,9 +66,16 @@ export type {
   CampaignParty,
   CampaignPhase,
   CampaignState,
+  CampaignStatistics,
+  CardTruthStat,
   DungeonStatus,
+  ExpeditionRecord,
   Grade,
   MemoryRecord,
+  SettlementStep,
+  SettlementStepKind,
+  TurningPoint,
+  TurningPointKind,
 } from "./campaign";
 
 export type {

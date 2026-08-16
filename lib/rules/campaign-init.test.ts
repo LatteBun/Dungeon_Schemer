@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GRADES } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
+import { emptyStatistics } from "@/lib/rules/statistics";
 
 describe("캠페인 초기화", () => {
   it("같은 seed는 전체 초기 캠페인을 재현한다", () => {
@@ -40,6 +41,7 @@ describe("캠페인 초기화", () => {
       expedition: null,
       ending: null,
       log: [],
+      statistics: emptyStatistics(),
     });
     expect(state.members).toHaveLength(51);
     expect(state.members.every((member) =>
