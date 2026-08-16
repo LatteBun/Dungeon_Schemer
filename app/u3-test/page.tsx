@@ -66,7 +66,7 @@ export default function U3TestPage() {
       ) : endingView === null ? (
         <p className="text-sm text-muted">엔딩을 만들지 못했다.</p>
       ) : (
-        <EndingPanel view={endingView} />
+        <EndingPanel view={endingView} onRestart={() => {}} />
       )}
     </main>
   );

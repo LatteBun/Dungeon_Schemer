@@ -34,6 +34,7 @@ export default function ResultPage() {
   const membersBeforeBoss = useCampaignStore(
     (store) => store.membersBeforeBoss,
   );
+  const startCampaign = useCampaignStore((store) => store.startCampaign);
   const [holdsSettlementSummary, setHoldsSettlementSummary] = useState(false);
   const dispatch = useCampaignDispatch();
   const router = useRouter();
@@ -121,5 +122,13 @@ export default function ResultPage() {
   if (ending === null) {
     throw new Error("엔딩 단계에 엔딩 결과가 없습니다.");
   }
-  return <EndingPanel view={ending} />;
+  return (
+    <EndingPanel
+      view={ending}
+      onRestart={() => {
+        startCampaign(`${campaign.seed}-next`);
+        router.replace(ROUTE_BY_PHASE.board);
+      }}
+    />
+  );
 }
