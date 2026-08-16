@@ -16,12 +16,8 @@ export function EventActions({
   onAdvance,
 }: EventActionsProps) {
   return (
-    <Panel title={`사건 행동 · ${view.kindLabel}`}>
-      <p className="text-sm text-parchment">{view.title}</p>
-      <p className="mt-1 text-xs text-muted">{view.description}</p>
-      <p className="mt-1 text-xs text-trust-down">{view.riskSummary}</p>
-
-      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+    <Panel title="조작 영역 · 사건 행동">
+      <ul className="grid gap-2 sm:grid-cols-2">
         {view.choices.map((choice) => {
           const selected = choice.choiceId === selectedChoiceId;
           return (

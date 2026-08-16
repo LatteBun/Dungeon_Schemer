@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { EncounterScenePanel } from "@/components/game/EncounterScenePanel";
 import { EventActions } from "@/components/game/EventActions";
-import { InfoOpportunityPanel } from "@/components/game/InfoOpportunityPanel";
+import { InfoCardChoices } from "@/components/game/InfoCardChoices";
 import { PartyReactionSidebar } from "@/components/game/PartyReactionSidebar";
 import {
   toEventView,
@@ -11,6 +12,7 @@ import {
 } from "@/components/game/expedition-view-model";
 import type { CardId, ChoiceId } from "@/lib/domain";
 import { useCampaignStore } from "@/lib/stores/campaign-store-provider";
+import { ExpeditionPartyAside } from "../expedition-party-aside";
 import { usePhaseGuard } from "../phase-route";
 import {
   CAMPAIGN_CONTEXT,
@@ -49,25 +51,33 @@ export default function EncounterPage() {
       throw new Error("정보 전달 화면의 캠페인 데이터가 올바르지 않습니다.");
     }
 
+    const infoView = toInfoOpportunityView(
+      pending,
+      (cardId) => {
+        const card = CAMPAIGN_CONTEXT.cards.find(
+          (candidate) => candidate.id === cardId,
+        );
+        if (card === undefined) {
+          throw new Error(`콘텐츠에 없는 카드입니다: ${cardId}`);
+        }
+        return card;
+      },
+      node,
+      event,
+      participants,
+    );
+
     return (
-      <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-3 lg:grid-cols-[1fr_20rem]">
         <div className="flex flex-col gap-3">
-          <InfoOpportunityPanel
-            view={toInfoOpportunityView(
-              pending,
-              (cardId) => {
-                const card = CAMPAIGN_CONTEXT.cards.find(
-                  (candidate) => candidate.id === cardId,
-                );
-                if (card === undefined) {
-                  throw new Error(`콘텐츠에 없는 카드입니다: ${cardId}`);
-                }
-                return card;
-              },
-              node,
-              event,
-              participants,
-            )}
+          <EncounterScenePanel
+            title={event.title}
+            sceneText={infoView.scene.sceneText}
+            riskSummary={infoView.scene.riskSummary}
+            memberNames={infoView.scene.memberNames}
+          />
+          <InfoCardChoices
+            cards={infoView.cards}
             selectedCardId={selectedCardId}
             onSelectCard={(cardId) => {
               const review = prepareInfoCardReview(
@@ -107,22 +117,39 @@ export default function EncounterPage() {
     throw new Error("사건 화면의 캠페인 데이터가 올바르지 않습니다.");
   }
 
+  const eventView = toEventView(
+    event,
+    campaign.currentGold,
+    (itemId) => CAMPAIGN_CONTEXT.items.find(
+      (candidate) => candidate.id === itemId,
+    ),
+  );
+
   return (
-    <EventActions
-      view={toEventView(
-        event,
-        campaign.currentGold,
-        (itemId) => CAMPAIGN_CONTEXT.items.find(
-          (candidate) => candidate.id === itemId,
-        ),
-      )}
-      selectedChoiceId={selectedChoiceId}
-      onSelectChoice={setSelectedChoiceId}
-      onAdvance={() => {
-        if (selectedChoiceId !== null) {
-          dispatch({ type: "chooseEvent", choiceId: selectedChoiceId });
-        }
-      }}
-    />
+    <div className="grid gap-3 lg:grid-cols-[1fr_20rem]">
+      <div className="flex flex-col gap-3">
+        <EncounterScenePanel
+          title={eventView.title}
+          sceneText={eventView.description}
+          riskSummary={eventView.riskSummary}
+          memberNames={participants.map((member) => ({
+            id: member.id,
+            name: member.name,
+            alive: member.alive,
+          }))}
+        />
+        <EventActions
+          view={eventView}
+          selectedChoiceId={selectedChoiceId}
+          onSelectChoice={setSelectedChoiceId}
+          onAdvance={() => {
+            if (selectedChoiceId !== null) {
+              dispatch({ type: "chooseEvent", choiceId: selectedChoiceId });
+            }
+          }}
+        />
+      </div>
+      <ExpeditionPartyAside />
+    </div>
   );
 }
