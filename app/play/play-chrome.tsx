@@ -3,7 +3,10 @@
 import type { ReactNode } from "react";
 import { CampaignHeader } from "@/components/game/CampaignHeader";
 import { PartyStatusSidebar } from "@/components/game/PartyStatusSidebar";
-import { toCampaignHeaderView } from "@/components/game/campaign-view-model";
+import {
+  toCampaignHeaderView,
+  toScreenTitle,
+} from "@/components/game/campaign-view-model";
 import { toPartyStatusView } from "@/components/game/expedition-view-model";
 import { useCampaignStore } from "@/lib/stores/campaign-store-provider";
 
@@ -21,7 +24,10 @@ export function PlayChrome({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-3 p-3">
-      <CampaignHeader view={toCampaignHeaderView(campaign)} />
+      <CampaignHeader
+        title={toScreenTitle(campaign)}
+        view={toCampaignHeaderView(campaign)}
+      />
       <div className="flex flex-1 flex-col gap-3 lg:flex-row">
         <main className="flex flex-1 flex-col gap-3">{children}</main>
         {participants.length === 0 ? null : (

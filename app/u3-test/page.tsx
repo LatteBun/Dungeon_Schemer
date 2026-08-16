@@ -49,7 +49,7 @@ export default function U3TestPage() {
         </button>
       </div>
 
-      <CampaignHeader view={outcome.headerView} />
+      <CampaignHeader title="U3 하네스 · 정산·엔딩" view={outcome.headerView} />
 
       {tab === "settlement" ? (
         <>

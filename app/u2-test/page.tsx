@@ -87,7 +87,7 @@ export default function U2TestPage() {
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-3 p-4 text-parchment">
-      <CampaignHeader view={fx.headerView} />
+      <CampaignHeader title="U2 하네스 · 지도·정보·사건" view={fx.headerView} />
 
       {step === "map" ? (
         <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
