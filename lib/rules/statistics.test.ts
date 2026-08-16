@@ -9,7 +9,8 @@ import type {
 } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createFixtureExpeditionState } from "@/lib/rules/fixtures";
-import { emptyStatistics, summarizeExpeditionCards } from "./statistics";
+import { createFixtureExpeditionRecord } from "@/lib/rules/fixtures";
+import { emptyStatistics, summarizeExpeditionCards, findTurningPoint } from "./statistics";
 
 describe("emptyStatistics", () => {
   it("진위 세 종류를 모두 0으로 채운다", () => {
@@ -168,5 +169,83 @@ describe("summarizeExpeditionCards", () => {
   it("기록이 없으면 빈 집계다", () => {
     expect(summarizeExpeditionCards(expeditionWith([], null)))
       .toEqual(emptyStatistics().cards);
+  });
+});
+
+describe("findTurningPoint", () => {
+  it("기록이 없으면 전환점이 없다", () => {
+    expect(findTurningPoint([])).toBeNull();
+  });
+
+  // wipeGoldFirst 의 77.4%가 첫 전멸 뒤 지원 불가로 끝났다.
+  it("전멸이 승급보다 앞선다", () => {
+    const point = findTurningPoint([
+      createFixtureExpeditionRecord({
+        order: 1,
+        rankBefore: "C",
+        rankAfter: "B",
+        scoreBefore: 0,
+        scoreAfter: 500,
+      }),
+      createFixtureExpeditionRecord({
+        order: 2,
+        status: "failed",
+        survivorCount: 0,
+        casualtyCount: 3,
+      }),
+    ]);
+
+    expect(point?.kind).toBe("firstWipe");
+    expect(point?.expeditionOrder).toBe(2);
+  });
+
+  it("전멸이 여럿이면 첫 전멸을 고른다", () => {
+    const point = findTurningPoint([
+      createFixtureExpeditionRecord({ order: 1, status: "failed" }),
+      createFixtureExpeditionRecord({ order: 2, status: "failed" }),
+    ]);
+
+    expect(point?.expeditionOrder).toBe(1);
+  });
+
+  it("전멸이 없으면 가장 높은 등급에 도달한 원정을 고른다", () => {
+    const point = findTurningPoint([
+      createFixtureExpeditionRecord({ order: 1, rankBefore: "C", rankAfter: "B" }),
+      createFixtureExpeditionRecord({ order: 2, rankBefore: "B", rankAfter: "S" }),
+      createFixtureExpeditionRecord({ order: 3 }),
+    ]);
+
+    expect(point?.kind).toBe("promotion");
+    expect(point?.expeditionOrder).toBe(2);
+    expect(point?.summary).toContain("B에서 S로");
+  });
+
+  it("전멸도 승급도 없으면 점수 변화폭이 가장 큰 원정을 고른다", () => {
+    const point = findTurningPoint([
+      createFixtureExpeditionRecord({ order: 1, scoreBefore: 100, scoreAfter: 120 }),
+      createFixtureExpeditionRecord({ order: 2, scoreBefore: 120, scoreAfter: 40 }),
+    ]);
+
+    expect(point?.kind).toBe("scoreSwing");
+    expect(point?.expeditionOrder).toBe(2);
+    expect(point?.summary).toContain("80");
+  });
+
+  it("점수 변화폭이 같으면 이른 원정을 고른다", () => {
+    const point = findTurningPoint([
+      createFixtureExpeditionRecord({ order: 1, scoreBefore: 0, scoreAfter: 30 }),
+      createFixtureExpeditionRecord({ order: 2, scoreBefore: 30, scoreAfter: 60 }),
+    ]);
+
+    expect(point?.expeditionOrder).toBe(1);
+  });
+
+  it("승급이 여럿이고 등급이 같으면 이른 원정을 고른다", () => {
+    const point = findTurningPoint([
+      createFixtureExpeditionRecord({ order: 1, rankBefore: "C", rankAfter: "B" }),
+      createFixtureExpeditionRecord({ order: 2, rankBefore: "C", rankAfter: "B" }),
+    ]);
+
+    expect(point?.expeditionOrder).toBe(1);
   });
 });

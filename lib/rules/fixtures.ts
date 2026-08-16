@@ -5,6 +5,7 @@ import type {
   GeneratedMap,
   MapNode,
   MapPath,
+  ExpeditionRecord,
 } from "@/lib/domain";
 import type {
   ClassId,
@@ -14,7 +15,7 @@ import type {
   NodeId,
   PartyId,
 } from "@/lib/domain";
-import { emptyStatistics } from "@/lib/rules/statistics";
+import { emptyStatistics, emptyCardStats } from "@/lib/rules/statistics";
 
 const asId = <T extends string>(value: string): T => value as T;
 
@@ -34,6 +35,30 @@ export function createMemberWithHp(
     carriedGold: 20,
     alive: currentHp > 0,
     memory: [],
+    ...overrides,
+  };
+}
+
+export function createFixtureExpeditionRecord(
+  overrides: Partial<ExpeditionRecord> = {},
+): ExpeditionRecord {
+  return {
+    order: 1,
+    dungeonId: asId<DungeonId>("dungeon-001"),
+    grade: "C",
+    partyId: asId<PartyId>("party-001"),
+    status: "cleared",
+    survivorCount: 3,
+    casualtyCount: 0,
+    cards: emptyCardStats(),
+    bossDamageTotal: 0,
+    reputationDelta: 0,
+    goldDelta: 0,
+    scoreBefore: 0,
+    scoreAfter: 0,
+    rankBefore: "C",
+    rankAfter: "C",
+    steps: [],
     ...overrides,
   };
 }

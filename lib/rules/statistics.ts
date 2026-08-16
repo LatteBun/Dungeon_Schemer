@@ -1,8 +1,10 @@
-import { TRUTH_TYPES } from "@/lib/domain";
+import { TRUTH_TYPES, GRADES } from "@/lib/domain";
 import type {
   CampaignStatistics,
   CardTruthStat,
   ExpeditionState,
+  ExpeditionRecord,
+  TurningPoint,
   TruthType,
 } from "@/lib/domain";
 
@@ -68,4 +70,67 @@ export function summarizeExpeditionCards(
   }
 
   return cards;
+}
+
+function scoreSwingOf(record: ExpeditionRecord): number {
+  return Math.abs(record.scoreAfter - record.scoreBefore);
+}
+
+/**
+ * 캠페인의 궤적을 꺾은 원정 하나를 고른다.
+ *
+ * 단위가 다른 값을 억지로 한 축에 더하지 않고 우선순위로 고른다. 첫 전멸이
+ * 승급보다 앞서는 근거는 첫 백테스트다. wipeGoldFirst 전략의 77.4%가 첫
+ * 전멸 뒤 지원 불가로 끝나 평균 6.4회 원정으로 캠페인이 멈췄다.
+ *
+ * 점수 변화폭을 마지막에 두는 것은 승급 점수가 `명성 × 2 + 누적 골드`라
+ * 등급이 높은 던전일수록 보상도 손실도 커지기 때문이다. 이것만으로 고르면
+ * S급 원정이 거의 항상 뽑혀 전환점이 등급의 다른 이름이 된다.
+ *
+ * 세 갈래 모두 비교가 `>`이므로 동률이면 먼저 온 기록이 남는다.
+ * docs/technical/PROTOTYPE_WORK_ASSIGNMENT.md 「확인된 밸런스 문제」
+ */
+export function findTurningPoint(
+  records: readonly ExpeditionRecord[],
+): TurningPoint | null {
+  const wiped = records.find((record) => record.status === "failed");
+  if (wiped !== undefined) {
+    return {
+      kind: "firstWipe",
+      expeditionOrder: wiped.order,
+      summary: `${wiped.order}번째 원정에서 출전한 파티가 전멸했다`,
+    };
+  }
+
+  const promoted = records
+    .filter((record) => record.rankBefore !== record.rankAfter)
+    .reduce<ExpeditionRecord | null>(
+      (best, record) =>
+        best === null
+          || GRADES.indexOf(record.rankAfter) > GRADES.indexOf(best.rankAfter)
+          ? record
+          : best,
+      null,
+    );
+  if (promoted !== null) {
+    return {
+      kind: "promotion",
+      expeditionOrder: promoted.order,
+      summary: `${promoted.order}번째 원정에서 등급이 `
+        + `${promoted.rankBefore}에서 ${promoted.rankAfter}로 올랐다`,
+    };
+  }
+
+  const swung = records.reduce<ExpeditionRecord | null>(
+    (best, record) =>
+      best === null || scoreSwingOf(record) > scoreSwingOf(best) ? record : best,
+    null,
+  );
+  if (swung === null) return null;
+
+  return {
+    kind: "scoreSwing",
+    expeditionOrder: swung.order,
+    summary: `${swung.order}번째 원정에서 승급 점수가 ${scoreSwingOf(swung)} 움직였다`,
+  };
 }
