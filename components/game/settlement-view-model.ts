@@ -11,7 +11,15 @@ import type {
   Grade,
   MemberId,
 } from "@/lib/domain";
-import { ENDING_LABELS, SETTLEMENT_STEP_LABELS } from "./labels";
+import { ENDING_LABELS, SETTLEMENT_STEP_LABELS, TRUTH_TYPE_LABELS } from "./labels";
+import { numericSuffix } from "./campaign-view-model";
+import { TRUTH_TYPES } from "@/lib/domain";
+import type {
+  CampaignStatistics,
+  ExpeditionRecord,
+  TurningPoint,
+  TruthType,
+} from "@/lib/domain";
 
 const RETROSPECTIVE = "S급 목표를 위해 어떤 선택을 했는가?";
 
@@ -124,11 +132,110 @@ export function toSettlementTimelineView(
   }));
 }
 
+// --- 누적 통계 ---
+
+export interface CardStatView {
+  truthType: TruthType;
+  label: string;
+  delivered: number;
+  accepted: number;
+  suspected: number;
+  exposed: number;
+  lateExposed: number;
+}
+
+export interface TurningPointView {
+  order: number;
+  /** 규칙이 쓴 이유 문장 그대로. */
+  summary: string;
+  dungeonLabel: string;
+  partyLabel: string;
+  detail: string;
+}
+
+export interface ChronicleEntryView {
+  order: number;
+  orderLabel: string;
+  dungeonLabel: string;
+  partyLabel: string;
+  /** 색과 기호에 기대지 않도록 글자를 함께 낸다. */
+  statusMark: string;
+  statusLabel: string;
+  rewardLabel: string;
+  scoreLabel: string;
+}
+
+function dungeonLabelOf(record: ExpeditionRecord): string {
+  return `${record.grade}급 ${numericSuffix(record.dungeonId)}번`;
+}
+
+function partyLabelOf(record: ExpeditionRecord): string {
+  return `${numericSuffix(record.partyId)}팀`;
+}
+
+function signed(value: number): string {
+  return value >= 0 ? `+${value}` : `${value}`;
+}
+
+function rewardLabelOf(record: ExpeditionRecord): string {
+  return `명성 ${signed(record.reputationDelta)} · 골드 ${signed(record.goldDelta)}`;
+}
+
+export function toCardStatViews(
+  statistics: CampaignStatistics,
+): CardStatView[] {
+  return TRUTH_TYPES.map((truthType) => ({
+    truthType,
+    label: TRUTH_TYPE_LABELS[truthType],
+    ...statistics.cards[truthType],
+  }));
+}
+
+export function toTurningPointView(
+  statistics: CampaignStatistics,
+): TurningPointView | null {
+  const point: TurningPoint | null = statistics.turningPoint;
+  if (point === null) return null;
+
+  const record = statistics.expeditions.find(
+    (entry) => entry.order === point.expeditionOrder,
+  );
+  if (record === undefined) return null;
+
+  return {
+    order: point.expeditionOrder,
+    summary: point.summary,
+    dungeonLabel: dungeonLabelOf(record),
+    partyLabel: partyLabelOf(record),
+    detail: `${rewardLabelOf(record)} · `
+      + `승급 점수 ${record.scoreBefore} → ${record.scoreAfter}`,
+  };
+}
+
+export function toChronicleView(
+  statistics: CampaignStatistics,
+): ChronicleEntryView[] {
+  return statistics.expeditions.map((record) => ({
+    order: record.order,
+    orderLabel: String(record.order).padStart(2, "0"),
+    dungeonLabel: dungeonLabelOf(record),
+    partyLabel: partyLabelOf(record),
+    statusMark: record.status === "cleared" ? "✓" : "×",
+    statusLabel: record.status === "cleared"
+      ? `생환 ${record.survivorCount}명`
+      : "전멸",
+    rewardLabel: rewardLabelOf(record),
+    scoreLabel: `${record.scoreBefore} → ${record.scoreAfter}`,
+  }));
+}
+
 // --- 엔딩 ---
 
 export interface EndingSummaryView {
   clearedDungeons: number;
   totalDungeons: number;
+  clearedExpeditions: number;
+  wipedExpeditions: number;
   deadMembers: number;
   aliveMembers: number;
   survivalRate: number;
@@ -147,6 +254,9 @@ export interface EndingView {
   promotionScore: number;
   nextGrade: { grade: Grade; threshold: number } | null;
   summary: EndingSummaryView;
+  cards: CardStatView[];
+  turningPoint: TurningPointView | null;
+  chronicle: ChronicleEntryView[];
   retrospective: string;
 }
 
@@ -176,6 +286,8 @@ export function toEndingView(
         (dungeon) => dungeon.status === "cleared",
       ).length,
       totalDungeons: state.dungeons.length,
+      clearedExpeditions: state.statistics.clearedExpeditions,
+      wipedExpeditions: state.statistics.wipedExpeditions,
       deadMembers: total - alive,
       aliveMembers: alive,
       survivalRate: total === 0 ? 0 : Math.round((alive / total) * 100),
@@ -185,6 +297,9 @@ export function toEndingView(
       cumulativeGold: state.cumulativeGold,
       seed: state.seed,
     },
+    cards: toCardStatViews(state.statistics),
+    turningPoint: toTurningPointView(state.statistics),
+    chronicle: toChronicleView(state.statistics),
     retrospective: RETROSPECTIVE,
   };
 }
