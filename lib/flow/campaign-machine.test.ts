@@ -13,6 +13,7 @@ import type {
 } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { generateBoard } from "@/lib/rules/board";
+import { previewOfferMap } from "@/lib/rules/offer-risk";
 import {
   affordableChoiceIds,
   createCampaignMachineContext,
@@ -480,5 +481,22 @@ describe("transitionCampaignDetailed", () => {
     ).state;
 
     expect(viaWrapper).toEqual(viaDetailed);
+  });
+});
+
+describe("게시판 위험 미리보기", () => {
+  it("계약 전에 만든 지도가 계약 후 탐험 지도와 같다", () => {
+    const state = boardState("c5-일치");
+    const offer = state.board.find((candidate) => !candidate.locked)!;
+
+    const preview = previewOfferMap(state, offer, DUNGEON_EVENT_POOLS);
+    const after = transitionCampaign(
+      state,
+      { type: "acceptContract", offerId: offer.id },
+      CONTEXT,
+    );
+
+    expect(after.expedition).not.toBeNull();
+    expect(preview).toEqual(after.expedition!.map);
   });
 });

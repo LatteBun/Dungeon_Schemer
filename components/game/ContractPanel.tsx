@@ -38,6 +38,34 @@ export function ContractPanel({ contract }: ContractPanelProps) {
             }`}
       </p>
 
+      {contract.risk === null ? null : (
+        <>
+          <h3 className="mt-3 text-sm font-semibold text-muted">
+            사건 분류
+            <span className="ml-1 text-xs font-normal">
+              전체 지도 기준 · 한 갈래만 지난다
+            </span>
+          </h3>
+          <ul className="mt-2 flex flex-col gap-1">
+            {contract.risk.kinds.map((entry) => (
+              <li
+                key={entry.kind}
+                className="flex justify-between text-xs text-muted"
+              >
+                <span>
+                  {entry.mark} {entry.label}
+                </span>
+                <span>{entry.count}곳</span>
+              </li>
+            ))}
+            <li className="flex justify-between border-t border-edge pt-1 text-xs text-muted">
+              <span>보스전</span>
+              <span>{contract.risk.bossCount}곳</span>
+            </li>
+          </ul>
+        </>
+      )}
+
       <h3 className="mt-3 text-sm font-semibold text-muted">
         출전 파티 · {contract.partyLabel}
       </h3>

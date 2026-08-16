@@ -82,6 +82,17 @@ export function Board({
                   파티: {offer.partyLabel} · 생존 {offer.survivorCount} · 평균 신뢰{" "}
                   {offer.averageTrust}
                 </span>
+                {offer.risk === null ? null : (
+                  <span className="mt-1 flex flex-wrap gap-x-2 text-xs text-muted">
+                    {offer.risk.kinds.map((entry) => (
+                      <span key={entry.kind}>
+                        {entry.mark}
+                        {entry.label} {entry.count}
+                      </span>
+                    ))}
+                    <span>보스전 {offer.risk.bossCount}</span>
+                  </span>
+                )}
               </button>
             </li>
           );
