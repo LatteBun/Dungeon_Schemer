@@ -25,6 +25,7 @@ import { canAcceptOffer, generateBoard } from "@/lib/rules/board";
 import { resolveBossFight } from "@/lib/rules/boss";
 import type { BossResolution } from "@/lib/rules/boss";
 import { resolveEventChoice } from "@/lib/rules/event";
+import { expeditionKey } from "@/lib/rules/expedition-key";
 import {
   applyInfoRecord,
   createInfoOpportunity,
@@ -160,17 +161,6 @@ function findNode(expedition: ExpeditionState, nodeId: NodeId): MapNode {
     unknown(`지도에 없는 지점이다: ${nodeId}`, { nodeId });
   }
   return node;
-}
-
-/**
- * 한 원정을 가리키는 안정된 난수 키다.
- *
- * 호출 횟수가 아니라 식별자에서 파생하므로 같은 시드로 같은 선택을 하면 중간에
- * 무엇을 몇 번 했든 같은 결과가 나온다. 실패 횟수를 넣는 이유는 전멸 뒤 등급이
- * 올라 같은 던전을 다시 도전할 때 첫 도전과 같은 지도가 나오지 않게 하려는 것이다.
- */
-function expeditionKey(state: CampaignState, dungeon: CampaignDungeon): string {
-  return `${state.seed}/${dungeon.id}#${dungeon.failureCount}`;
 }
 
 function nodeRng(
