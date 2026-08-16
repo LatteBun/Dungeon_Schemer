@@ -5,6 +5,7 @@ import { CampaignHeader } from "@/components/game/CampaignHeader";
 import { DungeonMapView } from "@/components/game/DungeonMapView";
 import { EventActions } from "@/components/game/EventActions";
 import { InfoOpportunityPanel } from "@/components/game/InfoOpportunityPanel";
+import { MapLegend } from "@/components/game/MapLegend";
 import { PartyReactionSidebar } from "@/components/game/PartyReactionSidebar";
 import { PartyStatusSidebar } from "@/components/game/PartyStatusSidebar";
 import {
@@ -90,14 +91,26 @@ export default function U2TestPage() {
       <CampaignHeader title="U2 하네스 · 지도·정보·사건" view={fx.headerView} />
 
       {step === "map" ? (
-        <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-3 lg:grid-cols-[13rem_1fr_18rem]">
+          <MapLegend />
           <DungeonMapView
             view={mapView}
             selectedNodeId={selectedNodeId}
             onSelectNode={setSelectedNodeId}
-            onEnterNode={enterNode}
           />
-          <PartyStatusSidebar members={partyStatus} />
+          <PartyStatusSidebar
+            members={partyStatus}
+            footer={
+              <button
+                type="button"
+                disabled={selectedNodeId === null}
+                onClick={enterNode}
+                className="w-full rounded border border-edge px-3 py-2 text-sm text-parchment enabled:hover:bg-edge disabled:opacity-40"
+              >
+                선택 지점 입장 · 정보 기회 →
+              </button>
+            }
+          />
         </div>
       ) : (
         <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
