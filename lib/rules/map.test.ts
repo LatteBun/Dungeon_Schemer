@@ -116,10 +116,10 @@ function generationErrorOf(call: () => unknown): RuleError {
 
 describe("등급별 지도 수치", () => {
   it.each([
-    ["C", 7, 4, 2, 1],
-    ["B", 9, 5, 3, 1],
-    ["A", 11, 6, 4, 2],
-    ["S", 13, 7, 5, 2],
+    ["C", 7, 3, 2, 1],
+    ["B", 9, 4, 3, 1],
+    ["A", 11, 5, 4, 2],
+    ["S", 13, 6, 5, 2],
   ] as const)(
     "%s급 지도는 전체 지점·일반 사건·정보·보스 보장 수를 만족한다",
     (grade, total, regular, info, bossInfo) => {
@@ -218,18 +218,18 @@ describe("정보 전달 기회 배치", () => {
     }
   });
 
-  it("입구와 합류도 정보 기회 후보이며 시드에 따라 표시된다", () => {
+  it("합류는 정보 기회 후보이며 입구에는 정보 기회가 없다", () => {
     const shared = new Set<string>();
     for (const grade of GRADES) {
       for (let index = 0; index < 40; index += 1) {
         const map = mapOf(grade, `공유-${grade}-${index}`);
-        for (const id of ["node-entry", "node-merge"]) {
+        for (const id of ["node-merge"]) {
           if (nodeOf(map, id).hasInfoOpportunity) shared.add(id);
         }
       }
     }
 
-    expect(shared).toEqual(new Set(["node-entry", "node-merge"]));
+    expect(shared).toEqual(new Set(["node-merge"]));
   });
 
   it("보스 보장 지점은 정보 기회가 있는 지점 안에서만 표시한다", () => {
@@ -435,7 +435,7 @@ describe("다수 시드 불변식", () => {
         for (const path of map.paths) {
           expect(path.infoCount).toBe(config.infoOpportunityCount);
           expect(path.bossRelatedInfoCount).toBe(config.bossRelatedInfoCount);
-          expect(path.regularEventCount).toBe(config.branchLength + 2);
+      expect(path.regularEventCount).toBe(config.branchLength + 1);
         }
       }
     }

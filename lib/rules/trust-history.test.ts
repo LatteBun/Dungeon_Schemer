@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { DecisionRecord, MemberId, NodeId } from "@/lib/domain";
+import type { MemberId } from "@/lib/domain";
 import {
   RECENT_TRUST_CHANGE_LIMIT,
   recentTrustChanges,
+  type TrustHistoryRecord,
 } from "@/lib/rules/trust-history";
 
 const ALPHA = "m-alpha" as MemberId;
@@ -11,16 +12,15 @@ const BETA = "m-beta" as MemberId;
 function record(
   at: number,
   changes: { memberId: MemberId; delta: number; reason: string }[],
-): DecisionRecord {
+): TrustHistoryRecord {
   return {
     at,
-    nodeId: `n-${at}` as NodeId,
     summary: `${at}번째 결정`,
     trustChanges: changes,
   };
 }
 
-const LOG: DecisionRecord[] = [
+const LOG: TrustHistoryRecord[] = [
   record(0, [{ memberId: ALPHA, delta: 4, reason: "첫 번째" }]),
   record(1, [{ memberId: BETA, delta: -6, reason: "베타의 것" }]),
   record(2, [{ memberId: ALPHA, delta: -3, reason: "두 번째" }]),
@@ -78,7 +78,7 @@ describe("최근 신뢰 변화 추출", () => {
   });
 
   it("한 기록 안에서 제한에 걸리면 그 자리에서 멈춘다", () => {
-    const straddling: DecisionRecord[] = [
+    const straddling: TrustHistoryRecord[] = [
       record(0, [{ memberId: ALPHA, delta: 1, reason: "오래된" }]),
       record(1, [
         { memberId: ALPHA, delta: 10, reason: "A" },

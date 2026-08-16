@@ -1,9 +1,16 @@
-import type { DecisionRecord, MemberId } from "@/lib/domain";
+import type { MemberId, TrustChange } from "@/lib/domain";
+
+/** 최근 신뢰 변화를 뽑는 데 필요한 로그의 최소 계약이다. */
+export interface TrustHistoryRecord {
+  at: number;
+  summary: string;
+  trustChanges: readonly TrustChange[];
+}
 
 export interface TrustHistoryEntry {
   /** 로그 순번이다. 시각이 아니다. 시각을 쓰면 재현성이 깨진다. */
   at: number;
-  /** 무슨 사건이었는지. DecisionRecord.summary 그대로다. */
+  /** 무슨 사건이었는지. 원본 로그의 summary 그대로다. */
   summary: string;
   /** 실제로 적용된 변화량이다. */
   delta: number;
@@ -18,7 +25,7 @@ export const RECENT_TRUST_CHANGE_LIMIT = 3;
  * 로그는 추가 전용이므로 원본을 건드리지 않는다.
  */
 export function recentTrustChanges(
-  log: DecisionRecord[],
+  log: readonly TrustHistoryRecord[],
   memberId: MemberId,
   limit: number = RECENT_TRUST_CHANGE_LIMIT,
 ): TrustHistoryEntry[] {

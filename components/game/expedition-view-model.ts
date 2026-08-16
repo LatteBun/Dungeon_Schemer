@@ -309,6 +309,7 @@ export interface MemberStatusView {
   memberId: MemberId;
   name: string;
   className: string;
+  alive: boolean;
   currentHp: number;
   maxHp: number;
   trust: number;
@@ -325,6 +326,7 @@ export function toPartyStatusView(
     memberId: member.id,
     name: member.name,
     className: classNameOf(member.classId),
+    alive: member.alive,
     currentHp: member.currentHp,
     maxHp: member.maxHp,
     trust: member.trust,

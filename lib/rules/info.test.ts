@@ -329,7 +329,7 @@ describe("정보 기회 카드 후보", () => {
     ["merchant", "merchant"],
     ["special", "event"],
   ] as const)("%s 사건 지점은 %s 주제를 제시한다", (eventKind, subject) => {
-    const pending = opportunity({ eventKind });
+    const pending = opportunity({ eventKind, node: infoNode({ depth: 2 }) });
 
     expect(new Set(subjectsOf(pending))).toEqual(new Set([subject]));
   });

@@ -47,3 +47,11 @@ export interface PartyMember {
   trust: number;
   alive: boolean;
 }
+
+/** 신뢰 변화 한 건. reason은 화면이 지어내지 않도록 규칙이 문장으로 남긴다. */
+export interface TrustChange {
+  memberId: MemberId;
+  delta: number;
+  /** "정의로운 성격: 거짓 정보가 발각됨"처럼 사람이 읽는 문장이다. */
+  reason: string;
+}

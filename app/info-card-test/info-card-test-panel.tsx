@@ -143,9 +143,6 @@ export function InfoCardTestPanel() {
           <Link className="rounded border border-edge px-3 py-2 hover:bg-edge" href="/integration-test">
             전체 통합 테스트
           </Link>
-          <Link className="rounded border border-edge px-3 py-2 hover:bg-edge" href="/state-preview">
-            상태 스토어 미리보기
-          </Link>
         </nav>
       </header>
 

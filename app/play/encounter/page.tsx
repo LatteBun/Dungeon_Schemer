@@ -1,49 +1,128 @@
 "use client";
 
-import { ChoiceList } from "@/components/game/ChoiceList";
-import { SceneStage } from "@/components/game/SceneStage";
-import { Panel } from "@/components/ui/Panel";
-import { useRunStore } from "@/lib/stores/game-store-provider";
+import { useState } from "react";
+import { EventActions } from "@/components/game/EventActions";
+import { InfoOpportunityPanel } from "@/components/game/InfoOpportunityPanel";
+import { PartyReactionSidebar } from "@/components/game/PartyReactionSidebar";
+import {
+  toEventView,
+  toInfoOpportunityView,
+  type MemberReactionView,
+} from "@/components/game/expedition-view-model";
+import type { CardId, ChoiceId } from "@/lib/domain";
+import { useCampaignStore } from "@/lib/stores/campaign-store-provider";
 import { usePhaseGuard } from "../phase-route";
-import { useRunEvents, useRunTransition } from "../play-run-provider";
+import {
+  CAMPAIGN_CONTEXT,
+  useCampaignDispatch,
+} from "../play-campaign-provider";
+import { prepareInfoCardReview } from "./info-review";
 
 /** 항상 스토어의 현재 노드 이벤트를 보여준다. URL에 노드를 담지 않는다. */
 export default function EncounterPage() {
-  const run = useRunStore((store) => store.run);
-  const events = useRunEvents();
-  const dispatch = useRunTransition();
-  const matches = usePhaseGuard(["event", "bossFight"]);
-  if (!matches) return null;
+  const campaign = useCampaignStore((store) => store.campaign);
+  const dispatch = useCampaignDispatch();
+  const [selectedCardId, setSelectedCardId] = useState<CardId | null>(null);
+  const [reactions, setReactions] = useState<MemberReactionView[]>([]);
+  const [selectedChoiceId, setSelectedChoiceId] = useState<ChoiceId | null>(null);
+  const matches = usePhaseGuard(["infoOpportunity", "event"]);
+  const expedition = campaign.expedition;
+  if (!matches || expedition === null) return null;
 
-  const node = run.dungeon.nodes.find((item) => item.id === run.currentNodeId);
-  const event = events.find((item) => item.id === node?.eventId);
-  const isBoss = run.phase === "bossFight";
+  const party = campaign.parties.find(
+    (candidate) => candidate.id === expedition.partyId,
+  );
+  const memberIds = new Set((party?.memberIds ?? []).map(String));
+  const participants = campaign.members.filter((member) =>
+    memberIds.has(member.id as string),
+  );
 
-  if (event === undefined) {
+  if (campaign.phase === "infoOpportunity") {
+    const pending = expedition.pendingInfo;
+    const node = expedition.map.nodes.find(
+      (candidate) => candidate.id === pending?.nodeId,
+    );
+    const event = node === undefined
+      ? undefined
+      : CAMPAIGN_CONTEXT.eventById.get(node.eventId as string);
+    if (pending === null || node === undefined || event === undefined) {
+      throw new Error("정보 전달 화면의 캠페인 데이터가 올바르지 않습니다.");
+    }
+
     return (
-      <Panel title="조우">
-        <p className="text-sm text-trust-down">현재 지점의 이벤트를 찾을 수 없다.</p>
-      </Panel>
+      <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
+        <div className="flex flex-col gap-3">
+          <InfoOpportunityPanel
+            view={toInfoOpportunityView(
+              pending,
+              (cardId) => {
+                const card = CAMPAIGN_CONTEXT.cards.find(
+                  (candidate) => candidate.id === cardId,
+                );
+                if (card === undefined) {
+                  throw new Error(`콘텐츠에 없는 카드입니다: ${cardId}`);
+                }
+                return card;
+              },
+              node,
+              event,
+              participants,
+            )}
+            selectedCardId={selectedCardId}
+            onSelectCard={(cardId) => {
+              const review = prepareInfoCardReview(
+                campaign,
+                cardId,
+                CAMPAIGN_CONTEXT,
+              );
+              setSelectedCardId(review.selectedCardId);
+              setReactions(review.reactions);
+            }}
+          />
+          {selectedCardId === null ? null : (
+            <button
+              type="button"
+              onClick={() => {
+                const cardId = selectedCardId;
+                setSelectedCardId(null);
+                setReactions([]);
+                dispatch({ type: "chooseInfoCard", cardId });
+              }}
+              className="rounded border border-edge px-3 py-2 text-sm text-parchment hover:bg-edge"
+            >
+              정보 반응 확인 완료 · 사건 행동으로 →
+            </button>
+          )}
+        </div>
+        <PartyReactionSidebar reactions={reactions} />
+      </div>
     );
   }
 
+  const pending = expedition.pendingEvent;
+  const event = pending === null
+    ? undefined
+    : CAMPAIGN_CONTEXT.eventById.get(pending.eventId as string);
+  if (pending === null || event === undefined) {
+    throw new Error("사건 화면의 캠페인 데이터가 올바르지 않습니다.");
+  }
+
   return (
-    <>
-      <SceneStage party={run.party} event={event} isBoss={isBoss} />
-      <Panel title={isBoss ? "보스전" : "이벤트와 선택"} className="flex-1">
-        <ChoiceList
-          event={event}
-          party={run.party}
-          disabled={isBoss}
-          onChoose={(choiceId) => dispatch({ type: "completeEvent", choiceId })}
-        />
-        {isBoss ? (
-          <p className="mt-3 text-xs text-muted">
-            보스전 진행과 종료 조건은 아직 구현 전이다. 여기까지가 이번 판의
-            끝이다.
-          </p>
-        ) : null}
-      </Panel>
-    </>
+    <EventActions
+      view={toEventView(
+        event,
+        campaign.currentGold,
+        (itemId) => CAMPAIGN_CONTEXT.items.find(
+          (candidate) => candidate.id === itemId,
+        ),
+      )}
+      selectedChoiceId={selectedChoiceId}
+      onSelectChoice={setSelectedChoiceId}
+      onAdvance={() => {
+        if (selectedChoiceId !== null) {
+          dispatch({ type: "chooseEvent", choiceId: selectedChoiceId });
+        }
+      }}
+    />
   );
 }

@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { createE1TestSnapshot } from "@/app/e1-test/e1-test-snapshot";
 
 const EXPECTED_BY_GRADE = {
-  C: { nodes: 7, branchLength: 2, regular: 4, info: 2, bossInfo: 1 },
-  B: { nodes: 9, branchLength: 3, regular: 5, info: 3, bossInfo: 1 },
-  A: { nodes: 11, branchLength: 4, regular: 6, info: 4, bossInfo: 2 },
-  S: { nodes: 13, branchLength: 5, regular: 7, info: 5, bossInfo: 2 },
+  C: { nodes: 7, branchLength: 2, regular: 3, info: 2, bossInfo: 1 },
+  B: { nodes: 9, branchLength: 3, regular: 4, info: 3, bossInfo: 1 },
+  A: { nodes: 11, branchLength: 4, regular: 5, info: 4, bossInfo: 2 },
+  S: { nodes: 13, branchLength: 5, regular: 6, info: 5, bossInfo: 2 },
 } as const;
 
 describe("E1 검증 snapshot", () => {

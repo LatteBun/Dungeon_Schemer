@@ -20,10 +20,18 @@ export function PartyStatusSidebar({ members, footer }: PartyStatusSidebarProps)
         {members.map((member) => {
           const delta = trustDelta(member.trustDelta);
           return (
-            <li key={member.memberId} className="rounded border border-edge px-3 py-2">
+            <li
+              key={member.memberId}
+              className={`rounded border px-3 py-2 ${
+                member.alive ? "border-edge" : "border-dashed border-trust-down"
+              }`}
+            >
               <p className="text-sm text-parchment">
                 {member.name}
                 <span className="ml-1 text-xs text-muted">{member.className}</span>
+                {member.alive ? null : (
+                  <span className="ml-1 text-xs text-trust-down">· 사망</span>
+                )}
               </p>
               <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted">
                 <span>HP {member.currentHp} / {member.maxHp}</span>

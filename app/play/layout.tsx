@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { PlayChrome } from "./play-chrome";
-import { PlayRunProvider } from "./play-run-provider";
+import { PlayCampaignProvider } from "./play-campaign-provider";
 
 export default function PlayLayout({ children }: { children: ReactNode }) {
   return (
-    <PlayRunProvider>
+    <PlayCampaignProvider>
       <PlayChrome>{children}</PlayChrome>
-    </PlayRunProvider>
+    </PlayCampaignProvider>
   );
 }

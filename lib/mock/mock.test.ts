@@ -12,7 +12,6 @@ import {
   MOCK_DUNGEON,
   MOCK_EVENTS,
   MOCK_PARTY,
-  MOCK_RUN,
   MOCK_SETTLEMENT,
 } from "@/lib/mock";
 
@@ -99,10 +98,9 @@ describe("이벤트 목", () => {
 });
 
 describe("던전 지도 목", () => {
-  it("입구와 보스방과 현재 위치가 노드 목록에 있다", () => {
+  it("입구와 보스방이 노드 목록에 있다", () => {
     expect(nodeById.has(MOCK_DUNGEON.entryNodeId), "입구").toBe(true);
     expect(nodeById.has(MOCK_DUNGEON.bossNodeId), "보스방").toBe(true);
-    expect(nodeById.has(MOCK_RUN.currentNodeId), "현재 위치").toBe(true);
   });
   it("모든 eventId가 이벤트 목록에 있다", () => {
     const known = new Set(MOCK_EVENTS.map((event) => event.id));
@@ -151,35 +149,7 @@ describe("던전 지도 목", () => {
   });
 });
 
-describe("런 상태 목", () => {
-  it("시드가 비어 있지 않다", () => expect(MOCK_RUN.seed).not.toBe(""));
-  it("파티와 던전이 다른 목과 같은 것을 가리킨다", () => {
-    expect(MOCK_RUN.party).toBe(MOCK_PARTY);
-    expect(MOCK_RUN.dungeon).toBe(MOCK_DUNGEON);
-  });
-  it("미검증 정보의 cardId가 카드 목록에 있다", () => {
-    const known = new Set(MOCK_CARDS.map((card) => card.id));
-    expect(MOCK_RUN.pendingClaims.filter((claim) => !known.has(claim.cardId)).map((claim) => `${claim.id}: ${claim.cardId}`), "카드 목록에 없는 cardId").toEqual([]);
-  });
-  it("미검증 정보의 대상 파티원이 파티에 있다", () => {
-    const known = new Set(MOCK_PARTY.map((member) => member.id));
-    expect(MOCK_RUN.pendingClaims.filter((claim) => claim.target.kind === "member" && !known.has(claim.target.id)).map((claim) => claim.id), "파티에 없는 대상").toEqual([]);
-  });
-  it("로그의 at이 0부터 1씩 늘어난다", () => {
-    expect(MOCK_RUN.log.map((record) => record.at)).toEqual(MOCK_RUN.log.map((_, index) => index));
-  });
-  it("로그의 nodeId와 신뢰 변화 대상이 모두 존재한다", () => {
-    const knownMembers = new Set(MOCK_PARTY.map((member) => member.id));
-    const problems: string[] = [];
-    for (const record of MOCK_RUN.log) {
-      if (!nodeById.has(record.nodeId)) problems.push(`at ${record.at}: 없는 노드 ${record.nodeId}`);
-      for (const change of record.trustChanges) {
-        if (!knownMembers.has(change.memberId)) problems.push(`at ${record.at}: 없는 파티원 ${change.memberId}`);
-        if (change.reason === "") problems.push(`at ${record.at}: 사유가 빈 신뢰 변화`);
-      }
-    }
-    expect(problems, "로그의 문제").toEqual([]);
-  });
+describe("정보 카드 목", () => {
   it("카드가 진실·거짓·중립을 모두 담는다", () => {
     expect([...new Set(MOCK_CARDS.map((card) => card.truthType))].sort()).toEqual(["lie", "neutral", "truth"]);
   });
