@@ -24,7 +24,7 @@ export default function PlayPage() {
     : toContractView(campaign, selectedOfferId);
 
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="grid gap-3 lg:grid-cols-[3fr_2fr]">
       <Board
         offers={toBoardView(campaign)}
         selectedOfferId={selectedOfferId}
