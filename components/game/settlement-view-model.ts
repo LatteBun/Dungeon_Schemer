@@ -303,3 +303,54 @@ export function toEndingView(
     retrospective: RETROSPECTIVE,
   };
 }
+
+// --- 원인 사슬 ---
+
+export interface CauseChainLinkView {
+  label: string;
+  value: string;
+}
+
+/**
+ * 원정 하나의 인과를 다섯 고리로 편다.
+ *
+ * 스토어의 휘발성 값이 아니라 상태의 원정 기록에서 파생하므로 새로고침해도
+ * 남는다. 와이어프레임 04의 `선택 → 개인 반응 → 피해 → 보상·손실 →
+ * 캠페인 변화`와 같은 순서다.
+ */
+export function toCauseChainView(record: ExpeditionRecord): CauseChainLinkView[] {
+  const delivered = TRUTH_TYPES
+    .filter((truthType) => record.cards[truthType].delivered > 0)
+    .map((truthType) =>
+      `${TRUTH_TYPE_LABELS[truthType]} ${record.cards[truthType].delivered}`);
+
+  const totals = TRUTH_TYPES.reduce(
+    (sum, truthType) => ({
+      accepted: sum.accepted + record.cards[truthType].accepted,
+      suspected: sum.suspected + record.cards[truthType].suspected,
+      exposed: sum.exposed + record.cards[truthType].exposed,
+    }),
+    { accepted: 0, suspected: 0, exposed: 0 },
+  );
+
+  return [
+    { label: "전달", value: delivered.length === 0 ? "없음" : delivered.join(" · ") },
+    {
+      label: "반응",
+      value: `수용 ${totals.accepted} · 의심 ${totals.suspected} · 적발 ${totals.exposed}`,
+    },
+    {
+      label: "결과",
+      value: `보스 피해 ${record.bossDamageTotal} · `
+        + (record.status === "cleared" ? `${record.survivorCount}명 생환` : "전멸"),
+    },
+    { label: "보상", value: rewardLabelOf(record) },
+    {
+      label: "캠페인",
+      value: `승급 점수 ${record.scoreBefore} → ${record.scoreAfter} · `
+        + (record.rankBefore === record.rankAfter
+          ? `등급 ${record.rankAfter} 유지`
+          : `등급 ${record.rankBefore} → ${record.rankAfter}`),
+    },
+  ];
+}

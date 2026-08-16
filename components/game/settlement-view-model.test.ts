@@ -23,6 +23,7 @@ import {
   toBossResultView,
   toEndingView,
   toSettlementTimelineView,
+  toCauseChainView,
 } from "./settlement-view-model";
 
 function firstParty(state: CampaignState): CampaignMember[] {
@@ -405,5 +406,56 @@ describe("toEndingView 누적 통계", () => {
 
     expect(view?.turningPoint).toBeNull();
     expect(view?.chronicle).toEqual([]);
+  });
+});
+
+describe("toCauseChainView", () => {
+  it("다섯 고리를 순서대로 낸다", () => {
+    const cards = emptyStatistics().cards;
+    cards.lie.delivered = 2;
+    cards.lie.accepted = 5;
+    cards.truth.delivered = 1;
+    cards.truth.suspected = 3;
+    cards.truth.exposed = 1;
+
+    const links = toCauseChainView(createFixtureExpeditionRecord({
+      cards,
+      bossDamageTotal: 47,
+      survivorCount: 2,
+      reputationDelta: 8,
+      goldDelta: 72,
+      scoreBefore: 274,
+      scoreAfter: 358,
+      rankBefore: "A",
+      rankAfter: "A",
+    }));
+
+    expect(links.map((link) => link.label)).toEqual([
+      "전달", "반응", "결과", "보상", "캠페인",
+    ]);
+    expect(links[0].value).toBe("진실 1 · 거짓 2");
+    expect(links[1].value).toBe("수용 5 · 의심 3 · 적발 1");
+    expect(links[2].value).toBe("보스 피해 47 · 2명 생환");
+    expect(links[3].value).toBe("명성 +8 · 골드 +72");
+    expect(links[4].value).toBe("승급 점수 274 → 358 · 등급 A 유지");
+  });
+
+  it("전달한 카드가 없으면 없음이라고 적는다", () => {
+    const links = toCauseChainView(createFixtureExpeditionRecord({}));
+
+    expect(links[0].value).toBe("없음");
+  });
+
+  it("전멸과 승급을 문장으로 구분한다", () => {
+    const links = toCauseChainView(createFixtureExpeditionRecord({
+      status: "failed",
+      survivorCount: 0,
+      bossDamageTotal: 62,
+      rankBefore: "A",
+      rankAfter: "S",
+    }));
+
+    expect(links[2].value).toBe("보스 피해 62 · 전멸");
+    expect(links[4].value).toContain("등급 A → S");
   });
 });
