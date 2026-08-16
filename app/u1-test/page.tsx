@@ -26,7 +26,7 @@ export default function U1TestPage() {
 
   const state = FIXTURES[fixtureKey].state;
   const contract =
-    selectedOfferId === null ? null : toContractView(state, selectedOfferId);
+    selectedOfferId === null ? null : toContractView(state, selectedOfferId, null);
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-3 p-4 text-parchment">
@@ -53,7 +53,7 @@ export default function U1TestPage() {
 
       <div className="grid gap-3 md:grid-cols-2">
         <Board
-          offers={toBoardView(state)}
+          offers={toBoardView(state, new Map())}
           selectedOfferId={selectedOfferId}
           onSelectOffer={setSelectedOfferId}
           onAcceptContract={(offerId) =>
