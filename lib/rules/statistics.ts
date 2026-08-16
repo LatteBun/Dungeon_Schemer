@@ -76,6 +76,21 @@ function scoreSwingOf(record: ExpeditionRecord): number {
   return Math.abs(record.scoreAfter - record.scoreBefore);
 }
 
+function addCardStats(
+  base: Record<TruthType, CardTruthStat>,
+  added: Record<TruthType, CardTruthStat>,
+): Record<TruthType, CardTruthStat> {
+  return Object.fromEntries(
+    TRUTH_TYPES.map((truthType) => [truthType, {
+      delivered: base[truthType].delivered + added[truthType].delivered,
+      accepted: base[truthType].accepted + added[truthType].accepted,
+      suspected: base[truthType].suspected + added[truthType].suspected,
+      exposed: base[truthType].exposed + added[truthType].exposed,
+      lateExposed: base[truthType].lateExposed + added[truthType].lateExposed,
+    }]),
+  ) as Record<TruthType, CardTruthStat>;
+}
+
 /**
  * 캠페인의 궤적을 꺾은 원정 하나를 고른다.
  *
@@ -132,5 +147,29 @@ export function findTurningPoint(
     kind: "scoreSwing",
     expeditionOrder: swung.order,
     summary: `${swung.order}번째 원정에서 승급 점수가 ${scoreSwingOf(swung)} 움직였다`,
+  };
+}
+
+/**
+ * 원정 하나를 통계에 접어 넣는다.
+ *
+ * 전환점을 증분으로 유지하지 않고 매번 연대기 전체에서 다시 고른다.
+ * 우선순위가 뒤늦게 뒤집히기 때문이다. 3번째 원정에서 전멸하면 1·2번째에서
+ * 고른 승급 전환점을 물러야 한다. 연대기가 15건 남짓이라 비용이 없다.
+ */
+export function recordExpedition(
+  statistics: CampaignStatistics,
+  record: ExpeditionRecord,
+): CampaignStatistics {
+  const expeditions = [...statistics.expeditions, record];
+
+  return {
+    cards: addCardStats(statistics.cards, record.cards),
+    clearedExpeditions:
+      statistics.clearedExpeditions + (record.status === "cleared" ? 1 : 0),
+    wipedExpeditions:
+      statistics.wipedExpeditions + (record.status === "failed" ? 1 : 0),
+    expeditions,
+    turningPoint: findTurningPoint(expeditions),
   };
 }

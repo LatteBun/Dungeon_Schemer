@@ -10,7 +10,7 @@ import type {
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createFixtureExpeditionState } from "@/lib/rules/fixtures";
 import { createFixtureExpeditionRecord } from "@/lib/rules/fixtures";
-import { emptyStatistics, summarizeExpeditionCards, findTurningPoint } from "./statistics";
+import { emptyStatistics, summarizeExpeditionCards, findTurningPoint, recordExpedition } from "./statistics";
 
 describe("emptyStatistics", () => {
   it("진위 세 종류를 모두 0으로 채운다", () => {
@@ -247,5 +247,64 @@ describe("findTurningPoint", () => {
     ]);
 
     expect(point?.expeditionOrder).toBe(1);
+  });
+});
+
+describe("recordExpedition", () => {
+  function statWith(lieDelivered: number, lieExposed: number) {
+    const cards = emptyStatistics().cards;
+    cards.lie.delivered = lieDelivered;
+    cards.lie.exposed = lieExposed;
+    return cards;
+  }
+
+  it("누적 카드 통계가 각 원정의 합과 같다", () => {
+    const first = recordExpedition(
+      emptyStatistics(),
+      createFixtureExpeditionRecord({ order: 1, cards: statWith(2, 1) }),
+    );
+    const second = recordExpedition(
+      first,
+      createFixtureExpeditionRecord({ order: 2, cards: statWith(3, 2) }),
+    );
+
+    expect(second.cards.lie.delivered).toBe(5);
+    expect(second.cards.lie.exposed).toBe(3);
+  });
+
+  it("생환과 전멸의 합이 원정 수와 같다", () => {
+    const statistics = [
+      createFixtureExpeditionRecord({ order: 1 }),
+      createFixtureExpeditionRecord({ order: 2, status: "failed" }),
+      createFixtureExpeditionRecord({ order: 3 }),
+    ].reduce(recordExpedition, emptyStatistics());
+
+    expect(statistics.clearedExpeditions).toBe(2);
+    expect(statistics.wipedExpeditions).toBe(1);
+    expect(statistics.clearedExpeditions + statistics.wipedExpeditions)
+      .toBe(statistics.expeditions.length);
+  });
+
+  it("입력 통계를 고치지 않는다", () => {
+    const before = emptyStatistics();
+    recordExpedition(before, createFixtureExpeditionRecord({ cards: statWith(9, 9) }));
+
+    expect(before.cards.lie.delivered).toBe(0);
+    expect(before.expeditions).toEqual([]);
+  });
+
+  // 3번째에 전멸하면 1·2번째에서 고른 승급 전환점을 물러야 한다.
+  it("나중 원정이 전환점을 뒤집는다", () => {
+    const promoted = recordExpedition(
+      emptyStatistics(),
+      createFixtureExpeditionRecord({ order: 1, rankBefore: "C", rankAfter: "B" }),
+    );
+    expect(promoted.turningPoint?.kind).toBe("promotion");
+
+    const wiped = recordExpedition(
+      promoted,
+      createFixtureExpeditionRecord({ order: 2, status: "failed" }),
+    );
+    expect(wiped.turningPoint?.kind).toBe("firstWipe");
   });
 });
