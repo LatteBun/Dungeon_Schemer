@@ -184,7 +184,7 @@ function toGradeView(grade: Grade, seed: string): E1GradeView {
     check("서로 다른 사건", map.nodes.length, distinctEvents),
     check(
       "경로별 일반 사건",
-      config.branchLength + 2,
+      config.branchLength + 1,
       new Set(paths.map((path) => path.regularEventCount)).size === 1
         ? paths[0].regularEventCount
         : "불일치",

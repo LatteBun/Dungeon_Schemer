@@ -136,9 +136,7 @@ function runExpedition(start: CampaignState): CampaignState {
 }
 
 describe("허용된 전이", () => {
-  // 입구도 다른 지점과 똑같이 도착 처리를 한다. E1이 입구를 일반 사건 지점으로
-  // 세었으므로 건너뛰면 C급 경로가 지나는 사건이 4개가 아니라 3개가 된다.
-  it("계약을 수락하면 입구에 도착해 그 지점의 사건을 만난다", () => {
+  it("계약을 수락하면 입구에서 지도를 먼저 보여준다", () => {
     const state = boardState();
     const next = apply(state, { type: "acceptContract", offerId: firstOpenOffer(state) });
     const entry = next.expedition!.map.nodes.find(
@@ -147,8 +145,20 @@ describe("허용된 전이", () => {
 
     expect(next.expedition).not.toBeNull();
     expect(next.expedition?.currentNodeId).toBe(next.expedition?.map.entryNodeId);
-    expect(next.phase).toBe(entry.hasInfoOpportunity ? "infoOpportunity" : "event");
-    expect(next.expedition?.visitedNodeIds).toEqual([entry.id]);
+    expect(next.phase).toBe("map");
+    expect(entry.hasInfoOpportunity).toBe(false);
+    expect(next.expedition?.visitedNodeIds).toEqual([]);
+  });
+
+  it("첫 갈래 지점을 선택하면 해당 지점의 정보 또는 사건으로 진입한다", () => {
+    const state = boardState();
+    const started = apply(state, { type: "acceptContract", offerId: firstOpenOffer(state) });
+    const firstNode = nextNode(started);
+    const next = apply(started, { type: "selectNode", nodeId: firstNode });
+
+    expect(next.phase === "infoOpportunity" || next.phase === "event").toBe(true);
+    expect(next.expedition?.currentNodeId).toBe(firstNode);
+    expect(next.expedition?.visitedNodeIds).toEqual([firstNode]);
   });
 
   it("한 경로에서 등급이 요구하는 만큼 사건을 지난다", () => {
@@ -321,6 +331,9 @@ describe("전멸 처리", () => {
       ...current,
       members: current.members.map((member) => ({ ...member, currentHp: 1 })),
     };
+    if (current.phase === "map") {
+      current = apply(current, { type: "selectNode", nodeId: nextNode(current) });
+    }
     if (current.phase === "infoOpportunity") {
       current = apply(current, {
         type: "chooseInfoCard",

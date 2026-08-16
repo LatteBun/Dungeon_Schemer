@@ -208,13 +208,7 @@ interface Arrival {
   readonly expedition: ExpeditionState;
 }
 
-/**
- * 지점에 도착했을 때의 처리다.
- *
- * 입구도 다른 지점과 똑같이 도착 처리를 한다. `E1`이 입구를 일반 사건 지점으로
- * 세었기 때문이다. C급 경로의 일반 사건 4개는 입구·갈래 2개·합류이므로, 입구를
- * 건너뛰면 실제로 지나는 사건이 3개가 되어 상위 spec의 등급별 수치가 깨진다.
- */
+/** 지점에 도착했을 때의 처리다. 입구는 계약 수락 시 도착 처리하지 않는다. */
 function arriveAt(
   state: CampaignState,
   expedition: ExpeditionState,
@@ -321,15 +315,7 @@ function acceptContract(
     result: null,
     log: [],
   };
-  const arrival = arriveAt(
-    state,
-    started,
-    dungeon,
-    findNode(started, map.entryNodeId),
-    context,
-  );
-
-  return { ...state, phase: arrival.phase, expedition: arrival.expedition };
+  return { ...state, phase: "map", expedition: started };
 }
 
 function selectNode(

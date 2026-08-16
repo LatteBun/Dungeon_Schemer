@@ -221,16 +221,16 @@ export function evaluatePartyInfoCard<M extends PartyMember>(
 /**
  * 이 지점에서 제시할 카드 주제를 정한다.
  *
- * 보장 여부가 먼저다. E1이 지도에 표시한 약속이기 때문이다. 그다음이 입구인데,
- * 갈래를 고르기 직전이라 경로 정보가 결정에 개입하는 유일한 자리다. 합류 지점도
- * 공유 지점이지만 그때는 갈래 선택이 끝나 경로 정보가 쓸모없다.
+ * 보장 여부가 먼저다. E1이 지도에 표시한 약속이기 때문이다. 그다음이 첫 갈래
+ * 지점인데, 계약 직후 지도를 확인하고 첫 노드를 고른 직후라 경로 정보가 결정에
+ * 개입한다. 합류 지점도 공유 지점이지만 그때는 갈래 선택이 끝나 쓸모없다.
  *
- * 입구는 깊이 0으로 판별한다. `validateGeneratedMap`이 입구 깊이가 0이고 모든
- * 간선이 깊이를 늘린다는 것을 보장하므로 깊이 0인 지점은 입구뿐이다.
+ * 첫 갈래 지점은 깊이 1로 판별한다. `validateGeneratedMap`이 입구 깊이가 0이고
+ * 모든 간선이 깊이를 늘린다는 것을 보장하므로 깊이 1은 첫 선택 직후다.
  */
 function subjectFor(node: MapNode, eventKind: EventKind): InfoSubject {
   if (node.bossRelatedInfoCount > 0) return "boss";
-  if (node.depth === 0) return "route";
+  if (node.depth <= 1) return "route";
   return SUBJECT_BY_EVENT_KIND[eventKind];
 }
 

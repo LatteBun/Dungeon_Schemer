@@ -46,7 +46,6 @@ function invalid(message: string, details: Record<string, unknown>): never {
 
 function infoSlots(branchLength: number): InfoSlot[] {
   return [
-    "node-entry",
     ...Array.from({ length: branchLength }, (_, index): InfoSlot => `depth-${index + 1}`),
     "node-merge",
   ];
@@ -232,7 +231,9 @@ function countPath(
   bossNodeId: NodeId,
 ): Omit<MapPath, "nodeIds"> {
   return {
-    regularEventCount: pathNodes.filter((node) => node.id !== bossNodeId).length,
+    regularEventCount: pathNodes.filter(
+      (node) => node.id !== bossNodeId && node.id !== ENTRY_ID,
+    ).length,
     infoCount: pathNodes.filter((node) => node.hasInfoOpportunity).length,
     bossRelatedInfoCount: pathNodes.reduce(
       (sum, node) => sum + node.bossRelatedInfoCount,
@@ -363,7 +364,7 @@ export function validateGeneratedMap(
 
     const counted = countPath(pathNodes, map.bossNodeId);
     const expected = {
-      regularEventCount: config.branchLength + 2,
+      regularEventCount: config.branchLength + 1,
       infoCount: config.infoOpportunityCount,
       bossRelatedInfoCount: config.bossRelatedInfoCount,
     };
