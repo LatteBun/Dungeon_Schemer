@@ -12,6 +12,7 @@ import {
   toBoardView,
   toCampaignHeaderView,
   toContractView,
+  toOfferRiskView,
   toScreenTitle,
 } from "./campaign-view-model";
 
@@ -63,7 +64,7 @@ describe("toCampaignHeaderView", () => {
 
 describe("toBoardView", () => {
   it("던전·파티를 조인하고 평균 신뢰와 생존 수를 계산한다", () => {
-    const view = toBoardView(createFixtureCampaignState());
+    const view = toBoardView(createFixtureCampaignState(), new Map());
     expect(view).toHaveLength(1);
     expect(view[0].dungeonLabel).toBe("C급 1번");
     expect(view[0].partyLabel).toBe("1팀");
@@ -74,7 +75,7 @@ describe("toBoardView", () => {
   });
 
   it("잠긴 공고는 부족 명성을 계산한다", () => {
-    const view = toBoardView(lockedState());
+    const view = toBoardView(lockedState(), new Map());
     expect(view[0].locked).toBe(true);
     expect(view[0].dungeonLabel).toBe("B급 7번");
     expect(view[0].shortfall).toBe(20);
@@ -84,7 +85,7 @@ describe("toBoardView", () => {
 describe("toContractView", () => {
   it("파티원 상세를 조인하고 계약 가능 여부를 표시한다", () => {
     const state = createFixtureCampaignState();
-    const view = toContractView(state, state.board[0].id);
+    const view = toContractView(state, state.board[0].id, null);
     expect(view).not.toBeNull();
     expect(view?.branchCount).toBe(2);
     expect(view?.bossRevealed).toBe(true);
@@ -104,13 +105,15 @@ describe("toContractView", () => {
           : member,
       ),
     };
-    const view = toContractView(withMemory, withMemory.board[0].id);
+    const view = toContractView(withMemory, withMemory.board[0].id, null);
     expect(view?.members[0].memorySummary).toBe("신뢰가 올랐다");
   });
 
   it("없는 공고 id는 null을 돌려준다", () => {
     const state = createFixtureCampaignState();
-    expect(toContractView(state, "no-such-offer" as BoardOfferId)).toBeNull();
+    expect(
+      toContractView(state, "no-such-offer" as BoardOfferId, null),
+    ).toBeNull();
   });
 });
 
@@ -156,5 +159,36 @@ describe("toScreenTitle", () => {
   it("탐험이 없으면 던전 이름 없이도 문장이 성립한다", () => {
     const base = createFixtureCampaignState();
     expect(toScreenTitle({ ...base, phase: "map" })).toBe("공개 분기 지도");
+  });
+});
+
+describe("toOfferRiskView", () => {
+  const summary = {
+    counts: { monster: 2, rest: 2, merchant: 1, special: 1 },
+    bossCount: 1,
+  } as const;
+
+  it("네 분류를 항상 같은 순서로 낸다", () => {
+    const view = toOfferRiskView(summary);
+    expect(view.kinds.map((entry) => entry.kind)).toEqual([
+      "monster",
+      "rest",
+      "merchant",
+      "special",
+    ]);
+  });
+
+  it("기호와 분류명을 함께 담는다", () => {
+    const view = toOfferRiskView(summary);
+    const monster = view.kinds[0];
+    expect(monster.mark).toBe("◆");
+    expect(monster.label).toBe("몬스터");
+    expect(monster.count).toBe(2);
+  });
+
+  it("보스 수를 분류와 섞지 않는다", () => {
+    const view = toOfferRiskView(summary);
+    expect(view.bossCount).toBe(1);
+    expect(view.kinds).toHaveLength(4);
   });
 });

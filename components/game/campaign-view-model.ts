@@ -1,5 +1,7 @@
 import { CLASSES } from "@/lib/content/classes";
+import { EVENT_KINDS } from "@/lib/domain";
 import { canAcceptOffer } from "@/lib/rules/board";
+import type { OfferRiskSummary } from "@/lib/rules/offer-risk";
 import {
   calculatePromotionScore,
   nextGradeTarget,
@@ -10,9 +12,14 @@ import type {
   CampaignMember,
   CampaignState,
   ClassId,
+  EventKind,
   Grade,
 } from "@/lib/domain";
-import { PERSONALITY_LABELS } from "./labels";
+import {
+  EVENT_KIND_LABELS,
+  EVENT_KIND_MARKS,
+  PERSONALITY_LABELS,
+} from "./labels";
 
 /** 지도는 항상 두 갈래다(상위 spec). 갈래별 지점 수는 E1 소관이다. */
 const TOTAL_BRANCHES = 2;
@@ -26,6 +33,36 @@ export interface CampaignHeaderView {
   nextGrade: { grade: Grade; threshold: number } | null;
   remainingDungeons: number;
   totalDungeons: number;
+}
+
+export interface OfferRiskKindView {
+  kind: EventKind;
+  mark: string;
+  label: string;
+  count: number;
+}
+
+export interface OfferRiskView {
+  /** 네 분류가 EVENT_KINDS 순서로 모두 들어온다. 개수가 0인 분류는 없다. */
+  kinds: OfferRiskKindView[];
+  bossCount: number;
+}
+
+/**
+ * 기호 옆에 분류명을 함께 담는다.
+ * 기호만으로는 스크린리더가 읽지 못하고 색·기호 외 단서를 요구하는
+ * 접근성 기준에 걸린다.
+ */
+export function toOfferRiskView(summary: OfferRiskSummary): OfferRiskView {
+  return {
+    kinds: EVENT_KINDS.map((kind) => ({
+      kind,
+      mark: EVENT_KIND_MARKS[kind],
+      label: EVENT_KIND_LABELS[kind],
+      count: summary.counts[kind],
+    })),
+    bossCount: summary.bossCount,
+  };
 }
 
 export interface BoardOfferView {
@@ -44,7 +81,7 @@ export interface BoardOfferView {
   locked: boolean;
   shortfall: number | null;
   lockReason: BoardLockReason;
-  // riskSummary?: ... — E1 지도 통합 때 추가한다. U1에서는 없음.
+  risk: OfferRiskView | null;
 }
 
 export interface ContractMemberView {
@@ -73,6 +110,7 @@ export interface ContractView {
   members: ContractMemberView[];
   acceptable: boolean;
   acceptBlockReason: "insufficientReputation" | "partyUnavailable" | null;
+  risk: OfferRiskView | null;
 }
 
 /** "dungeon-001" 또는 "party-007" 같은 id 끝의 숫자를 읽는다. */
@@ -120,7 +158,10 @@ export function toCampaignHeaderView(state: CampaignState): CampaignHeaderView {
   };
 }
 
-export function toBoardView(state: CampaignState): BoardOfferView[] {
+export function toBoardView(
+  state: CampaignState,
+  riskByOfferId: ReadonlyMap<string, OfferRiskSummary>,
+): BoardOfferView[] {
   return state.board.map((offer, index) => {
     const dungeon = state.dungeons.find(
       (candidate) => candidate.id === offer.dungeonId,
@@ -158,6 +199,10 @@ export function toBoardView(state: CampaignState): BoardOfferView[] {
       locked: offer.locked,
       shortfall,
       lockReason: offer.lockReason,
+      risk: (() => {
+        const summary = riskByOfferId.get(offer.id as string);
+        return summary === undefined ? null : toOfferRiskView(summary);
+      })(),
     };
   });
 }
@@ -165,6 +210,7 @@ export function toBoardView(state: CampaignState): BoardOfferView[] {
 export function toContractView(
   state: CampaignState,
   offerId: BoardOfferId,
+  risk: OfferRiskSummary | null,
 ): ContractView | null {
   const offer = state.board.find((candidate) => candidate.id === offerId);
   if (offer === undefined) {
@@ -208,6 +254,7 @@ export function toContractView(
     members,
     acceptable: acceptance.accepted,
     acceptBlockReason: acceptance.accepted ? null : acceptance.reason,
+    risk: risk === null ? null : toOfferRiskView(risk),
   };
 }
 
