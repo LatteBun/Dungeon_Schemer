@@ -14,6 +14,7 @@ import {
   generateParty,
 } from "@/lib/rules/party";
 import type { MemberProfile } from "@/lib/rules/party";
+import { emptyStatistics } from "@/lib/rules/statistics";
 
 const INITIAL_RESERVE_SIZE = 6;
 const INITIAL_MEMBER_GOLD_MIN = 10;
@@ -128,6 +129,7 @@ export function initializeCampaign(seed: string): CampaignState {
     expedition: null,
     ending: null,
     log: [],
+    statistics: emptyStatistics(),
   };
 
   return {

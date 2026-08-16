@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BossResultPanel } from "@/components/game/BossResultPanel";
+import { CauseChainBand } from "@/components/game/CauseChainBand";
 import { EndingPanel } from "@/components/game/EndingPanel";
 import { SettlementTimeline } from "@/components/game/SettlementTimeline";
 import {
   toBossResultView,
   toEndingView,
   toSettlementTimelineView,
+  toCauseChainView,
 } from "@/components/game/settlement-view-model";
 import { useCampaignStore } from "@/lib/stores/campaign-store-provider";
 import { ROUTE_BY_PHASE, usePhaseGuard } from "../phase-route";
@@ -98,6 +100,12 @@ export default function ResultPage() {
         <SettlementTimeline
           steps={toSettlementTimelineView(lastSettlementSteps)}
         />
+        {(() => {
+          const record = campaign.statistics.expeditions.at(-1);
+          return record === undefined ? null : (
+            <CauseChainBand links={toCauseChainView(record)} />
+          );
+        })()}
         <button
           type="button"
           onClick={() => {
