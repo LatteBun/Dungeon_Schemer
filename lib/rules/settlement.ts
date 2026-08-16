@@ -5,6 +5,7 @@ import type {
   CampaignEnding,
   CampaignMember,
   CampaignState,
+  ExpeditionRecord,
   ExpeditionResult,
   ExpeditionState,
   Grade,
@@ -17,6 +18,7 @@ import { generateBoard } from "@/lib/rules/board";
 import { resolveEnding } from "@/lib/rules/ending";
 import { maintainPartiesAfterExpedition } from "@/lib/rules/party-lifecycle";
 import { calculatePromotionScore, promote } from "@/lib/rules/promotion";
+import { recordExpedition, summarizeExpeditionCards } from "@/lib/rules/statistics";
 
 /** 타입은 도메인으로 옮겼다. 기존 import 경로를 깨지 않기 위해 다시 내보낸다. */
 export type { SettlementStep, SettlementStepKind };
@@ -245,8 +247,40 @@ export function settleExpedition(
     { kind: "ending", summary: endingSummary(ending) },
   ];
 
+  const record: ExpeditionRecord = {
+    order: input.state.statistics.expeditions.length + 1,
+    dungeonId: dungeon.id,
+    // settledDungeon 이 아니라 dungeon 이다. 실패로 등급이 오르기 전 값이어야
+    // 연대기가 "어느 등급에 나갔다가 무슨 일을 겪었는지"를 옳게 말한다.
+    grade: dungeon.grade,
+    partyId: input.expedition.partyId,
+    status: result.status,
+    survivorCount: result.survivorIds.length,
+    casualtyCount: result.casualtyIds.length,
+    cards: summarizeExpeditionCards(input.expedition),
+    bossDamageTotal: Object.values(
+      input.expedition.bossResult?.damageByMember ?? {},
+    ).reduce((sum, damage) => sum + damage, 0),
+    reputationDelta: payout.reputation,
+    goldDelta: payout.gold + payout.loot,
+    scoreBefore: calculatePromotionScore(
+      input.state.currentReputation,
+      input.state.cumulativeGold,
+    ),
+    scoreAfter: score,
+    // promote 이전 값이다.
+    rankBefore: input.state.rank,
+    rankAfter: rank,
+    steps,
+  };
+
   return {
-    state: { ...withBoard, ending, phase: ending === null ? "board" : "ended" },
+    state: {
+      ...withBoard,
+      ending,
+      phase: ending === null ? "board" : "ended",
+      statistics: recordExpedition(input.state.statistics, record),
+    },
     steps,
   };
 }
