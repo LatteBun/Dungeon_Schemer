@@ -253,7 +253,7 @@ BACKTEST_SEEDS=200 pnpm backtest   # 빠르게 확인할 때
 
 | 무엇 | 어디 |
 | --- | --- |
-| 기준 승급 시나리오 | `lib/backtest/campaign-simulator.test.ts`의 checkpoint 120·274·370 |
+| 기준 승급 시나리오 | `lib/backtest/campaign-simulator.test.ts`의 checkpoint 120·261·489 |
 | 승급 기준 상수 | `lib/rules/promotion.test.ts` |
 | 사건 효과 계산 | `lib/rules/event.test.ts` |
 | 정산 보상 | `lib/rules/settlement.test.ts` |
