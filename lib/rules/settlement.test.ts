@@ -215,15 +215,16 @@ describe("전멸 정산", () => {
     expect(state.dungeons[0].failureCount).toBe(1);
   });
 
-  it("명성은 음수가 될 수 있고 그 순간 모든 공고가 잠긴다", () => {
+  it("명성은 음수가 될 수 있고 요구치 아래로 내려가면 공고가 잠긴다", () => {
     const { state } = settle({
       survivors: [],
       casualties: [1, 2, 3],
       currentReputation: 0,
     });
 
-    // 문서가 현재 명성의 최솟값을 제한하지 않는다. 그 결과 첫 전멸이 곧
-    // 캠페인 종료가 될 수 있다. C4 백테스트가 조기 엔딩 비율을 보고한다.
+    // 문서가 현재 명성의 최솟값을 제한하지 않는다. 다만 요구 명성이 음수
+    // 구간까지 내려가므로 음수가 되는 것 자체는 잠금을 뜻하지 않는다.
+    // 이 fixture는 출전 파티가 전멸해 완성 파티가 남지 않은 경우다.
     expect(state.currentReputation).toBe(-6);
     expect(state.ending?.id).toBe("partyExhausted");
   });

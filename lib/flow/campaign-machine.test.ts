@@ -295,7 +295,7 @@ describe("금지된 전이", () => {
       apply(state, { type: "acceptContract", offerId: "offer-없음" as BoardOfferId })).code)
       .toBe("UNKNOWN_ID");
 
-    const locked = { ...state, currentReputation: -1 };
+    const locked = { ...state, currentReputation: -40 };
     const withLockedBoard = { ...locked, board: generateBoard(locked) };
     expect(ruleErrorOf(() => apply(withLockedBoard, {
       type: "acceptContract",
