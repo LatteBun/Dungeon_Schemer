@@ -16,8 +16,9 @@ import {
 import type { MemberProfile } from "@/lib/rules/party";
 
 const INITIAL_RESERVE_SIZE = 6;
-const INITIAL_MEMBER_GOLD_MIN = 10;
-const INITIAL_MEMBER_GOLD_MAX = 30;
+/** 파티원 소지 골드의 시드 범위. 전멸 유품으로만 회수되는 값이다. */
+export const INITIAL_MEMBER_GOLD_MIN = 20;
+export const INITIAL_MEMBER_GOLD_MAX = 45;
 
 interface ProfileRecord {
   id: MemberId;
