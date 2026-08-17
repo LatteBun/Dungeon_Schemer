@@ -16,9 +16,11 @@ import type {
 import { createRng } from "@/lib/rng";
 import {
   createFixtureCampaignState,
+  createFixtureExpeditionRecord,
   createFixtureExpeditionState,
 } from "@/lib/rules/fixtures";
 import { SETTLEMENT_STEP_ORDER, settleExpedition } from "@/lib/rules/settlement";
+import { recordExpedition } from "@/lib/rules/statistics";
 
 const CLASSES = ["warrior", "scout", "cleric"] as const;
 
@@ -308,6 +310,79 @@ describe("정산 단계 기록", () => {
 
     expect(steps.map((step) => step.kind)).toEqual([...SETTLEMENT_STEP_ORDER]);
     expect(steps.every((step) => step.summary.trim() !== "")).toBe(true);
+  });
+});
+
+describe("원정 기록", () => {
+  it("정산 한 번이 기록 하나를 남긴다", () => {
+    const settled = settle({ survivors: [1, 2, 3], casualties: [] });
+    const statistics = settled.state.statistics;
+
+    expect(statistics.expeditions).toHaveLength(1);
+    expect(statistics.expeditions[0].order).toBe(1);
+    expect(statistics.clearedExpeditions).toBe(1);
+    expect(statistics.wipedExpeditions).toBe(0);
+  });
+
+  // settledDungeon 을 읽으면 실패로 오른 등급이 기록에 새어 든다.
+  it("실패해도 기록의 등급은 출전 당시 등급이다", () => {
+    const settled = settle({ grade: "C", survivors: [], casualties: [1, 2, 3] });
+    const record = settled.state.statistics.expeditions[0];
+
+    expect(record.grade).toBe("C");
+    expect(settled.state.dungeons[0].grade).toBe("B");
+    expect(record.status).toBe("failed");
+  });
+
+  it("승급하면 기록의 등급 전후가 갈린다", () => {
+    const settled = settle({
+      grade: "S",
+      survivors: [1, 2, 3],
+      casualties: [],
+      currentReputation: 200,
+      cumulativeGold: 300,
+    });
+    const record = settled.state.statistics.expeditions[0];
+
+    expect(record.rankBefore).toBe("C");
+    expect(record.rankAfter).toBe(settled.state.rank);
+    expect(record.scoreAfter).toBeGreaterThan(record.scoreBefore);
+  });
+
+  it("기록이 정산 원인 사슬을 그대로 품는다", () => {
+    const settled = settle({ survivors: [1, 2], casualties: [3] });
+
+    expect(settled.state.statistics.expeditions[0].steps).toEqual(settled.steps);
+  });
+
+  // 앞선 원정을 다시 돌리지 않고 통계만 미리 채운다. 두 번째 정산이
+  // 파티 재편을 다시 거치면 이 테스트가 순번이 아닌 것을 재게 된다.
+  it("이미 기록이 있으면 다음 순번을 붙인다", () => {
+    const { state, expedition } = stateBeforeSettlement({
+      survivors: [1, 2, 3],
+      casualties: [],
+    });
+    const settled = settleExpedition({
+      state: {
+        ...state,
+        statistics: recordExpedition(
+          state.statistics,
+          createFixtureExpeditionRecord({ order: 1 }),
+        ),
+      },
+      expedition,
+      rng: createRng("순번"),
+    });
+
+    expect(settled.state.statistics.expeditions.map((record) => record.order))
+      .toEqual([1, 2]);
+  });
+
+  it("같은 입력은 같은 통계를 낸다", () => {
+    const first = settle({ survivors: [1, 2], casualties: [3], seed: "재현" });
+    const second = settle({ survivors: [1, 2], casualties: [3], seed: "재현" });
+
+    expect(first.state.statistics).toEqual(second.state.statistics);
   });
 });
 

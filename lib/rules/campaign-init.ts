@@ -14,6 +14,7 @@ import {
   generateParty,
 } from "@/lib/rules/party";
 import type { MemberProfile } from "@/lib/rules/party";
+import { emptyStatistics } from "@/lib/rules/statistics";
 
 const INITIAL_RESERVE_SIZE = 6;
 /** 파티원 소지 골드의 시드 범위. 전멸 유품으로만 회수되는 값이다. */
@@ -129,6 +130,7 @@ export function initializeCampaign(seed: string): CampaignState {
     expedition: null,
     ending: null,
     log: [],
+    statistics: emptyStatistics(),
   };
 
   return {

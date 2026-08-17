@@ -114,7 +114,7 @@ export interface ContractView {
 }
 
 /** "dungeon-001" 또는 "party-007" 같은 id 끝의 숫자를 읽는다. */
-function numericSuffix(id: string): number {
+export function numericSuffix(id: string): number {
   const match = /(\d+)\s*$/.exec(id);
   return match === null ? 0 : Number(match[1]);
 }

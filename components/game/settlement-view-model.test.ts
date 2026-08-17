@@ -6,10 +6,14 @@ import { resolveBossFight } from "@/lib/rules/boss";
 import { resolveEnding } from "@/lib/rules/ending";
 import { BOSS_DAMAGE_MODIFIERS } from "@/lib/rules/info";
 import { runOneExpedition } from "@/app/u3-test/u3-fixtures";
+import { emptyStatistics, recordExpedition } from "@/lib/rules/statistics";
+import { createFixtureCampaignState, createFixtureExpeditionRecord } from "@/lib/rules/fixtures";
 import type {
+  CampaignEnding,
   CampaignMember,
   CampaignState,
   CardId,
+  DungeonId,
   InfoRecord,
   MemberId,
   TruthType,
@@ -19,6 +23,7 @@ import {
   toBossResultView,
   toEndingView,
   toSettlementTimelineView,
+  toCauseChainView,
 } from "./settlement-view-model";
 
 function firstParty(state: CampaignState): CampaignMember[] {
@@ -327,5 +332,130 @@ describe("toEndingView", () => {
     expect(view.summary.aliveMembers).toBe(2);
     expect(view.summary.deadMembers).toBe(1);
     expect(view.summary.survivalRate).toBe(67);
+  });
+});
+
+const ENDING: CampaignEnding = {
+  id: "expeditionComplete",
+  reason: "던전 15개를 모두 정리하고 원정을 끝냈다.",
+  at: 0,
+};
+
+function stateWithStatistics(): CampaignState {
+  const cards = emptyStatistics().cards;
+  cards.lie.delivered = 2;
+  cards.lie.accepted = 4;
+  cards.lie.exposed = 1;
+  cards.lie.lateExposed = 3;
+
+  const statistics = [
+    createFixtureExpeditionRecord({
+      order: 1,
+      grade: "B",
+      dungeonId: "dungeon-003" as DungeonId,
+      cards,
+      reputationDelta: -6,
+      goldDelta: 31,
+      scoreBefore: 274,
+      scoreAfter: 262,
+      status: "failed",
+      survivorCount: 0,
+      casualtyCount: 3,
+    }),
+  ].reduce(recordExpedition, emptyStatistics());
+
+  return { ...createFixtureCampaignState(), statistics };
+}
+
+describe("toEndingView 누적 통계", () => {
+  it("진위 세 종류를 순서대로 이름표와 함께 낸다", () => {
+    const view = toEndingView(stateWithStatistics(), ENDING);
+
+    expect(view?.cards.map((card) => card.label)).toEqual(["진실", "거짓", "중립"]);
+    expect(view?.cards[1].delivered).toBe(2);
+    expect(view?.cards[1].lateExposed).toBe(3);
+  });
+
+  it("생환과 전멸 원정 수를 요약에 넣는다", () => {
+    const view = toEndingView(stateWithStatistics(), ENDING);
+
+    expect(view?.summary.clearedExpeditions).toBe(0);
+    expect(view?.summary.wipedExpeditions).toBe(1);
+  });
+
+  it("전환점에 규칙 문장과 화면 이름표를 함께 담는다", () => {
+    const view = toEndingView(stateWithStatistics(), ENDING);
+
+    expect(view?.turningPoint?.summary).toContain("전멸했다");
+    expect(view?.turningPoint?.dungeonLabel).toBe("B급 3번");
+    expect(view?.turningPoint?.detail).toContain("274 → 262");
+  });
+
+  it("연대기가 기호와 글자를 함께 낸다", () => {
+    const view = toEndingView(stateWithStatistics(), ENDING);
+    const entry = view?.chronicle[0];
+
+    expect(entry?.orderLabel).toBe("01");
+    expect(entry?.statusMark).toBe("×");
+    expect(entry?.statusLabel).toBe("전멸");
+    expect(entry?.rewardLabel).toBe("명성 -6 · 골드 +31");
+  });
+
+  it("통계가 비면 전환점이 없고 연대기가 빈 목록이다", () => {
+    const view = toEndingView(createFixtureCampaignState(), ENDING);
+
+    expect(view?.turningPoint).toBeNull();
+    expect(view?.chronicle).toEqual([]);
+  });
+});
+
+describe("toCauseChainView", () => {
+  it("다섯 고리를 순서대로 낸다", () => {
+    const cards = emptyStatistics().cards;
+    cards.lie.delivered = 2;
+    cards.lie.accepted = 5;
+    cards.truth.delivered = 1;
+    cards.truth.suspected = 3;
+    cards.truth.exposed = 1;
+
+    const links = toCauseChainView(createFixtureExpeditionRecord({
+      cards,
+      bossDamageTotal: 47,
+      survivorCount: 2,
+      reputationDelta: 8,
+      goldDelta: 72,
+      scoreBefore: 274,
+      scoreAfter: 358,
+      rankBefore: "A",
+      rankAfter: "A",
+    }));
+
+    expect(links.map((link) => link.label)).toEqual([
+      "전달", "반응", "결과", "보상", "캠페인",
+    ]);
+    expect(links[0].value).toBe("진실 1 · 거짓 2");
+    expect(links[1].value).toBe("수용 5 · 의심 3 · 적발 1");
+    expect(links[2].value).toBe("보스 피해 47 · 2명 생환");
+    expect(links[3].value).toBe("명성 +8 · 골드 +72");
+    expect(links[4].value).toBe("승급 점수 274 → 358 · 등급 A 유지");
+  });
+
+  it("전달한 카드가 없으면 없음이라고 적는다", () => {
+    const links = toCauseChainView(createFixtureExpeditionRecord({}));
+
+    expect(links[0].value).toBe("없음");
+  });
+
+  it("전멸과 승급을 문장으로 구분한다", () => {
+    const links = toCauseChainView(createFixtureExpeditionRecord({
+      status: "failed",
+      survivorCount: 0,
+      bossDamageTotal: 62,
+      rankBefore: "A",
+      rankAfter: "S",
+    }));
+
+    expect(links[2].value).toBe("보스 피해 62 · 전멸");
+    expect(links[4].value).toContain("등급 A → S");
   });
 });
