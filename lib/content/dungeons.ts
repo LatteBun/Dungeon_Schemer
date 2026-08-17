@@ -22,10 +22,10 @@ export interface CampaignGradeConfig {
  * docs/superpowers/specs/2026-08-13-sanghwan-yoo-game-direction-rework-design.md
  */
 export const CAMPAIGN_GRADE_CONFIG: Readonly<Record<Grade, CampaignGradeConfig>> = {
-  C: { requiredReputation: 0, baseReputationReward: 10, baseGoldReward: 20, nodeCount: 7, branchLength: 2, infoOpportunityCount: 2, bossRelatedInfoCount: 1 },
-  B: { requiredReputation: 30, baseReputationReward: 15, baseGoldReward: 35, nodeCount: 9, branchLength: 3, infoOpportunityCount: 3, bossRelatedInfoCount: 1 },
-  A: { requiredReputation: 60, baseReputationReward: 25, baseGoldReward: 55, nodeCount: 11, branchLength: 4, infoOpportunityCount: 4, bossRelatedInfoCount: 2 },
-  S: { requiredReputation: 100, baseReputationReward: 40, baseGoldReward: 80, nodeCount: 13, branchLength: 5, infoOpportunityCount: 5, bossRelatedInfoCount: 2 },
+  C: { requiredReputation: 0, baseReputationReward: 6, baseGoldReward: 12, nodeCount: 7, branchLength: 2, infoOpportunityCount: 2, bossRelatedInfoCount: 1 },
+  B: { requiredReputation: 30, baseReputationReward: 9, baseGoldReward: 21, nodeCount: 9, branchLength: 3, infoOpportunityCount: 3, bossRelatedInfoCount: 1 },
+  A: { requiredReputation: 60, baseReputationReward: 15, baseGoldReward: 33, nodeCount: 11, branchLength: 4, infoOpportunityCount: 4, bossRelatedInfoCount: 2 },
+  S: { requiredReputation: 100, baseReputationReward: 24, baseGoldReward: 48, nodeCount: 13, branchLength: 5, infoOpportunityCount: 5, bossRelatedInfoCount: 2 },
 };
 
 export interface InitialDungeonDefinition {

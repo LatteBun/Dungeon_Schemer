@@ -147,12 +147,12 @@ describe("클리어 보상", () => {
     expect(state.cumulativeGold).toBe(200 + Math.floor(config.baseGoldReward * ratio));
   });
 
-  it("A급 1명 생존은 소수점을 버려 명성 7과 골드 16을 준다", () => {
+  it("A급 1명 생존은 소수점을 버려 명성 4와 골드 9를 준다", () => {
     const { state } = settle({ grade: "A", survivors: [1], casualties: [2, 3] });
 
-    // 25 × 0.3 = 7.5 → 7, 55 × 0.3 = 16.5 → 16
-    expect(state.currentReputation).toBe(107);
-    expect(state.currentGold).toBe(66);
+    // 15 × 0.3 = 4.5 → 4, 33 × 0.3 = 9.9 → 9
+    expect(state.currentReputation).toBe(104);
+    expect(state.currentGold).toBe(59);
   });
 
   it("클리어한 던전은 cleared가 되고 등급이 오르지 않는다", () => {
@@ -171,8 +171,8 @@ describe("클리어 보상", () => {
       currentGold: 50,
     });
 
-    // C급 2명 생존 골드는 floor(20 × 0.6) = 12. 유품 30은 더하지 않는다.
-    expect(state.currentGold).toBe(62);
+    // C급 2명 생존 골드는 floor(12 × 0.6) = 7. 유품 30은 더하지 않는다.
+    expect(state.currentGold).toBe(57);
     expect(state.members.find((entry) => entry.id === "member-003")?.carriedGold).toBe(30);
   });
 });
@@ -224,7 +224,7 @@ describe("전멸 정산", () => {
 
     // 문서가 현재 명성의 최솟값을 제한하지 않는다. 그 결과 첫 전멸이 곧
     // 캠페인 종료가 될 수 있다. C4 백테스트가 조기 엔딩 비율을 보고한다.
-    expect(state.currentReputation).toBe(-10);
+    expect(state.currentReputation).toBe(-6);
     expect(state.ending?.id).toBe("partyExhausted");
   });
 });
@@ -238,9 +238,9 @@ describe("승급", () => {
       cumulativeGold: 50,
     });
 
-    // 명성 40 × 2 + 누적 70 = 150 ≥ 120
-    expect(state.currentReputation).toBe(40);
-    expect(state.cumulativeGold).toBe(70);
+    // 명성 36 × 2 + 누적 62 = 134 ≥ 120
+    expect(state.currentReputation).toBe(36);
+    expect(state.cumulativeGold).toBe(62);
     expect(state.rank).toBe("B");
   });
 

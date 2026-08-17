@@ -51,7 +51,7 @@ describe("toCampaignHeaderView", () => {
     };
     const view = toCampaignHeaderView(state);
     expect(view.promotionScore).toBe(136);
-    expect(view.nextGrade).toEqual({ grade: "A", threshold: 274 });
+    expect(view.nextGrade).toEqual({ grade: "A", threshold: 261 });
     expect(view.remainingDungeons).toBe(1);
     expect(view.totalDungeons).toBe(1);
   });

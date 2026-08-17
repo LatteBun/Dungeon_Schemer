@@ -15,7 +15,7 @@ describe("백테스트 보고서 문서", () => {
 
   it("기준 승급 시나리오와 세 전략을 모두 담는다", () => {
     expect(document).toContain("| B | 30 | 60 | 120 |");
-    expect(document).toContain("| S | 90 | 190 | 370 |");
+    expect(document).toContain("| S | 117 | 255 | 489 |");
     for (const name of STRATEGY_NAMES) {
       expect(document).toContain(name);
     }

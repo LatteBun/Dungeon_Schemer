@@ -13,8 +13,8 @@ describe("기준 승급 시나리오", () => {
 
     expect(report.checkpoints).toEqual({
       B: { reputation: 30, cumulativeGold: 60, score: 120 },
-      A: { reputation: 66, cumulativeGold: 142, score: 274 },
-      S: { reputation: 90, cumulativeGold: 190, score: 370 },
+      A: { reputation: 63, cumulativeGold: 135, score: 261 },
+      S: { reputation: 117, cumulativeGold: 255, score: 489 },
     });
     expect(report.finalRank).toBe("S");
   });
@@ -99,6 +99,6 @@ describe("백테스트 보고서", () => {
   });
 
   it("기준 시나리오를 함께 담는다", () => {
-    expect(report.baseline.checkpoints.S.score).toBe(370);
+    expect(report.baseline.checkpoints.S.score).toBe(489);
   });
 }, 60_000);
