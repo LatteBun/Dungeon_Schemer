@@ -178,6 +178,8 @@ F2는 `lib/content/events.ts`에 일반 사건 12개와 보스 사건 풀을 제
 
 ## 첫 백테스트 보고서
 
+> 이 절은 `C4` 시점의 기록이다. `B1` 조정 뒤의 현재 수치는 [BACKTEST_REPORT.md](BACKTEST_REPORT.md)를 본다.
+
 `C4`가 10,000개 시드 × 3전략 = 30,000 캠페인을 92.9초에 돌린 결과다. **생성 오류 0건, 시작 즉시 진행 불가 시드 0건**으로 강제 조건은 통과했다. 아래는 합격·불합격이 아니라 밸런스 조정 자료다.
 
 | | survivalFirst | balanced | wipeGoldFirst |
@@ -243,6 +245,7 @@ BACKTEST_SEEDS=200 pnpm backtest   # 빠르게 확인할 때
 | `lib/rules/settlement.ts` | `CLEAR_REWARD_RATIO` | 생존 인원별 보상 비율 |
 | `lib/rules/info.ts` | `BOSS_DAMAGE_MODIFIERS` | 진위별 보스 피해 보정 |
 | `lib/rules/party-lifecycle.ts` | `REST_HEAL_RATIO` | 비출전 생존자 회복률 |
+| `lib/rules/campaign-init.ts` | `INITIAL_MEMBER_GOLD_MIN` · `MAX` | 파티원 소지 골드 범위. 전멸 유품의 크기 |
 
 ### 상수를 바꾸면 함께 깨지는 것
 
