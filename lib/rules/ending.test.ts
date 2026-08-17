@@ -98,7 +98,7 @@ describe("엔딩 우선순위", () => {
   });
 
   it("공고가 모두 명성에 막히면 길잡이 자격 박탈이다", () => {
-    const state = stateAfterSettlement({ currentReputation: -10 });
+    const state = stateAfterSettlement({ currentReputation: -40 });
 
     expect(resolveEnding(state, SURVIVORS)?.id).toBe("supportUnavailable");
   });

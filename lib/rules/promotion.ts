@@ -1,11 +1,11 @@
 import type { Grade } from "@/lib/domain";
 
-/** 승급 점수 기준. 상위 spec에서 확정된 값이다. */
+/** 승급 점수 기준. 기준 시나리오(lib/backtest/fixtures.ts)에서 파생한 값이다. */
 export const PROMOTION_THRESHOLDS: Readonly<Record<Grade, number>> = {
   C: 0,
   B: 120,
-  A: 274,
-  S: 370,
+  A: 261,
+  S: 489,
 };
 
 const GRADE_ORDER: readonly Grade[] = ["C", "B", "A", "S"];

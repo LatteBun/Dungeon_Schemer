@@ -34,7 +34,7 @@ describe("F1·F2·C1 통합 snapshot", () => {
     expect(snapshot.c1.board).toHaveLength(5);
     expect(snapshot.c1.board.every((offer) => offer.dungeonGrade === "C")).toBe(true);
     expect(snapshot.c1.board.every((offer) =>
-      offer.requiredReputation === 0
+      offer.requiredReputation === -30
       && !offer.locked
       && offer.lockReason === null,
     )).toBe(true);

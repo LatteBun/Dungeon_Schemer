@@ -6,6 +6,7 @@ import {
   simulateCampaign,
   simulateFixture,
 } from "@/lib/backtest/campaign-simulator";
+import { PROMOTION_THRESHOLDS } from "@/lib/rules/promotion";
 
 describe("기준 승급 시나리오", () => {
   it("승급 checkpoint를 정확히 재현한다", () => {
@@ -13,10 +14,21 @@ describe("기준 승급 시나리오", () => {
 
     expect(report.checkpoints).toEqual({
       B: { reputation: 30, cumulativeGold: 60, score: 120 },
-      A: { reputation: 66, cumulativeGold: 142, score: 274 },
-      S: { reputation: 90, cumulativeGold: 190, score: 370 },
+      A: { reputation: 63, cumulativeGold: 135, score: 261 },
+      S: { reputation: 117, cumulativeGold: 255, score: 489 },
     });
     expect(report.finalRank).toBe("S");
+  });
+
+  it("checkpoint 점수가 승급 기준과 정확히 일치한다", () => {
+    // PROMOTION_THRESHOLDS는 이 시나리오에서 파생한 값이다. 두 곳이 어긋나면
+    // 여기서 잡는다. finalRank 단정만으로는 기준을 낮추는 방향의 드리프트가
+    // 보이지 않는다.
+    const report = simulateFixture("baseline");
+
+    for (const grade of ["B", "A", "S"] as const) {
+      expect(report.checkpoints[grade].score).toBe(PROMOTION_THRESHOLDS[grade]);
+    }
   });
 
   it("난수를 쓰지 않으므로 몇 번을 돌려도 같다", () => {
@@ -99,6 +111,6 @@ describe("백테스트 보고서", () => {
   });
 
   it("기준 시나리오를 함께 담는다", () => {
-    expect(report.baseline.checkpoints.S.score).toBe(370);
+    expect(report.baseline.checkpoints.S.score).toBe(489);
   });
 }, 60_000);

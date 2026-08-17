@@ -180,6 +180,8 @@ F2는 `lib/content/events.ts`에 일반 사건 12개와 보스 사건 풀을 제
 
 ## 첫 백테스트 보고서
 
+> 이 절은 `C4` 시점의 기록이다. `B1` 조정 뒤의 현재 수치는 [BACKTEST_REPORT.md](BACKTEST_REPORT.md)를 본다.
+
 `C4`가 10,000개 시드 × 3전략 = 30,000 캠페인을 92.9초에 돌린 결과다. **생성 오류 0건, 시작 즉시 진행 불가 시드 0건**으로 강제 조건은 통과했다. 아래는 합격·불합격이 아니라 밸런스 조정 자료다.
 
 | | survivalFirst | balanced | wipeGoldFirst |
@@ -245,6 +247,7 @@ BACKTEST_SEEDS=200 pnpm backtest   # 빠르게 확인할 때
 | `lib/rules/settlement.ts` | `CLEAR_REWARD_RATIO` | 생존 인원별 보상 비율 |
 | `lib/rules/info.ts` | `BOSS_DAMAGE_MODIFIERS` | 진위별 보스 피해 보정 |
 | `lib/rules/party-lifecycle.ts` | `REST_HEAL_RATIO` | 비출전 생존자 회복률 |
+| `lib/rules/campaign-init.ts` | `INITIAL_MEMBER_GOLD_MIN` · `MAX` | 파티원 소지 골드 범위. 전멸 유품의 크기 |
 
 ### 상수를 바꾸면 함께 깨지는 것
 
@@ -252,13 +255,15 @@ BACKTEST_SEEDS=200 pnpm backtest   # 빠르게 확인할 때
 
 | 무엇 | 어디 |
 | --- | --- |
-| 기준 승급 시나리오 | `lib/backtest/campaign-simulator.test.ts`의 checkpoint 120·274·370 |
+| 기준 승급 시나리오 | `lib/backtest/campaign-simulator.test.ts`의 checkpoint 120·261·489 |
 | 승급 기준 상수 | `lib/rules/promotion.test.ts` |
 | 사건 효과 계산 | `lib/rules/event.test.ts` |
 | 정산 보상 | `lib/rules/settlement.test.ts` |
 | 문서의 수치표 | [성장과 엔딩](../systems/PROGRESSION_AND_ENDINGS.md), [던전 사건과 보스](../systems/DUNGEON_EVENTS_AND_BOSSES.md) |
 
 문서를 함께 고치는 것이 중요하다. 상수의 근거는 코드가 아니라 그 문서에 먼저 적혀 있다.
+
+문서 정합성은 파일 하나가 아니라 `docs/` 전체를 훑어 확인한다. `B1`에서 `docs/systems/`만 검사했다가 `docs/design/CORE_GAME_LOOP.md`의 옛 값을 놓쳤다.
 
 ## 배정표
 
@@ -281,7 +286,7 @@ BACKTEST_SEEDS=200 pnpm backtest   # 빠르게 확인할 때
 | U3 | 정산·엔딩 화면 | 생존부터 승급까지 원인 순서와 네 엔딩·최종 등급 표시 | — | **I1** | LatteBun | ✅ |
 | U4 | 와이어프레임 화면 충실도 | 대표 화면 5개의 패널 배치·순서·표시 항목이 `docs/diagram/png`와 일치하고, 화면마다 다른 오른쪽 패널이 구조로 표현됨 | — | **Q1** | LatteBun | ✅ |
 | I1 | 캠페인 전체 통합 | 게시판→탐험→정산→다음 공고/엔딩 흐름이 시드로 재현되고 전체 검증 통과 | — | **B1 Q1 U4** | LatteBun | ✅ |
-| B1 | 밸런스 조정 | 배신 전략이 성립하고 S 도달률이 100%가 아니며 보스가 위협이 됨. 상수만 바꾼 커밋에 재생성한 백테스트 보고서 동봉 | — | — |  | ⬜ |
+| B1 | 밸런스 조정 | 배신 전략이 성립하고 S 도달률이 100%가 아니며 보스가 위협이 됨. 상수만 바꾼 커밋에 재생성한 백테스트 보고서 동봉 | — | — | LatteBun | ✅ |
 | Q1 | 접근성·전체 검증 | 키보드 조작, 색상 외 단서, 변화 사유, lint·typecheck·test·build와 브라우저 검증 통과 | — | **Q2** |  | ⬜ |
 | Q2 | 데모 배포 | `main` 데모에서 캠페인 핵심 흐름과 시드 재현을 확인 | **Q1** | — |  | ⬜ |
 

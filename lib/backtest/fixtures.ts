@@ -23,17 +23,26 @@ interface ClearStep {
 }
 
 /**
- * 프로토타입 승급 속도 기준을 그대로 옮긴 클리어 순서다.
+ * 던전 15개를 등급 순으로 완주하는 기준 진행이다. 캠페인 길이가 승급 속도의
+ * 기준이므로 클리어 횟수를 캠페인 전체로 잡는다.
  * docs/systems/PROGRESSION_AND_ENDINGS.md
  */
 const BASELINE_CLEARS: readonly ClearStep[] = [
   { grade: "C", survivors: 3 },
   { grade: "C", survivors: 3 },
+  { grade: "C", survivors: 3 },
+  { grade: "C", survivors: 3 },
   { grade: "C", survivors: 3, reaches: "B" },
+  { grade: "C", survivors: 3 },
   { grade: "B", survivors: 3 },
   { grade: "B", survivors: 3 },
-  { grade: "C", survivors: 2, reaches: "A" },
-  { grade: "S", survivors: 2, reaches: "S" },
+  { grade: "B", survivors: 3, reaches: "A" },
+  { grade: "B", survivors: 3 },
+  { grade: "A", survivors: 3 },
+  { grade: "A", survivors: 3 },
+  { grade: "A", survivors: 3, reaches: "S" },
+  { grade: "S", survivors: 3 },
+  { grade: "S", survivors: 3 },
 ];
 
 /**

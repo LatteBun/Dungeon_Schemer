@@ -107,10 +107,10 @@ describe("보스 피해 보정", () => {
       infoRecords: [record("member-001", "truth", "accepted")],
     });
 
-    expect(resultFor(result, "member-001").damage).toBe(Math.round(24 * 0.8));
-    expect(resultFor(result, "member-002").damage).toBe(24);
-    expect(resultFor(result, "member-001").member.currentHp).toBe(100 - 19);
-    expect(resultFor(result, "member-002").member.currentHp).toBe(76);
+    expect(resultFor(result, "member-001").damage).toBe(Math.round(52 * 0.8));
+    expect(resultFor(result, "member-002").damage).toBe(52);
+    expect(resultFor(result, "member-001").member.currentHp).toBe(100 - 42);
+    expect(resultFor(result, "member-002").member.currentHp).toBe(48);
   });
 
   it("보스 주제가 아니거나 의심·적발한 기록은 보정을 만들지 않는다", () => {

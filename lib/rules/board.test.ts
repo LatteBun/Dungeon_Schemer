@@ -89,11 +89,11 @@ describe("게시판 생성 규칙", () => {
   });
 
   it("명성 부족 공고를 숨기지 않고 잠근다", () => {
-    const board = generateBoard(stateWithCungeonsCleared(5, 0));
+    const board = generateBoard(stateWithCungeonsCleared(5, -20));
     const firstBOffer = board.find((offer) => offer.dungeonId === "dungeon-007");
 
     expect(firstBOffer).toMatchObject({
-      requiredReputation: 30,
+      requiredReputation: -10,
       locked: true,
       lockReason: "insufficientReputation",
     });
@@ -121,7 +121,7 @@ describe("공고 지원 판정", () => {
       accepted: true,
     });
 
-    const lockedState = stateWithCungeonsCleared(5, 0);
+    const lockedState = stateWithCungeonsCleared(5, -20);
     const lockedBoard = generateBoard(lockedState);
     const stateWithLockedBoard = { ...lockedState, board: lockedBoard };
 
@@ -165,7 +165,7 @@ describe("게시판 종료 후보", () => {
   });
 
   it("모든 공고가 잠기면 supportUnavailable을 반환한다", () => {
-    expect(createBoardEnding(stateWithCungeonsCleared(5, 0))).toBe(
+    expect(createBoardEnding(stateWithCungeonsCleared(5, -20))).toBe(
       "supportUnavailable",
     );
   });

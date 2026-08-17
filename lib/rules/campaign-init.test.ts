@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { GRADES } from "@/lib/domain";
-import { initializeCampaign } from "@/lib/rules/campaign-init";
+import {
+  INITIAL_MEMBER_GOLD_MAX,
+  INITIAL_MEMBER_GOLD_MIN,
+  initializeCampaign,
+} from "@/lib/rules/campaign-init";
 import { emptyStatistics } from "@/lib/rules/statistics";
 
 describe("캠페인 초기화", () => {
@@ -50,8 +54,8 @@ describe("캠페인 초기화", () => {
       && member.alive
       && member.trust >= 0
       && member.trust <= 100
-      && member.carriedGold >= 10
-      && member.carriedGold <= 30
+      && member.carriedGold >= INITIAL_MEMBER_GOLD_MIN
+      && member.carriedGold <= INITIAL_MEMBER_GOLD_MAX
       && member.memory.length === 0,
     )).toBe(true);
   });
