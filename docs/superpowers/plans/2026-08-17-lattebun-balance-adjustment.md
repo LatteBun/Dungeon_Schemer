@@ -524,18 +524,32 @@ import {
 
 - [ ] **Step 4: 검사가 실제로 발동하는지 확인한다**
 
-일부러 `INITIAL_MEMBER_GOLD_MAX`를 `19`로 바꿔(최솟값보다 작게) 테스트가 실패하는지 본다.
+테스트가 이제 상수를 참조하므로 **상수를 바꾸면 단정하는 쪽과 생성하는 쪽이 함께 움직여 검사가 순환한다.** 그래서 상수가 아니라 **생성 지점**을 흔든다. 이 테스트가 지키는 불변식은 "생성값이 선언된 범위를 지킨다"이므로 생성을 어긋나게 해야 발동한다.
+
+`lib/rules/campaign-init.ts:112`의 호출을 일시적으로 바꾼다.
+
+찾을 문자열:
+
+```ts
+      carriedGoldRng.int(INITIAL_MEMBER_GOLD_MIN, INITIAL_MEMBER_GOLD_MAX),
+```
+
+일시적으로 바꿀 문자열:
+
+```ts
+      carriedGoldRng.int(1, 5),
+```
 
 Run: `pnpm test lib/rules/campaign-init.test.ts`
-Expected: FAIL. 실패하지 않으면 테스트가 아무것도 검사하지 않는다는 뜻이므로 Step 3을 다시 본다.
+Expected: FAIL. `초기 등급·자원·개인 상태 불변식을 지킨다`가 실패한다. 실패하지 않으면 테스트가 아무것도 검사하지 않는다는 뜻이므로 Step 3을 다시 본다.
 
-확인한 뒤 **반드시 45로 되돌리고** 복원을 확인한다.
+확인한 뒤 **반드시 원래 호출로 되돌리고** 복원을 확인한다.
 
 ```bash
 git diff lib/rules/campaign-init.ts
 ```
 
-Expected: `INITIAL_MEMBER_GOLD_MIN`이 20, `INITIAL_MEMBER_GOLD_MAX`가 45인 변경만 보인다.
+Expected: `INITIAL_MEMBER_GOLD_MIN`이 20, `INITIAL_MEMBER_GOLD_MAX`가 45가 되고 `export`가 붙은 변경만 보인다. `carriedGoldRng.int(1, 5)`가 남아 있으면 안 된다.
 
 - [ ] **Step 5: 전체 테스트가 통과하는지 확인한다**
 
@@ -825,13 +839,15 @@ MSG
 
 **배경:** 사전 측정은 1,000 시드였다. 10,000 시드에서 수치가 소폭 달라질 수 있으므로 목표에 여유를 두었다. 이 Task가 `B1`의 완료 여부를 결정한다.
 
-- [ ] **Step 1: 조정 전 보고서를 따로 남긴다**
+- [ ] **Step 1: 작업 트리가 깨끗한지 확인한다**
 
-diff를 읽으려면 비교 대상이 필요하다.
+보고서의 diff를 읽으려면 다른 변경이 섞여 있으면 안 된다. 별도 사본은 만들지 않는다 — `git`이 조정 전 보고서를 이미 갖고 있고 Step 3의 `git diff`가 전후를 보여준다.
 
 ```bash
-cp docs/technical/BACKTEST_REPORT.md /tmp/backtest-before.md
+git status --short
 ```
+
+Expected: 추적 중인 파일에 변경이 없다. `.omo/`와 `dungeon-schemer-handoff.md`는 추적하지 않는 개인 파일이므로 나와도 된다.
 
 - [ ] **Step 2: 10,000 시드 백테스트를 돌린다**
 
