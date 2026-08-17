@@ -6,6 +6,7 @@ import {
   simulateCampaign,
   simulateFixture,
 } from "@/lib/backtest/campaign-simulator";
+import { PROMOTION_THRESHOLDS } from "@/lib/rules/promotion";
 
 describe("기준 승급 시나리오", () => {
   it("승급 checkpoint를 정확히 재현한다", () => {
@@ -17,6 +18,17 @@ describe("기준 승급 시나리오", () => {
       S: { reputation: 117, cumulativeGold: 255, score: 489 },
     });
     expect(report.finalRank).toBe("S");
+  });
+
+  it("checkpoint 점수가 승급 기준과 정확히 일치한다", () => {
+    // PROMOTION_THRESHOLDS는 이 시나리오에서 파생한 값이다. 두 곳이 어긋나면
+    // 여기서 잡는다. finalRank 단정만으로는 기준을 낮추는 방향의 드리프트가
+    // 보이지 않는다.
+    const report = simulateFixture("baseline");
+
+    for (const grade of ["B", "A", "S"] as const) {
+      expect(report.checkpoints[grade].score).toBe(PROMOTION_THRESHOLDS[grade]);
+    }
   });
 
   it("난수를 쓰지 않으므로 몇 번을 돌려도 같다", () => {

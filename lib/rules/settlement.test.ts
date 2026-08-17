@@ -217,16 +217,17 @@ describe("전멸 정산", () => {
     expect(state.dungeons[0].failureCount).toBe(1);
   });
 
-  it("명성은 음수가 될 수 있고 요구치 아래로 내려가면 공고가 잠긴다", () => {
+  it("전멸로 명성이 음수가 되어도 그 자체로 공고가 잠기지는 않는다", () => {
     const { state } = settle({
       survivors: [],
       casualties: [1, 2, 3],
       currentReputation: 0,
     });
 
-    // 문서가 현재 명성의 최솟값을 제한하지 않는다. 다만 요구 명성이 음수
-    // 구간까지 내려가므로 음수가 되는 것 자체는 잠금을 뜻하지 않는다.
-    // 이 fixture는 출전 파티가 전멸해 완성 파티가 남지 않은 경우다.
+    // 문서가 현재 명성의 최솟값을 제한하지 않으므로 음수가 될 수 있다. 이
+    // fixture는 출전 파티가 전멸해 완성 파티가 남지 않은 경우이고, 그래서
+    // ending 우선순위상 supportUnavailable(잠김)이 아니라 partyExhausted가
+    // 성립한다. 잠김 자체의 검증은 board.test.ts에 있다.
     expect(state.currentReputation).toBe(-6);
     expect(state.ending?.id).toBe("partyExhausted");
   });
