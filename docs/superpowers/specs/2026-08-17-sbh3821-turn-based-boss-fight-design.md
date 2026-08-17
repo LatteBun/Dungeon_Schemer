@@ -70,23 +70,73 @@
 
 보스 HP가 0 이하면 `clear`, 살아 있는 파티원이 없으면 `wipe`다. 파티 공격력 합이 0이면 전투가 끝나지 않으므로 **50턴 상한**을 두고 넘으면 `wipe`로 끝낸다. 정상 콘텐츠에서는 닿지 않는 값이고, 닿으면 공격력 데이터가 잘못됐다는 신호다.
 
-## 결과 계약
+## 결과 계약과 전투 흐름 읽기
 
-`BossResolution`에 턴 기록을 더한다. 화면이 "왜 저 사람이 죽었는지"를 설명하려면 누가 언제 맞았는지가 있어야 한다.
+`BossResolution`에 턴 기록을 더한다. 화면이 "왜 저 사람이 죽었는지"를 설명하려면, 그리고 나중에 전투를 모션으로 재생하려면 **누가 언제 무엇을 했는지**가 순서대로 있어야 한다.
 
 ```ts
+interface BossPartyAttack {
+  readonly memberId: MemberId;
+  readonly damage: number;
+  readonly bossHpAfter: number;
+}
+
 interface BossTurn {
   readonly turn: number;
+  /** 이 턴에 파티가 넣은 피해의 합. `attacks`의 합과 같다. */
   readonly partyDamage: number;
+  readonly attacks: readonly BossPartyAttack[];
   readonly bossHpAfter: number;
-  /** 보스가 이 턴에 때린 대상. 보스가 먼저 죽으면 없다. */
+  /** 보스가 이 턴에 때린 대상. 보스가 먼저 쓰러지면 없다. */
   readonly targetId: MemberId | null;
   readonly damage: number;
   readonly targetHpAfter: number;
 }
 ```
 
-`BossMemberResult.damage`는 그 파티원이 **전투 내내 받은 합계**가 된다. 기존 소비자(`damageByMember`, 정산 원인 사슬, `U3` 화면)는 이 뜻으로 그대로 읽을 수 있다.
+`BossResolution`은 `turns`와 함께 `bossMaxHp`·`bossHpRemaining`을 담는다. 화면이 보스 HP 막대를 그리려면 최대치가 필요하다.
+
+### 파티는 한 덩어리가 아니라 한 명씩 친다
+
+한 턴에 살아 있는 파티원이 **입력 순서대로 한 명씩** 보스를 친다. 보스가 도중에 쓰러지면 남은 사람은 치지 않는다.
+
+공격력을 합산해 한 번에 깎아도 결과는 같다. 보스가 쓰러지는 턴이 같고 그 턴에는 반격하지 않기 때문이다. 그런데도 한 명씩 적용하는 이유는 **합계만 남기면 모션이 누가 언제 쳤는지 그릴 수 없기** 때문이다. 규칙은 그대로 두고 기록만 자세해진다.
+
+공격 순서는 파티에 들어간 순서다. 직업별 행동 순서(선공권)는 축을 하나 더 늘리는 일이라 이번 범위에 넣지 않는다.
+
+### 모션이 읽는 법
+
+`turns`를 순서대로 돌면서 한 턴마다 이렇게 그리면 된다.
+
+```text
+for (const turn of resolution.turns) {
+  for (const attack of turn.attacks) {
+    // attack.memberId 가 보스를 친다
+    // 보스 HP 막대를 attack.bossHpAfter / resolution.bossMaxHp 로
+  }
+  if (turn.targetId === null) {
+    // 보스가 이 턴에 쓰러졌다. 승리 연출
+  } else {
+    // 보스가 turn.targetId 를 친다
+    // 그 파티원 HP 를 turn.targetHpAfter 로
+  }
+}
+```
+
+턴 기록만으로 전투 전체가 재생된다. 규칙을 다시 돌리거나 상태를 앞뒤로 비교할 필요가 없다.
+
+`BossMemberResult.damage`는 그 파티원이 **전투 내내 받은 합계**이고 `hits`는 맞은 횟수다. 기존 소비자(`damageByMember`, 정산 원인 사슬, `U3` 화면)는 합계를 그대로 읽을 수 있다.
+
+### 전달 경로
+
+규칙이 만든 `BossResolution`은 `transitionCampaign`이 `CampaignTransition.bossResolution`으로 함께 내보내고, `campaign-store`가 `lastBossResolution`에 담는다. 화면은 이미 그 자리에서 읽고 있으므로 모션 작업은 새 배선 없이 `turns`만 더 읽으면 된다.
+
+```text
+resolveBossFight
+  → CampaignTransition.bossResolution   (lib/flow/campaign-machine.ts)
+  → campaign-store.lastBossResolution   (lib/stores/campaign-store.ts)
+  → app/play/result/page.tsx
+```
 
 ## B1 밸런스가 무효가 된다
 

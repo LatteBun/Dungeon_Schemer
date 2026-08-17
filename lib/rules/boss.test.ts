@@ -145,6 +145,45 @@ describe("턴 진행", () => {
     }
   });
 
+  it("파티원이 순서대로 한 명씩 치고 각 타격이 기록된다", () => {
+    const result = fight({ boss: BOSS_S, members: mixedParty(), seed: "타격기록" });
+    const first = result.turns[0];
+
+    expect(first.attacks.map((entry) => entry.memberId))
+      .toEqual(["member-warrior", "member-mage"]);
+    expect(first.attacks.map((entry) => entry.damage))
+      .toEqual([WARRIOR.attack, MAGE.attack]);
+    expect(first.attacks[0].bossHpAfter).toBe(BOSS_S.maxHp - WARRIOR.attack);
+    expect(first.attacks[1].bossHpAfter)
+      .toBe(BOSS_S.maxHp - WARRIOR.attack - MAGE.attack);
+  });
+
+  it("보스가 도중에 쓰러지면 남은 파티원은 치지 않는다", () => {
+    // 전사 한 방이면 죽는 보스를 만든다.
+    const frail: BossDef = { ...BOSS_C, maxHp: WARRIOR.attack };
+    const result = fight({ boss: frail, members: mixedParty(), seed: "조기격파" });
+
+    expect(result.turns).toHaveLength(1);
+    expect(result.turns[0].attacks).toHaveLength(1);
+    expect(result.turns[0].attacks[0].memberId).toBe("member-warrior");
+    expect(result.outcome).toBe("clear");
+  });
+
+  it("각 타격의 합이 그 턴의 partyDamage와 같다", () => {
+    const result = fight({ boss: BOSS_S, members: mixedParty(), seed: "합계" });
+
+    for (const entry of result.turns) {
+      const sum = entry.attacks.reduce((total, attack) => total + attack.damage, 0);
+      expect(sum).toBe(entry.partyDamage);
+    }
+  });
+
+  it("보스 최대 HP를 결과에 담아 화면이 비율을 그릴 수 있다", () => {
+    const result = fight({ boss: BOSS_S, members: mixedParty(), seed: "최대HP" });
+
+    expect(result.bossMaxHp).toBe(BOSS_S.maxHp);
+  });
+
   it("턴 기록의 보스 HP가 실제 누적과 일치한다", () => {
     const result = fight({ boss: BOSS_S, members: mixedParty(), seed: "누적" });
     let hp = BOSS_S.maxHp;

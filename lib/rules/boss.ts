@@ -31,10 +31,30 @@ export interface BossMemberResult {
   readonly hits: number;
 }
 
-/** 한 턴의 기록. 화면이 누가 언제 맞았는지 설명하려면 필요하다. */
+/**
+ * 파티원 한 명이 보스를 친 기록이다.
+ *
+ * 합계만 남기면 모션이 누가 언제 쳤는지 그릴 수 없다. 순차로 적용해도 보스가
+ * 쓰러지는 턴과 그 턴에 반격하지 않는다는 규칙이 같으므로 결과는 합산과
+ * 동일하고 기록만 자세해진다.
+ */
+export interface BossPartyAttack {
+  readonly memberId: MemberId;
+  readonly damage: number;
+  readonly bossHpAfter: number;
+}
+
+/**
+ * 한 턴의 기록. 화면과 모션이 이것만 순서대로 읽으면 전투를 재생할 수 있다.
+ *
+ * 한 턴은 `attacks`를 순서대로 그린 뒤 `targetId`가 있으면 보스의 반격을
+ * 그리면 된다. 보스가 파티 공격에 쓰러진 턴은 `targetId`가 없다.
+ */
 export interface BossTurn {
   readonly turn: number;
+  /** 이 턴에 파티가 넣은 피해의 합. `attacks`의 합과 같다. */
   readonly partyDamage: number;
+  readonly attacks: readonly BossPartyAttack[];
   readonly bossHpAfter: number;
   /** 보스가 이 턴에 때린 대상. 보스가 먼저 쓰러지면 없다. */
   readonly targetId: MemberId | null;
@@ -64,6 +84,8 @@ export interface BossResolution {
   readonly turns: BossTurn[];
   /** 전투가 끝났을 때 보스에게 남은 HP. 클리어면 0이다. */
   readonly bossHpRemaining: number;
+  /** 보스의 최대 HP. 화면이 남은 비율을 그리려면 필요하다. */
+  readonly bossMaxHp: number;
 }
 
 /**
@@ -167,17 +189,23 @@ export function resolveBossFight(
     turn += 1;
     const alive = aliveEntries();
 
-    const partyDamage = alive.reduce(
-      (sum, entry) => sum + (profileOf(entry.member)?.attack ?? 0),
-      0,
-    );
-    bossHp = Math.max(0, bossHp - partyDamage);
+    // 파티원이 입력 순서대로 한 명씩 친다. 보스가 도중에 쓰러지면 남은 사람은
+    // 치지 않는다. 합산해서 한 번에 깎던 때와 결과는 같고 기록만 자세해진다.
+    const attacks: BossPartyAttack[] = [];
+    for (const entry of alive) {
+      if (bossHp === 0) break;
+      const damage = profileOf(entry.member)?.attack ?? 0;
+      bossHp = Math.max(0, bossHp - damage);
+      attacks.push({ memberId: entry.member.id, damage, bossHpAfter: bossHp });
+    }
+    const partyDamage = attacks.reduce((sum, entry) => sum + entry.damage, 0);
 
     // 보스가 쓰러진 턴에는 반격하지 않는다.
     if (bossHp === 0) {
       turns.push({
         turn,
         partyDamage,
+        attacks,
         bossHpAfter: 0,
         targetId: null,
         damage: 0,
@@ -206,6 +234,7 @@ export function resolveBossFight(
     turns.push({
       turn,
       partyDamage,
+      attacks,
       bossHpAfter: bossHp,
       targetId: targetId as MemberId,
       damage,
@@ -254,5 +283,6 @@ export function resolveBossFight(
     verifications,
     turns,
     bossHpRemaining: bossHp,
+    bossMaxHp: input.boss.maxHp,
   };
 }
