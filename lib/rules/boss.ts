@@ -3,6 +3,7 @@ import { RuleError } from "@/lib/domain";
 import type {
   BossDef,
   CampaignMember,
+  ClassDef,
   InfoRecord,
   MemberId,
   TrustChange,
@@ -16,13 +17,29 @@ export interface ResolveBossFightInput {
   readonly members: readonly CampaignMember[];
   readonly infoRecords: readonly InfoRecord[];
   readonly rng: Rng;
+  /** 직업별 공격력과 피격 가중치. 규칙이 콘텐츠를 인자로 받는 관례를 따른다. */
+  readonly classes: readonly ClassDef[];
 }
 
 export interface BossMemberResult {
   readonly member: CampaignMember;
   /** 이 파티원에게 적용한 최종 피해 보정. 이미 상한으로 잘린 값이다. */
   readonly damageModifier: number;
+  /** 전투 내내 받은 피해의 합계. 맞은 횟수만큼 쌓인다. */
   readonly damage: number;
+  /** 이 파티원이 보스에게 맞은 횟수. */
+  readonly hits: number;
+}
+
+/** 한 턴의 기록. 화면이 누가 언제 맞았는지 설명하려면 필요하다. */
+export interface BossTurn {
+  readonly turn: number;
+  readonly partyDamage: number;
+  readonly bossHpAfter: number;
+  /** 보스가 이 턴에 때린 대상. 보스가 먼저 쓰러지면 없다. */
+  readonly targetId: MemberId | null;
+  readonly damage: number;
+  readonly targetHpAfter: number;
 }
 
 export type BossOutcome = "clear" | "wipe";
@@ -44,7 +61,18 @@ export interface BossResolution {
   readonly survivorIds: MemberId[];
   readonly casualtyIds: MemberId[];
   readonly verifications: InfoVerification[];
+  readonly turns: BossTurn[];
+  /** 전투가 끝났을 때 보스에게 남은 HP. 클리어면 0이다. */
+  readonly bossHpRemaining: number;
 }
+
+/**
+ * 전투가 끝나지 않는 것을 막는 안전장치다.
+ *
+ * 파티 공격력 합이 0이면 보스 HP가 줄지 않아 무한 루프가 된다. 정상 콘텐츠에서는
+ * 닿지 않는 값이고, 닿으면 공격력 데이터가 잘못됐다는 신호다.
+ */
+export const MAX_BOSS_TURNS = 50;
 
 function clampModifier(value: number): number {
   return Math.min(BOSS_MODIFIER_MAX, Math.max(BOSS_MODIFIER_MIN, value));
@@ -66,11 +94,33 @@ function verificationAction(record: InfoRecord): InfoVerification["action"] | nu
     : "suspicionWasCostly";
 }
 
+/** 가중치에 비례해 하나를 고른다. 가중치가 클수록 자주 뽑힌다. */
+function pickWeighted(
+  entries: readonly { readonly id: string; readonly weight: number }[],
+  rng: Rng,
+): string {
+  const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  if (total <= 0) return entries[0].id;
+
+  let roll = rng.int(1, total);
+  for (const entry of entries) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.id;
+  }
+  return entries[entries.length - 1].id;
+}
+
 /**
- * 보스전을 자동으로 해결하고 미검증 기록을 검증한다.
+ * 보스전을 턴제로 해결하고 미검증 기록을 검증한다.
  *
- * 보정은 파티원마다 독립이고 기본 피해에 한 번만 적용한다. 난수는 전투가 아니라
- * 사후 검증의 신뢰 변동에서만 쓴다. 입력이 정해지면 피해는 하나로 정해진다.
+ * 한 턴은 파티가 먼저 치고 보스가 되받는 순서다. 파티가 먼저 치는 이유는 공격력을
+ * 결정에 넣기 위해서다. 보스를 N턴에 잡으면 맞는 것은 N-1번이므로 화력이 높은
+ * 파티는 맞는 횟수 자체가 줄어든다. 보스가 먼저 치면 공격력은 전투 길이만 바꾸고
+ * 첫 턴 피해는 못 줄인다.
+ *
+ * 보스는 살아 있는 파티원 중 피격 가중치에 비례한 확률로 대상을 고른다. 정보
+ * 보정은 그 파티원이 맞을 때마다 적용한다.
+ * docs/superpowers/specs/2026-08-17-sbh3821-turn-based-boss-fight-design.md
  */
 export function resolveBossFight(
   input: ResolveBossFightInput,
@@ -93,20 +143,82 @@ export function resolveBossFight(
     );
   }
 
+  const profileOf = (member: CampaignMember): ClassDef | undefined =>
+    input.classes.find((entry) => entry.id === member.classId);
+
+  const state = new Map<string, BossMemberResult>(fighters.map((member) => [
+    member.id as string,
+    {
+      member: { ...member },
+      damageModifier: clampModifier(modifierByMember.get(member.id) ?? 0),
+      damage: 0,
+      hits: 0,
+    },
+  ]));
+  const order = fighters.map((member) => member.id as string);
+  const aliveEntries = (): BossMemberResult[] =>
+    order.map((id) => state.get(id)!).filter((entry) => entry.member.alive);
+
+  const turns: BossTurn[] = [];
+  let bossHp = input.boss.maxHp;
+  let turn = 0;
+
+  while (bossHp > 0 && aliveEntries().length > 0 && turn < MAX_BOSS_TURNS) {
+    turn += 1;
+    const alive = aliveEntries();
+
+    const partyDamage = alive.reduce(
+      (sum, entry) => sum + (profileOf(entry.member)?.attack ?? 0),
+      0,
+    );
+    bossHp = Math.max(0, bossHp - partyDamage);
+
+    // 보스가 쓰러진 턴에는 반격하지 않는다.
+    if (bossHp === 0) {
+      turns.push({
+        turn,
+        partyDamage,
+        bossHpAfter: 0,
+        targetId: null,
+        damage: 0,
+        targetHpAfter: 0,
+      });
+      break;
+    }
+
+    const targetId = pickWeighted(
+      alive.map((entry) => ({
+        id: entry.member.id as string,
+        weight: profileOf(entry.member)?.hitWeight ?? 1,
+      })),
+      input.rng,
+    );
+    const target = state.get(targetId)!;
+    const damage = Math.round(input.boss.baseDamage * (1 + target.damageModifier));
+    const currentHp = Math.max(0, target.member.currentHp - damage);
+
+    state.set(targetId, {
+      ...target,
+      member: { ...target.member, currentHp, alive: currentHp > 0 },
+      damage: target.damage + damage,
+      hits: target.hits + 1,
+    });
+    turns.push({
+      turn,
+      partyDamage,
+      bossHpAfter: bossHp,
+      targetId: targetId as MemberId,
+      damage,
+      targetHpAfter: currentHp,
+    });
+  }
+
   const survivorIds: MemberId[] = [];
   const casualtyIds: MemberId[] = [];
-  const members = fighters.map((member) => {
-    const damageModifier = clampModifier(modifierByMember.get(member.id) ?? 0);
-    const damage = Math.round(input.boss.baseDamage * (1 + damageModifier));
-    const currentHp = Math.max(0, member.currentHp - damage);
-    const alive = currentHp > 0;
-    (alive ? survivorIds : casualtyIds).push(member.id);
-
-    return {
-      member: { ...member, currentHp, alive },
-      damageModifier,
-      damage,
-    };
+  const members = order.map((id) => {
+    const entry = state.get(id)!;
+    (entry.member.alive ? survivorIds : casualtyIds).push(entry.member.id);
+    return entry;
   });
 
   // 검증은 보스전 뒤에 한다. 죽은 사람의 신뢰는 움직여도 갈 곳이 없다.
@@ -132,11 +244,15 @@ export function resolveBossFight(
   }
 
   return {
-    outcome: survivorIds.length > 0 ? "clear" : "wipe",
+    // 보스를 쓰러뜨렸을 때만 클리어다. 생존자 수로 판정하면 턴 상한에 걸려
+    // 보스가 멀쩡히 서 있는데도 클리어가 된다.
+    outcome: bossHp === 0 ? "clear" : "wipe",
     members: members.map((entry) =>
       survivorById.get(entry.member.id as string) ?? entry),
     survivorIds,
     casualtyIds,
     verifications,
+    turns,
+    bossHpRemaining: bossHp,
   };
 }

@@ -1,4 +1,5 @@
 import { toCampaignHeaderView } from "@/components/game/campaign-view-model";
+import { CLASSES } from "@/lib/content/classes";
 import { BOSSES } from "@/lib/content/bosses";
 import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
 import { INFO_CARDS } from "@/lib/content/info-cards";
@@ -135,6 +136,7 @@ export function runOneExpedition(seed: string): ExpeditionOutcome {
     members: membersBefore,
     infoRecords: expedition.infoRecords,
     rng: createRng(key).derive("boss"),
+    classes: CLASSES,
   });
 
   state = transitionCampaign(state, { type: "resolveBoss" }, CONTEXT);

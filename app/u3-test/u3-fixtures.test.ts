@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CLASSES } from "@/lib/content/classes";
 import { BOSSES } from "@/lib/content/bosses";
 import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
 import { INFO_CARDS } from "@/lib/content/info-cards";
@@ -103,6 +104,7 @@ describe("runOneExpedition", () => {
       members: participantsOf(beforeBoss, expedition),
       infoRecords: expedition.infoRecords,
       rng: createRng(key).derive("boss"),
+    classes: CLASSES,
     });
 
     expect(fixture.bossResolution).toEqual(directBoss);

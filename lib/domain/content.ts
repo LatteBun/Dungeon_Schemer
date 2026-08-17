@@ -64,5 +64,14 @@ export interface BossDef {
   grade: Grade;
   name: string;
   description: string;
+  /**
+   * 한 턴에 대상 하나에게 주는 피해.
+   *
+   * 턴제로 바뀌기 전에는 전투 내내 한 번 주는 값이었다. 매 턴 적용되므로
+   * 뜻이 달라졌고 수치도 함께 낮췄다.
+   * docs/superpowers/specs/2026-08-17-sbh3821-turn-based-boss-fight-design.md
+   */
   baseDamage: number;
+  /** 파티가 이만큼 깎으면 보스가 쓰러진다. */
+  maxHp: number;
 }

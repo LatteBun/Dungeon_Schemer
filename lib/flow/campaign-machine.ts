@@ -1,3 +1,4 @@
+import { CLASSES } from "@/lib/content/classes";
 import type { DungeonEventPools } from "@/lib/content/events";
 import { EVENT_KINDS, RuleError } from "@/lib/domain";
 import type {
@@ -454,6 +455,7 @@ function resolveBoss(
     members: participants,
     infoRecords: expedition.infoRecords,
     rng: createRng(expeditionKey(state, dungeon)).derive("boss"),
+    classes: CLASSES,
   });
   const fought = resolution.members.map((entry) => entry.member);
   const afterBoss = mergeMembers(participants, fought);

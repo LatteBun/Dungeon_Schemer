@@ -36,6 +36,16 @@ export interface ClassDef {
   id: ClassId;
   name: string;
   description: string;
+  /**
+   * 보스전에서 한 턴에 보스에게 주는 피해.
+   *
+   * 공격력과 피격 가중치는 반비례한다. 전사는 적게 때리고 많이 맞으며 마법사는
+   * 많이 때리고 적게 맞는다. 이 두 값이 직업 구성을 생존에 직접 연결한다.
+   * docs/superpowers/specs/2026-08-17-sbh3821-turn-based-boss-fight-design.md
+   */
+  attack: number;
+  /** 보스가 대상을 고를 때의 상대 가중치. 클수록 자주 맞는다. */
+  hitWeight: number;
 }
 
 export interface PartyMember {

@@ -1,3 +1,4 @@
+import { CLASSES } from "@/lib/content/classes";
 import { describe, expect, it } from "vitest";
 import { BOSSES } from "@/lib/content/bosses";
 import { createRng } from "@/lib/rng";
@@ -62,6 +63,7 @@ describe("toBossResultView", () => {
       members: membersBefore,
       infoRecords: [],
       rng: createRng("u3-boss").derive("boss"),
+      classes: CLASSES,
     });
 
     const view = toBossResultView(resolution, membersBefore);
@@ -89,6 +91,7 @@ describe("toBossResultView", () => {
       members: membersBefore,
       infoRecords: [],
       rng: createRng("u3-wipe-label").derive("boss"),
+      classes: CLASSES,
     });
 
     const view = toBossResultView(resolution, membersBefore);
@@ -111,6 +114,7 @@ describe("toBossResultView", () => {
       members: membersBefore,
       infoRecords,
       rng: createRng("u3-modifier").derive("boss"),
+      classes: CLASSES,
     });
 
     const view = toBossResultView(resolution, membersBefore);
@@ -147,6 +151,7 @@ describe("toBossResultView", () => {
       members: membersBefore,
       infoRecords: [],
       rng: createRng("u3-fallback").derive("boss"),
+      classes: CLASSES,
     });
     const missingEntry = resolution.members[0];
 
@@ -172,6 +177,7 @@ describe("toBossResultView", () => {
       members: membersBefore,
       infoRecords: [],
       rng: createRng("u3-dead-fallback").derive("boss"),
+      classes: CLASSES,
     });
     const missingEntry = resolution.members[0];
 
