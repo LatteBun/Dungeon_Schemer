@@ -11,6 +11,7 @@ import type { EventKind, GeneratedMap, Grade, MapNode } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
 import type { Rng, RngStream } from "@/lib/rng";
 import { generateGradeMap, validateGeneratedMap } from "@/lib/rules/map";
+import { layoutMap } from "@/components/game/map-layout";
 
 const EVENT_BY_ID = new Map(
   EVENT_KINDS.flatMap((kind) =>
@@ -220,6 +221,48 @@ describe("층 구조", () => {
 
     expect(splits, "갈라지는 자리가 하나도 없다").toBeGreaterThan(0);
     expect(merges, "다시 합쳐지는 자리가 하나도 없다").toBeGreaterThan(0);
+  });
+
+  it("간선이 서로 교차하지 않는다", () => {
+    // 부모 열 기준으로 정렬한 자식 열이 줄지 않으면 선이 엇갈리지 않는다.
+    for (const grade of GRADES) {
+      for (let index = 0; index < 60; index += 1) {
+        const map = mapOf(grade, `교차-${grade}-${index}`);
+        const byDepth = layers(map);
+        const maxDepth = Math.max(...map.nodes.map((node) => node.depth));
+
+        for (let depth = 0; depth < maxDepth; depth += 1) {
+          const columnOf = new Map(
+            (byDepth.get(depth + 1) ?? []).map((node) => [node.id as string, node.column]),
+          );
+          const pairs = (byDepth.get(depth) ?? [])
+            .slice()
+            .sort((left, right) => left.column - right.column)
+            .flatMap((node) => node.nextNodeIds
+              .map((next) => columnOf.get(next as string)!)
+              .sort((left, right) => left - right));
+
+          expect(pairs, `${grade}급 깊이 ${depth}에서 간선이 엇갈린다`)
+            .toEqual([...pairs].sort((left, right) => left - right));
+        }
+      }
+    }
+  });
+
+  it("화면 좌표로 옮겨도 선이 만나지 않는다", () => {
+    // 흔들림이 열 간격보다 작아야 좌우 순서가 뒤집히지 않는다.
+    for (const grade of GRADES) {
+      const map = mapOf(grade, `좌표교차-${grade}`);
+      const byDepth = layers(map);
+
+      for (const [, layer] of byDepth) {
+        const sorted = [...layer].sort((left, right) => left.column - right.column);
+        const positions = sorted.map((node) => layoutMap(map).nodes
+          .find((entry) => entry.id === node.id)!.x);
+
+        expect(positions).toEqual([...positions].sort((left, right) => left - right));
+      }
+    }
   });
 
   it("층 안의 열 번호가 0부터 이어진다", () => {

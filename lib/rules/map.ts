@@ -90,14 +90,19 @@ function layerWidths(
 }
 
 /**
- * 층과 층 사이를 잇는다.
+ * 층과 층 사이를 잇는다. 간선이 서로 교차하지 않는다.
  *
- * 아래 층의 모든 지점에 부모를 하나씩 먼저 주고, 자식이 없는 위 층 지점을 채운 뒤,
- * 여유가 남은 곳에 두 번째 간선을 더한다. 순서가 중요하다. 부모 배정을 먼저 하지
- * 않으면 닿을 수 없는 지점이 생기고, 자식 채우기를 건너뛰면 막다른 길이 생긴다.
+ * 부모를 아무렇게나 고르면 왼쪽 부모가 오른쪽 자식으로, 오른쪽 부모가 왼쪽
+ * 자식으로 가면서 선이 엇갈린다. 그래서 부모를 **왼쪽부터 순서대로** 훑으며
+ * 자식도 왼쪽부터 이어 붙인다. 열 순서가 곧 화면의 좌우 순서이므로, 간선을
+ * 부모 열 기준으로 정렬했을 때 자식 열이 줄지 않으면 교차가 생기지 않는다.
  *
- * 두 번째 간선이 갈라짐과 합쳐짐을 동시에 만든다. 위 층의 두 지점이 아래 층의 같은
- * 지점을 가리키면 그 자리가 합류점이다.
+ * 각 부모는 자식 1~2명을 맡는다. 2명이면 갈림길이고, 앞 부모가 맡은 마지막
+ * 자식을 다시 맡으면 그 자리가 합류점이다. 둘 다 순서를 깨지 않는다.
+ *
+ * 흔들림은 열 간격보다 작으므로 좌우 순서를 뒤집지 못한다. 그래서 순서가 교차
+ * 없음을 그대로 보장한다.
+ * docs/superpowers/specs/2026-08-18-sbh3821-irregular-map-generation-design.md
  */
 function connectLayers(
   parents: readonly NodeId[],
@@ -105,37 +110,40 @@ function connectLayers(
   rng: Rng,
 ): Map<string, NodeId[]> {
   const edges = new Map<string, NodeId[]>(parents.map((id) => [id as string, []]));
-  const outdegree = (id: NodeId): number => edges.get(id as string)!.length;
-  const link = (parent: NodeId, child: NodeId): void => {
-    edges.get(parent as string)!.push(child);
-  };
+  // 아직 부모가 없는 첫 자식. 이 왼쪽은 모두 이어졌다.
+  let cursor = 0;
 
-  for (const child of children) {
-    const available = parents.filter((id) => outdegree(id) < MAX_NEXT_NODES);
-    if (available.length === 0) {
-      invalid("자식을 받을 부모가 없다. 층 너비 계산이 잘못됐다.", {
+  for (let index = 0; index < parents.length; index += 1) {
+    const parentsLeft = parents.length - index - 1;
+    // 앞 부모의 마지막 자식부터 시작하면 그 자식이 합류점이 된다.
+    const starts = cursor > 0 ? [cursor - 1, cursor] : [cursor];
+    const options: { start: number; span: number }[] = [];
+
+    for (const start of starts) {
+      for (const span of [1, MAX_NEXT_NODES]) {
+        if (start + span > children.length) continue;
+        const next = Math.max(cursor, start + span);
+        // 남은 부모가 나머지 자식을 다 맡을 수 있어야 빈 자식이 남지 않는다.
+        if (children.length - next > parentsLeft * MAX_NEXT_NODES) continue;
+        // 마지막 부모는 마지막 자식까지 맡아야 한다.
+        if (parentsLeft === 0 && next !== children.length) continue;
+        options.push({ start, span });
+      }
+    }
+
+    if (options.length === 0) {
+      invalid("교차 없이 층을 이을 수 없다. 층 너비 계산이 잘못됐다.", {
         parents: parents.length,
         children: children.length,
+        cursor,
       });
     }
-    // 아직 자식이 없는 부모를 먼저 채워 막다른 길을 만들지 않는다.
-    const idle = available.filter((id) => outdegree(id) === 0);
-    link(rng.pick(idle.length > 0 ? idle : available), child);
-  }
 
-  for (const parent of parents) {
-    if (outdegree(parent) > 0) continue;
-    link(parent, rng.pick(children));
-  }
-
-  // 남은 여유에 두 번째 간선을 더해 갈림길을 만든다. 이미 이어진 자식은 제외해
-  // 같은 곳으로 두 번 가는 간선을 만들지 않는다.
-  for (const parent of parents) {
-    if (outdegree(parent) >= MAX_NEXT_NODES) continue;
-    const taken = new Set(edges.get(parent as string)!.map(String));
-    const others = children.filter((child) => !taken.has(child as string));
-    if (others.length === 0 || rng.int(0, 1) === 0) continue;
-    link(parent, rng.pick(others));
+    const chosen = rng.pick(options);
+    for (let offset = 0; offset < chosen.span; offset += 1) {
+      edges.get(parents[index] as string)!.push(children[chosen.start + offset]);
+    }
+    cursor = Math.max(cursor, chosen.start + chosen.span);
   }
 
   return edges;
@@ -397,6 +405,31 @@ export function validateGeneratedMap(
           { nodeId: node.id, nextNodeId: next },
         );
       }
+    }
+  }
+
+  // 간선을 부모 열 기준으로 정렬했을 때 자식 열이 줄면 선이 엇갈린다.
+  for (let depth = 0; depth <= config.pathLength; depth += 1) {
+    const layer = (byDepth.get(depth) ?? [])
+      .slice()
+      .sort((left, right) => left.column - right.column);
+    const columnOf = new Map(
+      (byDepth.get(depth + 1) ?? []).map((node) => [node.id as string, node.column]),
+    );
+    let highest = -1;
+    for (const node of layer) {
+      const targets = node.nextNodeIds
+        .map((next) => columnOf.get(next as string) ?? 0)
+        .sort((left, right) => left - right);
+      for (const column of targets) {
+        if (column < highest) {
+          invalid(
+            `간선이 교차한다: 깊이 ${depth}의 열 ${node.column}이 열 ${column}으로 되돌아간다`,
+            { grade: map.grade, depth, column: node.column, target: column },
+          );
+        }
+      }
+      if (targets.length > 0) highest = targets[targets.length - 1];
     }
   }
 
