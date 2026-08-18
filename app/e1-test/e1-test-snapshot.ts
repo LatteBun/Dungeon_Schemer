@@ -1,5 +1,5 @@
 import { CAMPAIGN_GRADE_CONFIG } from "@/lib/content/dungeons";
-import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
+import { DUNGEON_EVENT_POOLS, ENTRY_EVENT } from "@/lib/content/events";
 import type { DungeonEventPools } from "@/lib/content/events";
 import { EVENT_KINDS, GRADES, RuleError } from "@/lib/domain";
 import type { EventKind, GeneratedMap, Grade } from "@/lib/domain";
@@ -46,12 +46,11 @@ export interface E1GradeView {
   grade: Grade;
   status: "pass" | "fail";
   error?: string;
-  branchLength: number;
+  pathLength: number;
   rows: E1RowView[];
   paths: E1PathView[];
   checks: E1CheckView[];
-  entryKind: EventKind;
-  mergeKind: EventKind;
+  layerWidths: number[];
   infoNodeCount: number;
 }
 
@@ -78,6 +77,8 @@ const EVENT_BY_ID = new Map(
   [
     ...EVENT_KINDS.flatMap((kind) => DUNGEON_EVENT_POOLS.regular[kind]),
     ...DUNGEON_EVENT_POOLS.boss,
+    // 입구는 일반 풀에 없는 전용 사건이다. 빠뜨리면 "알 수 없는 사건"으로 뜬다.
+    ENTRY_EVENT,
   ].map((event) => [event.id as string, event]),
 );
 
@@ -126,17 +127,35 @@ function toRows(map: GeneratedMap): E1RowView[] {
     }));
 }
 
+/**
+ * 입구에서 보스까지 갈 수 있는 모든 길을 걷는다.
+ *
+ * 간선이 깊이를 1씩 늘리므로 모든 길이 같은 값을 갖는다. 그래도 전부 걷는 이유는
+ * 화면이 "정말 같은가"를 눈으로 보여주는 자리이기 때문이다.
+ */
 function toPathViews(map: GeneratedMap): E1PathView[] {
-  return map.paths.map((path, index) => {
-    const kinds = path.nodeIds
-      .filter((id) => id !== map.bossNodeId)
-      .map((id) => toNodeView(map, id as string).kind);
+  const byId = new Map(map.nodes.map((node) => [node.id as string, node]));
+  const routes: string[][] = [];
+  const walk = (id: string, trail: string[]): void => {
+    if (id === (map.bossNodeId as string)) {
+      routes.push([...trail, id]);
+      return;
+    }
+    for (const next of byId.get(id)!.nextNodeIds) walk(next as string, [...trail, id]);
+  };
+  walk(map.entryNodeId as string, []);
+
+  return routes.map((nodeIds, index) => {
+    const kinds = nodeIds
+      .filter((id) => id !== (map.bossNodeId as string) && id !== (map.entryNodeId as string))
+      .map((id) => toNodeView(map, id).kind);
     return {
-      label: index === 0 ? "왼쪽 갈래" : "오른쪽 갈래",
-      nodeIds: path.nodeIds as unknown as string[],
-      regularEventCount: path.regularEventCount,
-      infoCount: path.infoCount,
-      bossRelatedInfoCount: path.bossRelatedInfoCount,
+      label: `경로 ${index + 1}`,
+      nodeIds,
+      regularEventCount: nodeIds.length - 2,
+      infoCount: nodeIds.filter((id) => toNodeView(map, id).hasInfoOpportunity).length,
+      bossRelatedInfoCount: nodeIds
+        .reduce((sum, id) => sum + toNodeView(map, id).bossRelatedInfoCount, 0),
       kinds,
       coversAllKinds: EVENT_KINDS.every((kind) => kinds.includes(kind)),
     };
@@ -163,52 +182,38 @@ function toGradeView(grade: Grade, seed: string): E1GradeView {
       grade,
       status: "fail",
       error: ruleError?.message ?? String(error),
-      branchLength: config.branchLength,
+      pathLength: config.pathLength,
       rows: [],
       paths: [],
       checks: [],
-      entryKind: "special",
-      mergeKind: "special",
+      layerWidths: [],
       infoNodeCount: 0,
     };
   }
 
   const paths = toPathViews(map);
-  const entry = toNodeView(map, map.entryNodeId as string);
-  const merge = toNodeView(map, "node-merge");
   const distinctEvents = new Set(map.nodes.map((node) => node.eventId as string)).size;
+  const layerWidths = Array.from({ length: config.pathLength }, (_, index) =>
+    map.nodes.filter((node) => node.depth === index + 1).length);
+  const uniform = <T>(values: readonly T[]): T | "불일치" =>
+    new Set(values).size === 1 ? values[0] : "불일치";
 
   const checks: E1CheckView[] = [
-    check("전체 지점", config.nodeCount, map.nodes.length),
-    check("갈래 길이", config.branchLength, (map.nodes.length - 3) / 2),
+    check("전체 지점", config.eventNodeCount + 2, map.nodes.length),
+    check("경로 길이", config.pathLength, map.regularEventCount),
     check("서로 다른 사건", map.nodes.length, distinctEvents),
-    check(
-      "경로별 일반 사건",
-      config.branchLength + 1,
-      new Set(paths.map((path) => path.regularEventCount)).size === 1
-        ? paths[0].regularEventCount
-        : "불일치",
-    ),
-    check(
-      "경로별 정보 기회",
-      config.infoOpportunityCount,
-      new Set(paths.map((path) => path.infoCount)).size === 1
-        ? paths[0].infoCount
-        : "불일치",
-    ),
-    check(
-      "경로별 보스 보장",
-      config.bossRelatedInfoCount,
-      new Set(paths.map((path) => path.bossRelatedInfoCount)).size === 1
-        ? paths[0].bossRelatedInfoCount
-        : "불일치",
-    ),
-    check(
-      "네 분류를 지나는 경로",
-      paths.length,
-      paths.filter((path) => path.coversAllKinds).length,
-    ),
-    check("입구·합류 분류", "서로 다름", entry.kind === merge.kind ? "같음" : "서로 다름"),
+    check("모든 경로의 사건 수", config.pathLength,
+      uniform(paths.map((path) => path.regularEventCount))),
+    check("모든 경로의 정보 횟수", config.infoOpportunityCount,
+      uniform(paths.map((path) => path.infoCount))),
+    check("모든 경로의 보스 보장", config.bossRelatedInfoCount,
+      uniform(paths.map((path) => path.bossRelatedInfoCount))),
+    check("네 분류를 지나는 경로", paths.length,
+      paths.filter((path) => path.coversAllKinds).length),
+    check("층 너비 상한", "1~3",
+      layerWidths.every((width) => width >= 1 && width <= 3) ? "1~3" : "벗어남"),
+    check("다음 선택지 상한", "2 이하",
+      map.nodes.every((node) => node.nextNodeIds.length <= 2) ? "2 이하" : "초과"),
   ];
 
   let error: string | undefined;
@@ -222,12 +227,11 @@ function toGradeView(grade: Grade, seed: string): E1GradeView {
     grade,
     status: error === undefined && checks.every((entry) => entry.pass) ? "pass" : "fail",
     error,
-    branchLength: config.branchLength,
+    pathLength: config.pathLength,
     rows: toRows(map),
     paths,
     checks,
-    entryKind: entry.kind,
-    mergeKind: merge.kind,
+    layerWidths,
     infoNodeCount: map.nodes.filter((node) => node.hasInfoOpportunity).length,
   };
 }
@@ -237,6 +241,17 @@ function poolsWithout(kind: EventKind, keep: number): DungeonEventPools {
   return {
     ...pools,
     regular: { ...pools.regular, [kind]: pools.regular[kind].slice(0, keep) },
+  };
+}
+
+/** 분류별 3개만 남긴 풀. 전체 12개라 S급이 요구하는 16개에 못 미친다. */
+function thinPools(): DungeonEventPools {
+  const pools = structuredClone(DUNGEON_EVENT_POOLS) as DungeonEventPools;
+  return {
+    ...pools,
+    regular: Object.fromEntries(
+      EVENT_KINDS.map((kind) => [kind, pools.regular[kind].slice(0, 3)]),
+    ) as unknown as DungeonEventPools["regular"],
   };
 }
 
@@ -273,10 +288,10 @@ function corrupted(seed: string, mutate: (map: GeneratedMap) => void): () => voi
 function negativeCases(seed: string): E1NegativeCase[] {
   return [
     negativeCase(
-      "S급 · 몬스터 풀 1개 축소",
-      "S급은 서로 다른 사건 12개를 요구하므로 11개로는 생성할 수 없다",
+      "S급 · 분류별 3개로 축소",
+      "S급은 서로 다른 사건 16개를 요구하므로 12개로는 생성할 수 없다",
       () => generateGradeMap("S", createRng(seed).derive("map"), {
-        eventPools: poolsWithout("monster", 2),
+        eventPools: thinPools(),
       }),
     ),
     negativeCase(
@@ -299,15 +314,14 @@ function negativeCases(seed: string): E1NegativeCase[] {
       "S급은 경로마다 보스 관련 정보를 2회 보장해야 한다",
       corrupted(seed, (map) => {
         for (const node of map.nodes) node.bossRelatedInfoCount = 0;
-        for (const path of map.paths) path.bossRelatedInfoCount = 0;
       }),
     ),
     negativeCase(
-      "합류 → 보스방 간선 절단",
+      "첫 층의 간선 절단",
       "보스방에 도달하지 못하는 지도가 된다",
       corrupted(seed, (map) => {
-        const merge = map.nodes.find((node) => node.id === "node-merge");
-        if (merge !== undefined) merge.nextNodeIds = [];
+        const first = map.nodes.find((node) => node.depth === 1);
+        if (first !== undefined) first.nextNodeIds = [];
       }),
     ),
     negativeCase(
@@ -335,7 +349,7 @@ export function createE1TestSnapshot(seed: string): E1Snapshot {
     reproducibility: {
       sameSeed: signature(first) === signature(again),
       otherSeedDiffers: signature(first) !== signature(other),
-      sampleNodeIds: first.paths[0].nodeIds as unknown as string[],
+      sampleNodeIds: toPathViews(first)[0].nodeIds,
     },
   };
 }

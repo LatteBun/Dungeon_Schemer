@@ -59,7 +59,7 @@ function GradeSection({ view }: { view: E1GradeView }) {
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 id={`grade-${view.grade}`} className="text-xl text-parchment">
           {view.grade}급 지도
-          <span className="ml-2 text-sm text-muted">갈래 길이 {view.branchLength}</span>
+          <span className="ml-2 text-sm text-muted">경로 {view.pathLength}칸 · 층 너비 {view.layerWidths.join("·")}</span>
         </h2>
         <span
           className={`rounded-full border px-3 py-1 text-xs ${
@@ -131,9 +131,7 @@ function GradeSection({ view }: { view: E1GradeView }) {
           </div>
 
           <p className="text-xs text-muted">
-            입구 {EVENT_KIND_LABELS[view.entryKind]} · 합류{" "}
-            {EVENT_KIND_LABELS[view.mergeKind]} · 정보 기회가 찍힌 지점{" "}
-            {view.infoNodeCount}곳
+            정보 기회가 찍힌 지점 {view.infoNodeCount}곳 · 가능한 경로 {view.paths.length}가지
           </p>
         </div>
       </div>

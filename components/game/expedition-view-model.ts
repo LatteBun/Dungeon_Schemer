@@ -1,5 +1,6 @@
 import { CLASSES } from "@/lib/content/classes";
 import { EVENT_KIND_RISK_SUMMARY } from "@/lib/content/events";
+import type { MapIconKind } from "./MapNodeIcon";
 import type {
   CampaignMember,
   CardId,
@@ -9,6 +10,7 @@ import type {
   EventId,
   EventKind,
   GeneratedMap,
+  Grade,
   InfoCard,
   InfoReaction,
   ItemDef,
@@ -79,6 +81,10 @@ export interface MapNodeView {
   state: MapNodeState;
   isBoss: boolean;
   riskSummary: string;
+  /** 지점에 그릴 아이콘. 범례를 찾지 않아도 무엇인지 읽히게 한다. */
+  icon: MapIconKind | "boss";
+  /** 보스방일 때 어느 보스인지. 등급마다 실루엣이 다르다. */
+  grade: Grade;
 }
 
 export interface MapView {
@@ -120,7 +126,13 @@ export function toMapView(
       state = "inactive";
     }
 
-    const kind = isBoss ? null : eventKindById(node.eventId);
+    // 입구는 전용 사건을 쓰고 일반 풀에 없다. 분류를 물으면 조회가 실패한다.
+    const kind = isBoss || isEntry ? null : eventKindById(node.eventId);
+    const icon: MapIconKind | "boss" = isBoss
+      ? "boss"
+      : isEntry
+        ? "entry"
+        : (kind as EventKind);
     const categoryLabel = isBoss
       ? "보스방"
       : isEntry
@@ -138,6 +150,8 @@ export function toMapView(
       state,
       isBoss,
       riskSummary: node.riskSummary,
+      icon,
+      grade: map.grade,
     };
   });
 

@@ -1,4 +1,5 @@
 import { CLASSES } from "@/lib/content/classes";
+import { ENTRY_EVENT } from "@/lib/content/events";
 import type { DungeonEventPools } from "@/lib/content/events";
 import { EVENT_KINDS, RuleError } from "@/lib/domain";
 import type {
@@ -86,7 +87,8 @@ export function createCampaignMachineContext(
   return {
     ...pools,
     eventById: new Map(
-      [...regular, ...pools.events.boss].map((event) => [event.id as string, event]),
+      [...regular, ...pools.events.boss, ENTRY_EVENT]
+        .map((event) => [event.id as string, event]),
     ),
     eventKindById: new Map(
       EVENT_KINDS.flatMap((kind) =>
@@ -226,7 +228,7 @@ function arriveAt(
         ...moved,
         pendingInfo: createInfoOpportunity({
           node,
-          eventKind: context.eventKindById.get(node.eventId as string) ?? "special",
+          event: requireEvent(node.eventId, context),
           rng: nodeRng(state, dungeon, node.id).derive("card"),
           cards: context.cards,
         }),
@@ -237,11 +239,16 @@ function arriveAt(
   return { phase: "event", expedition: { ...moved, pendingEvent: pendingEventAt(node, context) } };
 }
 
-function pendingEventAt(node: MapNode, context: CampaignMachineContext) {
-  const event = context.eventById.get(node.eventId as string);
+function requireEvent(eventId: MapNode["eventId"], context: CampaignMachineContext) {
+  const event = context.eventById.get(eventId as string);
   if (event === undefined) {
-    unknown(`콘텐츠에 없는 사건이다: ${node.eventId}`, { eventId: node.eventId });
+    unknown(`콘텐츠에 없는 사건이다: ${eventId}`, { eventId });
   }
+  return event;
+}
+
+function pendingEventAt(node: MapNode, context: CampaignMachineContext) {
+  const event = requireEvent(node.eventId, context);
   return {
     nodeId: node.id,
     eventId: event.id,

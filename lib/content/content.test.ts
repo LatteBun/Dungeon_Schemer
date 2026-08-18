@@ -10,9 +10,19 @@ import type { BossDef, DungeonEvent, EventKind, InfoCard, ItemDef } from "@/lib/
 import { validateContentPools } from "@/lib/content/validation";
 
 describe("F2 콘텐츠 정상 풀", () => {
-  it("일반 사건 12개를 네 분류별 3개로 제공한다", () => {
-    expect(EVENT_KINDS.every((kind) => DUNGEON_EVENT_POOLS.regular[kind].length === 3)).toBe(true);
-    expect(EVENT_KINDS.flatMap((kind) => DUNGEON_EVENT_POOLS.regular[kind])).toHaveLength(12);
+  it("일반 사건 20개를 세 분류로 제공한다", () => {
+    // S급 지도가 사건 지점 16개를 서로 다른 사건으로 채워야 한다. 상인 조우가
+    // 특수로 합쳐져 특수가 10개, 몬스터와 휴식이 5개씩이다.
+    expect(EVENT_KINDS.every((kind) => DUNGEON_EVENT_POOLS.regular[kind].length >= 5)).toBe(true);
+    expect(EVENT_KINDS.flatMap((kind) => DUNGEON_EVENT_POOLS.regular[kind])).toHaveLength(20);
+  });
+
+  it("상인 조우 사건이 상인 주제를 직접 선언한다", () => {
+    const merchants = DUNGEON_EVENT_POOLS.regular.special
+      .filter((event) => event.infoSubject === "merchant");
+
+    expect(merchants.length).toBeGreaterThan(0);
+    expect(merchants.every((event) => event.kind === "special")).toBe(true);
   });
 
   it("모든 사건의 선택지가 두 개 이상이다", () => {

@@ -20,7 +20,7 @@ const RAW_MOCK_EVENTS = [
     ],
   },
   {
-    id: "e-a2" as EventId, kind: "merchant", title: "그림자 상인",
+    id: "e-a2" as EventId, kind: "special", infoSubject: "merchant", title: "그림자 상인",
     description: "후드를 쓴 상인이 좌판을 펼친다. 독과 가짜 지도를 함께 팔고 있다.",
     choices: [
       { id: "ch-a2-buy-map" as ChoiceId, label: "가짜 지도를 산다", expectedGain: "나중에 파티를 원하는 길로 유도할 수 있다", knownRisk: "사례금 6을 쓴다" },

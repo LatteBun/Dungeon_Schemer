@@ -69,7 +69,7 @@ export const sampleMember: PartyMember = {
 export const wrongPersonality: Personality = "brave";
 
 export const truthTypeCount: 3 = TRUTH_TYPES.length;
-export const eventKindCount: 4 = EVENT_KINDS.length;
+export const eventKindCount: 3 = EVENT_KINDS.length;
 
 export const sampleTargetMember: Target = { kind: "member", id: memberId };
 export const sampleTargetBoss: EventTarget = { kind: "boss" };
@@ -178,7 +178,7 @@ export const sampleTrustChange: TrustChange = {
 
 // 배럴이 모든 공개 타입과 상수를 내보내는지 확인한다.
 // 다른 작업은 개별 파일이 아니라 이 경로에서 가져온다.
-export const barrelHasAllConstants: [5, 4, 3, 3, 5, 0, 100] = [
+export const barrelHasAllConstants: [5, 3, 3, 3, 5, 0, 100] = [
   domain.PERSONALITIES.length,
   domain.EVENT_KINDS.length,
   domain.TRUTH_TYPES.length,

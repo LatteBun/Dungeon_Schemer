@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRng } from "@/lib/rng";
-import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
+import { DUNGEON_EVENT_POOLS, ENTRY_EVENT } from "@/lib/content/events";
 import { generateGradeMap } from "@/lib/rules/map";
 import { createInfoOpportunity, evaluatePartyInfoCard } from "@/lib/rules/info";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
@@ -27,6 +27,7 @@ import {
 const ALL_EVENTS: DungeonEvent[] = [
   ...Object.values(DUNGEON_EVENT_POOLS.regular).flat(),
   ...DUNGEON_EVENT_POOLS.boss,
+  ENTRY_EVENT,
 ];
 const eventById = (id: EventId): DungeonEvent => {
   const found = ALL_EVENTS.find((event) => event.id === id);
@@ -34,6 +35,7 @@ const eventById = (id: EventId): DungeonEvent => {
   return found;
 };
 const eventKindById = (id: EventId): EventKind => eventById(id).kind;
+const eventFor = (id: EventId): DungeonEvent => eventById(id);
 
 const cardById = (id: CardId): InfoCard => {
   const found = INFO_CARDS.find((card) => card.id === id);
@@ -69,7 +71,7 @@ describe("toEventView", () => {
     const item = ITEMS[0];
     const event: DungeonEvent = {
       id: "e-merchant" as EventId,
-      kind: "merchant",
+      kind: "special",
       title: "떠돌이 상인",
       description: "상인이 물건을 편다.",
       choices: [
@@ -105,7 +107,7 @@ describe("toInfoReactionsView", () => {
     const infoNode = map.nodes.find((node) => node.hasInfoOpportunity)!;
     const pending = createInfoOpportunity({
       node: infoNode,
-      eventKind: eventKindById(infoNode.eventId),
+      event: eventFor(infoNode.eventId),
       rng: createRng("u2-vm-info").derive("card"),
     });
     const card = INFO_CARDS.find((candidate) => candidate.id === pending.cardIds[0])!;
@@ -131,7 +133,7 @@ describe("toInfoOpportunityView", () => {
     const event = eventById(infoNode.eventId);
     const pending = createInfoOpportunity({
       node: infoNode,
-      eventKind: eventKindById(infoNode.eventId),
+      event: eventFor(infoNode.eventId),
       rng: createRng("u2-vm-opportunity").derive("card"),
     });
     const members = party();

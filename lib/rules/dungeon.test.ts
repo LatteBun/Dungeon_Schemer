@@ -139,7 +139,7 @@ function pathsToBoss(nodes: readonly DungeonNode[], entry: NodeId, boss: NodeId)
 }
 
 describe("던전 이벤트 기본 콘텐츠", () => {
-  it("일반 네 분류에 이벤트가 두 개 이상 있다", () => {
+  it("일반 분류마다 이벤트가 두 개 이상 있다", () => {
     for (const kind of EVENT_KINDS) {
       expect(DUNGEON_EVENT_POOLS.regular[kind].length).toBeGreaterThanOrEqual(2);
       expect(
@@ -364,7 +364,7 @@ describe("던전 경로 생성", () => {
 });
 
 describe("던전 이벤트 배치", () => {
-  it("일반 경로에 네 분류를 보장하고 보스 전용 이벤트를 배치한다", () => {
+  it("일반 경로에 모든 분류를 보장하고 보스 전용 이벤트를 배치한다", () => {
     for (let index = 0; index < 50; index += 1) {
       const { dungeon, events } = dungeonOf(`events-${index}`);
       expect(events).toHaveLength(dungeon.nodes.length);
@@ -376,10 +376,12 @@ describe("던전 이벤트 배치", () => {
         .toContain(events[bossIndex].id);
       expect(events[bossIndex].kind).toBe("special");
       const regular = events.filter((_, eventIndex) => eventIndex !== bossIndex);
+      // 분류 수와 노드 수가 나누어떨어지지 않으므로 개수가 고르지는 않다.
+      // 중요한 것은 모든 분류가 한 번은 나오는 것이다.
       const categoryCounts = EVENT_KINDS
-        .map((kind) => regular.filter((event) => event.kind === kind).length)
-        .sort((left, right) => left - right);
-      expect(categoryCounts).toEqual(regular.length === 6 ? [1, 1, 2, 2] : [2, 2, 2, 2]);
+        .map((kind) => regular.filter((event) => event.kind === kind).length);
+      expect(categoryCounts.reduce((sum, count) => sum + count, 0)).toBe(regular.length);
+      expect(categoryCounts.every((count) => count >= 1)).toBe(true);
       expect(new Set(regular.map((event) => event.kind)))
         .toEqual(new Set(EVENT_KINDS));
       expect(new Set(events.map((event) => event.id)).size).toBe(events.length);

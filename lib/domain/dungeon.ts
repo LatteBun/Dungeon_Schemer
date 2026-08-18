@@ -1,18 +1,17 @@
 import type { ChoiceId, EventId, ItemId, NodeId } from "./ids";
 import type { EventEffectTag } from "./content";
-import type { EventTarget } from "./info";
+import type { EventTarget, InfoSubject } from "./info";
 
 /**
  * 이벤트 분류는 닫힌 목록이다. 분류마다 제시하는 행동과 처리가 다르다.
  * 개별 이벤트는 이 분류 안에서 콘텐츠 데이터로 추가한다.
  * docs/systems/DUNGEON_EVENTS_AND_BOSSES.md
  */
-export type EventKind = "monster" | "rest" | "merchant" | "special";
+export type EventKind = "monster" | "rest" | "special";
 
 export const EVENT_KINDS = [
   "monster",
   "rest",
-  "merchant",
   "special",
 ] as const satisfies readonly EventKind[];
 
@@ -41,6 +40,15 @@ export interface EventChoice {
 export interface DungeonEvent {
   id: EventId;
   kind: EventKind;
+  /**
+   * 이 지점에서 제시할 정보 카드 주제. 없으면 분류에서 정한다.
+   *
+   * 상인 조우를 특수 사건으로 합치면서 생겼다. 분류만으로 주제를 정하면 상인
+   * 주제 카드가 영영 나오지 않는다. 사건이 스스로 선언하면 그 자리의 상황과
+   * 맞는 카드가 나온다.
+   * docs/superpowers/specs/2026-08-18-sbh3821-irregular-map-generation-design.md
+   */
+  infoSubject?: InfoSubject;
   title: string;
   description: string;
   /** 비어 있을 수 없다. 모든 이벤트는 최소 하나의 선택을 제공한다. */

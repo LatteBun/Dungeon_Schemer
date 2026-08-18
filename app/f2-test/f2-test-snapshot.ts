@@ -54,7 +54,7 @@ function f1Snapshot(seed: string) {
   const expedition = createFixtureExpeditionState();
   return {
     campaign: { seed: campaign.seed, phase: campaign.phase, rank: campaign.rank, dungeonCount: campaign.dungeons.length, partyCount: campaign.parties.length },
-    expedition: { dungeonId: String(expedition.dungeonId), partyId: String(expedition.partyId), mapNodeCount: expedition.map.nodes.length, pathCount: expedition.map.paths.length },
+    expedition: { dungeonId: String(expedition.dungeonId), partyId: String(expedition.partyId), mapNodeCount: expedition.map.nodes.length, pathCount: expedition.map.regularEventCount },
   };
 }
 
