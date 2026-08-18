@@ -18,14 +18,18 @@ export interface MapLayout {
   edges: MapLayoutEdge[];
 }
 
-const VIEW_WIDTH = 400;
-const CENTER_X = 200;
-const COLUMN_GAP = 110;
-const ROW_GAP = 110;
+const VIEW_WIDTH = 480;
+const CENTER_X = 240;
+const COLUMN_GAP = 128;
+const ROW_GAP = 76;
 
-/** 층 구조가 계단으로 보이지 않게 흔드는 폭. 지점이 겹치지 않을 만큼만 둔다. */
-const JITTER_X = 26;
-const JITTER_Y = 18;
+/**
+ * 층 구조가 계단으로 보이지 않게 흔드는 폭.
+ *
+ * 세로는 층 간격이 좁아 조금만 흔든다. 가로는 여유가 있어 더 흔들어도 겹치지 않는다.
+ */
+const JITTER_X = 30;
+const JITTER_Y = 11;
 
 /**
  * 지점 ID에서 뽑는 고정 난수다.

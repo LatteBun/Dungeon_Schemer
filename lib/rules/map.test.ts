@@ -102,10 +102,10 @@ function generationErrorOf(call: () => unknown): RuleError {
 
 describe("등급별 지도 수치", () => {
   it.each([
-    ["C", 5, 7, 2, 1],
-    ["B", 7, 10, 3, 1],
-    ["A", 9, 13, 4, 2],
-    ["S", 11, 16, 5, 2],
+    ["C", 4, 7, 2, 1],
+    ["B", 5, 9, 3, 1],
+    ["A", 6, 11, 4, 2],
+    ["S", 7, 13, 5, 2],
   ] as const)(
     "%s급은 경로 %i칸·지점 %i개·정보 %i회·보스 보장 %i회다",
     (grade, pathLength, eventNodes, info, bossInfo) => {

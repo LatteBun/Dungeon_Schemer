@@ -33,8 +33,8 @@ describe("layoutMap", () => {
       const map = mapFor(grade);
       const byId = new Map(layoutMap(map).nodes.map((node) => [node.id, node]));
 
-      expect(byId.get(map.entryNodeId)?.x).toBe(200);
-      expect(byId.get(map.bossNodeId)?.x).toBe(200);
+      expect(byId.get(map.entryNodeId)?.x).toBe(240);
+      expect(byId.get(map.bossNodeId)?.x).toBe(240);
     }
   });
 

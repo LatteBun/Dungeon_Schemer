@@ -17,16 +17,20 @@ export interface CampaignGradeConfig {
 /**
  * 등급별 프로토타입 상수다.
  *
+ * 경로를 짧게 하고 지점을 늘려 지도가 위아래로 길어지지 않게 한다. 평균 층 너비가
+ * 1.75~1.86이라 갈래가 자주 갈라졌다 합쳐진다. 등급 단계가 하나 더 늘면 경로 8칸을
+ * 그 자리에 둔다.
+ *
  * `pathLength`와 `eventNodeCount`가 다른 것이 핵심이다. 앞은 플레이어가 겪는
  * 사건 수이고 뒤는 지도에 그려지는 지점 수다. 갈래가 여러 번 갈라졌다 합쳐지므로
  * 지점이 경로보다 많다.
  * docs/superpowers/specs/2026-08-18-sbh3821-irregular-map-generation-design.md
  */
 export const CAMPAIGN_GRADE_CONFIG: Readonly<Record<Grade, CampaignGradeConfig>> = {
-  C: { requiredReputation: -30, baseReputationReward: 6, baseGoldReward: 12, pathLength: 5, eventNodeCount: 7, infoOpportunityCount: 2, bossRelatedInfoCount: 1 },
-  B: { requiredReputation: -10, baseReputationReward: 9, baseGoldReward: 21, pathLength: 7, eventNodeCount: 10, infoOpportunityCount: 3, bossRelatedInfoCount: 1 },
-  A: { requiredReputation: 10, baseReputationReward: 15, baseGoldReward: 33, pathLength: 9, eventNodeCount: 13, infoOpportunityCount: 4, bossRelatedInfoCount: 2 },
-  S: { requiredReputation: 30, baseReputationReward: 24, baseGoldReward: 48, pathLength: 11, eventNodeCount: 16, infoOpportunityCount: 5, bossRelatedInfoCount: 2 },
+  C: { requiredReputation: -30, baseReputationReward: 6, baseGoldReward: 12, pathLength: 4, eventNodeCount: 7, infoOpportunityCount: 2, bossRelatedInfoCount: 1 },
+  B: { requiredReputation: -10, baseReputationReward: 9, baseGoldReward: 21, pathLength: 5, eventNodeCount: 9, infoOpportunityCount: 3, bossRelatedInfoCount: 1 },
+  A: { requiredReputation: 10, baseReputationReward: 15, baseGoldReward: 33, pathLength: 6, eventNodeCount: 11, infoOpportunityCount: 4, bossRelatedInfoCount: 2 },
+  S: { requiredReputation: 30, baseReputationReward: 24, baseGoldReward: 48, pathLength: 7, eventNodeCount: 13, infoOpportunityCount: 5, bossRelatedInfoCount: 2 },
 };
 
 /** 한 층에 놓을 수 있는 지점 수의 상한. 화면이 읽을 수 있는 폭이다. */

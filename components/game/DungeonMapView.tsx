@@ -10,7 +10,7 @@ interface DungeonMapViewProps {
 }
 
 /** 지점 도형과 흔들림이 잘리지 않도록 위아래에 두는 여백. */
-const NODE_MARGIN = 44;
+const NODE_MARGIN = 32;
 
 const NODE_STROKE: Record<MapNodeView["state"], string> = {
   current: "var(--color-parchment)",
@@ -111,7 +111,7 @@ export function DungeonMapView({
             >
               {node.isBoss ? (
                 <polygon
-                  points={starPoints(30)}
+                  points={starPoints(25)}
                   fill={selected ? "var(--color-edge)" : "var(--color-panel)"}
                   stroke={NODE_STROKE[node.state]}
                   strokeWidth={selected ? 4 : 2}
@@ -119,7 +119,7 @@ export function DungeonMapView({
                 />
               ) : (
                 <circle
-                  r={26}
+                  r={21}
                   fill={selected ? "var(--color-edge)" : "var(--color-panel)"}
                   stroke={NODE_STROKE[node.state]}
                   strokeWidth={selected ? 4 : 2}
@@ -129,12 +129,12 @@ export function DungeonMapView({
               <MapNodeIcon
                 kind={node.icon}
                 grade={node.grade}
-                size={node.isBoss ? 22 : 18}
+                size={node.isBoss ? 19 : 16}
                 color={NODE_STROKE[node.state]}
               />
               {node.hasInfo ? (
-                <g transform="translate(20, -20)">
-                  <circle r={8} fill="var(--color-panel)" stroke="var(--color-trust-up)" strokeWidth={1.5} />
+                <g transform="translate(16, -16)">
+                  <circle r={7} fill="var(--color-panel)" stroke="var(--color-trust-up)" strokeWidth={1.5} />
                   <text
                     textAnchor="middle"
                     y={3.5}
