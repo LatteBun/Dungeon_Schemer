@@ -1,5 +1,5 @@
 import { CAMPAIGN_GRADE_CONFIG } from "@/lib/content/dungeons";
-import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
+import { DUNGEON_EVENT_POOLS, ENTRY_EVENT } from "@/lib/content/events";
 import type { DungeonEventPools } from "@/lib/content/events";
 import { EVENT_KINDS, GRADES, RuleError } from "@/lib/domain";
 import type { EventKind, GeneratedMap, Grade } from "@/lib/domain";
@@ -77,6 +77,8 @@ const EVENT_BY_ID = new Map(
   [
     ...EVENT_KINDS.flatMap((kind) => DUNGEON_EVENT_POOLS.regular[kind]),
     ...DUNGEON_EVENT_POOLS.boss,
+    // 입구는 일반 풀에 없는 전용 사건이다. 빠뜨리면 "알 수 없는 사건"으로 뜬다.
+    ENTRY_EVENT,
   ].map((event) => [event.id as string, event]),
 );
 

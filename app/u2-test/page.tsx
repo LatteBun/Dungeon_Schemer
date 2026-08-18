@@ -18,14 +18,16 @@ import {
 } from "@/components/game/expedition-view-model";
 import { createRng } from "@/lib/rng";
 import { createInfoOpportunity, evaluatePartyInfoCard } from "@/lib/rules/info";
-import type { CardId, ChoiceId, NodeId, PendingInfo } from "@/lib/domain";
+import { GRADES } from "@/lib/domain";
+import type { CardId, ChoiceId, Grade, NodeId, PendingInfo } from "@/lib/domain";
 import type { MemberReactionView } from "@/components/game/expedition-view-model";
 import { u2Fixture } from "./u2-fixtures";
 
 type Step = "map" | "info" | "event";
 
 export default function U2TestPage() {
-  const fx = useMemo(() => u2Fixture("C"), []);
+  const [grade, setGrade] = useState<Grade>("C");
+  const fx = useMemo(() => u2Fixture(grade), [grade]);
   const [step, setStep] = useState<Step>("map");
   const [currentNodeId, setCurrentNodeId] = useState<NodeId>(fx.currentNodeId);
   const [visited, setVisited] = useState<NodeId[]>([]);
@@ -34,6 +36,21 @@ export default function U2TestPage() {
   const [reactions, setReactions] = useState<MemberReactionView[]>([]);
   const [selectedChoiceId, setSelectedChoiceId] = useState<ChoiceId | null>(null);
   const [pendingInfo, setPendingInfo] = useState<PendingInfo | null>(null);
+
+  // 등급을 바꾸면 지도가 통째로 달라지므로 걷던 상태를 모두 되돌린다. 남겨 두면
+  // 이전 지도의 지점 ID를 가리켜 화면이 깨진다.
+  function changeGrade(next: Grade): void {
+    const fixture = u2Fixture(next);
+    setGrade(next);
+    setStep("map");
+    setCurrentNodeId(fixture.currentNodeId);
+    setVisited([]);
+    setSelectedNodeId(null);
+    setSelectedCardId(null);
+    setReactions([]);
+    setSelectedChoiceId(null);
+    setPendingInfo(null);
+  }
 
   const activeNode = fx.map.nodes.find((node) => node.id === (selectedNodeId ?? currentNodeId))!;
   const event = fx.eventById(activeNode.eventId);
@@ -95,6 +112,29 @@ export default function U2TestPage() {
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-3 p-4 text-parchment">
       <CampaignHeader title="U2 하네스 · 지도·정보·사건" view={fx.headerView} />
+
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-muted">등급</span>
+        {GRADES.map((option) => (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={option === grade}
+            onClick={() => changeGrade(option)}
+            className={
+              "rounded border px-3 py-1 "
+              + (option === grade
+                ? "border-trust-up text-trust-up"
+                : "border-edge text-muted hover:bg-edge")
+            }
+          >
+            {option}급
+          </button>
+        ))}
+        <span className="text-xs text-muted">
+          경로 {fx.map.regularEventCount}칸 · 지점 {fx.map.nodes.length}개
+        </span>
+      </div>
 
       {step === "map" ? (
         <div className="grid gap-3 lg:grid-cols-[13rem_1fr_18rem]">

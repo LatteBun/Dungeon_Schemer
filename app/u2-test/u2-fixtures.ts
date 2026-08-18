@@ -1,5 +1,5 @@
 import { INFO_CARDS } from "@/lib/content/info-cards";
-import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
+import { DUNGEON_EVENT_POOLS, ENTRY_EVENT } from "@/lib/content/events";
 import { ITEMS } from "@/lib/content/items";
 import { createRng } from "@/lib/rng";
 import { generateGradeMap } from "@/lib/rules/map";
@@ -18,9 +18,11 @@ import type {
 } from "@/lib/domain";
 import type { CampaignHeaderView } from "@/components/game/campaign-view-model";
 
+// 입구는 일반 풀에 없는 전용 사건을 쓴다. 빠뜨리면 지도를 그릴 때 조회가 터진다.
 const ALL_EVENTS: DungeonEvent[] = [
   ...Object.values(DUNGEON_EVENT_POOLS.regular).flat(),
   ...DUNGEON_EVENT_POOLS.boss,
+  ENTRY_EVENT,
 ];
 
 export interface U2Fixture {
