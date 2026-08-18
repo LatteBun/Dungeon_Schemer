@@ -34,6 +34,10 @@ const RETIRED_TERMS: readonly string[] = [
   "현재 명성 0",
   "음수가 될 수 있음",
   "C 2회",
+  "대기 명단",
+  "지원 최소 명성",
+  "현재 HP × 0.05",
+  "C·B 3명 / A 4명 / S 5명",
 ];
 
 /** 개정이 끝난 문서. D2~D6이 진행되면서 늘어난다. */
@@ -49,8 +53,8 @@ const CLEANED_DOCS: readonly string[] = [
  */
 const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
   "GAME_PRINCIPLES.md": ["캐릭터 30명", "위험도", "테마 3종"],
-  "design/GAME_OVERVIEW.md": ["캐릭터 30명", "위험도"],
-  "design/CORE_GAME_LOOP.md": ["월드턴", "위험도"],
+  "design/GAME_OVERVIEW.md": ["캐릭터 30명", "위험도", "테마 3종"],
+  "design/CORE_GAME_LOOP.md": ["월드턴", "위험도", "캐릭터 30명"],
 };
 
 function read(relativePath: string): string {
