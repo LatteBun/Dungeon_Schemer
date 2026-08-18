@@ -6,7 +6,6 @@ import { DungeonMapView } from "@/components/game/DungeonMapView";
 import { EncounterScenePanel } from "@/components/game/EncounterScenePanel";
 import { EventActions } from "@/components/game/EventActions";
 import { InfoCardChoices } from "@/components/game/InfoCardChoices";
-import { MapLegend } from "@/components/game/MapLegend";
 import { PartyReactionSidebar } from "@/components/game/PartyReactionSidebar";
 import { PartyStatusSidebar } from "@/components/game/PartyStatusSidebar";
 import {
@@ -74,7 +73,7 @@ export default function U2TestPage() {
       setPendingInfo(
         createInfoOpportunity({
           node,
-          eventKind: fx.eventKindById(node.eventId),
+          event: fx.eventById(node.eventId),
           rng: createRng(node.id).derive("card"),
         }),
       );
@@ -137,9 +136,8 @@ export default function U2TestPage() {
       </div>
 
       {step === "map" ? (
-        <div className="grid gap-3 lg:grid-cols-[13rem_1fr_18rem]">
-          <MapLegend />
-          <DungeonMapView
+        <div className="grid gap-3 lg:grid-cols-[1fr_18rem]">
+              <DungeonMapView
             view={mapView}
             selectedNodeId={selectedNodeId}
             onSelectNode={setSelectedNodeId}

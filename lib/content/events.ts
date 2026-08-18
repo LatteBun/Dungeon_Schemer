@@ -24,7 +24,6 @@ export interface DungeonEventPools {
 export const EVENT_KIND_RISK_SUMMARY: Readonly<Record<EventKind, string>> = {
   monster: "전투 위험 높음",
   rest: "위험 낮음",
-  merchant: "자원 손실 위험",
   special: "위험 예측 어려움",
 };
 
@@ -63,8 +62,16 @@ function event(
   title: string,
   description: string,
   choices: EventChoice[],
+  infoSubject?: DungeonEvent["infoSubject"],
 ): DungeonEvent {
-  return { id: id as EventId, kind, title, description, choices };
+  return {
+    id: id as EventId,
+    kind,
+    title,
+    description,
+    choices,
+    ...(infoSubject === undefined ? {} : { infoSubject }),
+  };
 }
 
 export const DUNGEON_EVENT_POOLS: DungeonEventPools = {
@@ -293,123 +300,6 @@ export const DUNGEON_EVENT_POOLS: DungeonEventPools = {
         ],
       ),
     ],
-    merchant: [
-      event(
-        "event-shadow-merchant",
-        "merchant",
-        "그림자 행상인",
-        "그림자 속 행상인이 조용히 거래를 제안한다.",
-        [
-          choice(
-            "choice-buy-rumor",
-            "보스의 소문을 산다",
-            "보스와 경로에 관한 정보를 얻는다",
-            "거짓 정보에 자원을 낭비할 수 있다",
-            ["trade"],
-            "item-information-scroll",
-          ),
-          choice(
-            "choice-ignore-rumor",
-            "소문을 사지 않고 관찰한다",
-            "자원을 아낀다",
-            "유용한 단서를 놓칠 수 있다",
-            ["observe"],
-          ),
-        ],
-      ),
-      event(
-        "event-map-peddler",
-        "merchant",
-        "지도 장수",
-        "낡은 지도를 든 장수가 다음 갈림길을 가리킨다.",
-        [
-          choice(
-            "choice-trade-map",
-            "낡은 지도를 거래한다",
-            "다음 경로의 위험을 비교할 단서를 얻는다",
-            "거래 사실이 양쪽에 알려질 수 있다",
-            ["trade"],
-            "item-information-scroll",
-          ),
-          choice(
-            "choice-refuse-map",
-            "거래를 거절하고 직접 살핀다",
-            "스스로 판단할 시간을 얻는다",
-            "위험한 길을 고를 수 있다",
-            ["observe"],
-          ),
-        ],
-      ),
-      event(
-        "event-herbalist-cart",
-        "merchant",
-        "약초 수레",
-        "약초꾼이 치료 재료와 독성 재료를 함께 펼쳐 보인다.",
-        [
-          choice(
-            "choice-buy-herbs",
-            "치료 약초를 산다",
-            "부상에 대비할 물자를 확보한다",
-            "당장 쓸 골드를 잃는다",
-            ["trade"],
-            "item-healing-potion",
-          ),
-          choice(
-            "choice-study-herbs",
-            "약초의 성질만 묻는다",
-            "위험한 식물을 구분하는 단서를 얻는다",
-            "거래 없이 떠나면 약초꾼이 불쾌해한다",
-            ["information"],
-          ),
-        ],
-      ),
-      event(
-        "event-bone-collector",
-        "merchant",
-        "뼈 수집가",
-        "수집가가 죽은 자의 유품을 늘어놓고 값을 부른다.",
-        [
-          choice(
-            "choice-buy-antidote",
-            "해독 물자를 산다",
-            "독에 당한 상처를 되돌린다",
-            "값이 만만치 않다",
-            ["trade"],
-            "item-healing-potion",
-          ),
-          choice(
-            "choice-ask-origin",
-            "유품의 출처를 묻는다",
-            "앞서 간 원정대의 최후를 듣는다",
-            "듣고 나면 파티가 동요한다",
-            ["information"],
-          ),
-        ],
-      ),
-      event(
-        "event-lamp-trader",
-        "merchant",
-        "등불 장수",
-        "장수가 오래 타는 등불을 흔들어 보인다.",
-        [
-          choice(
-            "choice-buy-lamp",
-            "등불을 산다",
-            "어두운 구간에서 덜 다친다",
-            "골드를 쓴다",
-            ["trade"],
-            "item-lure-pouch",
-          ),
-          choice(
-            "choice-borrow-light",
-            "불씨만 얻어 간다",
-            "값을 치르지 않고 넘긴다",
-            "장수가 다음에 값을 올린다",
-            ["observe"],
-          ),
-        ],
-      ),
-    ],
     special: [
       event(
         "event-sealed-contract",
@@ -520,6 +410,127 @@ export const DUNGEON_EVENT_POOLS: DungeonEventPools = {
             ["sabotage"],
           ),
         ],
+      ),
+
+      event(
+        "event-shadow-merchant",
+        "special",
+        "그림자 행상인",
+        "그림자 속 행상인이 조용히 거래를 제안한다.",
+        [
+          choice(
+            "choice-buy-rumor",
+            "보스의 소문을 산다",
+            "보스와 경로에 관한 정보를 얻는다",
+            "거짓 정보에 자원을 낭비할 수 있다",
+            ["trade"],
+            "item-information-scroll",
+          ),
+          choice(
+            "choice-ignore-rumor",
+            "소문을 사지 않고 관찰한다",
+            "자원을 아낀다",
+            "유용한 단서를 놓칠 수 있다",
+            ["observe"],
+          ),
+        ],
+        "merchant",
+      ),
+      event(
+        "event-map-peddler",
+        "special",
+        "지도 장수",
+        "낡은 지도를 든 장수가 다음 갈림길을 가리킨다.",
+        [
+          choice(
+            "choice-trade-map",
+            "낡은 지도를 거래한다",
+            "다음 경로의 위험을 비교할 단서를 얻는다",
+            "거래 사실이 양쪽에 알려질 수 있다",
+            ["trade"],
+            "item-information-scroll",
+          ),
+          choice(
+            "choice-refuse-map",
+            "거래를 거절하고 직접 살핀다",
+            "스스로 판단할 시간을 얻는다",
+            "위험한 길을 고를 수 있다",
+            ["observe"],
+          ),
+        ],
+        "merchant",
+      ),
+      event(
+        "event-herbalist-cart",
+        "special",
+        "약초 수레",
+        "약초꾼이 치료 재료와 독성 재료를 함께 펼쳐 보인다.",
+        [
+          choice(
+            "choice-buy-herbs",
+            "치료 약초를 산다",
+            "부상에 대비할 물자를 확보한다",
+            "당장 쓸 골드를 잃는다",
+            ["trade"],
+            "item-healing-potion",
+          ),
+          choice(
+            "choice-study-herbs",
+            "약초의 성질만 묻는다",
+            "위험한 식물을 구분하는 단서를 얻는다",
+            "거래 없이 떠나면 약초꾼이 불쾌해한다",
+            ["information"],
+          ),
+        ],
+        "merchant",
+      ),
+      event(
+        "event-bone-collector",
+        "special",
+        "뼈 수집가",
+        "수집가가 죽은 자의 유품을 늘어놓고 값을 부른다.",
+        [
+          choice(
+            "choice-buy-antidote",
+            "해독 물자를 산다",
+            "독에 당한 상처를 되돌린다",
+            "값이 만만치 않다",
+            ["trade"],
+            "item-healing-potion",
+          ),
+          choice(
+            "choice-ask-origin",
+            "유품의 출처를 묻는다",
+            "앞서 간 원정대의 최후를 듣는다",
+            "듣고 나면 파티가 동요한다",
+            ["information"],
+          ),
+        ],
+        "merchant",
+      ),
+      event(
+        "event-lamp-trader",
+        "special",
+        "등불 장수",
+        "장수가 오래 타는 등불을 흔들어 보인다.",
+        [
+          choice(
+            "choice-buy-lamp",
+            "등불을 산다",
+            "어두운 구간에서 덜 다친다",
+            "골드를 쓴다",
+            ["trade"],
+            "item-lure-pouch",
+          ),
+          choice(
+            "choice-borrow-light",
+            "불씨만 얻어 간다",
+            "값을 치르지 않고 넘긴다",
+            "장수가 다음에 값을 올린다",
+            ["observe"],
+          ),
+        ],
+        "merchant",
       ),
     ],
   },

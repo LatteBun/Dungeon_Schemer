@@ -82,7 +82,7 @@ function validateEventPools(
   const eventIds = new Set<string>();
   const choiceIds = new Set<string>();
   let regularCount = 0;
-  for (const kind of ["monster", "rest", "merchant", "special"] as const) {
+  for (const kind of ["monster", "rest", "special"] as const) {
     const events = pools.regular[kind];
     if (events.length < minimumEventsPerKind) {
       invalid(`${kind} 이벤트 풀은 최소 ${minimumEventsPerKind}개여야 한다: ${events.length}`, { contentType: "event", kind, expected: minimumEventsPerKind, actual: events.length });

@@ -71,7 +71,6 @@ export function summarizeOfferRisk(
   const counts: Record<EventKind, number> = {
     monster: 0,
     rest: 0,
-    merchant: 0,
     special: 0,
   };
   let bossCount = 0;

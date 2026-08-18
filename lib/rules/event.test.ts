@@ -196,7 +196,7 @@ describe("거래", () => {
   it("현재 골드만 줄이고 상품 효과를 즉시 적용한다", () => {
     const potion = ITEMS.find((item) => item.id === "item-healing-potion")!;
     const result = resolve({
-      kind: "merchant",
+      kind: "special",
       effectTags: ["trade"],
       itemId: "item-healing-potion",
       currentGold: 30,
@@ -212,7 +212,7 @@ describe("거래", () => {
     const members = [member("member-001", 50)];
     const snapshot = structuredClone(members);
     const error = ruleErrorOf(() => resolve({
-      kind: "merchant",
+      kind: "special",
       effectTags: ["trade"],
       itemId: "item-information-scroll",
       currentGold: 3,
@@ -225,7 +225,7 @@ describe("거래", () => {
 
   it("상품을 가리키지 않는 거래 선택지는 거부한다", () => {
     const error = ruleErrorOf(() => resolve({
-      kind: "merchant",
+      kind: "special",
       effectTags: ["trade"],
     }));
 
@@ -233,7 +233,7 @@ describe("거래", () => {
   });
 
   it("거래가 아닌 선택은 골드를 쓰지 않는다", () => {
-    const result = resolve({ kind: "merchant", effectTags: ["observe"], currentGold: 30 });
+    const result = resolve({ kind: "special", effectTags: ["observe"], currentGold: 30 });
 
     expect(result.goldSpent).toBe(0);
     expect(result.currentGold).toBe(30);

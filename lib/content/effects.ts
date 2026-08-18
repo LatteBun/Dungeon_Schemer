@@ -16,8 +16,8 @@ import type {
 export const EVENT_KIND_BASE_HP: Readonly<Record<EventKind, number>> = {
   monster: -20,
   rest: 8,
-  merchant: 0,
-  special: -12,
+  // 상인 조우가 특수로 합쳐졌다. 가게에 들르기만 해도 깎이면 안 되므로 둘 다 0이다.
+  special: 0,
 };
 
 /**

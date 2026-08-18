@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CAMPAIGN_GRADE_CONFIG } from "@/lib/content/dungeons";
-import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
+import { DUNGEON_EVENT_POOLS, ENTRY_EVENT } from "@/lib/content/events";
 import { INFO_CARDS } from "@/lib/content/info-cards";
 import {
   EVENT_KINDS,
@@ -13,6 +13,7 @@ import type {
   CampaignMember,
   CardId,
   ClassId,
+  DungeonEvent,
   EventKind,
   ExpeditionState,
   InfoCard,
@@ -110,15 +111,29 @@ function infoNode(overrides: Partial<MapNode> = {}): MapNode {
   };
 }
 
+function testEvent(
+  kind: EventKind,
+  infoSubject?: InfoCard["subject"],
+): DungeonEvent {
+  return {
+    id: "event-test" as DungeonEvent["id"],
+    kind,
+    title: "테스트 사건",
+    description: "테스트",
+    choices: [],
+    ...(infoSubject === undefined ? {} : { infoSubject }),
+  };
+}
+
 function opportunity(options: {
   node?: MapNode;
-  eventKind?: EventKind;
+  event?: DungeonEvent;
   seed?: string;
   cards?: readonly InfoCard[];
 }) {
   return createInfoOpportunity({
     node: options.node ?? infoNode(),
-    eventKind: options.eventKind ?? "monster",
+    event: options.event ?? testEvent("monster"),
     rng: createRng(options.seed ?? "기회").derive("card"),
     cards: options.cards,
   });
@@ -327,12 +342,24 @@ describe("정보 기회 카드 후보", () => {
   it.each([
     ["monster", "monster"],
     ["rest", "rest"],
-    ["merchant", "merchant"],
     ["special", "event"],
   ] as const)("%s 사건 지점은 %s 주제를 제시한다", (eventKind, subject) => {
-    const pending = opportunity({ eventKind, node: infoNode({ depth: 2 }) });
+    const pending = opportunity({
+      event: testEvent(eventKind),
+      node: infoNode({ depth: 2 }),
+    });
 
     expect(new Set(subjectsOf(pending))).toEqual(new Set([subject]));
+  });
+
+  it("사건이 선언한 주제가 분류보다 앞선다", () => {
+    // 상인 조우가 특수 사건으로 합쳐졌다. 분류만 보면 상인 카드가 안 나온다.
+    const pending = opportunity({
+      event: testEvent("special", "merchant"),
+      node: infoNode({ depth: 2 }),
+    });
+
+    expect(new Set(subjectsOf(pending))).toEqual(new Set(["merchant"]));
   });
 
   it("어느 지점이든 진실·거짓·중립을 한 장씩 제시한다", () => {
@@ -340,7 +367,7 @@ describe("정보 기회 카드 후보", () => {
     const nodes = [
       opportunity({ node: infoNode({ bossRelatedInfoCount: 1 }) }),
       opportunity({ node: infoNode({ id: "node-entry" as NodeId, depth: 0 }) }),
-      ...EVENT_KINDS.map((eventKind) => opportunity({ eventKind })),
+      ...EVENT_KINDS.map((kind) => opportunity({ event: testEvent(kind) })),
     ];
 
     for (const pending of nodes) {
@@ -392,9 +419,11 @@ describe("정보 기회 카드 후보", () => {
 });
 
 describe("E1 지도와의 연결", () => {
-  const eventKindById = new Map(
-    EVENT_KINDS.flatMap((kind) =>
-      DUNGEON_EVENT_POOLS.regular[kind].map((event) => [event.id as string, kind])),
+  const eventById = new Map(
+    [
+      ...EVENT_KINDS.flatMap((kind) => DUNGEON_EVENT_POOLS.regular[kind]),
+      ENTRY_EVENT,
+    ].map((event) => [event.id as string, event]),
   );
 
   it("경로에서 보스 카드만 제시하는 기회 수가 등급 보장과 같다", () => {
@@ -404,7 +433,7 @@ describe("E1 지도와의 연결", () => {
         .filter((node) => node.hasInfoOpportunity)
         .map((node) => createInfoOpportunity({
           node,
-          eventKind: eventKindById.get(node.eventId as string) ?? "special",
+          event: eventById.get(node.eventId as string)!,
           rng: createRng(`${grade}/${node.id}`).derive("card"),
         }));
       const infoDepths = new Set(
@@ -431,7 +460,7 @@ describe("E1 지도와의 연결", () => {
           if (!node.hasInfoOpportunity) continue;
           const pending = createInfoOpportunity({
             node,
-            eventKind: eventKindById.get(node.eventId as string) ?? "special",
+            event: eventById.get(node.eventId as string)!,
             rng: createRng(`${grade}/${index}/${node.id}`).derive("card"),
           });
           for (const id of pending.cardIds) seen.add(byId.get(id as string)!.subject);

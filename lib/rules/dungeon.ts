@@ -62,9 +62,17 @@ function buildNodeDrafts(branches: number, pathDepth: number): NodeDraft[] {
   return drafts;
 }
 
+/**
+ * 노드 수만큼 분류를 뽑되 네 분류가 아니라 있는 분류를 모두 한 번씩 먼저 넣는다.
+ *
+ * 단일 런 전용 생성기다. Task 10의 RunState 정리에서 사라진다.
+ */
 function regularKinds(count: number, rng: Rng): EventKind[] {
-  const extras = count === 6 ? rng.shuffle(EVENT_KINDS).slice(0, 2) : EVENT_KINDS;
-  return rng.shuffle([...EVENT_KINDS, ...extras]);
+  const kinds: EventKind[] = [...EVENT_KINDS];
+  while (kinds.length < count) {
+    kinds.push(...rng.shuffle(EVENT_KINDS).slice(0, Math.min(EVENT_KINDS.length, count - kinds.length)));
+  }
+  return rng.shuffle(kinds.slice(0, count));
 }
 
 

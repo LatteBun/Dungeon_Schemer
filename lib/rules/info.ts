@@ -2,6 +2,7 @@ import { INFO_CARDS } from "@/lib/content/info-cards";
 import { RuleError, TRUTH_TYPES } from "@/lib/domain";
 import type {
   CardId,
+  DungeonEvent,
   EventKind,
   ExpeditionState,
   InfoCard,
@@ -48,8 +49,8 @@ export interface PartyInfoCardOptions<M extends PartyMember> {
 
 export interface CreateInfoOpportunityInput {
   readonly node: MapNode;
-  /** 이 지점의 사건 분류. `MapNode`에는 없으므로 호출자가 풀에서 찾아 넘긴다. */
-  readonly eventKind: EventKind;
+  /** 이 지점의 사건. `MapNode`에는 없으므로 호출자가 풀에서 찾아 넘긴다. */
+  readonly event: DungeonEvent;
   readonly rng: Rng;
   readonly cards?: readonly InfoCard[];
 }
@@ -63,7 +64,6 @@ export interface CreateInfoOpportunityInput {
 const SUBJECT_BY_EVENT_KIND: Readonly<Record<EventKind, InfoSubject>> = {
   monster: "monster",
   rest: "rest",
-  merchant: "merchant",
   special: "event",
 };
 
@@ -228,10 +228,12 @@ export function evaluatePartyInfoCard<M extends PartyMember>(
  * 첫 갈래 지점은 깊이 1로 판별한다. `validateGeneratedMap`이 입구 깊이가 0이고
  * 모든 간선이 깊이를 늘린다는 것을 보장하므로 깊이 1은 첫 선택 직후다.
  */
-function subjectFor(node: MapNode, eventKind: EventKind): InfoSubject {
+function subjectFor(node: MapNode, event: DungeonEvent): InfoSubject {
   if (node.bossRelatedInfoCount > 0) return "boss";
   if (node.depth <= 1) return "route";
-  return SUBJECT_BY_EVENT_KIND[eventKind];
+  // 사건이 스스로 선언한 주제가 분류보다 앞선다. 상인 조우가 특수 사건으로
+  // 합쳐졌으므로 분류만 보면 상인 주제 카드가 영영 나오지 않는다.
+  return event.infoSubject ?? SUBJECT_BY_EVENT_KIND[event.kind];
 }
 
 /**
@@ -256,7 +258,7 @@ export function createInfoOpportunity(
     );
   }
 
-  const subject = subjectFor(node, input.eventKind);
+  const subject = subjectFor(node, input.event);
   const eligible = (input.cards ?? INFO_CARDS)
     .filter((card) => card.subject === subject);
   const cards = TRUTH_TYPES

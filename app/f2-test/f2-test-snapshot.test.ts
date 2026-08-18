@@ -12,7 +12,7 @@ describe("F2 검증 snapshot", () => {
     expect(snapshot.f1.expedition.mapNodeCount).toBe(2);
     expect(snapshot.contentStatus).toBe("pass");
     expect(snapshot.events.total).toBe(20);
-    expect(snapshot.events.byKind).toEqual({ monster: 5, rest: 5, merchant: 5, special: 5 });
+    expect(snapshot.events.byKind).toEqual({ monster: 5, rest: 5, special: 10 });
     expect(snapshot.events.minimumChoices).toBeGreaterThanOrEqual(2);
     expect(snapshot.cards.total).toBe(36);
     expect(snapshot.cards.byTruthType).toEqual({ truth: 12, lie: 12, neutral: 12 });

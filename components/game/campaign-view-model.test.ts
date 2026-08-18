@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { EVENT_KINDS } from "@/lib/domain";
 import {
   createFixtureCampaignState,
   createFixtureExpeditionState,
@@ -164,18 +165,13 @@ describe("toScreenTitle", () => {
 
 describe("toOfferRiskView", () => {
   const summary = {
-    counts: { monster: 2, rest: 2, merchant: 1, special: 1 },
+    counts: { monster: 2, rest: 2, special: 2 },
     bossCount: 1,
   } as const;
 
-  it("네 분류를 항상 같은 순서로 낸다", () => {
+  it("모든 분류를 항상 같은 순서로 낸다", () => {
     const view = toOfferRiskView(summary);
-    expect(view.kinds.map((entry) => entry.kind)).toEqual([
-      "monster",
-      "rest",
-      "merchant",
-      "special",
-    ]);
+    expect(view.kinds.map((entry) => entry.kind)).toEqual([...EVENT_KINDS]);
   });
 
   it("기호와 분류명을 함께 담는다", () => {
@@ -189,6 +185,6 @@ describe("toOfferRiskView", () => {
   it("보스 수를 분류와 섞지 않는다", () => {
     const view = toOfferRiskView(summary);
     expect(view.bossCount).toBe(1);
-    expect(view.kinds).toHaveLength(4);
+    expect(view.kinds).toHaveLength(EVENT_KINDS.length);
   });
 });

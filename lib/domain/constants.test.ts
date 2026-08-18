@@ -12,8 +12,9 @@ describe("도메인 상수", () => {
     expect(PERSONALITIES).toHaveLength(5);
   });
 
-  it("이벤트 분류는 넷이다", () => {
-    expect(EVENT_KINDS).toHaveLength(4);
+  it("이벤트 분류는 셋이다", () => {
+    // 상인 조우를 특수 사건으로 합쳤다.
+    expect(EVENT_KINDS).toHaveLength(3);
   });
 
   it("진실 유형은 셋이다", () => {

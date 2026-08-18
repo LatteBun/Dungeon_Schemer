@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { DungeonMapView } from "@/components/game/DungeonMapView";
-import { MapLegend } from "@/components/game/MapLegend";
 import { toMapView } from "@/components/game/expedition-view-model";
 import type { NodeId } from "@/lib/domain";
 import { useCampaignStore } from "@/lib/stores/campaign-store-provider";
@@ -29,8 +28,7 @@ export default function MapPage() {
   );
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[13rem_1fr_18rem]">
-      <MapLegend />
+    <div className="grid gap-3 lg:grid-cols-[1fr_18rem]">
       <DungeonMapView
         view={view}
         selectedNodeId={selectedNodeId}
