@@ -50,6 +50,8 @@ export const trustRange: [0, 100] = [TRUST_MIN, TRUST_MAX];
 export const sampleClass: ClassDef = {
   id: "warrior" as ClassId,
   name: "전사",
+  attack: 9,
+  hitWeight: 4,
   description: "앞에서 버티며 파티의 피해를 받아낸다.",
 };
 
@@ -111,6 +113,7 @@ export const sampleBoss: BossDef = {
   name: "심연의 감시자",
   description: "던전의 입구를 지키는 보스다.",
   baseDamage: 8,
+  maxHp: 210,
 };
 
 export const sampleDungeonId = "dungeon-001" as DungeonId;
