@@ -18,17 +18,8 @@ export interface MapNode {
   riskSummary: string;
   hasInfoOpportunity: boolean;
   bossRelatedInfoCount: number;
-}
-
-export interface MapPath {
-  nodeIds: NodeId[];
-  regularEventCount: number;
-  infoCount: number;
-  /**
-   * 이 경로에서 보장하는 보스 주제 카드 수.
-   * 보장은 지점이 아니라 경로 단위 요구사항이라 경로에 직접 둔다.
-   */
-  bossRelatedInfoCount: number;
+  /** 같은 깊이 안에서 몇 번째인지. 화면이 좌표를 잡는 기준이다. */
+  column: number;
 }
 
 export interface GeneratedMap {
@@ -36,7 +27,16 @@ export interface GeneratedMap {
   nodes: MapNode[];
   entryNodeId: NodeId;
   bossNodeId: NodeId;
-  paths: MapPath[];
+  /**
+   * 어느 길로 가도 지나는 사건 수. 층 수와 같다.
+   *
+   * 경로 목록을 두지 않는 이유는 간선이 깊이를 정확히 1씩 늘려 모든 경로가 같은
+   * 값을 갖기 때문이다. 목록으로 두면 같은 수를 최대 2048번 반복하게 된다.
+   * docs/superpowers/specs/2026-08-18-sbh3821-irregular-map-generation-design.md
+   */
+  regularEventCount: number;
+  infoCount: number;
+  bossRelatedInfoCount: number;
 }
 
 export interface PendingInfo {

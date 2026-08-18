@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { createE1TestSnapshot } from "@/app/e1-test/e1-test-snapshot";
 
 const EXPECTED_BY_GRADE = {
-  C: { nodes: 7, branchLength: 2, regular: 3, info: 2, bossInfo: 1 },
-  B: { nodes: 9, branchLength: 3, regular: 4, info: 3, bossInfo: 1 },
-  A: { nodes: 11, branchLength: 4, regular: 5, info: 4, bossInfo: 2 },
-  S: { nodes: 13, branchLength: 5, regular: 6, info: 5, bossInfo: 2 },
+  C: { nodes: 9, pathLength: 5, regular: 5, info: 2, bossInfo: 1 },
+  B: { nodes: 12, pathLength: 7, regular: 7, info: 3, bossInfo: 1 },
+  A: { nodes: 15, pathLength: 9, regular: 9, info: 4, bossInfo: 2 },
+  S: { nodes: 18, pathLength: 11, regular: 11, info: 5, bossInfo: 2 },
 } as const;
 
 describe("E1 검증 snapshot", () => {
@@ -19,16 +19,15 @@ describe("E1 검증 snapshot", () => {
 
       expect(view.status).toBe("pass");
       expect(view.error).toBeUndefined();
-      expect(view.branchLength).toBe(expected.branchLength);
+      expect(view.pathLength).toBe(expected.pathLength);
       expect(view.checks.every((check) => check.pass)).toBe(true);
-      expect(view.entryKind).not.toBe(view.mergeKind);
-      expect(view.paths).toHaveLength(2);
+      expect(view.paths.length).toBeGreaterThan(0);
       for (const path of view.paths) {
         expect(path.regularEventCount).toBe(expected.regular);
         expect(path.infoCount).toBe(expected.info);
         expect(path.bossRelatedInfoCount).toBe(expected.bossInfo);
         expect(path.coversAllKinds).toBe(true);
-        expect(path.nodeIds).toHaveLength(expected.branchLength + 3);
+        expect(path.nodeIds).toHaveLength(expected.pathLength + 2);
       }
     }
   });
@@ -39,14 +38,16 @@ describe("E1 검증 snapshot", () => {
       const depths = view.rows.map((row) => row.depth);
 
       expect(depths).toEqual([...depths].sort((left, right) => right - left));
-      expect(depths[0]).toBe(expected.branchLength + 2);
+      expect(depths[0]).toBe(expected.pathLength + 1);
       expect(depths[depths.length - 1]).toBe(0);
       expect(view.rows.flatMap((row) => row.nodes)).toHaveLength(expected.nodes);
       expect(view.rows[0].nodes.map((node) => node.role)).toEqual(["boss"]);
       expect(view.rows[depths.length - 1].nodes.map((node) => node.role)).toEqual(["entry"]);
-      // 갈래 행은 좌우 두 지점, 입구·합류·보스방 행은 한 지점이다.
-      expect(view.rows.filter((row) => row.nodes.length === 2))
-        .toHaveLength(expected.branchLength);
+      // 입구와 보스방은 한 지점이고, 사건 층은 1~3개다.
+      expect(view.rows[0].nodes).toHaveLength(1);
+      expect(view.rows[depths.length - 1].nodes).toHaveLength(1);
+      expect(view.rows.every((row) => row.nodes.length >= 1 && row.nodes.length <= 3))
+        .toBe(true);
     }
   });
 
@@ -54,8 +55,9 @@ describe("E1 검증 snapshot", () => {
     const snapshot = createE1TestSnapshot("negative");
 
     expect(snapshot.negativeCases).toHaveLength(6);
-    expect(snapshot.negativeCases.every((entry) =>
-      entry.pass && entry.errorCode === "INVALID_GENERATION")).toBe(true);
+    const failed = snapshot.negativeCases.filter((entry) =>
+      !entry.pass || entry.errorCode !== "INVALID_GENERATION");
+    expect(failed.map((entry) => `${entry.label}: ${entry.message ?? "오류 없음"}`)).toEqual([]);
   });
 
   it("같은 시드는 재현되고 다른 시드는 배치가 달라진다", () => {

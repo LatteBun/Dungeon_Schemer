@@ -4,7 +4,6 @@ import type {
   ExpeditionState,
   GeneratedMap,
   MapNode,
-  MapPath,
   ExpeditionRecord,
 } from "@/lib/domain";
 import type {
@@ -72,6 +71,7 @@ function fixtureMap(): GeneratedMap {
     riskSummary: "낮은 위험",
     hasInfoOpportunity: true,
     bossRelatedInfoCount: 1,
+    column: 0,
   };
   const boss: MapNode = {
     id: asId<NodeId>("node-boss"),
@@ -81,20 +81,16 @@ function fixtureMap(): GeneratedMap {
     riskSummary: "보스 위험",
     hasInfoOpportunity: false,
     bossRelatedInfoCount: 0,
+    column: 0,
   };
-  const path: MapPath = {
-    nodeIds: [entry.id, boss.id],
-    regularEventCount: 1,
-    infoCount: 1,
-    bossRelatedInfoCount: 1,
-  };
-
   return {
     grade: "C",
     nodes: [entry, boss],
     entryNodeId: entry.id,
     bossNodeId: boss.id,
-    paths: [path],
+    regularEventCount: 1,
+    infoCount: 1,
+    bossRelatedInfoCount: 1,
   };
 }
 

@@ -120,7 +120,8 @@ export function toMapView(
       state = "inactive";
     }
 
-    const kind = isBoss ? null : eventKindById(node.eventId);
+    // 입구는 전용 사건을 쓰고 일반 풀에 없다. 분류를 물으면 조회가 실패한다.
+    const kind = isBoss || isEntry ? null : eventKindById(node.eventId);
     const categoryLabel = isBoss
       ? "보스방"
       : isEntry

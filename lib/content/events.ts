@@ -30,6 +30,8 @@ export const EVENT_KIND_RISK_SUMMARY: Readonly<Record<EventKind, string>> = {
 
 export const BOSS_RISK_SUMMARY = "보스전 위험";
 
+export const ENTRY_RISK_SUMMARY = "던전 입구";
+
 /**
  * 효과 태그는 라벨의 의도를 규칙이 읽을 수 있게 옮긴 것이다.
  *
@@ -134,6 +136,50 @@ export const DUNGEON_EVENT_POOLS: DungeonEventPools = {
           ),
         ],
       ),
+      event(
+        "event-howling-tunnel",
+        "monster",
+        "울부짖는 굴",
+        "굴 안쪽에서 여러 마리의 울음이 겹쳐 들린다.",
+        [
+          choice(
+            "choice-mark-safe-gap",
+            "울음이 끊기는 틈을 알려준다",
+            "무리와 마주치지 않고 지나간다",
+            "틈을 기다리는 동안 뒤가 비어 있다",
+            ["support"],
+          ),
+          choice(
+            "choice-provoke-pack",
+            "돌을 던져 무리를 끌어낸다",
+            "한곳에 모아 길을 비운다",
+            "모인 무리가 파티를 덮칠 수 있다",
+            ["sabotage"],
+          ),
+        ],
+      ),
+      event(
+        "event-stone-sentinel",
+        "monster",
+        "돌의 파수꾼",
+        "통로 한가운데 선 석상이 지나는 것을 세고 있다.",
+        [
+          choice(
+            "choice-match-count",
+            "숫자를 맞춰 통과시킨다",
+            "파수꾼을 깨우지 않고 지난다",
+            "셈이 틀리면 즉시 반응한다",
+            ["support"],
+          ),
+          choice(
+            "choice-break-sentinel",
+            "석상을 부순다",
+            "다시 지나갈 길을 확보한다",
+            "무너지는 돌에 파티가 다친다",
+            ["sabotage"],
+          ),
+        ],
+      ),
     ],
     rest: [
       event(
@@ -199,6 +245,50 @@ export const DUNGEON_EVENT_POOLS: DungeonEventPools = {
             "자원을 보존한다",
             "중요한 경고를 놓칠 수 있다",
             ["observe"],
+          ),
+        ],
+      ),
+      event(
+        "event-warm-spring",
+        "rest",
+        "따뜻한 샘",
+        "김이 오르는 샘가에 잠시 앉을 자리가 있다.",
+        [
+          choice(
+            "choice-soak-wounds",
+            "상처를 씻게 한다",
+            "파티가 눈에 띄게 회복한다",
+            "물소리에 발소리가 묻힌다",
+            ["rest"],
+          ),
+          choice(
+            "choice-fill-skins",
+            "물만 채우고 서두른다",
+            "시간을 아낀다",
+            "회복할 기회를 넘긴다",
+            ["observe"],
+          ),
+        ],
+      ),
+      event(
+        "event-old-shrine",
+        "rest",
+        "낡은 사당",
+        "누군가 오래전에 두고 간 공물이 아직 남아 있다.",
+        [
+          choice(
+            "choice-share-offering",
+            "공물을 나눠 먹인다",
+            "굶주림을 덜고 사기를 올린다",
+            "사당의 주인이 달가워하지 않는다",
+            ["rest"],
+          ),
+          choice(
+            "choice-read-inscription",
+            "새겨진 글을 읽는다",
+            "이 층의 내력을 알아낸다",
+            "읽는 데 시간이 걸린다",
+            ["information"],
           ),
         ],
       ),
@@ -273,6 +363,52 @@ export const DUNGEON_EVENT_POOLS: DungeonEventPools = {
           ),
         ],
       ),
+      event(
+        "event-bone-collector",
+        "merchant",
+        "뼈 수집가",
+        "수집가가 죽은 자의 유품을 늘어놓고 값을 부른다.",
+        [
+          choice(
+            "choice-buy-antidote",
+            "해독 물자를 산다",
+            "독에 당한 상처를 되돌린다",
+            "값이 만만치 않다",
+            ["trade"],
+            "item-healing-potion",
+          ),
+          choice(
+            "choice-ask-origin",
+            "유품의 출처를 묻는다",
+            "앞서 간 원정대의 최후를 듣는다",
+            "듣고 나면 파티가 동요한다",
+            ["information"],
+          ),
+        ],
+      ),
+      event(
+        "event-lamp-trader",
+        "merchant",
+        "등불 장수",
+        "장수가 오래 타는 등불을 흔들어 보인다.",
+        [
+          choice(
+            "choice-buy-lamp",
+            "등불을 산다",
+            "어두운 구간에서 덜 다친다",
+            "골드를 쓴다",
+            ["trade"],
+            "item-lure-pouch",
+          ),
+          choice(
+            "choice-borrow-light",
+            "불씨만 얻어 간다",
+            "값을 치르지 않고 넘긴다",
+            "장수가 다음에 값을 올린다",
+            ["observe"],
+          ),
+        ],
+      ),
     ],
     special: [
       event(
@@ -341,6 +477,50 @@ export const DUNGEON_EVENT_POOLS: DungeonEventPools = {
           ),
         ],
       ),
+      event(
+        "event-mirror-pool",
+        "special",
+        "거울 웅덩이",
+        "잔잔한 웅덩이가 지나는 이의 모습을 다르게 비춘다.",
+        [
+          choice(
+            "choice-read-reflection",
+            "비친 모습을 읽어준다",
+            "파티가 스스로의 상태를 알아챈다",
+            "감추고 싶던 것도 함께 드러난다",
+            ["information"],
+          ),
+          choice(
+            "choice-stir-pool",
+            "물을 흐트러뜨린다",
+            "불길한 장면을 지운다",
+            "웅덩이가 반응할 수 있다",
+            ["sabotage"],
+          ),
+        ],
+      ),
+      event(
+        "event-collapsing-hall",
+        "special",
+        "무너지는 방",
+        "천장에서 흙이 떨어지고 기둥이 기울고 있다.",
+        [
+          choice(
+            "choice-brace-pillar",
+            "기둥을 받쳐 시간을 번다",
+            "파티를 무사히 통과시킨다",
+            "받치는 동안 길잡이가 남는다",
+            ["support"],
+          ),
+          choice(
+            "choice-rush-through",
+            "무너지기 전에 뛰게 한다",
+            "빠르게 벗어난다",
+            "낙석에 맞을 수 있다",
+            ["sabotage"],
+          ),
+        ],
+      ),
     ],
   },
   boss: [
@@ -368,3 +548,27 @@ export const DUNGEON_EVENT_POOLS: DungeonEventPools = {
     ),
   ],
 };
+
+/**
+ * 입구 지점의 사건이다. 일반 사건 풀에 넣지 않는다.
+ *
+ * 입구는 파티가 서 있는 자리일 뿐 사건이 발생하지 않는다. 그런데도 지점이므로
+ * 사건 식별자가 필요하다. 풀에서 뽑아 쓰면 지도에 뜨기만 하고 절대 열리지 않는
+ * 사건이 한 칸을 먹는다.
+ * docs/superpowers/specs/2026-08-18-sbh3821-irregular-map-generation-design.md
+ */
+export const ENTRY_EVENT: DungeonEvent = event(
+  "event-dungeon-entrance",
+  "special",
+  "던전 입구",
+  "여기서부터가 던전이다. 파티가 첫 길을 고르기를 기다린다.",
+  [
+    choice(
+      "choice-enter-dungeon",
+      "안으로 들어간다",
+      "탐험을 시작한다",
+      "한번 들어가면 돌아 나올 수 없다",
+      ["observe"],
+    ),
+  ],
+);

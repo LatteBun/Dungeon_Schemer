@@ -33,14 +33,9 @@ describe("탐험 도메인 계약", () => {
       hasInfoOpportunity: true,
       bossRelatedInfoCount: 1,
     });
-    expect(state.map.paths).toEqual([
-      {
-        nodeIds: ["node-entry", "node-boss"],
-        regularEventCount: 1,
-        infoCount: 1,
-        bossRelatedInfoCount: 1,
-      },
-    ]);
+    expect(state.map.regularEventCount).toBe(1);
+    expect(state.map.infoCount).toBe(1);
+    expect(state.map.bossRelatedInfoCount).toBe(1);
   });
 
   it("탐험 fixture도 호출마다 지도 배열을 새로 만든다", () => {

@@ -90,8 +90,8 @@ function validateEventPools(
     regularCount += events.length;
     for (const event of events) validateEvent(event, kind, eventIds, choiceIds, { minimumChoices, rejectBossTarget });
   }
-  if (regularCount < 12 && minimumEventsPerKind >= 3) {
-    invalid(`일반 이벤트 풀은 최소 12개여야 한다: ${regularCount}`, { contentType: "event", expected: 12, actual: regularCount });
+  if (regularCount < 20 && minimumEventsPerKind >= 5) {
+    invalid(`일반 이벤트 풀은 최소 20개여야 한다: ${regularCount}`, { contentType: "event", expected: 20, actual: regularCount });
   }
   if (pools.boss.length === 0) invalid("보스 이벤트 풀이 비어 있다.", { contentType: "event", kind: "boss", expected: 1, actual: 0 });
   for (const event of pools.boss) {
@@ -177,7 +177,7 @@ export function validateDungeonEventPools(pools: DungeonEventPools): void {
 }
 
 export function validateContentPools(pools: ContentPools): void {
-  validateEventPools(pools.events, 3, 2, true);
+  validateEventPools(pools.events, 5, 2, true);
   // 전체 수량은 조합 규칙에서 따라 나오므로 따로 세지 않는다. 여분 카드가
   // 들어오면 그 조합의 장수가 어긋나 아래 검사가 잡는다.
   validateCards(pools.cards);

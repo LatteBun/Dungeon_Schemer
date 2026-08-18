@@ -86,7 +86,6 @@ export type {
   ExpeditionState,
   GeneratedMap,
   MapNode,
-  MapPath,
   PendingEvent,
   PendingInfo,
 } from "./expedition";

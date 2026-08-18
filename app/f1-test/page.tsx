@@ -130,7 +130,7 @@ export default async function F1TestPage({
           <p>던전 ID: <span className="font-mono text-parchment">{expedition.dungeonId}</span></p>
           <p>파티 ID: <span className="font-mono text-parchment">{expedition.partyId}</span></p>
           <p>지도 지점: <span className="text-parchment">{expedition.map.nodes.length}개</span></p>
-          <p>경로: <span className="text-parchment">{expedition.map.paths.length}개</span></p>
+          <p>경로: <span className="text-parchment">{expedition.map.regularEventCount}개</span></p>
         </div>
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[620px] text-left text-sm">

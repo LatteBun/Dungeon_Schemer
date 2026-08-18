@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRng } from "@/lib/rng";
-import { DUNGEON_EVENT_POOLS } from "@/lib/content/events";
+import { DUNGEON_EVENT_POOLS, ENTRY_EVENT } from "@/lib/content/events";
 import { generateGradeMap } from "@/lib/rules/map";
 import { createInfoOpportunity, evaluatePartyInfoCard } from "@/lib/rules/info";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
@@ -27,6 +27,7 @@ import {
 const ALL_EVENTS: DungeonEvent[] = [
   ...Object.values(DUNGEON_EVENT_POOLS.regular).flat(),
   ...DUNGEON_EVENT_POOLS.boss,
+  ENTRY_EVENT,
 ];
 const eventById = (id: EventId): DungeonEvent => {
   const found = ALL_EVENTS.find((event) => event.id === id);

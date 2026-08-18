@@ -49,7 +49,7 @@ describe("summarizeOfferRisk", () => {
     const risk = summarizeOfferRisk(state, offer, DUNGEON_EVENT_POOLS);
 
     const total = EVENT_KINDS.reduce((sum, kind) => sum + risk.counts[kind], 0);
-    expect(total + risk.bossCount).toBe(offer.nodeCount);
+    expect(total).toBe(offer.nodeCount);
     expect(risk.bossCount).toBe(1);
   });
 

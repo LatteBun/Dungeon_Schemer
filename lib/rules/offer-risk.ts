@@ -11,7 +11,7 @@ import { expeditionKey } from "./expedition-key";
 import { generateGradeMap } from "./map";
 
 export interface OfferRiskSummary {
-  /** 보스방을 뺀 전체 지점의 분류별 개수. 합은 offer.nodeCount - 1이다. */
+  /** 입구와 보스방을 뺀 사건 지점의 분류별 개수. 합은 offer.nodeCount다. */
   readonly counts: Readonly<Record<EventKind, number>>;
   /** 보스방 수. 지도마다 항상 1이다. */
   readonly bossCount: number;
@@ -81,6 +81,8 @@ export function summarizeOfferRisk(
       bossCount += 1;
       continue;
     }
+    // 입구는 전용 사건을 쓰고 일반 풀에 없다. 사건이 열리지도 않으므로 세지 않는다.
+    if (node.id === map.entryNodeId) continue;
     const kind = kindById.get(node.eventId as string);
     if (kind === undefined) {
       throw new RuleError(

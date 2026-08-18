@@ -50,7 +50,7 @@ export function generateBoard(state: CampaignState): BoardOffer[] {
       requiredReputation: config.requiredReputation,
       baseReputationReward: config.baseReputationReward,
       baseGoldReward: config.baseGoldReward,
-      nodeCount: config.nodeCount,
+      nodeCount: config.eventNodeCount,
       locked,
       lockReason: locked ? "insufficientReputation" : null,
     };

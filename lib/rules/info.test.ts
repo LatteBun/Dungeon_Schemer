@@ -105,6 +105,7 @@ function infoNode(overrides: Partial<MapNode> = {}): MapNode {
     riskSummary: "위험 낮음",
     hasInfoOpportunity: true,
     bossRelatedInfoCount: 0,
+    column: 0,
     ...overrides,
   };
 }
@@ -399,22 +400,23 @@ describe("E1 지도와의 연결", () => {
   it("경로에서 보스 카드만 제시하는 기회 수가 등급 보장과 같다", () => {
     for (const grade of GRADES) {
       const map = generateGradeMap(grade, createRng(`보장-${grade}`).derive("map"));
-      const byId = new Map(map.nodes.map((node) => [node.id as string, node]));
+      const opportunities = map.nodes
+        .filter((node) => node.hasInfoOpportunity)
+        .map((node) => createInfoOpportunity({
+          node,
+          eventKind: eventKindById.get(node.eventId as string) ?? "special",
+          rng: createRng(`${grade}/${node.id}`).derive("card"),
+        }));
+      const infoDepths = new Set(
+        map.nodes.filter((node) => node.hasInfoOpportunity).map((node) => node.depth),
+      );
+      const bossDepths = new Set(
+        map.nodes.filter((node) => node.bossRelatedInfoCount > 0).map((node) => node.depth),
+      );
 
-      for (const path of map.paths) {
-        const opportunities = path.nodeIds
-          .map((id) => byId.get(id as string)!)
-          .filter((node) => node.hasInfoOpportunity)
-          .map((node) => createInfoOpportunity({
-            node,
-            eventKind: eventKindById.get(node.eventId as string) ?? "special",
-            rng: createRng(`${grade}/${node.id}`).derive("card"),
-          }));
-
-        expect(opportunities).toHaveLength(CAMPAIGN_GRADE_CONFIG[grade].infoOpportunityCount);
-        expect(opportunities.filter((pending) => pending.bossRelatedCardCount > 0))
-          .toHaveLength(CAMPAIGN_GRADE_CONFIG[grade].bossRelatedInfoCount);
-      }
+      expect(infoDepths.size).toBe(CAMPAIGN_GRADE_CONFIG[grade].infoOpportunityCount);
+      expect(bossDepths.size).toBe(CAMPAIGN_GRADE_CONFIG[grade].bossRelatedInfoCount);
+      expect(opportunities.every((pending) => pending.cardIds.length >= 2)).toBe(true);
     }
   });
 

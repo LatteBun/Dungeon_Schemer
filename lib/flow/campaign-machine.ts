@@ -1,4 +1,5 @@
 import { CLASSES } from "@/lib/content/classes";
+import { ENTRY_EVENT } from "@/lib/content/events";
 import type { DungeonEventPools } from "@/lib/content/events";
 import { EVENT_KINDS, RuleError } from "@/lib/domain";
 import type {
@@ -86,7 +87,8 @@ export function createCampaignMachineContext(
   return {
     ...pools,
     eventById: new Map(
-      [...regular, ...pools.events.boss].map((event) => [event.id as string, event]),
+      [...regular, ...pools.events.boss, ENTRY_EVENT]
+        .map((event) => [event.id as string, event]),
     ),
     eventKindById: new Map(
       EVENT_KINDS.flatMap((kind) =>
