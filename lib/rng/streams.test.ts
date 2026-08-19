@@ -4,17 +4,16 @@ import { RNG_STREAMS, createRng } from "@/lib/rng";
 describe("캠페인 난수 스트림 계약", () => {
   it("캠페인 영역별 스트림 이름을 고정한다", () => {
     expect(RNG_STREAMS).toEqual([
-      "dungeon",
+      "pool",
       "party",
-      "reserve",
-      "carriedGold",
       "board",
       "map",
+      "ecology",
       "card",
-      "trust",
       "event",
       "boss",
-      "regroup",
+      "trust",
+      "worldturn",
     ]);
   });
 

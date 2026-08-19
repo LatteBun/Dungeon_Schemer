@@ -142,10 +142,10 @@ describe("derive", () => {
   it("스트림 이름이 다르면 다른 수열을 만든다", () => {
     const root = createRng("derive-names");
     const party = root.derive("party");
-    const dungeon = root.derive("dungeon");
+    const map = root.derive("map");
     expect([party.float(), party.float()]).not.toEqual([
-      dungeon.float(),
-      dungeon.float(),
+      map.float(),
+      map.float(),
     ]);
   });
 
@@ -160,13 +160,13 @@ describe("derive", () => {
   });
 
   it("부모에서 난수를 여러 번 뽑은 뒤 파생해도 결과가 같다", () => {
-    const untouched = createRng("derive-order").derive("dungeon");
+    const untouched = createRng("derive-order").derive("map");
 
     const used = createRng("derive-order");
     for (let i = 0; i < 100; i += 1) {
       used.float();
     }
-    const afterUse = used.derive("dungeon");
+    const afterUse = used.derive("map");
 
     expect([afterUse.float(), afterUse.float()]).toEqual([
       untouched.float(),
