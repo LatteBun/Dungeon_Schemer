@@ -1,3 +1,7 @@
+import type { Rng } from "@/lib/rng";
+
+import type { CharacterPool, ExpeditionParty } from "./pool";
+import { RuleError } from "./errors";
 import type { CharacterId } from "./ids";
 
 /** 원정에 나가지 않은 캐릭터가 한 턴 동안 하는 일. */
@@ -38,4 +42,105 @@ export interface WorldTurnOutcome {
 export interface WorldTurnResult {
   worldTurn: number;
   outcomes: readonly WorldTurnOutcome[];
+}
+
+export interface WorldTurnExecution {
+  pool: CharacterPool;
+  result: WorldTurnResult;
+}
+
+export function runWorldTurn(
+  pool: CharacterPool,
+  expeditionParty: ExpeditionParty,
+  worldTurn: number,
+  worldturnRng: Rng,
+): WorldTurnExecution {
+  validateWorldTurnInput(pool, expeditionParty, worldTurn);
+
+  return {
+    pool,
+    result: { worldTurn: worldTurn + 1, outcomes: [] },
+  };
+}
+
+function validateWorldTurnInput(
+  pool: CharacterPool,
+  expeditionParty: ExpeditionParty,
+  worldTurn: number,
+): void {
+  if (!Number.isInteger(worldTurn) || worldTurn < 0) {
+    throw new RuleError("INVALID_STATE", "월드턴 번호가 유효하지 않다", {
+      field: "worldTurn",
+    });
+  }
+
+  const orderedIds = new Set(pool.order);
+  if (orderedIds.size !== pool.order.length) {
+    throw new RuleError("INVALID_STATE", "캐릭터 풀 순서에 중복 ID가 있다", {
+      field: "pool.order",
+    });
+  }
+
+  const poolIds = Object.keys(pool.byId);
+  const poolIdSet = new Set(poolIds);
+  if (
+    poolIds.length !== pool.order.length ||
+    pool.order.some((characterId) => !poolIdSet.has(characterId))
+  ) {
+    throw new RuleError("INVALID_STATE", "캐릭터 풀의 ID 집합이 맞지 않다", {
+      field: "pool",
+    });
+  }
+
+  for (const [key, member] of Object.entries(pool.byId)) {
+    const characterId = key as CharacterId;
+    if (member.id !== characterId) {
+      throw new RuleError("INVALID_STATE", "캐릭터 ID가 키와 다르다", {
+        field: "byId",
+        characterId,
+      });
+    }
+    if (!Number.isInteger(member.maxHp) || member.maxHp <= 0) {
+      throw new RuleError("INVALID_STATE", "최대 HP가 유효하지 않다", {
+        field: "maxHp",
+        characterId,
+      });
+    }
+    if (
+      !Number.isInteger(member.hp) ||
+      member.hp < 1 ||
+      member.hp > member.maxHp
+    ) {
+      throw new RuleError("INVALID_STATE", "HP가 유효하지 않다", {
+        field: "hp",
+        characterId,
+      });
+    }
+    if (!Number.isInteger(member.gold) || member.gold < 0) {
+      throw new RuleError("INVALID_STATE", "골드가 유효하지 않다", {
+        field: "gold",
+        characterId,
+      });
+    }
+    if (!Number.isInteger(member.trust) || member.trust < 0 || member.trust > 100) {
+      throw new RuleError("INVALID_STATE", "신뢰가 유효하지 않다", {
+        field: "trust",
+        characterId,
+      });
+    }
+  }
+
+  const partyIds = new Set(expeditionParty.memberIds);
+  if (partyIds.size !== expeditionParty.memberIds.length) {
+    throw new RuleError("DUPLICATE_ID", "원정 파티에 중복 ID가 있다", {
+      field: "expeditionParty.memberIds",
+    });
+  }
+  for (const characterId of expeditionParty.memberIds) {
+    if (!pool.byId[characterId]) {
+      throw new RuleError("UNKNOWN_ID", "원정 파티에 알 수 없는 캐릭터 ID가 있다", {
+        characterId,
+      });
+    }
+  }
 }

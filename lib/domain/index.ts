@@ -78,8 +78,10 @@ export {
   REST_RECOVERY_MIN,
   REST_RECOVERY_RATIO,
   WORLD_TURN_ACTIVITIES,
+  runWorldTurn,
 } from "./worldturn";
 export type {
+  WorldTurnExecution,
   WorldTurnActivity,
   WorldTurnAssignment,
   WorldTurnOutcome,
