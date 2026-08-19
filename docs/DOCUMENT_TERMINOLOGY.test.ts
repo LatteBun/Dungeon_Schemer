@@ -45,6 +45,8 @@ const CLEANED_DOCS: readonly string[] = [
   "GAME_PRINCIPLES.md",
   "design/GAME_OVERVIEW.md",
   "design/CORE_GAME_LOOP.md",
+  "experience/SCREEN_LAYOUT.md",
+  "experience/ONBOARDING_AND_INTERFACE.md",
 ];
 
 /**
@@ -55,6 +57,8 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
   "GAME_PRINCIPLES.md": ["캐릭터 30명", "위험도", "테마 3종"],
   "design/GAME_OVERVIEW.md": ["캐릭터 30명", "위험도", "테마 3종"],
   "design/CORE_GAME_LOOP.md": ["월드턴", "위험도", "캐릭터 30명"],
+  "experience/SCREEN_LAYOUT.md": ["3:1", "1280×720", "색만으로"],
+  "experience/ONBOARDING_AND_INTERFACE.md": ["인트로", "위험도", "월드턴"],
 };
 
 function read(relativePath: string): string {
