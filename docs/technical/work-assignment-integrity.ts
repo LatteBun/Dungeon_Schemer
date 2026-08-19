@@ -16,7 +16,11 @@ import { describe, expect, it } from "vitest";
  * 여럿일 때 첫 번째만 드러나 여러 번 고쳐야 한다.
  */
 
-const ID_PATTERN = /^[A-Z]\d+$/;
+/**
+ * D6 → D6·D7처럼 그대로 뒤에 번호를 붙이는 분할과, F2 → F2-1·F2-2처럼
+ * 이어서 진행하는 하위 단계를 나누는 분할을 모두 담는다.
+ */
+const ID_PATTERN = /^[A-Z]\d+(?:-\d+)?$/;
 const STATUSES = ["⬜", "🟡", "✅"] as const;
 type Status = (typeof STATUSES)[number];
 const DONE: Status = "✅";
@@ -103,7 +107,7 @@ function parseGraph(markdown: string): Graph {
 
     // subgraph L0["L0 기반"] 의 L0 은 노드가 아니다.
     if (!trimmed.startsWith("subgraph")) {
-      const declaration = /^([A-Z]\d+)\["/.exec(trimmed);
+      const declaration = new RegExp(`^(${ID_PATTERN.source.slice(1, -1)})\\["`).exec(trimmed);
       if (declaration !== null) {
         nodes.push(declaration[1]);
         continue;
