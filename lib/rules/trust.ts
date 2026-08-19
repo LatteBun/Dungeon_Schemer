@@ -1,6 +1,6 @@
 import { TRUST_MAX, TRUST_MIN } from "@/lib/domain";
 import type {
-  PartyMember,
+  Character,
   Personality,
   TrustChange,
 } from "@/lib/domain";
@@ -105,11 +105,11 @@ export const TRUST_RULES = {
 /**
  * 넘긴 인물 타입을 그대로 돌려준다.
  *
- * `PartyMember`로 못박으면 `CampaignMember`를 넣었을 때 HP·소지 골드·기억이
+ * `Character`로 못박으면 `CampaignMember`를 넣었을 때 HP·소지 골드·기억이
  * 결과 타입에서 사라진다. 호출자가 단언으로 되돌리게 되고, 그 단언이 실제로
  * 필드를 잃은 자리까지 가려버린다.
  */
-export interface TrustEvaluation<M extends PartyMember = PartyMember> {
+export interface TrustEvaluation<M extends Character = Character> {
   member: M;
   change: TrustChange;
   exposed: boolean;
@@ -138,7 +138,7 @@ function rollDelta(baseDelta: number, rng: Rng): number {
   return baseDelta > 0 ? Math.max(1, rolled) : Math.min(-1, rolled);
 }
 
-export function evaluateTrust<M extends PartyMember>(
+export function evaluateTrust<M extends Character>(
   member: M,
   action: TrustAction,
   rng: Rng,
@@ -150,7 +150,7 @@ export function evaluateTrust<M extends PartyMember>(
     return {
       member: { ...member },
       change: {
-        memberId: member.id,
+        characterId: member.id,
         delta: 0,
         reason: `${trustRule.reason} · 이미 정체가 발각됨`,
       },
@@ -163,7 +163,7 @@ export function evaluateTrust<M extends PartyMember>(
   return {
     member: nextMember,
     change: {
-      memberId: member.id,
+      characterId: member.id,
       delta: nextTrust - member.trust,
       reason: trustRule.reason,
     },

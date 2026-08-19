@@ -174,7 +174,7 @@ Vitest는 `tsconfig.json`의 `paths`를 읽지 않는다. `@/` 별칭은 `vitest
 
 현재 테스트 환경은 Node이며 순수 로직 검증을 대상으로 한다. React 컴포넌트를 렌더링하는 테스트가 필요해지면 그 작업에서 `jsdom`과 테스트 라이브러리를 함께 도입하고 이 절을 갱신한다.
 
-가장 가까운 예시는 `lib/domain/constants.test.ts`다.
+가장 가까운 예시는 `lib/domain/contract.test.ts`다.
 
 ## 난수와 재현성
 
@@ -186,13 +186,18 @@ Vitest는 `tsconfig.json`의 `paths`를 읽지 않는다. `@/` 별칭은 `vitest
 - 새 스트림이 필요하면 `RngStream` 유니온에 이름을 추가한다. 문자열을 그대로 넘기면 오타가 오류 없이 다른 스트림을 만든다.
 - 새 판의 시드는 `createSeed()`로 만든다. 이 함수도 `Math.random`을 쓰지 않는다.
 
+현재 스트림 10개는 `pool` · `board` · `party` · `map` · `ecology` · `card` ·
+`event` · `boss` · `trust` · `worldturn`이다. `ecology`와 `worldturn`이 이번
+개편에서 새로 생겼다. 활성 규칙 추첨과 월드턴 배정이 다른 스트림을 소비해야
+한쪽 규칙을 고쳐도 다른 쪽 재현성이 흔들리지 않는다.
+
 난수를 쓰는 함수는 `Rng`를 인자로 받는다. 함수 안에서 `createRng`를 직접 부르지 않는다. 그래야 테스트가 고정 시드를 주입할 수 있다.
 
 ```ts
 // 이렇게 쓴다
-export function generateParty(rng: Rng): PartyMember[] { ... }
+export function generatePool(rng: Rng): Character[] { ... }
 
-const party = generateParty(createRng(seed).derive("party"));
+const pool = generatePool(createRng(seed).derive("pool"));
 ```
 
 가장 가까운 예시는 `lib/rng/index.test.ts`다.
