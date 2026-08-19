@@ -118,7 +118,8 @@
 
 - [게임 원칙](../GAME_PRINCIPLES.md)
 - [게임 개요](GAME_OVERVIEW.md)
-- [파티와 신뢰](../systems/PARTY_AND_TRUST.md)
+- [캐릭터와 신뢰](../systems/CHARACTERS_AND_TRUST.md)
+- [캐릭터 풀과 월드턴](../systems/CHARACTER_POOL_AND_WORLDTURN.md)
 - [정보와 기만](../systems/INFORMATION_AND_DECEPTION.md)
 - [던전 이벤트와 보스](../systems/DUNGEON_EVENTS_AND_BOSSES.md)
 - [성장과 엔딩](../systems/PROGRESSION_AND_ENDINGS.md)

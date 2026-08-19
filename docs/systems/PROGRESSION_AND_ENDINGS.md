@@ -110,6 +110,7 @@
 - [게임 원칙](../GAME_PRINCIPLES.md)
 - [게임 개요](../design/GAME_OVERVIEW.md)
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
-- [파티와 신뢰](PARTY_AND_TRUST.md)
+- [캐릭터와 신뢰](CHARACTERS_AND_TRUST.md)
+- [캐릭터 풀과 월드턴](CHARACTER_POOL_AND_WORLDTURN.md)
 - [정보와 기만](INFORMATION_AND_DECEPTION.md)
 - [던전 이벤트와 보스](DUNGEON_EVENTS_AND_BOSSES.md)

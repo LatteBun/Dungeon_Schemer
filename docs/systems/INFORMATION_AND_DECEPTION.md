@@ -91,7 +91,7 @@
 
 정의로운 성격의 수용 보정은 중립에 적용하지 않는다. 진실·중립의 수용 확률은 5~95%로 제한한다. 거짓은 적발률을 5~80%로 먼저 제한하고 수용률은 5% 이상, `95% - 적발률` 이하로 제한한다.
 
-신뢰가 0인 캐릭터가 누적되면 캠페인 상태 기반 보정이 이 표 위에 더해진다. 누적표는 [성장과 엔딩](PROGRESSION_AND_ENDINGS.md)에 있다.
+신뢰가 0인 캐릭터가 누적되면 캠페인 상태 기반 보정이 이 표 위에 더해진다. 누적표는 [캐릭터와 신뢰](CHARACTERS_AND_TRUST.md)에 있다.
 
 대상마다 `card` 난수 스트림에서 1~100 정수를 하나 사용한다. 거짓은 적발 구간, 수용 구간, 의심 구간 순으로 판정한다. 신뢰 변화가 필요할 때만 `trust` 스트림을 사용한다.
 
@@ -164,6 +164,7 @@
 
 - [게임 원칙](../GAME_PRINCIPLES.md)
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
+- [캐릭터와 신뢰](CHARACTERS_AND_TRUST.md)
 - [던전 테마와 생태](DUNGEON_THEMES_AND_ECOLOGY.md)
 - [던전 이벤트와 보스](DUNGEON_EVENTS_AND_BOSSES.md)
 - [성장과 엔딩](PROGRESSION_AND_ENDINGS.md)
