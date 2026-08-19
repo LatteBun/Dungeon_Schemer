@@ -146,10 +146,264 @@ const SPIDER_THEME: ThemeContent = {
 };
 
 /**
- * 테마 콘텐츠 전체. F2-2가 사막·묘지를 더하면 이 배열이 3개가 된다.
+ * 사막 생태 규칙 6개.
+ *
+ * 열기·물·발자국 세 축으로 나누고 열기·물 축에는 일반 규칙과 조건부
+ * 예외를 한 쌍씩 둔다.
+ * docs/superpowers/specs/2026-08-19-lattebun-f2-2-theme-desert-graveyard-design.md
+ */
+const DESERT_RULES: readonly EcologyRule[] = [
+  {
+    id: "desert-heat" as RuleId,
+    theme: "desert",
+    text: "사막코브라는 낮의 열기를 피해 그늘에서만 움직인다",
+    conditional: false,
+  },
+  {
+    id: "desert-lizard-heat" as RuleId,
+    theme: "desert",
+    text: "모래도마뱀은 오히려 뜨거운 모래 위에서 몸을 데운 뒤 낮에도 활발히 움직인다",
+    conditional: true,
+  },
+  {
+    id: "desert-water" as RuleId,
+    theme: "desert",
+    text: "사막전갈은 물기가 있는 곳 근처에 굴을 파고 숨어 있다",
+    conditional: false,
+  },
+  {
+    id: "desert-spirit-dry" as RuleId,
+    theme: "desert",
+    text: "모래정령은 물기가 전혀 없는 완전한 건조 지대에서만 나타난다",
+    conditional: true,
+  },
+  {
+    id: "desert-mummy-silent" as RuleId,
+    theme: "desert",
+    text: "미이라는 발소리 없이 미끄러지듯 움직여 발자국을 남기지 않는다",
+    conditional: false,
+  },
+  {
+    id: "desert-wind-track" as RuleId,
+    theme: "desert",
+    text: "사막에서는 바람이 발자국을 금방 지운다",
+    conditional: false,
+  },
+];
+
+const DESERT_MONSTERS: readonly MonsterDef[] = [
+  {
+    id: "desert-scorpion" as MonsterId,
+    theme: "desert",
+    name: "사막전갈",
+    traits: ["물가 근처에 굴을 팜", "밤에 활동"],
+  },
+  {
+    id: "desert-lizard" as MonsterId,
+    theme: "desert",
+    name: "모래도마뱀",
+    traits: ["열을 저장함", "낮에 활동"],
+  },
+  {
+    id: "desert-cobra" as MonsterId,
+    theme: "desert",
+    name: "사막코브라",
+    traits: ["그늘 선호", "열기에 예민"],
+  },
+  {
+    id: "desert-spirit" as MonsterId,
+    theme: "desert",
+    name: "모래정령",
+    traits: ["건조 지대 서식", "물기를 꺼림"],
+  },
+  {
+    id: "desert-mummy" as MonsterId,
+    theme: "desert",
+    name: "미이라",
+    traits: ["발자국을 남기지 않음", "무덤 수호"],
+  },
+];
+
+/** 보스 수치는 SPIDER_BOSSES와 같은 위험도 구간별 값을 그대로 재사용한다. */
+const DESERT_BOSSES: readonly BossDef[] = [
+  {
+    id: "boss-desert-1" as BossId,
+    theme: "desert",
+    name: "거대 전갈 자카르",
+    description: "모래 아래 숨어 있다가 지나가는 발소리에 튀어나오는 거대 전갈이다",
+    minRiskLevel: 1,
+    baseDamage: 14,
+    maxHp: 100,
+  },
+  {
+    id: "boss-desert-2" as BossId,
+    theme: "desert",
+    name: "샌드웜 카르둠",
+    description: "모래 바다를 헤엄치듯 이동하며 진동으로 사냥감을 좇는다",
+    minRiskLevel: 2,
+    baseDamage: 19,
+    maxHp: 150,
+  },
+  {
+    id: "boss-desert-3" as BossId,
+    theme: "desert",
+    name: "모래거신 오벨론",
+    description: "무너진 신전의 돌더미가 뭉쳐 일어난 거대한 존재다",
+    minRiskLevel: 3,
+    baseDamage: 25,
+    maxHp: 210,
+  },
+  {
+    id: "boss-desert-4" as BossId,
+    theme: "desert",
+    name: "스핑크스 네프리스",
+    description: "사막 깊은 곳의 마지막 관문을 지키며 답을 요구한다",
+    minRiskLevel: 4,
+    baseDamage: 32,
+    maxHp: 280,
+  },
+];
+
+const DESERT_THEME: ThemeContent = {
+  id: "desert",
+  name: "사막",
+  rules: DESERT_RULES,
+  monsters: DESERT_MONSTERS,
+  bosses: DESERT_BOSSES,
+};
+
+/**
+ * 묘지 생태 규칙 6개.
+ *
+ * 소리·빛·매장물 세 축으로 나누고 소리·빛 축에는 일반 규칙과 조건부
+ * 예외를 한 쌍씩 둔다.
+ * docs/superpowers/specs/2026-08-19-lattebun-f2-2-theme-desert-graveyard-design.md
+ */
+const GRAVEYARD_RULES: readonly EcologyRule[] = [
+  {
+    id: "graveyard-silence" as RuleId,
+    theme: "graveyard",
+    text: "썩은 좀비는 소리에 둔감해 조용히 지나가도 쉽게 알아채지 못한다",
+    conditional: false,
+  },
+  {
+    id: "graveyard-ghoul-sound" as RuleId,
+    theme: "graveyard",
+    text: "구울은 아주 작은 소리에도 민감하게 반응해 숨죽여도 쉽게 들킨다",
+    conditional: true,
+  },
+  {
+    id: "graveyard-light" as RuleId,
+    theme: "graveyard",
+    text: "해골 마법사는 빛을 향해 다가온다",
+    conditional: false,
+  },
+  {
+    id: "graveyard-archer-light" as RuleId,
+    theme: "graveyard",
+    text: "스켈레톤 궁수는 빛에 노출되면 오히려 그림자 속으로 숨어버린다",
+    conditional: true,
+  },
+  {
+    id: "graveyard-guard" as RuleId,
+    theme: "graveyard",
+    text: "부장품이 그대로 남아 있는 무덤은 스켈레톤 병사가 지키고 있을 가능성이 크다",
+    conditional: false,
+  },
+  {
+    id: "graveyard-desecration" as RuleId,
+    theme: "graveyard",
+    text: "매장물을 훔쳐 가면 그 무덤을 지키던 존재가 더 사납게 반응한다",
+    conditional: false,
+  },
+];
+
+const GRAVEYARD_MONSTERS: readonly MonsterDef[] = [
+  {
+    id: "graveyard-zombie" as MonsterId,
+    theme: "graveyard",
+    name: "썩은 좀비",
+    traits: ["소리에 둔감", "느림"],
+  },
+  {
+    id: "graveyard-ghoul" as MonsterId,
+    theme: "graveyard",
+    name: "구울",
+    traits: ["소리에 민감", "시체를 먹음"],
+  },
+  {
+    id: "graveyard-soldier" as MonsterId,
+    theme: "graveyard",
+    name: "스켈레톤 병사",
+    traits: ["부장품 수호", "정지 상태로 매복"],
+  },
+  {
+    id: "graveyard-archer" as MonsterId,
+    theme: "graveyard",
+    name: "스켈레톤 궁수",
+    traits: ["빛을 피함", "원거리 공격"],
+  },
+  {
+    id: "graveyard-mage" as MonsterId,
+    theme: "graveyard",
+    name: "해골 마법사",
+    traits: ["빛에 이끌림", "원거리 마법"],
+  },
+];
+
+/** 보스 수치는 SPIDER_BOSSES와 같은 위험도 구간별 값을 그대로 재사용한다. */
+const GRAVEYARD_BOSSES: readonly BossDef[] = [
+  {
+    id: "boss-graveyard-1" as BossId,
+    theme: "graveyard",
+    name: "스켈레톤 장군 바르칸",
+    description: "부하 해골들을 정렬시켜 무덤 입구를 지키는 지휘관이다",
+    minRiskLevel: 1,
+    baseDamage: 14,
+    maxHp: 100,
+  },
+  {
+    id: "boss-graveyard-2" as BossId,
+    theme: "graveyard",
+    name: "리치 모르비안",
+    description: "죽음의 마법으로 주변 시체를 조종하는 언데드 마법사다",
+    minRiskLevel: 2,
+    baseDamage: 19,
+    maxHp: 150,
+  },
+  {
+    id: "boss-graveyard-3" as BossId,
+    theme: "graveyard",
+    name: "사신 아즈라엘",
+    description: "정해진 자를 거두러 온다는 소문이 도는 존재다",
+    minRiskLevel: 3,
+    baseDamage: 25,
+    maxHp: 210,
+  },
+  {
+    id: "boss-graveyard-4" as BossId,
+    theme: "graveyard",
+    name: "데스나이트 발드라크",
+    description: "생전의 맹세에 묶여 무덤 가장 깊은 곳을 떠나지 못하는 기사다",
+    minRiskLevel: 4,
+    baseDamage: 32,
+    maxHp: 280,
+  },
+];
+
+const GRAVEYARD_THEME: ThemeContent = {
+  id: "graveyard",
+  name: "묘지",
+  rules: GRAVEYARD_RULES,
+  monsters: GRAVEYARD_MONSTERS,
+  bosses: GRAVEYARD_BOSSES,
+};
+
+/**
+ * 테마 콘텐츠 전체.
  * docs/systems/DUNGEON_THEMES_AND_ECOLOGY.md
  */
-export const THEMES: readonly ThemeContent[] = [SPIDER_THEME];
+export const THEMES: readonly ThemeContent[] = [SPIDER_THEME, DESERT_THEME, GRAVEYARD_THEME];
 
 validateThemes(THEMES);
 
