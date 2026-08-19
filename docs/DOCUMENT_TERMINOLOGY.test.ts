@@ -68,6 +68,13 @@ const CLEANED_DOCS: readonly string[] = [
   "experience/SCREEN_LAYOUT.md",
   "experience/ONBOARDING_AND_INTERFACE.md",
   "systems/PROGRESSION_AND_ENDINGS.md",
+  "README.md",
+  "diagram/README.md",
+  "diagram/campaign-state.md",
+  "diagram/campaign-sequence.md",
+  "diagram/expedition-state.md",
+  "diagram/expedition-sequence.md",
+  "diagram/screen-wireframes.md",
 ];
 
 /**
@@ -112,7 +119,13 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "하한 0",
     "인력 소진",
     "누적 고발",
-  ],
+  ],  "README.md": ["위험도", "테마 3종", "회의 기록"],
+  "diagram/README.md": ["엔딩 5종", "화면 6개", "생태 규칙"],
+  "diagram/campaign-state.md": ["엔딩 5종", "월드턴", "인력 소진"],
+  "diagram/campaign-sequence.md": ["캐릭터 30", "월드턴", "승급하기"],
+  "diagram/expedition-state.md": ["위험도", "월드턴", "활성 생태 규칙"],
+  "diagram/expedition-sequence.md": ["활성 생태 규칙", "유형 비공개", "턴 단위"],
+  "diagram/screen-wireframes.md": ["위험도", "활성 생태 규칙", "화면군 6개"],
 };
 
 function read(relativePath: string): string {

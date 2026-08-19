@@ -74,9 +74,9 @@
 # 2. 캠페인 게시판 화면
 
 > **참고용 이미지** — 아래 이미지는 최종 구현을 고정하는 산출물이 아니라, 게시판 화면의 레이아웃·분위기·정보 배치 방향을 공유하기 위한 참고용 시안이다.
-> [게시판 화면 참고 이미지 열기](docs\diagram\png\REFERENCE_UI_01_CAMPAIGN_BOARD.png)
+> [게시판 화면 참고 이미지 열기](../diagram/png/REFERENCE_UI_01_CAMPAIGN_BOARD.png)
 
-![게시판 화면 참고용 시안](docs\diagram\png\REFERENCE_UI_01_CAMPAIGN_BOARD.png)
+![게시판 화면 참고용 시안](../diagram/png/REFERENCE_UI_01_CAMPAIGN_BOARD.png)
 
 
 ## 2-1. 기본 구조
@@ -200,9 +200,9 @@
 # 3. 던전 지도 화면
 
 > **참고용 이미지** — 아래 이미지는 최종 구현을 고정하는 산출물이 아니라, 실제 던전 공간처럼 보이는 지도 표현과 우측 파티 상태 패널의 방향을 공유하기 위한 참고용 시안이다.
-> [던전 지도 화면 참고 이미지 열기](docs\diagram\png\REFERENCE_UI_02_DUNGEON_MAP.png)
+> [던전 지도 화면 참고 이미지 열기](../diagram/png/REFERENCE_UI_02_DUNGEON_MAP.png)
 
-![던전 지도 화면 참고용 시안](docs\diagram\png\REFERENCE_UI_02_DUNGEON_MAP.png)
+![던전 지도 화면 참고용 시안](../diagram/png/REFERENCE_UI_02_DUNGEON_MAP.png)
 
 
 ## 3-1. 기본 목표
@@ -305,9 +305,9 @@
 # 4. 던전 진행 / 정보 선택 화면
 
 > **참고용 이미지** — 아래 이미지는 최종 구현을 고정하는 산출물이 아니라, 자동 전투 연출 약 40% / 플레이어 조작 약 60% 구조와 전체 다크 판타지 UI 분위기를 공유하기 위한 참고용 시안이다.
-> [던전 진행 화면 참고 이미지 열기](docs\diagram\png\REFERENCE_UI_03_DUNGEON_PROGRESS.png)
+> [던전 진행 화면 참고 이미지 열기](../diagram/png/REFERENCE_UI_03_DUNGEON_PROGRESS.png)
 
-![던전 진행 화면 참고용 시안](docs\diagram\png\REFERENCE_UI_03_DUNGEON_PROGRESS.png)
+![던전 진행 화면 참고용 시안](../diagram/png/REFERENCE_UI_03_DUNGEON_PROGRESS.png)
 
 
 ## 4-1. 역할

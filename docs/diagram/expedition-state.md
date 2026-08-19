@@ -9,27 +9,29 @@
 
 ```mermaid
 stateDiagram-v2
-    state "캠페인 게시판" as campaignBoard
-    state "파티 소개" as partyIntro
-    state "경로 선택" as pathChoice
+    state "공고 게시판" as campaignBoard
+    state "계약과 편성" as contract
+    state "지점 선택" as pathChoice
     state "정보 기회" as infoOpportunity
     state "사건" as event
     state "보스 전투" as bossFight
     state "정산" as settlement
+    state "월드턴" as worldTurn
     state "캠페인 종료" as campaignEnded
     [*] --> campaignBoard
-    campaignBoard --> partyIntro: 공고 계약
-    partyIntro --> pathChoice: 탐험 입장
+    campaignBoard --> contract: 공고 계약
+    contract --> pathChoice: 탐험 입장
     pathChoice --> infoOpportunity: 정보 지점
     pathChoice --> event: 일반 지점
     infoOpportunity --> event: 개인 반응 기록
     event --> pathChoice: 사건 해결·생존
     pathChoice --> bossFight: 보스방
-    bossFight --> settlement: 자동 전투·사후 검증
+    bossFight --> settlement: 턴 단위 자동 전투·사후 검증
     infoOpportunity --> settlement: 처리 중 전멸
     event --> settlement: 사건 중 전멸
-    settlement --> campaignBoard: 캠페인 계속
-    settlement --> campaignEnded: 엔딩 발생
+    settlement --> worldTurn: 보상·위험도 반영
+    worldTurn --> campaignBoard: 캠페인 계속
+    worldTurn --> campaignEnded: 엔딩 발생
     campaignEnded --> [*]
     note right of settlement
       규칙 밖 전이·중복 사건·중복 정산은
@@ -41,14 +43,18 @@ stateDiagram-v2
 
 | 식별자 | 화면과 역할 |
 | --- | --- |
-| `campaignBoard` | 던전·파티 공고 비교와 계약 |
-| `partyIntro` | 출전 파티와 지도·위험 확인 |
+| `campaignBoard` | 진입 가능한 공고 비교. 진입 불가는 사유와 함께 표시 |
+| `contract` | 답사 기록·공개 위험 태그·임시 파티 3인 확인과 계약 |
 | `pathChoice` | 공개 지도에서 다음 지점 선택 |
-| `infoOpportunity` | 일부 지점에서 정보 카드 선택과 개인 반응 |
+| `infoOpportunity` | 일부 지점에서 카드 선택과 파티원별 독립 반응 |
 | `event` | 정보와 별도로 사건 행동 선택 |
-| `bossFight` | 누적 상태로 자동 전투와 사후 검증 |
-| `settlement` | 보상·던전·승급·파티·엔딩 순서 처리 |
+| `bossFight` | 누적 상태로 턴 단위 자동 전투와 사후 검증 |
+| `settlement` | 보상·유품 → 던전 위험도 → 명성 → 승급 순서 처리 |
+| `worldTurn` | 비출전 캐릭터의 휴식·백그라운드·중상 처리와 엔딩 판정 |
 | `campaignEnded` | 정상 완주 또는 조기 종료 표시 |
+
+전멸해도 던전은 사라지지 않는다. 위험도가 1 오르고 다음 공고에 다시 나온다.
+재도전하면 지도는 다시 생성되고 보스와 활성 생태 규칙은 유지된다.
 
 규칙 밖 전이, 이미 처리한 사건과 중복 정산은 상태를 조용히 보정하지 않고 오류로
 거부한다.
@@ -58,3 +64,4 @@ stateDiagram-v2
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
 - [탐험 시퀀스](expedition-sequence.md)
 - [던전 이벤트와 보스](../systems/DUNGEON_EVENTS_AND_BOSSES.md)
+- [캐릭터 풀과 월드턴](../systems/CHARACTER_POOL_AND_WORLDTURN.md)
