@@ -63,6 +63,8 @@ const CLEANED_DOCS: readonly string[] = [
   "systems/DUNGEON_THEMES_AND_ECOLOGY.md",
   "systems/CHARACTERS_AND_TRUST.md",
   "systems/CHARACTER_POOL_AND_WORLDTURN.md",
+  "experience/SCREEN_LAYOUT.md",
+  "experience/ONBOARDING_AND_INTERFACE.md",
 ];
 
 /**
@@ -101,6 +103,8 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "중상",
     "임시 파티",
   ],
+  "experience/SCREEN_LAYOUT.md": ["3:1", "1280×720", "색만으로"],
+  "experience/ONBOARDING_AND_INTERFACE.md": ["인트로", "위험도", "월드턴"],
 };
 
 function read(relativePath: string): string {
