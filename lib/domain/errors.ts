@@ -1,4 +1,5 @@
 export type RuleErrorCode =
+  | "INVALID_STATE"
   | "INVALID_TRANSITION"
   | "UNKNOWN_ID"
   | "DUPLICATE_ID"
