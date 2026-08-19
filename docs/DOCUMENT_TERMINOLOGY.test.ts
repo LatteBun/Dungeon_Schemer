@@ -51,6 +51,8 @@ const RETIRED_TERMS: readonly string[] = [
   "/f2-test",
   "처형 엔딩",
   "파티 소진",
+  "용사들의 시대가 끝나다",
+  "제한 없음",
 ];
 
 /** 개정이 끝난 문서. D2~D6이 진행되면서 늘어난다. */
@@ -65,6 +67,7 @@ const CLEANED_DOCS: readonly string[] = [
   "systems/CHARACTER_POOL_AND_WORLDTURN.md",
   "experience/SCREEN_LAYOUT.md",
   "experience/ONBOARDING_AND_INTERFACE.md",
+  "systems/PROGRESSION_AND_ENDINGS.md",
 ];
 
 /**
@@ -104,7 +107,12 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "임시 파티",
   ],
   "experience/SCREEN_LAYOUT.md": ["3:1", "1280×720", "색만으로"],
-  "experience/ONBOARDING_AND_INTERFACE.md": ["인트로", "위험도", "월드턴"],
+  "experience/ONBOARDING_AND_INTERFACE.md": ["인트로", "위험도", "월드턴"],  "systems/PROGRESSION_AND_ENDINGS.md": [
+    "위험도별 보상",
+    "하한 0",
+    "인력 소진",
+    "누적 고발",
+  ],
 };
 
 function read(relativePath: string): string {
