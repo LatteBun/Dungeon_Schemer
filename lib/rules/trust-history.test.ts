@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import type { MemberId } from "@/lib/domain";
+import type { CharacterId } from "@/lib/domain";
 import {
   RECENT_TRUST_CHANGE_LIMIT,
   recentTrustChanges,
   type TrustHistoryRecord,
 } from "@/lib/rules/trust-history";
 
-const ALPHA = "m-alpha" as MemberId;
-const BETA = "m-beta" as MemberId;
+const ALPHA = "m-alpha" as CharacterId;
+const BETA = "m-beta" as CharacterId;
 
 function record(
   at: number,
-  changes: { memberId: MemberId; delta: number; reason: string }[],
+  changes: { characterId: CharacterId; delta: number; reason: string }[],
 ): TrustHistoryRecord {
   return {
     at,
@@ -21,11 +21,11 @@ function record(
 }
 
 const LOG: TrustHistoryRecord[] = [
-  record(0, [{ memberId: ALPHA, delta: 4, reason: "첫 번째" }]),
-  record(1, [{ memberId: BETA, delta: -6, reason: "베타의 것" }]),
-  record(2, [{ memberId: ALPHA, delta: -3, reason: "두 번째" }]),
-  record(3, [{ memberId: ALPHA, delta: 7, reason: "세 번째" }]),
-  record(4, [{ memberId: ALPHA, delta: 1, reason: "네 번째" }]),
+  record(0, [{ characterId: ALPHA, delta: 4, reason: "첫 번째" }]),
+  record(1, [{ characterId: BETA, delta: -6, reason: "베타의 것" }]),
+  record(2, [{ characterId: ALPHA, delta: -3, reason: "두 번째" }]),
+  record(3, [{ characterId: ALPHA, delta: 7, reason: "세 번째" }]),
+  record(4, [{ characterId: ALPHA, delta: 1, reason: "네 번째" }]),
 ];
 
 describe("최근 신뢰 변화 추출", () => {
@@ -61,15 +61,15 @@ describe("최근 신뢰 변화 추출", () => {
   });
 
   it("기록이 없는 파티원은 빈 배열이다", () => {
-    expect(recentTrustChanges(LOG, "m-none" as MemberId)).toEqual([]);
+    expect(recentTrustChanges(LOG, "m-none" as CharacterId)).toEqual([]);
     expect(recentTrustChanges([], ALPHA)).toEqual([]);
   });
 
   it("한 기록에 같은 파티원의 변화가 여럿이면 모두 담는다", () => {
     const doubled = [
       record(0, [
-        { memberId: ALPHA, delta: 2, reason: "앞" },
-        { memberId: ALPHA, delta: -5, reason: "뒤" },
+        { characterId: ALPHA, delta: 2, reason: "앞" },
+        { characterId: ALPHA, delta: -5, reason: "뒤" },
       ]),
     ];
     const entries = recentTrustChanges(doubled, ALPHA);
@@ -79,11 +79,11 @@ describe("최근 신뢰 변화 추출", () => {
 
   it("한 기록 안에서 제한에 걸리면 그 자리에서 멈춘다", () => {
     const straddling: TrustHistoryRecord[] = [
-      record(0, [{ memberId: ALPHA, delta: 1, reason: "오래된" }]),
+      record(0, [{ characterId: ALPHA, delta: 1, reason: "오래된" }]),
       record(1, [
-        { memberId: ALPHA, delta: 10, reason: "A" },
-        { memberId: ALPHA, delta: 20, reason: "B" },
-        { memberId: ALPHA, delta: 30, reason: "C" },
+        { characterId: ALPHA, delta: 10, reason: "A" },
+        { characterId: ALPHA, delta: 20, reason: "B" },
+        { characterId: ALPHA, delta: 30, reason: "C" },
       ]),
     ];
     const entries = recentTrustChanges(straddling, ALPHA, 2);

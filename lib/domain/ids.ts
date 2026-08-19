@@ -6,7 +6,7 @@ declare const brand: unique symbol;
  */
 export type Brand<T, B extends string> = T & { readonly [brand]: B };
 
-export type MemberId = Brand<string, "MemberId">;
+export type CharacterId = Brand<string, "CharacterId">;
 export type ClassId = Brand<string, "ClassId">;
 export type CardId = Brand<string, "CardId">;
 export type EventId = Brand<string, "EventId">;
@@ -16,5 +16,8 @@ export type ClaimId = Brand<string, "ClaimId">;
 export type ItemId = Brand<string, "ItemId">;
 export type BossId = Brand<string, "BossId">;
 export type DungeonId = Brand<string, "DungeonId">;
-export type PartyId = Brand<string, "PartyId">;
-export type BoardOfferId = Brand<string, "BoardOfferId">;
+export type OfferId = Brand<string, "OfferId">;
+
+/** 생태 규칙 한 줄. 카드가 이 ID로 자기가 참조하는 규칙을 가리킨다. */
+export type RuleId = Brand<string, "RuleId">;
+export type MonsterId = Brand<string, "MonsterId">;

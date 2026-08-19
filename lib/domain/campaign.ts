@@ -1,210 +1,128 @@
-import type {
-  BoardOfferId,
-  ClassId,
-  DungeonId,
-  MemberId,
-  PartyId,
-} from "./ids";
-import type { ExpeditionResultStatus, ExpeditionState } from "./expedition";
-import type { TruthType } from "./info";
-import type { Personality } from "./party";
+import type { CampaignDungeon, RiskLevel } from "./dungeon";
+import type { CharacterPool, ExpeditionParty } from "./pool";
+import type { DungeonId, OfferId } from "./ids";
 
-export type Grade = "C" | "B" | "A" | "S";
+/**
+ * 길잡이 등급이다. 어느 위험도까지 들어갈 수 있는지만 정한다.
+ *
+ * 옛 `Grade`는 던전 난이도와 길잡이 자격을 함께 뜻했다. 이름을 바꾸지 않으면
+ * 옛 의미가 따라오므로 `GuideRank`로 부른다.
+ * docs/systems/PROGRESSION_AND_ENDINGS.md
+ */
+export type GuideRank = "C" | "B" | "A" | "S";
 
-export const GRADES = ["C", "B", "A", "S"] as const satisfies readonly Grade[];
+export const GUIDE_RANKS = ["C", "B", "A", "S"] as const satisfies readonly GuideRank[];
 
+/** 등급별 진입 가능한 최대 위험도. */
+export const RANK_RISK_LIMIT: Readonly<Record<GuideRank, RiskLevel>> = {
+  C: 2,
+  B: 3,
+  A: 4,
+  S: 5,
+};
+
+/** 요구 명성은 문턱이지 비용이 아니다. 승급해도 명성은 줄지 않는다. */
+export const PROMOTION_REPUTATION: Readonly<Record<Exclude<GuideRank, "C">, number>> = {
+  B: 60,
+  A: 120,
+  S: 200,
+};
+
+/** 골드 승급은 현재 골드를 소비하고 명성을 보지 않는다. */
+export const PROMOTION_GOLD: Readonly<Record<Exclude<GuideRank, "C">, number>> = {
+  B: 150,
+  A: 320,
+  S: 600,
+};
+
+export const REPUTATION_START = 30;
+/** 명성은 승급 요구치로만 쓰이므로 음수까지 내려갈 이유가 없다. */
+export const REPUTATION_MIN = 0;
+export const GOLD_START = 10;
+
+export const CAMPAIGN_DUNGEON_COUNT = 15;
+/** 게시판이 한 번에 보여주는 공고 수. 부족하면 진입 불가로 채운다. */
+export const BOARD_OFFER_MAX = 5;
+
+/** 신뢰 0이 이 인원에 이르면 즉시 누적 고발 엔딩이다. */
+export const DENOUNCE_THRESHOLD = 5;
+
+/**
+ * 엔딩 5종이다. 배열 순서가 곧 판정 순서이며 먼저 성립한 것만 적용한다.
+ * docs/systems/PROGRESSION_AND_ENDINGS.md
+ */
+export type EndingKind =
+  | "distrust"
+  | "denounced"
+  | "completed"
+  | "exhausted"
+  | "unemployed";
+
+export const ENDING_ORDER = [
+  "distrust",
+  "denounced",
+  "completed",
+  "exhausted",
+  "unemployed",
+] as const satisfies readonly EndingKind[];
+
+export interface CampaignEnding {
+  kind: EndingKind;
+  /** "생존자 전원의 신뢰가 0"처럼 판정 근거를 사람이 읽는 문장으로 남긴다. */
+  reason: string;
+  finalRank: GuideRank;
+}
+
+/** 진입 불가 공고를 왜 못 들어가는지 게시판이 그대로 보여준다. */
+export type OfferLockReason = "rankTooLow";
+
+export interface BoardOffer {
+  id: OfferId;
+  dungeonId: DungeonId;
+  /** 계약 시점의 위험도. 정산의 명성 손실도 이 값을 쓴다. */
+  riskLevel: RiskLevel;
+  /** 계약 화면에서 본 위험이 정산에서 달라지지 않도록 공고에 고정한다. */
+  party: ExpeditionParty;
+  lockReason: OfferLockReason | null;
+}
+
+/**
+ * 캠페인의 단계다. 인트로에서 시작해 월드턴을 거쳐 다음 게시판으로 돌아온다.
+ */
 export type CampaignPhase =
+  | "intro"
   | "board"
   | "contract"
-  | "map"
-  | "infoOpportunity"
-  | "event"
-  | "boss"
+  | "expedition"
   | "settlement"
+  | "promotion"
+  | "worldTurn"
   | "ended";
 
 export const CAMPAIGN_PHASES = [
+  "intro",
   "board",
   "contract",
-  "map",
-  "infoOpportunity",
-  "event",
-  "boss",
+  "expedition",
   "settlement",
+  "promotion",
+  "worldTurn",
   "ended",
 ] as const satisfies readonly CampaignPhase[];
-
-export type DungeonStatus = "remaining" | "cleared";
-
-export interface CampaignDungeon {
-  id: DungeonId;
-  initialGrade: Grade;
-  grade: Grade;
-  sortOrder: number;
-  status: DungeonStatus;
-  failureCount: number;
-}
-
-export interface MemoryRecord {
-  at: number;
-  kind: "info" | "event" | "boss" | "settlement";
-  summary: string;
-}
-
-export interface CampaignMember {
-  id: MemberId;
-  name: string;
-  classId: ClassId;
-  personality: Personality;
-  currentHp: number;
-  maxHp: number;
-  trust: number;
-  carriedGold: number;
-  alive: boolean;
-  memory: MemoryRecord[];
-}
-
-export interface CampaignParty {
-  id: PartyId;
-  memberIds: MemberId[];
-  complete: boolean;
-}
-
-export type BoardLockReason =
-  | "insufficientReputation"
-  | "partyUnavailable"
-  | null;
-
-export interface BoardOffer {
-  id: BoardOfferId;
-  dungeonId: DungeonId;
-  partyId: PartyId;
-  requiredReputation: number;
-  baseReputationReward: number;
-  baseGoldReward: number;
-  nodeCount: number;
-  locked: boolean;
-  lockReason: BoardLockReason;
-}
-
-export type CampaignEndingId =
-  | "distrust"
-  | "expeditionComplete"
-  | "supportUnavailable"
-  | "partyExhausted";
-
-export interface CampaignEnding {
-  id: CampaignEndingId;
-  reason: string;
-  at: number;
-}
-
-export interface CampaignLogRecord {
-  at: number;
-  summary: string;
-}
-
-/**
- * 정산이 남기는 원인 사슬 한 단계다.
- *
- * 규칙이 아니라 도메인에 두는 이유는 원정 기록이 이 단계를 그대로 품기
- * 때문이다. 도메인이 `lib/rules`를 가져오면 의존 방향이 뒤집힌다. 단계의
- * 순서는 여전히 규칙의 결정이므로 `SETTLEMENT_STEP_ORDER`는 규칙에 남는다.
- */
-export type SettlementStepKind =
-  | "survival"
-  | "reward"
-  | "dungeon"
-  | "promotion"
-  | "party"
-  | "ending";
-
-export interface SettlementStep {
-  readonly kind: SettlementStepKind;
-  readonly summary: string;
-}
-
-/**
- * 진위 한 종류의 전달·반응 누적이다.
- *
- * 두 단위를 일부러 함께 둔다. `delivered`는 플레이어가 내린 결정의 수이고
- * 나머지는 카드 × 파티원 판정의 수다. 한 단위로 통일하면 둘 중 하나를 잃는다.
- * docs/superpowers/specs/2026-08-16-sanghwan-yoo-campaign-statistics-design.md
- */
-export interface CardTruthStat {
-  /** 용사에게 전달한 카드 장수. */
-  delivered: number;
-  accepted: number;
-  suspected: number;
-  exposed: number;
-  /** 수용됐다가 보스전 뒤 드러난 거짓. `lie` 외에는 항상 0이다. */
-  lateExposed: number;
-}
-
-export type TurningPointKind = "firstWipe" | "promotion" | "scoreSwing";
-
-export interface TurningPoint {
-  kind: TurningPointKind;
-  /** 가리키는 `ExpeditionRecord.order`. */
-  expeditionOrder: number;
-  /** 왜 이 원정이 전환점인지. 규칙이 쓴 문장을 화면이 그대로 쓴다. */
-  summary: string;
-}
-
-/** 원정 하나가 캠페인에 남긴 것. 한 캠페인에 15건 남짓이라 통째로 들고 있는다. */
-export interface ExpeditionRecord {
-  /** 1부터 빈틈없이 증가한다. */
-  order: number;
-  dungeonId: DungeonId;
-  /** 출전 당시 등급. 실패로 등급이 오르기 전 값이다. */
-  grade: Grade;
-  partyId: PartyId;
-  status: ExpeditionResultStatus;
-  survivorCount: number;
-  casualtyCount: number;
-  cards: Record<TruthType, CardTruthStat>;
-  /** 보스전에서 파티가 입은 피해 합. 보스전이 없었으면 0이다. */
-  bossDamageTotal: number;
-  reputationDelta: number;
-  goldDelta: number;
-  scoreBefore: number;
-  scoreAfter: number;
-  rankBefore: Grade;
-  rankAfter: Grade;
-  /** 정산이 만든 원인 사슬 그대로. */
-  steps: SettlementStep[];
-}
-
-/**
- * 캠페인 누적 통계다.
- *
- * `cards`와 `expeditions`의 중복은 의도한 것이다. 엔딩 화면이 매 렌더마다
- * 15건을 접지 않아도 되고, 두 벌의 일치는 `statistics.test.ts`가 검사한다.
- */
-export interface CampaignStatistics {
-  cards: Record<TruthType, CardTruthStat>;
-  clearedExpeditions: number;
-  wipedExpeditions: number;
-  expeditions: ExpeditionRecord[];
-  /** 정산마다 연대기 전체에서 다시 고른다. */
-  turningPoint: TurningPoint | null;
-}
 
 export interface CampaignState {
   seed: string;
   phase: CampaignPhase;
-  rank: Grade;
-  currentReputation: number;
-  currentGold: number;
+  rank: GuideRank;
+  /** REPUTATION_MIN 이상. 상한은 없다. */
+  reputation: number;
+  gold: number;
+  /** 승급에 쓰지 않는다. 엔딩 회고 통계 전용이다. */
   cumulativeGold: number;
-  dungeons: CampaignDungeon[];
-  members: CampaignMember[];
-  parties: CampaignParty[];
-  reserveMemberIds: MemberId[];
-  waitingMemberIds: MemberId[];
-  board: BoardOffer[];
-  expedition: ExpeditionState | null;
+  pool: CharacterPool;
+  dungeons: readonly CampaignDungeon[];
+  offers: readonly BoardOffer[];
+  /** 플레이어 원정 1회가 세계의 시간 1단위다. */
+  worldTurn: number;
   ending: CampaignEnding | null;
-  log: CampaignLogRecord[];
-  statistics: CampaignStatistics;
 }
