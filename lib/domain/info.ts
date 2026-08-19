@@ -1,4 +1,4 @@
-import type { CardId, ClaimId, MemberId } from "./ids";
+import type { CardId, ClaimId, CharacterId } from "./ids";
 
 export type TruthType = "truth" | "lie" | "neutral";
 
@@ -9,7 +9,7 @@ export const TRUTH_TYPES = [
 ] as const satisfies readonly TruthType[];
 
 /** 정보 카드의 수신자는 살아 있는 용사 개인으로 제한한다. */
-export type Target = { kind: "member"; id: MemberId };
+export type Target = { kind: "member"; id: CharacterId };
 
 /** 사건 행동은 역사적 호환성을 위해 보스를 대상으로 삼을 수 있다. */
 export type EventTarget = Target | { kind: "boss" };
@@ -56,7 +56,7 @@ export interface InfoRecord {
   /** 카드가 실제로 진실이었는지. 보스전 뒤 의심을 검증할 때 쓴다. */
   truthType: TruthType;
   subject: InfoSubject;
-  memberId: MemberId;
+  characterId: CharacterId;
   reaction: InfoReaction;
   /** 이 카드 한 장이 만드는 보스 피해 보정. 합산과 상한은 보스전이 한다. */
   modifier: number;

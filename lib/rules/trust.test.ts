@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PERSONALITIES } from "@/lib/domain";
-import type { ClassId, MemberId, PartyMember } from "@/lib/domain";
+import type { ClassId, CharacterId, Character } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
 import {
   evaluateTrust,
@@ -9,16 +9,20 @@ import {
 } from "@/lib/rules/trust";
 
 function member(
-  personality: PartyMember["personality"],
+  personality: Character["personality"],
   trust = 50,
-): PartyMember {
+): Character {
   return {
-    id: `member-${personality}` as MemberId,
+    id: `character-${personality}` as CharacterId,
     name: personality,
     classId: "test-class" as ClassId,
     personality,
+    maxHp: 100,
+    hp: 100,
     trust,
+    gold: 30,
     alive: true,
+    gravelyWounded: false,
   };
 }
 

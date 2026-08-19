@@ -1,4 +1,4 @@
-import type { MemberId, TrustChange } from "@/lib/domain";
+import type { CharacterId, TrustChange } from "@/lib/domain";
 
 /** 최근 신뢰 변화를 뽑는 데 필요한 로그의 최소 계약이다. */
 export interface TrustHistoryRecord {
@@ -26,7 +26,7 @@ export const RECENT_TRUST_CHANGE_LIMIT = 3;
  */
 export function recentTrustChanges(
   log: readonly TrustHistoryRecord[],
-  memberId: MemberId,
+  characterId: CharacterId,
   limit: number = RECENT_TRUST_CHANGE_LIMIT,
 ): TrustHistoryEntry[] {
   if (limit <= 0) return [];
@@ -36,7 +36,7 @@ export function recentTrustChanges(
   for (let index = log.length - 1; index >= 0; index -= 1) {
     const record = log[index];
     for (const change of record.trustChanges) {
-      if (change.memberId !== memberId) continue;
+      if (change.characterId !== characterId) continue;
       entries.push({
         at: record.at,
         summary: record.summary,
