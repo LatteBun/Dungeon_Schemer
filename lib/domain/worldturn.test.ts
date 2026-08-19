@@ -78,6 +78,70 @@ describe("월드턴 입력 검증", () => {
     const execution = runWorldTurn(pool, emptyParty, 0, rng);
 
     expect(execution.result.worldTurn).toBe(1);
-    expect(execution.result.outcomes).toEqual([]);
+    expect(execution.result.outcomes[0].activity).toBe("rest");
+  });
+});
+
+describe("월드턴 활동 배정", () => {
+  it("원정 파티원과 사망자는 월드턴에서 처리하지 않는다", () => {
+    const result = runWorldTurn(
+      makePool([
+        character({ id: memberId }),
+        character({ id: "dead" as CharacterId, alive: false }),
+        character({ id: "resting" as CharacterId, hp: 40 }),
+      ]),
+      { memberIds: [memberId] },
+      3,
+      createRng("assignment-exclusion").derive("worldturn"),
+    );
+
+    expect(result.result.outcomes.map((outcome) => outcome.characterId)).toEqual([
+      "resting",
+    ]);
+  });
+
+  it("HP 50% 미만은 forcedRest이고 중상과 다르다", () => {
+    const lowHp = character({ id: "low" as CharacterId, hp: 40 });
+    const result = runWorldTurn(
+      makePool([lowHp]),
+      emptyParty,
+      0,
+      createRng("assignment-low-hp").derive("worldturn"),
+    );
+
+    expect(result.result.outcomes[0].activity).toBe("forcedRest");
+    expect(result.pool.byId[lowHp.id].gravelyWounded).toBe(false);
+  });
+
+  it("이미 중상인 캐릭터는 HP가 높아도 rest만 받는다", () => {
+    const wounded = character({
+      id: "wounded" as CharacterId,
+      hp: 80,
+      gravelyWounded: true,
+    });
+    const result = runWorldTurn(
+      makePool([wounded]),
+      emptyParty,
+      0,
+      createRng("assignment-wounded").derive("worldturn"),
+    );
+
+    expect(result.result.outcomes[0].activity).toBe("rest");
+  });
+
+  it("일반 후보는 시드로 섞은 뒤 휴식 ceil/2, 백그라운드 floor/2로 나뉜다", () => {
+    const members = Array.from({ length: 5 }, (_, index) =>
+      character({ id: `candidate-${index}` as CharacterId }),
+    );
+    const result = runWorldTurn(
+      makePool(members),
+      emptyParty,
+      0,
+      createRng("assignment-half").derive("worldturn"),
+    );
+    const activities = result.result.outcomes.map((outcome) => outcome.activity);
+
+    expect(activities.filter((activity) => activity === "rest")).toHaveLength(3);
+    expect(activities.filter((activity) => activity === "background")).toHaveLength(2);
   });
 });

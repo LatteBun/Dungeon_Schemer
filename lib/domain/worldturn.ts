@@ -56,10 +56,12 @@ export function runWorldTurn(
   worldturnRng: Rng,
 ): WorldTurnExecution {
   validateWorldTurnInput(pool, expeditionParty, worldTurn);
+  const assignments = selectWorldTurnAssignments(pool, expeditionParty, worldturnRng);
+  const outcomes = assignments.map((assignment) => buildPendingOutcome(assignment));
 
   return {
     pool,
-    result: { worldTurn: worldTurn + 1, outcomes: [] },
+    result: { worldTurn: worldTurn + 1, outcomes },
   };
 }
 
@@ -143,4 +145,51 @@ function validateWorldTurnInput(
       });
     }
   }
+}
+
+function selectWorldTurnAssignments(
+  pool: CharacterPool,
+  expeditionParty: ExpeditionParty,
+  worldturnRng: Rng,
+): WorldTurnAssignment[] {
+  const partyIds = new Set(expeditionParty.memberIds);
+  const assignmentsById = new Map<CharacterId, WorldTurnActivity>();
+  const candidates: CharacterId[] = [];
+
+  for (const characterId of pool.order) {
+    const member = pool.byId[characterId];
+    if (partyIds.has(characterId) || !member.alive) continue;
+
+    if (member.gravelyWounded) {
+      assignmentsById.set(characterId, "rest");
+      continue;
+    }
+    if (member.hp / member.maxHp < FORCED_REST_HP_RATIO) {
+      assignmentsById.set(characterId, "forcedRest");
+      continue;
+    }
+    candidates.push(characterId);
+  }
+
+  const shuffledCandidates = worldturnRng.shuffle(candidates);
+  const restCount = Math.ceil(shuffledCandidates.length / 2);
+  shuffledCandidates.forEach((characterId, index) => {
+    assignmentsById.set(characterId, index < restCount ? "rest" : "background");
+  });
+
+  return pool.order.flatMap((characterId) => {
+    const activity = assignmentsById.get(characterId);
+    return activity ? [{ characterId, activity }] : [];
+  });
+}
+
+function buildPendingOutcome(assignment: WorldTurnAssignment): WorldTurnOutcome {
+  return {
+    characterId: assignment.characterId,
+    activity: assignment.activity,
+    hpDelta: 0,
+    goldDelta: 0,
+    becameGravelyWounded: false,
+    reason: `월드턴 ${assignment.activity} 배정`,
+  };
 }
