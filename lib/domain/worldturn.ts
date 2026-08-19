@@ -1,5 +1,6 @@
 import type { Rng } from "@/lib/rng";
 
+import type { Character } from "./character";
 import type { CharacterPool, ExpeditionParty } from "./pool";
 import { RuleError } from "./errors";
 import type { CharacterId } from "./ids";
@@ -57,10 +58,19 @@ export function runWorldTurn(
 ): WorldTurnExecution {
   validateWorldTurnInput(pool, expeditionParty, worldTurn);
   const assignments = selectWorldTurnAssignments(pool, expeditionParty, worldturnRng);
-  const outcomes = assignments.map((assignment) => buildPendingOutcome(assignment));
+  const nextById = { ...pool.byId } as Record<CharacterId, Character>;
+  const outcomes = assignments.map((assignment) => {
+    const applied = applyWorldTurnAssignment(
+      nextById[assignment.characterId],
+      assignment,
+      worldturnRng,
+    );
+    nextById[assignment.characterId] = applied.character;
+    return applied.outcome;
+  });
 
   return {
-    pool,
+    pool: { byId: nextById, order: [...pool.order] },
     result: { worldTurn: worldTurn + 1, outcomes },
   };
 }
@@ -183,13 +193,74 @@ function selectWorldTurnAssignments(
   });
 }
 
-function buildPendingOutcome(assignment: WorldTurnAssignment): WorldTurnOutcome {
+interface AppliedWorldTurn {
+  character: Character;
+  outcome: WorldTurnOutcome;
+}
+
+function applyWorldTurnAssignment(
+  member: Character,
+  assignment: WorldTurnAssignment,
+  worldturnRng: Rng,
+): AppliedWorldTurn {
+  if (assignment.activity === "background") {
+    const lossPercent = worldturnRng.int(10, 20);
+    const hpLoss = Math.max(1, Math.round((member.maxHp * lossPercent) / 100));
+    const nextHp = Math.max(BACKGROUND_HP_FLOOR, member.hp - hpLoss);
+    const goldDelta = worldturnRng.int(5, 15);
+    return buildAppliedWorldTurn(
+      member,
+      assignment,
+      nextHp,
+      goldDelta,
+      `월드턴 백그라운드 원정: HP -${member.hp - nextHp}, 골드 +${goldDelta}`,
+    );
+  }
+
+  const recovery = Math.max(
+    REST_RECOVERY_MIN,
+    Math.round(member.maxHp * REST_RECOVERY_RATIO),
+  );
+  const nextHp = Math.min(member.maxHp, member.hp + recovery);
+  const hpDelta = nextHp - member.hp;
+  return buildAppliedWorldTurn(
+    member,
+    assignment,
+    nextHp,
+    0,
+    `월드턴 ${assignment.activity === "forcedRest" ? "강제 휴식" : "휴식"}: HP +${hpDelta}`,
+  );
+}
+
+function buildAppliedWorldTurn(
+  member: Character,
+  assignment: WorldTurnAssignment,
+  nextHp: number,
+  goldDelta: number,
+  baseReason: string,
+): AppliedWorldTurn {
+  const nextGravelyWounded = nextHp / member.maxHp < GRAVELY_WOUNDED_HP_RATIO;
+  const becameGravelyWounded = !member.gravelyWounded && nextGravelyWounded;
+  const woundedReason = becameGravelyWounded
+    ? "중상 발생"
+    : member.gravelyWounded && !nextGravelyWounded
+      ? "중상 해제"
+      : undefined;
+
   return {
-    characterId: assignment.characterId,
-    activity: assignment.activity,
-    hpDelta: 0,
-    goldDelta: 0,
-    becameGravelyWounded: false,
-    reason: `월드턴 ${assignment.activity} 배정`,
+    character: {
+      ...member,
+      hp: nextHp,
+      gold: member.gold + goldDelta,
+      gravelyWounded: nextGravelyWounded,
+    },
+    outcome: {
+      characterId: assignment.characterId,
+      activity: assignment.activity,
+      hpDelta: nextHp - member.hp,
+      goldDelta,
+      becameGravelyWounded,
+      reason: woundedReason ? `${baseReason}, ${woundedReason}` : baseReason,
+    },
   };
 }
