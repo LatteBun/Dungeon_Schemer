@@ -8,7 +8,7 @@ Dungeon Schemer는 용사 파티를 안내하는 던전 길잡이가 되어 정�
 - [게임 원칙](docs/GAME_PRINCIPLES.md)
 - [팀 개발 워크플로](docs/technical/TEAM_DEVELOPMENT_WORKFLOW.md)
 - [AI 개발 전 사전 점검표](docs/technical/AI_DEVELOPMENT_PRECHECK.md)
-- [프로토타입 작업 배정표](docs/technical/PROTOTYPE_WORK_ASSIGNMENT.md): 구현 영역, 선행 관계, 구현 순서, 담당자 배정 확인
+- [작업 배정표](docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md): 구현 영역, 선행 관계, 구현 순서, 담당자 배정 확인
 
 ## AI 작업 규칙
 
