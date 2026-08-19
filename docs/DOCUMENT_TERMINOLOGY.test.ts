@@ -49,6 +49,8 @@ const RETIRED_TERMS: readonly string[] = [
   "F2 카드 콘텐츠 계약",
   "Task 6~7",
   "/f2-test",
+  "처형 엔딩",
+  "파티 소진",
 ];
 
 /** 개정이 끝난 문서. D2~D6이 진행되면서 늘어난다. */
@@ -59,6 +61,8 @@ const CLEANED_DOCS: readonly string[] = [
   "systems/DUNGEON_EVENTS_AND_BOSSES.md",
   "systems/INFORMATION_AND_DECEPTION.md",
   "systems/DUNGEON_THEMES_AND_ECOLOGY.md",
+  "systems/CHARACTERS_AND_TRUST.md",
+  "systems/CHARACTER_POOL_AND_WORLDTURN.md",
 ];
 
 /**
@@ -85,6 +89,17 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "활성 규칙",
     "조건부 규칙",
     "거미굴",
+  ],
+  "systems/CHARACTERS_AND_TRUST.md": [
+    "신뢰 0 누적",
+    "출전 가능",
+    "직업별 최대 HP",
+  ],
+  "systems/CHARACTER_POOL_AND_WORLDTURN.md": [
+    "캐릭터 30명",
+    "월드턴",
+    "중상",
+    "임시 파티",
   ],
 };
 
