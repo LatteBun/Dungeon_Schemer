@@ -12,9 +12,9 @@ export const RISK_LEVELS = [1, 2, 3, 4, 5] as const satisfies readonly RiskLevel
 export const RISK_LEVEL_MAX: RiskLevel = 5;
 
 /** 테마는 닫힌 목록이다. 생태 규칙과 몬스터가 테마 단위로 묶인다. */
-export type ThemeId = "spider" | "mine" | "graveyard";
+export type ThemeId = "spider" | "desert" | "graveyard";
 
-export const THEME_IDS = ["spider", "mine", "graveyard"] as const satisfies readonly ThemeId[];
+export const THEME_IDS = ["spider", "desert", "graveyard"] as const satisfies readonly ThemeId[];
 
 /** 테마마다 규칙 6개를 두고 던전마다 3개를 활성으로 뽑는다. */
 export const ECOLOGY_RULES_PER_THEME = 6;
