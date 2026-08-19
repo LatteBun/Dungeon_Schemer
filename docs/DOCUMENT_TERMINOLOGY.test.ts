@@ -38,6 +38,19 @@ const RETIRED_TERMS: readonly string[] = [
   "지원 최소 명성",
   "현재 HP × 0.05",
   "C·B 3명 / A 4명 / S 5명",
+  "등급별 지도",
+  "갈래별 지점",
+  "등급별 데이터",
+  "등급별 전체 횟수",
+  "A·S급",
+  "카드 유형과 플레이어가 아는 사실",
+  "예상되는 이득과 발각 위험",
+  "F2 콘텐츠 데이터 계약",
+  "F2 카드 콘텐츠 계약",
+  "Task 6~7",
+  "/f2-test",
+  "처형 엔딩",
+  "파티 소진",
 ];
 
 /** 개정이 끝난 문서. D2~D6이 진행되면서 늘어난다. */
@@ -45,6 +58,11 @@ const CLEANED_DOCS: readonly string[] = [
   "GAME_PRINCIPLES.md",
   "design/GAME_OVERVIEW.md",
   "design/CORE_GAME_LOOP.md",
+  "systems/DUNGEON_EVENTS_AND_BOSSES.md",
+  "systems/INFORMATION_AND_DECEPTION.md",
+  "systems/DUNGEON_THEMES_AND_ECOLOGY.md",
+  "systems/CHARACTERS_AND_TRUST.md",
+  "systems/CHARACTER_POOL_AND_WORLDTURN.md",
   "experience/SCREEN_LAYOUT.md",
   "experience/ONBOARDING_AND_INTERFACE.md",
 ];
@@ -57,6 +75,34 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
   "GAME_PRINCIPLES.md": ["캐릭터 30명", "위험도", "테마 3종"],
   "design/GAME_OVERVIEW.md": ["캐릭터 30명", "위험도", "테마 3종"],
   "design/CORE_GAME_LOOP.md": ["월드턴", "위험도", "캐릭터 30명"],
+  "systems/DUNGEON_EVENTS_AND_BOSSES.md": [
+    "위험도별 지도",
+    "재도전",
+    "★5",
+    "생태 규칙",
+  ],
+  "systems/INFORMATION_AND_DECEPTION.md": [
+    "현재 위험도",
+    "활성 규칙",
+    "참조 규칙",
+  ],
+  "systems/DUNGEON_THEMES_AND_ECOLOGY.md": [
+    "생태 규칙",
+    "활성 규칙",
+    "조건부 규칙",
+    "거미굴",
+  ],
+  "systems/CHARACTERS_AND_TRUST.md": [
+    "신뢰 0 누적",
+    "출전 가능",
+    "직업별 최대 HP",
+  ],
+  "systems/CHARACTER_POOL_AND_WORLDTURN.md": [
+    "캐릭터 30명",
+    "월드턴",
+    "중상",
+    "임시 파티",
+  ],
   "experience/SCREEN_LAYOUT.md": ["3:1", "1280×720", "색만으로"],
   "experience/ONBOARDING_AND_INTERFACE.md": ["인트로", "위험도", "월드턴"],
 };

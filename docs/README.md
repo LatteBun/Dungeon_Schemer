@@ -42,7 +42,8 @@
 
 ### 핵심 시스템
 
-- [PARTY_AND_TRUST.md](systems/PARTY_AND_TRUST.md): 지속 3인 파티, 예비 인원, 자동 재편, 회복과 개인 신뢰
+- [CHARACTERS_AND_TRUST.md](systems/CHARACTERS_AND_TRUST.md): 캐릭터 상태, 직업, 성격, 신뢰 판정과 신뢰 0 누적
+- [CHARACTER_POOL_AND_WORLDTURN.md](systems/CHARACTER_POOL_AND_WORLDTURN.md): 풀 30명, 임시 파티 편성, 월드턴과 중상
 - [INFORMATION_AND_DECEPTION.md](systems/INFORMATION_AND_DECEPTION.md): 용사 파티에게 제공하는 진실·거짓·중립 정보와 사후 검증
 - [DUNGEON_EVENTS_AND_BOSSES.md](systems/DUNGEON_EVENTS_AND_BOSSES.md): 등급별 지도, 정보 전달 기회, 사건 행동과 자동 보스전
 - [PROGRESSION_AND_ENDINGS.md](systems/PROGRESSION_AND_ENDINGS.md): 정산 보상, 명성·골드 승급 점수, 던전 상승과 캠페인 엔딩

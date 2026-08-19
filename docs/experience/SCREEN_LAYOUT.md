@@ -66,7 +66,7 @@ GameShell
 
 왼쪽을 위아래로 나눈다. 위 40%는 파티가 움직이고 싸우는 장면 슬롯이고, 아래 60%는 상황 설명과 카드 3장이다. 카드 본문이 넓은 자리를 필요로 해 비율을 조정하더라도, 조작 영역이 장면보다 넓다는 원칙은 유지한다.
 
-카드 3장은 항상 같은 디자인이다. 유형 이름, 정답 색, 발각 위험, 예상 신뢰 변화량을 선택 전에는 어떤 방식으로도 표시하지 않는다. 대신 추론의 근거인 상황 설명과 환경 단서는 감추지 않는다.
+카드 3장은 항상 같은 디자인이다. 무엇을 감추고 무엇을 보여주는지는 [정보와 기만](../systems/INFORMATION_AND_DECEPTION.md)의 「피드백 원칙」을 따른다. 화면이 지는 몫은 세 장이 시각적으로 구별되지 않게 하는 것과, 추론의 근거인 상황 설명과 답사 기록을 같은 화면 안에 두는 것이다.
 
 선택 뒤에는 인과 순서로 보여준다.
 
@@ -134,4 +134,5 @@ app/play/layout.tsx
 - [게임 원칙](../GAME_PRINCIPLES.md)
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
 - [정보와 기만](../systems/INFORMATION_AND_DECEPTION.md)
+- [던전 이벤트와 보스](../systems/DUNGEON_EVENTS_AND_BOSSES.md)
 - [캠페인 개편 설계](../superpowers/specs/2026-08-19-lattebun-campaign-rework-design.md)
