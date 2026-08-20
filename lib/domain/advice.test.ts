@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { ADVICE_OUTCOMES, ECOLOGY_RELATIONS } from "@/lib/domain";
 import type {
   AdviceOption,
+  CharacterId,
   ChoiceId,
   ClueId,
   EventId,
+  InfoRecord,
   RuleId,
   SituationEvent,
 } from "@/lib/domain";
@@ -76,5 +78,22 @@ describe("SituationEvent", () => {
 
     expect(event.revealsClue).toBe("spider-molt-seen");
     expect(event.upgrades?.[0].slotIndex).toBe(0);
+  });
+});
+
+describe("InfoRecord", () => {
+  it("지연형 조언의 수용 기록을 담는다", () => {
+    const record: InfoRecord = {
+      eventId: "spider-boss-hint" as EventId,
+      adviceId: "a" as ChoiceId,
+      outcome: "help",
+      characterId: "character-001" as CharacterId,
+      reaction: "accepted",
+      modifier: -0.2,
+      pendingVerification: false,
+    };
+
+    expect(record.outcome).toBe("help");
+    expect(record.modifier).toBeLessThan(0);
   });
 });
