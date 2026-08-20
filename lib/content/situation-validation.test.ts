@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { validateSituationEvent, validateSituationEvents } from "@/lib/content/situation-validation";
+import { SPIDER_THEME } from "@/lib/content/themes";
 import { RuleError } from "@/lib/domain";
 import type {
   AdviceOption,
   AdviceOutcome,
+  BossId,
+  BossRuleId,
   ChoiceId,
   ClueId,
   EventId,
@@ -115,9 +118,15 @@ function themedAdvice(
   overrides: Partial<AdviceOption> = {},
 ): AdviceOption {
   const byOutcome = {
-    help: { relation: "consistent" as const, ruleId: "spider-fire" as RuleId },
-    harm: { relation: "contradictory" as const, ruleId: "spider-fire" as RuleId },
-    neutral: { relation: "unrelated" as const, ruleId: undefined },
+    help: {
+      relation: "consistent" as const,
+      source: { kind: "ecology" as const, ruleId: "spider-fire" as RuleId },
+    },
+    harm: {
+      relation: "contradictory" as const,
+      source: { kind: "ecology" as const, ruleId: "spider-fire" as RuleId },
+    },
+    neutral: { relation: "unrelated" as const, source: undefined },
   };
   return advice(id, outcome, { ...byOutcome[outcome], ...overrides });
 }
@@ -135,6 +144,28 @@ function themedEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
       themedAdvice("c", "neutral"),
     ],
     defaultResultText: "파티가 알아서 거미를 밀어낸다.",
+    ...overrides,
+  };
+}
+
+function bossEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
+  const source = {
+    kind: "boss" as const,
+    bossRuleId: "boss-ragna-turning" as BossRuleId,
+  };
+  return {
+    id: "spider-boss-hint" as EventId,
+    kind: "special",
+    theme: "spider",
+    targetBossId: "boss-spider-1" as BossId,
+    title: "보스 흔적",
+    description: "벽 한쪽에 거대한 긁힌 자국이 남아 있다.",
+    advice: [
+      themedAdvice("help", "help", { source, bossDamageModifier: -0.2 }),
+      themedAdvice("harm", "harm", { source, bossDamageModifier: 0.25 }),
+      themedAdvice("neutral", "neutral", { bossDamageModifier: -0.1 }),
+    ],
+    defaultResultText: "파티가 흔적을 살피고 이동한다.",
     ...overrides,
   };
 }
@@ -169,7 +200,7 @@ describe("validateSituationEvent 테마 전용", () => {
   it("정합·모순인데 참조 규칙이 없으면 생성 오류다", () => {
     const event = themedEvent({
       advice: [
-        themedAdvice("a", "help", { ruleId: undefined }),
+        themedAdvice("a", "help", { source: undefined }),
         themedAdvice("b", "harm"),
         themedAdvice("c", "neutral"),
       ],
@@ -182,7 +213,33 @@ describe("validateSituationEvent 테마 전용", () => {
       advice: [
         themedAdvice("a", "help"),
         themedAdvice("b", "harm"),
-        themedAdvice("c", "neutral", { ruleId: "spider-fire" as RuleId }),
+        themedAdvice("c", "neutral", {
+          source: { kind: "ecology", ruleId: "spider-fire" as RuleId },
+        }),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("일반 사건이 보스 source를 가지면 생성 오류다", () => {
+    const event = themedEvent({
+      advice: [
+        themedAdvice("a", "help", {
+          source: { kind: "boss", bossRuleId: "boss-ragna-turning" as BossRuleId },
+        }),
+        themedAdvice("b", "harm"),
+        themedAdvice("c", "neutral"),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("보스 대상 사건의 modifier가 빠지면 생성 오류다", () => {
+    const event = bossEvent({
+      advice: [
+        { ...bossEvent().advice[0], bossDamageModifier: undefined },
+        bossEvent().advice[1],
+        bossEvent().advice[2],
       ],
     });
     expect(() => validateSituationEvent(event)).toThrow(RuleError);
@@ -204,7 +261,9 @@ describe("validateSituationEvent 공용", () => {
   it("공용 조언에 참조 규칙이 있으면 생성 오류다", () => {
     const event = sharedEvent({
       advice: [
-        advice("a", "help", { ruleId: "spider-fire" as RuleId }),
+        advice("a", "help", {
+          source: { kind: "ecology", ruleId: "spider-fire" as RuleId },
+        }),
         advice("b", "harm"),
         advice("c", "neutral"),
       ],
@@ -289,7 +348,9 @@ describe("validateSituationEvent 강화판", () => {
         {
           clueId: "shared-clue" as ClueId,
           slotIndex: 0,
-          replacement: advice("a-up", "help", { ruleId: "spider-fire" as RuleId }),
+          replacement: advice("a-up", "help", {
+            source: { kind: "ecology", ruleId: "spider-fire" as RuleId },
+          }),
         },
       ],
     });
@@ -303,8 +364,12 @@ function themedSupply(ruleId: string): SituationEvent[] {
     themedEvent({
       id: `${ruleId}-event-${n}` as EventId,
       advice: [
-        themedAdvice(`${ruleId}-h${n}`, "help", { ruleId: ruleId as RuleId }),
-        themedAdvice(`${ruleId}-x${n}`, "harm", { ruleId: ruleId as RuleId }),
+        themedAdvice(`${ruleId}-h${n}`, "help", {
+          source: { kind: "ecology", ruleId: ruleId as RuleId },
+        }),
+        themedAdvice(`${ruleId}-x${n}`, "harm", {
+          source: { kind: "ecology", ruleId: ruleId as RuleId },
+        }),
         themedAdvice(`${ruleId}-n${n}`, "neutral"),
       ],
     }),
@@ -387,7 +452,9 @@ describe("validateSituationEvents 모음", () => {
             ...event,
             advice: [
               // 도움을 다른 규칙으로 옮겨 spider-fire의 도움을 1개로 만든다.
-              themedAdvice("moved-help", "help", { ruleId: "spider-shadow" as RuleId }),
+              themedAdvice("moved-help", "help", {
+                source: { kind: "ecology", ruleId: "spider-shadow" as RuleId },
+              }),
               event.advice[1],
               event.advice[2],
             ],
@@ -397,5 +464,53 @@ describe("validateSituationEvents 모음", () => {
     expect(() =>
       validateSituationEvents([...sharedSupply(), ...broken]),
     ).toThrow(RuleError);
+  });
+
+  it("테마 전용 모드는 공용 사건 없이 테마 전체 규칙을 검사한다", () => {
+    const events = [
+      "spider-fire",
+      "spider-brood-light",
+      "spider-vibration",
+      "spider-armor-vibration",
+      "spider-carrion",
+      "spider-shadow",
+    ].flatMap((ruleId) => themedSupply(ruleId));
+    expect(() => validateSituationEvents(events, SPIDER_THEME)).not.toThrow();
+  });
+
+  it("테마 전용 모드는 사건에 등장하지 않은 테마 규칙도 검사한다", () => {
+    expect(() => validateSituationEvents(themedSupply("spider-fire"), SPIDER_THEME))
+      .toThrow(/spider-brood-light/);
+  });
+
+  it("테마 밖 생태 규칙을 참조하면 생성 오류다", () => {
+    const event = themedSupply("spider-fire")[0];
+    const foreign = {
+      ...event,
+      advice: [
+        {
+          ...event.advice[0],
+          source: { kind: "ecology" as const, ruleId: "outside-rule" as RuleId },
+        },
+        event.advice[1],
+        event.advice[2],
+      ],
+    };
+    expect(() => validateSituationEvents([foreign], SPIDER_THEME)).toThrow(/테마 밖/);
+  });
+
+  it("보스 정보 사건이 다른 보스의 특징을 참조하면 생성 오류다", () => {
+    const event = bossEvent({
+      advice: [
+        {
+          ...bossEvent().advice[0],
+          source: { kind: "boss", bossRuleId: "boss-ragna-turning" as BossRuleId },
+        },
+        bossEvent().advice[1],
+        bossEvent().advice[2],
+      ],
+      targetBossId: "boss-spider-2" as BossId,
+    });
+    expect(() => validateSituationEvents([event], SPIDER_THEME)).toThrow(/다른 보스/);
   });
 });

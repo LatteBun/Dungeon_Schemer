@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ADVICE_OUTCOMES, ECOLOGY_RELATIONS } from "@/lib/domain";
 import type {
   AdviceOption,
+  BossId,
+  BossRuleId,
   CharacterId,
   ChoiceId,
   ClueId,
@@ -29,13 +31,16 @@ describe("ECOLOGY_RELATIONS", () => {
 
 describe("SituationEvent", () => {
   function advice(id: string, outcome: AdviceOption["outcome"]): AdviceOption {
+    const isNeutral = outcome === "neutral";
     return {
       id: id as ChoiceId,
       label: "횃불을 하나 집어 거미들 사이의 바닥에 던지세요",
       line: "거미는 불을 싫어한다고 들었어!",
       outcome,
-      ruleId: "spider-fire" as RuleId,
-      relation: "consistent",
+      source: isNeutral
+        ? undefined
+        : { kind: "ecology", ruleId: "spider-fire" as RuleId },
+      relation: isNeutral ? "unrelated" : "consistent",
       effectTags: ["support"],
       resultText: "거미들이 불을 피해 한쪽으로 몰린다.",
     };
@@ -78,6 +83,38 @@ describe("SituationEvent", () => {
 
     expect(event.revealsClue).toBe("spider-molt-seen");
     expect(event.upgrades?.[0].slotIndex).toBe(0);
+  });
+
+  it("보스 정보 사건이 대상 보스와 보스 특징 근거를 담는다", () => {
+    const event: SituationEvent = {
+      id: "spider-boss-hint" as EventId,
+      kind: "special",
+      theme: "spider",
+      targetBossId: "boss-spider-1" as BossId,
+      title: "좁은 통로의 흔적",
+      description: "벽 한쪽이 길게 긁혀 있다.",
+      advice: [
+        {
+          ...advice("help", "help"),
+          source: { kind: "boss", bossRuleId: "boss-ragna-turning" as BossRuleId },
+          bossDamageModifier: -0.2,
+        },
+        {
+          ...advice("harm", "harm"),
+          source: { kind: "boss", bossRuleId: "boss-ragna-turning" as BossRuleId },
+          relation: "contradictory",
+          bossDamageModifier: 0.25,
+        },
+        { ...advice("neutral", "neutral"), bossDamageModifier: -0.1 },
+      ],
+      defaultResultText: "파티가 흔적을 확인하고 이동한다.",
+    };
+
+    expect(event.targetBossId).toBe("boss-spider-1");
+    expect(event.advice[0].source).toEqual({
+      kind: "boss",
+      bossRuleId: "boss-ragna-turning",
+    });
   });
 });
 

@@ -3,6 +3,7 @@ import { validateThemes } from "@/lib/content/theme-validation";
 import type {
   BossDef,
   BossId,
+  BossRuleId,
   EcologyProfile,
   EcologyProfileId,
   EcologyRule,
@@ -182,7 +183,7 @@ const SPIDER_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
  * 있던 수치라, 등급제에서 위험도 구간제로 바뀌어도 턴수 설계 의도는
  * 유효하다. 잠정 수치이며 B1 백테스트에서 조정한다.
  */
-const SPIDER_BOSSES: readonly BossDef[] = [
+export const SPIDER_BOSSES: readonly BossDef[] = [
   {
     id: "boss-spider-1" as BossId,
     theme: "spider",
@@ -191,6 +192,10 @@ const SPIDER_BOSSES: readonly BossDef[] = [
     minRiskLevel: 1,
     baseDamage: 14,
     maxHp: 100,
+    rules: [
+      { id: "boss-ragna-turning" as BossRuleId, text: "큰 몸 때문에 급하게 방향을 바꾸기 어렵다." },
+      { id: "boss-ragna-crouch" as BossRuleId, text: "큰 공격을 하기 직전에 몸을 낮춘다." },
+    ],
   },
   {
     id: "boss-spider-2" as BossId,
@@ -200,6 +205,10 @@ const SPIDER_BOSSES: readonly BossDef[] = [
     minRiskLevel: 2,
     baseDamage: 19,
     maxHp: 150,
+    rules: [
+      { id: "boss-morkan-cocoon-side" as BossRuleId, text: "모르칸이 만든 고치는 한쪽 면이 더 얇다." },
+      { id: "boss-morkan-spin-pause" as BossRuleId, text: "새 거미줄을 만들 때 잠깐 움직임이 둔해진다." },
+    ],
   },
   {
     id: "boss-spider-3" as BossId,
@@ -209,6 +218,10 @@ const SPIDER_BOSSES: readonly BossDef[] = [
     minRiskLevel: 3,
     baseDamage: 25,
     maxHp: 210,
+    rules: [
+      { id: "boss-serina-web-hub" as BossRuleId, text: "여러 거미줄을 한꺼번에 당긴다." },
+      { id: "boss-serina-block-retreat" as BossRuleId, text: "공격하기 전에 상대의 퇴로부터 막는다." },
+    ],
   },
   {
     id: "boss-spider-4" as BossId,
@@ -218,10 +231,14 @@ const SPIDER_BOSSES: readonly BossDef[] = [
     minRiskLevel: 4,
     baseDamage: 32,
     maxHp: 280,
+    rules: [
+      { id: "boss-araksha-swarm-follow" as BossRuleId, text: "주변 새끼거미가 여왕의 움직임을 따라 움직인다." },
+      { id: "boss-araksha-summon-first" as BossRuleId, text: "여왕이 위협받으면 직접 달려들기 전에 주변 거미를 먼저 불러들인다." },
+    ],
   },
 ];
 
-const SPIDER_THEME: ThemeContent = {
+export const SPIDER_THEME: ThemeContent = {
   id: "spider",
   name: "거미굴",
   rules: SPIDER_RULES,
@@ -381,6 +398,7 @@ const DESERT_BOSSES: readonly BossDef[] = [
     minRiskLevel: 1,
     baseDamage: 14,
     maxHp: 100,
+    rules: [],
   },
   {
     id: "boss-desert-2" as BossId,
@@ -390,6 +408,7 @@ const DESERT_BOSSES: readonly BossDef[] = [
     minRiskLevel: 2,
     baseDamage: 19,
     maxHp: 150,
+    rules: [],
   },
   {
     id: "boss-desert-3" as BossId,
@@ -399,6 +418,7 @@ const DESERT_BOSSES: readonly BossDef[] = [
     minRiskLevel: 3,
     baseDamage: 25,
     maxHp: 210,
+    rules: [],
   },
   {
     id: "boss-desert-4" as BossId,
@@ -408,6 +428,7 @@ const DESERT_BOSSES: readonly BossDef[] = [
     minRiskLevel: 4,
     baseDamage: 32,
     maxHp: 280,
+    rules: [],
   },
 ];
 
@@ -571,6 +592,7 @@ const GRAVEYARD_BOSSES: readonly BossDef[] = [
     minRiskLevel: 1,
     baseDamage: 14,
     maxHp: 100,
+    rules: [],
   },
   {
     id: "boss-graveyard-2" as BossId,
@@ -580,6 +602,7 @@ const GRAVEYARD_BOSSES: readonly BossDef[] = [
     minRiskLevel: 2,
     baseDamage: 19,
     maxHp: 150,
+    rules: [],
   },
   {
     id: "boss-graveyard-3" as BossId,
@@ -589,6 +612,7 @@ const GRAVEYARD_BOSSES: readonly BossDef[] = [
     minRiskLevel: 3,
     baseDamage: 25,
     maxHp: 210,
+    rules: [],
   },
   {
     id: "boss-graveyard-4" as BossId,
@@ -598,6 +622,7 @@ const GRAVEYARD_BOSSES: readonly BossDef[] = [
     minRiskLevel: 4,
     baseDamage: 32,
     maxHp: 280,
+    rules: [],
   },
 ];
 
