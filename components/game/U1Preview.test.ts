@@ -13,6 +13,9 @@ describe("U1Preview", () => {
     expect(html).toContain("게시판");
     expect(html).toContain("지도");
     expect(html).toContain("진행");
+    expect(html).toContain('class="u1-preview__screen-button is-active"');
+    expect(html).toContain("u1-preview__reference-frame");
+    expect(html).toContain("게임 셸 프리뷰");
     expect(html).toContain("정산·엔딩");
     expect(html).toContain("길잡이의 시작");
     expect(html).toContain('data-testid="game-shell-right-panel"');

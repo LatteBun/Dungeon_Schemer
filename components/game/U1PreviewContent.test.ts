@@ -31,6 +31,7 @@ describe("U1PreviewContent", () => {
       for (const anchor of anchors) {
         expect(html).toContain(anchor);
       }
+      expect(html).not.toContain('<button type="button">');
     }
   });
 

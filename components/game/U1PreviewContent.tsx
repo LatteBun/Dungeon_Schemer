@@ -63,7 +63,7 @@ function BoardPreview() {
               <h3>{notice.title}</h3>
             </div>
             <p>위험 ★{notice.riskLevel} · {notice.status}</p>
-            <button type="button" disabled={index !== 0}>
+            <button type="button" disabled>
               {index === 0 ? "계약하기 (프리뷰)" : "계약 불가 (프리뷰)"}
             </button>
           </article>

@@ -139,3 +139,211 @@
     padding: 0.75rem;
   }
 }
+
+.u1-preview__reference-frame {
+  background: linear-gradient(180deg, #0f0b08 0%, #171009 16rem, var(--color-shell-ink) 100%);
+}
+
+.u1-preview__eyebrow,
+.u1-reference-panel__eyebrow {
+  margin: 0;
+  color: var(--color-shell-gold);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.u1-preview__eyebrow {
+  margin: 0 0 0.5rem;
+}
+
+.u1-preview__screen-button {
+  border: 1px solid var(--color-edge);
+  border-radius: 0.25rem;
+  background: var(--color-panel);
+  color: var(--color-parchment);
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.u1-preview__screen-button:hover,
+.u1-preview__screen-button.is-active {
+  border-color: var(--color-shell-gold);
+  background: #3b2a14;
+  color: #fff3cc;
+}
+
+.u1-preview__screen-button.is-active {
+  box-shadow: inset 0 0 0 1px rgb(216 170 67 / 30%);
+}
+
+.u1-reference-panel {
+  border-color: color-mix(in srgb, var(--color-shell-metal) 56%, var(--color-edge));
+  border-radius: 0.25rem;
+  background: #21170f;
+  box-shadow: inset 0 1px 0 rgb(255 229 170 / 5%);
+}
+
+.u1-reference-panel__section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.u1-reference-intro,
+.u1-reference-contract,
+.u1-reference-scene,
+.u1-reference-note {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.u1-reference-notice-list,
+.u1-reference-party-list,
+.u1-reference-settlement-list,
+.u1-reference-path {
+  display: grid;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+}
+
+.u1-reference-notice,
+.u1-reference-party-list__item,
+.u1-reference-settlement-list li,
+.u1-reference-path__node {
+  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 38%, var(--color-edge));
+  background: rgb(15 11 8 / 38%);
+}
+
+.u1-reference-notice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  padding: 0.75rem;
+}
+
+.u1-reference-notice h3,
+.u1-reference-party-list__item strong,
+.u1-reference-settlement-list strong,
+.u1-reference-path__node strong,
+.u1-reference-choice-grid strong {
+  color: var(--color-parchment);
+}
+
+.u1-reference-notice p,
+.u1-reference-party-list__item p,
+.u1-reference-party-list__item span,
+.u1-reference-settlement-list p,
+.u1-reference-settlement-list span,
+.u1-reference-path__node p,
+.u1-reference-choice-grid span {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.u1-reference-notice button,
+.u1-reference-action,
+.u1-reference-choice-grid button {
+  border: 1px solid var(--color-shell-active);
+  border-radius: 0.25rem;
+  background: rgb(116 146 96 / 18%);
+  color: #dcebd1;
+  padding: 0.5rem 0.625rem;
+}
+
+.u1-reference-notice button:disabled,
+.u1-reference-action:disabled,
+.u1-reference-choice-grid button:disabled {
+  cursor: not-allowed;
+  opacity: 0.82;
+}
+
+.u1-reference-party-list {
+  list-style: none;
+}
+
+.u1-reference-party-list__item {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.625rem;
+}
+
+.u1-reference-party-list__item div,
+.u1-reference-settlement-list li > div,
+.u1-reference-path__node {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.u1-reference-path {
+  list-style: none;
+  counter-reset: path-node;
+}
+
+.u1-reference-path__node {
+  align-items: center;
+  padding: 0.625rem;
+}
+
+.u1-reference-path__node > span {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--color-shell-gold);
+  border-radius: 999px;
+  color: var(--color-shell-gold);
+}
+
+.u1-reference-path__node > div {
+  min-width: 0;
+}
+
+.u1-reference-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625rem;
+  margin-top: 0.75rem;
+}
+
+.u1-reference-choice-grid button {
+  display: grid;
+  min-width: 0;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.u1-reference-settlement-list {
+  list-style: none;
+}
+
+.u1-reference-settlement-list li {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.625rem;
+}
+
+.u1-reference-action {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 40rem) {
+  .u1-reference-notice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .u1-reference-choice-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
