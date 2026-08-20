@@ -399,7 +399,7 @@ git log --oneline --decorate main..HEAD
 
 Expected: `main`이 아닌 기능 브랜치이고, 작업 트리가 깨끗하며, spec·U1 route·U2 CTA·문서 커밋이 모두 보인다.
 
-- [ ] **Step 2: 기능 브랜치를 origin에 push한다.**
+- [x] **Step 2: 기능 브랜치를 origin에 push한다.**
 
 ```bash
 git push -u origin HEAD
@@ -407,7 +407,7 @@ git push -u origin HEAD
 
 Expected: 현재 기능 브랜치가 origin에 생성되고 원격 추적이 설정된다.
 
-- [ ] **Step 3: 한글 제목·본문으로 PR을 생성한다.**
+- [x] **Step 3: 한글 제목·본문으로 PR을 생성한다.**
 
 PR 제목:
 
@@ -433,6 +433,6 @@ PR 본문:
 - 브라우저: `/u2-test` CTA 클릭 → `/u1-test?screen=board` → 게시판 선택 상태·공고·계약 상세 확인
 ```
 
-- [ ] **Step 4: PR URL과 검증 결과를 사용자에게 전달한다.**
+- [x] **Step 4: PR URL과 검증 결과를 사용자에게 전달한다.**
 
 최종 응답에는 변경 파일의 핵심, 실행한 명령의 결과, 브라우저 흐름 결과, 생성된 PR URL, 현재 브랜치와 커밋을 짧게 기록한다.
