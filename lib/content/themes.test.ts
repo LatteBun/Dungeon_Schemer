@@ -22,6 +22,23 @@ describe("THEMES", () => {
       "spider",
     ]);
   });
+
+  it("각 테마는 위험도와 의미적으로 맞물린 생태 패키지 5개를 가진다", () => {
+    for (const theme of THEMES) {
+      expect(theme.ecologyProfiles).toHaveLength(5);
+      for (const profile of theme.ecologyProfiles) {
+        expect(profile.theme).toBe(theme.id);
+        expect(profile.activeRuleIds).toHaveLength(3);
+        expect(profile.activeMonsterIds.length).toBeGreaterThan(0);
+        const activeRules = profile.activeRuleIds.map((id) =>
+          theme.rules.find((rule) => rule.id === id),
+        );
+        expect(activeRules.every((rule) => rule !== undefined)).toBe(true);
+        const hasConditionalRule = activeRules.some((rule) => rule?.conditional);
+        expect(hasConditionalRule).toBe(profile.initialRiskLevel >= 4);
+      }
+    }
+  });
 });
 
 describe("selectThemeBoss", () => {

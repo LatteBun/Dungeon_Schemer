@@ -21,6 +21,7 @@ export type OfferId = Brand<string, "OfferId">;
 /** 생태 규칙 한 줄. 카드가 이 ID로 자기가 참조하는 규칙을 가리킨다. */
 export type RuleId = Brand<string, "RuleId">;
 export type MonsterId = Brand<string, "MonsterId">;
+export type EcologyProfileId = Brand<string, "EcologyProfileId">;
 
 /** 상황 묘사가 남기는 관찰 결과. 약한 연계와 강한 연계의 유일한 화폐다. */
 export type ClueId = Brand<string, "ClueId">;
