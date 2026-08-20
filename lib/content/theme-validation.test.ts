@@ -4,6 +4,7 @@ import { RuleError } from "@/lib/domain";
 import type {
   BossDef,
   BossId,
+  BossRuleId,
   EcologyProfile,
   EcologyProfileId,
   EcologyRule,
@@ -37,6 +38,7 @@ function boss(id: string, minRiskLevel: 1 | 2 | 3 | 4): BossDef {
     minRiskLevel,
     baseDamage: 10,
     maxHp: 100,
+    rules: [],
   };
 }
 
@@ -159,6 +161,41 @@ describe("validateThemes", () => {
       bosses: [{ ...bosses[0], name: "" }, ...bosses.slice(1)],
     });
     expect(() => validateThemes([theme])).toThrow(/보스 이름이 비어 있다/);
+  });
+
+  it("보스 특징이 비어 있어도 아직 작성하지 않은 테마는 통과한다", () => {
+    expect(() => validateThemes([validTheme()])).not.toThrow();
+  });
+
+  it("같은 보스 안에서 특징 ID가 중복이면 거부한다", () => {
+    const bosses = validTheme().bosses;
+    const theme = validTheme({
+      bosses: [
+        {
+          ...bosses[0],
+          rules: [
+            { id: "boss-rule" as BossRuleId, text: "특징" },
+            { id: "boss-rule" as BossRuleId, text: "다른 특징" },
+          ],
+        },
+        ...bosses.slice(1),
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("보스 특징 문구가 비어 있으면 거부한다", () => {
+    const bosses = validTheme().bosses;
+    const theme = validTheme({
+      bosses: [
+        {
+          ...bosses[0],
+          rules: [{ id: "boss-rule" as BossRuleId, text: "  " }],
+        },
+        ...bosses.slice(1),
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
   });
 
   it("생태 패키지가 테마마다 정확히 5개가 아니면 거부한다", () => {

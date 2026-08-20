@@ -127,6 +127,15 @@ function validateBosses(bosses: readonly BossDef[], theme: string): void {
       theme,
       id: boss.id,
     });
+    requireUniqueIds(boss.rules.map((rule) => rule.id), "bossRule", theme);
+    for (const rule of boss.rules) {
+      requireText(rule.text, `보스 특징 문구가 비어 있다: ${rule.id}`, {
+        contentType: "bossRule",
+        theme,
+        bossId: boss.id,
+        id: rule.id,
+      });
+    }
   }
 }
 

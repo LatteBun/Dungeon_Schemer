@@ -1,4 +1,4 @@
-import type { ChoiceId, ClueId, EventId, ItemId, RuleId } from "./ids";
+import type { BossId, ChoiceId, ClueId, EventId, ItemId, RuleId, BossRuleId } from "./ids";
 import type { AdviceOutcome, EcologyRelation } from "./info";
 import type { ThemeId } from "./dungeon";
 
@@ -65,8 +65,8 @@ export interface AdviceOption {
   /** "거미는 불을 싫어한다고 들었어!" — 고블린이 대는 근거 */
   line: string;
   outcome: AdviceOutcome;
-  /** relation이 unrelated면 없다. */
-  ruleId?: RuleId;
+  /** 생태 규칙 또는 보스 특징의 근거. 중립이면 없다. */
+  source?: AdviceSource;
   relation: EcologyRelation;
   effectTags: readonly EventEffectTag[];
   /** 지연형만 갖는다. 수용한 파티원의 보스 피해를 바꾼다. */
@@ -74,6 +74,10 @@ export interface AdviceOption {
   /** 수용됐을 때 보여줄 결과 문구. */
   resultText: string;
 }
+
+export type AdviceSource =
+  | { kind: "ecology"; ruleId: RuleId }
+  | { kind: "boss"; bossRuleId: BossRuleId };
 
 /** 단서를 보유했을 때 조언 한 슬롯을 강화판으로 바꾼다. */
 export interface AdviceUpgrade {
@@ -96,6 +100,8 @@ export interface SituationEvent {
   kind: EventKind;
   /** 생태 규칙을 참조하면 테마 전용이고, 공용이면 없다. */
   theme?: ThemeId;
+  /** 보스 정보 사건이면 대상 보스, 일반 사건이면 없다. */
+  targetBossId?: BossId;
   title: string;
   /** 관찰 가능한 사실을 담는다. 단서가 여기 실린다. */
   description: string;

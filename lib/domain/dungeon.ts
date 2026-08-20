@@ -1,5 +1,6 @@
 import type {
   BossId,
+  BossRuleId,
   DungeonId,
   EcologyProfileId,
   MonsterId,
@@ -90,6 +91,12 @@ export interface BossDef {
   baseDamage: number;
   /** 파티가 깎아야 하는 양. baseDamage와 함께 전투 길이를 정한다. */
   maxHp: number;
+  rules: readonly BossRule[];
+}
+
+export interface BossRule {
+  id: BossRuleId;
+  text: string;
 }
 
 /** 한 테마의 콘텐츠 묶음. 수량 계약은 F2의 검증기가 지킨다. */

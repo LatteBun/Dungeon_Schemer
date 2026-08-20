@@ -1,6 +1,7 @@
 export type {
   Brand,
   BossId,
+  BossRuleId,
   CardId,
   CharacterId,
   ChoiceId,
@@ -38,6 +39,7 @@ export {
 } from "./dungeon";
 export type {
   BossDef,
+  BossRule,
   CampaignDungeon,
   DungeonNode,
   DungeonStatus,
@@ -116,6 +118,7 @@ export { EVENT_EFFECT_TAGS, EVENT_KINDS, ITEM_KINDS } from "./content";
 export type {
   AdviceOption,
   AdviceUpgrade,
+  AdviceSource,
   EventEffectTag,
   EventKind,
   ItemDef,
