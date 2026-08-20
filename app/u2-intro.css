@@ -1,0 +1,366 @@
+/* U2 intro screen — intro alone is intentionally full width. */
+.u2-intro-shell {
+  height: 100vh;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background: #080604;
+  color: var(--color-parchment);
+}
+
+.u2-intro-shell > .game-shell__status-bar {
+  position: relative;
+  z-index: 10;
+  flex: 0 0 auto;
+  padding: 0.62rem clamp(0.8rem, 2vw, 1.5rem);
+  border-top: 1px solid rgb(112 79 34 / 65%);
+  border-bottom: 1px solid #6b502a;
+  background: linear-gradient(180deg, rgb(5 5 4 / 99%), rgb(9 7 5 / 99%));
+  box-shadow: 0 2px 12px rgb(0 0 0 / 72%);
+}
+
+.u2-intro-shell .game-shell__status-list {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  gap: clamp(0.45rem, 1.1vw, 0.8rem);
+  margin: 0;
+}
+
+.u2-intro-shell .game-shell__status-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: clamp(8.7rem, 14vw, 11.3rem);
+  min-height: 2.85rem;
+  padding: 0.4rem clamp(0.58rem, 1vw, 0.8rem);
+  border: 1px solid rgb(122 91 49 / 42%);
+  border-radius: 0.36rem;
+  background: linear-gradient(180deg, rgb(22 17 12 / 93%), rgb(13 10 7 / 95%));
+  box-shadow: inset 0 1px 0 rgb(244 214 145 / 6%), 0 1px 2px rgb(0 0 0 / 55%);
+}
+
+.u2-intro-shell .game-shell__status-icon {
+  width: 1.45rem;
+  height: 1.45rem;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 70%));
+}
+
+.u2-intro-shell .game-shell__status-copy {
+  display: flex;
+  align-items: baseline;
+  gap: 0.36rem;
+  min-width: 0;
+}
+
+.u2-intro-shell .game-shell__status-copy dt {
+  white-space: nowrap;
+  color: #a99678;
+  font-size: clamp(0.64rem, 0.86vw, 0.77rem);
+  font-weight: 600;
+}
+
+.u2-intro-shell .game-shell__status-copy dd {
+  margin: 0;
+  white-space: nowrap;
+  color: #ead5aa;
+  font-size: clamp(0.77rem, 1vw, 0.92rem);
+  font-weight: 700;
+}
+
+.u2-intro-stage {
+  position: relative;
+  isolation: isolate;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgb(111 80 37 / 52%);
+  background: #0c0906;
+}
+
+/* The approved background is locked to this single asset. Do not regenerate per iteration. */
+.u2-intro-stage::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -3;
+  background-image: url("/assets/u2/intro-background-full.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center 46%;
+  transform: scaleX(-1) scale(1.012);
+}
+
+.u2-intro-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(4 3 2 / 76%) 0%, rgb(5 4 3 / 52%) 34%, rgb(5 4 3 / 12%) 60%, rgb(4 3 2 / 8%) 78%, rgb(4 3 2 / 28%) 100%),
+    linear-gradient(180deg, rgb(0 0 0 / 9%) 0%, transparent 55%, rgb(0 0 0 / 42%) 100%);
+  box-shadow: inset 0 0 80px rgb(0 0 0 / 42%);
+}
+
+.u2-intro {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: clamp(0.75rem, 1.6vh, 1.1rem);
+  width: min(100%, 80rem);
+  height: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vh, 2.1rem) clamp(1.2rem, 3vw, 2.5rem) clamp(1rem, 2.2vh, 1.5rem);
+}
+
+.u2-intro__copy {
+  width: min(53%, 39rem);
+  margin-left: clamp(0.5rem, 4vw, 3.2rem);
+  padding: clamp(0.5rem, 1vw, 0.75rem) 0;
+  text-shadow: 0 2px 4px #000, 0 0 16px rgb(0 0 0 / 85%);
+}
+
+.u2-intro__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0.45rem;
+  color: #d5aa58;
+  font-size: clamp(0.75rem, 1vw, 0.92rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.u2-intro__eyebrow::after {
+  content: "";
+  width: min(12rem, 24vw);
+  height: 1px;
+  background: linear-gradient(90deg, #9d7736, transparent);
+}
+
+.u2-intro__copy h1 {
+  margin: 0;
+  color: #f0dfbb;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 3.3vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+}
+
+.u2-intro__lead {
+  max-width: 38rem;
+  margin: 0.9rem 0 0;
+  color: #d5c4a6;
+  font-size: clamp(0.78rem, 1.12vw, 0.96rem);
+  line-height: 1.68;
+}
+
+.u2-intro__cards {
+  align-self: end;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.7rem, 1.25vw, 1rem);
+  width: min(65vw, 45rem);
+  margin: 0 auto;
+  transform: translateY(0.15rem);
+}
+
+.u2-intro__card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: clamp(13.5rem, 28vh, 16.5rem);
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(0.9rem, 1.6vw, 1.25rem) clamp(0.78rem, 1.25vw, 1rem) 1rem;
+  border: 1px solid #856c43;
+  border-radius: 0.18rem;
+  background:
+    radial-gradient(circle at 28% 18%, rgb(255 245 210 / 48%), transparent 12rem),
+    linear-gradient(160deg, #e8d8ad 0%, #d8c18d 52%, #cbb17b 100%);
+  color: #2a2014;
+  text-align: center;
+  box-shadow:
+    0 6px 16px rgb(0 0 0 / 60%),
+    inset 0 0 0 3px rgb(82 57 28 / 12%),
+    inset 0 0 28px rgb(102 72 37 / 14%);
+}
+
+.u2-intro__card::before,
+.u2-intro__card::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.u2-intro__card::before {
+  inset: 5px;
+  border: 1px solid rgb(86 58 26 / 18%);
+}
+
+.u2-intro__card::after {
+  inset: 0.55rem;
+  background:
+    linear-gradient(135deg, rgb(99 66 31 / 22%) 0 1px, transparent 1px) top left / 1rem 1rem no-repeat,
+    linear-gradient(225deg, rgb(99 66 31 / 22%) 0 1px, transparent 1px) top right / 1rem 1rem no-repeat,
+    linear-gradient(45deg, rgb(99 66 31 / 22%) 0 1px, transparent 1px) bottom left / 1rem 1rem no-repeat,
+    linear-gradient(315deg, rgb(99 66 31 / 22%) 0 1px, transparent 1px) bottom right / 1rem 1rem no-repeat;
+}
+
+.u2-intro__card-icon {
+  display: grid;
+  width: clamp(4rem, 6vw, 5.25rem);
+  height: clamp(4rem, 6vw, 5.25rem);
+  place-items: center;
+  margin-bottom: 0.5rem;
+  border: 1px solid #9d7b36;
+  border-radius: 999px;
+  background: radial-gradient(circle, #3c4b21 0%, #263518 70%, #172111 100%);
+  box-shadow: inset 0 0 0 3px #c4a65c, 0 2px 5px rgb(0 0 0 / 34%);
+}
+
+.u2-intro__card-icon img {
+  width: 66%;
+  height: 66%;
+}
+
+.u2-intro__card h2 {
+  margin: 0;
+  color: #21190f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.05rem, 1.45vw, 1.35rem);
+  font-weight: 800;
+}
+
+.u2-intro__card-rule {
+  width: 72%;
+  height: 1px;
+  margin: 0.55rem 0 0.7rem;
+  background: linear-gradient(90deg, transparent, #7f6539 18%, #7f6539 82%, transparent);
+}
+
+.u2-intro__card p {
+  margin: 0;
+  color: #55452f;
+  font-size: clamp(0.7rem, 0.95vw, 0.84rem);
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.u2-intro__cta {
+  justify-self: center;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.9rem;
+  align-items: center;
+  width: min(47vw, 32rem);
+  min-height: clamp(3.8rem, 8vh, 4.7rem);
+  padding: 0.55rem clamp(1rem, 2vw, 1.5rem);
+  border: 1px solid #b99b50;
+  border-radius: 0.28rem;
+  background:
+    linear-gradient(180deg, rgb(68 99 39 / 99%), rgb(34 65 28 / 99%));
+  color: #f0e0ba;
+  box-shadow:
+    0 7px 18px rgb(0 0 0 / 64%),
+    inset 0 0 0 3px #24451f,
+    inset 0 0 0 5px rgb(204 177 96 / 48%),
+    inset 0 1px 0 rgb(255 241 176 / 24%);
+  cursor: pointer;
+  text-align: center;
+  text-shadow: 0 2px 2px rgb(0 0 0 / 72%);
+  transition: transform 120ms ease, filter 120ms ease, border-color 120ms ease;
+}
+
+.u2-intro__cta img {
+  width: clamp(2rem, 3vw, 2.6rem);
+  height: clamp(2rem, 3vw, 2.6rem);
+  filter: drop-shadow(0 2px 1px rgb(0 0 0 / 55%));
+}
+
+.u2-intro__cta strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.18rem, 2vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.u2-intro__cta-arrow {
+  color: #d5b85f;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+}
+
+.u2-intro__cta:hover {
+  transform: translateY(-1px);
+  border-color: #dfc56d;
+  filter: brightness(1.08);
+}
+
+.u2-intro__cta:focus-visible {
+  outline: 3px solid #f0d477;
+  outline-offset: 4px;
+}
+
+.u2-preview__feedback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 68rem) {
+  .u2-intro-shell > .game-shell__status-bar {
+    padding-inline: 0.55rem;
+  }
+
+  .u2-intro-shell .game-shell__status-list {
+    gap: 0.32rem;
+  }
+
+  .u2-intro-shell .game-shell__status-chip {
+    min-width: 0;
+    flex: 1 1 0;
+    gap: 0.3rem;
+    padding-inline: 0.42rem;
+  }
+
+  .u2-intro-shell .game-shell__status-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .u2-intro-shell .game-shell__status-copy {
+    gap: 0.2rem;
+  }
+
+  .u2-intro__copy {
+    width: 58%;
+    margin-left: 0.35rem;
+  }
+
+  .u2-intro__cards {
+    width: min(72vw, 42rem);
+  }
+
+  .u2-intro__card {
+    min-height: 13rem;
+    padding-top: 0.8rem;
+  }
+
+  .u2-intro__cta {
+    width: min(50vw, 29rem);
+    min-height: 3.6rem;
+  }
+}
