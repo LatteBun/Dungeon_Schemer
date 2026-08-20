@@ -36,7 +36,7 @@
 | `components/game/u1-preview-data.test.ts` | 프리뷰 화면 수·중복·필수 표시값 계약 |
 | `components/game/TopStatusBar.tsx` | 등급·명성·골드·승급·남은 던전 표시 |
 | `components/game/GameShell.tsx` | 상태 바, 3:1 grid, MainContent·RightPanel landmark |
-| `components/game/GameShell.test.tsx` | 정적 HTML로 셸 구조와 상태 문구 검증 |
+| `components/game/GameShell.test.ts` | 정적 HTML로 셸 구조와 상태 문구 검증 |
 | `components/game/U1Preview.tsx` | 화면 선택 버튼과 셸 슬롯 연결 |
 | `app/u1-test/page.tsx` | `/u1-test` 프리뷰 진입점 |
 | `app/globals.css` | 고정 3:1 grid와 overflow 방지 |
@@ -202,7 +202,7 @@ git commit -m "테스트: U1 프리뷰 화면 계약을 정의한다" -m "인트
 
 - Create: `components/game/TopStatusBar.tsx`
 - Create: `components/game/GameShell.tsx`
-- Create: `components/game/GameShell.test.tsx`
+- Create: `components/game/GameShell.test.ts`
 
 **Interfaces:**
 
@@ -267,7 +267,7 @@ describe("GameShell", () => {
 
 - [ ] **Step 2: 테스트가 실패하는지 확인한다.**
 
-Run: `pnpm test components/game/GameShell.test.tsx`
+Run: `pnpm test components/game/GameShell.test.ts`
 
 Expected: FAIL — `./GameShell` 모듈이 아직 없다.
 
@@ -301,7 +301,7 @@ Expected: FAIL — `./GameShell` 모듈이 아직 없다.
 
 - [ ] **Step 5: 정적 렌더 테스트와 타입 검사를 통과시킨다.**
 
-Run: `pnpm test components/game/GameShell.test.tsx && pnpm typecheck`
+Run: `pnpm test components/game/GameShell.test.ts && pnpm typecheck`
 
 Expected: PASS.
 
@@ -561,4 +561,3 @@ Expected: 의도한 U1 파일과 문서만 변경되고, 3:1을 벗어나는 col
 - [ ] **Step 4: 사용자에게 결과를 인계한다.**
 
 변경 파일, 자동 검증 결과, 실제 브라우저 viewport별 결과, work assignment 갱신 위치와 U2~U6 재사용 API를 요약한다. 확인하지 않은 성공은 주장하지 않는다.
-
