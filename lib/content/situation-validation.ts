@@ -1,5 +1,5 @@
 import { ADVICE_OUTCOMES, RuleError } from "@/lib/domain";
-import type { AdviceOption, SituationEvent } from "@/lib/domain";
+import type { AdviceOption, AdviceOutcome, EcologyRelation, SituationEvent } from "@/lib/domain";
 
 /** 사건 하나가 담는 조언 수. 도움·방해·중립을 한 개씩이다. */
 const ADVICE_PER_EVENT = 3;
@@ -23,6 +23,64 @@ function validateAdviceText(option: AdviceOption, eventId: string): void {
   requireText(option.resultText, `조언의 결과 문구가 비어 있다: ${option.id}`, details);
 }
 
+/** 테마 전용 사건에서 유형이 요구하는 관계. */
+const REQUIRED_RELATION: Readonly<Record<AdviceOutcome, EcologyRelation>> = {
+  help: "consistent",
+  harm: "contradictory",
+  neutral: "unrelated",
+};
+
+function validateThemedAdvice(option: AdviceOption, eventId: string): void {
+  const details = { contentType: "advice", eventId, adviceId: option.id };
+  const required = REQUIRED_RELATION[option.outcome];
+
+  if (option.relation !== required) {
+    invalid(`조언 유형과 규칙 관계가 맞지 않는다: ${option.id}`, {
+      ...details,
+      outcome: option.outcome,
+      expected: required,
+      actual: option.relation,
+    });
+  }
+
+  // 정합·모순은 무엇에 대해 정합인지 가리켜야 한다. 무관은 가리킬 것이 없다.
+  const needsRule = option.relation !== "unrelated";
+  if (needsRule && option.ruleId === undefined) {
+    invalid(`참조 규칙이 없다: ${option.id}`, { ...details, relation: option.relation });
+  }
+  if (!needsRule && option.ruleId !== undefined) {
+    invalid(`무관한 조언이 참조 규칙을 갖는다: ${option.id}`, {
+      ...details,
+      ruleId: option.ruleId,
+    });
+  }
+}
+
+function validateSharedAdvice(option: AdviceOption, eventId: string): void {
+  const details = { contentType: "advice", eventId, adviceId: option.id };
+
+  // 공용 사건은 생태 규칙을 참조하지 않는다. 그것이 공용의 정의다.
+  if (option.relation !== "unrelated") {
+    invalid(`공용 조언의 관계가 무관이 아니다: ${option.id}`, {
+      ...details,
+      actual: option.relation,
+    });
+  }
+  if (option.ruleId !== undefined) {
+    invalid(`공용 조언이 참조 규칙을 갖는다: ${option.id}`, {
+      ...details,
+      ruleId: option.ruleId,
+    });
+  }
+  // 보스는 테마에 속한다. 모든 테마에 나오는 사건이 특정 보스의 피해를 바꿀 수 없다.
+  if (option.bossDamageModifier !== undefined) {
+    invalid(`공용 조언이 보스 피해 보정을 갖는다: ${option.id}`, {
+      ...details,
+      bossDamageModifier: option.bossDamageModifier,
+    });
+  }
+}
+
 function validateAdviceSet(event: SituationEvent): void {
   const details = { contentType: "situationEvent", eventId: event.id };
 
@@ -44,6 +102,11 @@ function validateAdviceSet(event: SituationEvent): void {
     }
     seenIds.add(option.id);
     validateAdviceText(option, event.id);
+    if (event.theme === undefined) {
+      validateSharedAdvice(option, event.id);
+    } else {
+      validateThemedAdvice(option, event.id);
+    }
   }
 
   // 유형이 정확히 한 개씩인지. 개수만 세면 help 2개 + harm 1개도 3개라 통과한다.

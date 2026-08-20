@@ -6,7 +6,9 @@ import type {
   AdviceOutcome,
   ChoiceId,
   EventId,
+  RuleId,
   SituationEvent,
+  ThemeId,
 } from "@/lib/domain";
 
 /** 계약을 만족하는 공용 조언 하나. 테스트가 필요한 필드만 덮어쓴다. */
@@ -102,5 +104,121 @@ describe("validateSituationEvent 구조", () => {
       expect(error).toBeInstanceOf(RuleError);
       expect((error as RuleError).code).toBe("INVALID_GENERATION");
     }
+  });
+});
+
+/** 계약을 만족하는 테마 전용 조언. */
+function themedAdvice(
+  id: string,
+  outcome: AdviceOutcome,
+  overrides: Partial<AdviceOption> = {},
+): AdviceOption {
+  const byOutcome = {
+    help: { relation: "consistent" as const, ruleId: "spider-fire" as RuleId },
+    harm: { relation: "contradictory" as const, ruleId: "spider-fire" as RuleId },
+    neutral: { relation: "unrelated" as const, ruleId: undefined },
+  };
+  return advice(id, outcome, { ...byOutcome[outcome], ...overrides });
+}
+
+function themedEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
+  return {
+    id: "spider-webbed-hunter" as EventId,
+    kind: "monster",
+    theme: "spider" as ThemeId,
+    title: "실에 걸린 사냥꾼",
+    description: "바닥과 벽에는 오래된 거미줄이 잔뜩 붙어 있다.",
+    advice: [
+      themedAdvice("a", "help"),
+      themedAdvice("b", "harm"),
+      themedAdvice("c", "neutral"),
+    ],
+    defaultResultText: "파티가 알아서 거미를 밀어낸다.",
+    ...overrides,
+  };
+}
+
+describe("validateSituationEvent 테마 전용", () => {
+  it("계약을 만족하는 테마 사건은 통과한다", () => {
+    expect(() => validateSituationEvent(themedEvent())).not.toThrow();
+  });
+
+  it("도움이 정합이 아니면 생성 오류다", () => {
+    const event = themedEvent({
+      advice: [
+        themedAdvice("a", "help", { relation: "contradictory" }),
+        themedAdvice("b", "harm"),
+        themedAdvice("c", "neutral"),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("방해가 모순이 아니면 생성 오류다", () => {
+    const event = themedEvent({
+      advice: [
+        themedAdvice("a", "help"),
+        themedAdvice("b", "harm", { relation: "consistent" }),
+        themedAdvice("c", "neutral"),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("정합·모순인데 참조 규칙이 없으면 생성 오류다", () => {
+    const event = themedEvent({
+      advice: [
+        themedAdvice("a", "help", { ruleId: undefined }),
+        themedAdvice("b", "harm"),
+        themedAdvice("c", "neutral"),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("무관인데 참조 규칙이 있으면 생성 오류다", () => {
+    const event = themedEvent({
+      advice: [
+        themedAdvice("a", "help"),
+        themedAdvice("b", "harm"),
+        themedAdvice("c", "neutral", { ruleId: "spider-fire" as RuleId }),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+});
+
+describe("validateSituationEvent 공용", () => {
+  it("공용 조언이 무관이 아니면 생성 오류다", () => {
+    const event = sharedEvent({
+      advice: [
+        advice("a", "help", { relation: "consistent", ruleId: "spider-fire" as RuleId }),
+        advice("b", "harm"),
+        advice("c", "neutral"),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("공용 조언에 참조 규칙이 있으면 생성 오류다", () => {
+    const event = sharedEvent({
+      advice: [
+        advice("a", "help", { ruleId: "spider-fire" as RuleId }),
+        advice("b", "harm"),
+        advice("c", "neutral"),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("공용 조언에 보스 피해 보정이 있으면 생성 오류다", () => {
+    const event = sharedEvent({
+      advice: [
+        advice("a", "help", { bossDamageModifier: -0.2 }),
+        advice("b", "harm"),
+        advice("c", "neutral"),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
   });
 });
