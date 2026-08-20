@@ -192,7 +192,7 @@ describe("validateSituationEvent 공용", () => {
   it("공용 조언이 무관이 아니면 생성 오류다", () => {
     const event = sharedEvent({
       advice: [
-        advice("a", "help", { relation: "consistent", ruleId: "spider-fire" as RuleId }),
+        advice("a", "help", { relation: "consistent" }),
         advice("b", "harm"),
         advice("c", "neutral"),
       ],
