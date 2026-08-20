@@ -394,7 +394,7 @@ const SPECIAL_EVENTS: readonly SituationEvent[] = [
     "shared-special-scrawl",
     "special",
     "벽의 낙서",
-    "벽에 누군가 급하게 새긴 글씨가 있다. `셋을 두고 혼자 나오면 몫이 는다.` 글씨 아래에는 마른 핏자국이 번져 있다.",
+    "벽에 누군가 급하게 새긴 글씨가 있다. `셋을 두고 혼자 나오면 몫이 는다.` 글씨 아래에는 마른 핏자국이 번져 있고, 성직자가 바로 뒤에서 같은 벽을 따라 걸어오고 있다.",
     [
       advice(
         "shared-special-scrawl-a",
@@ -442,7 +442,7 @@ const SPECIAL_EVENTS: readonly SituationEvent[] = [
         "harm",
         "짐을 챙겨 나눠 가지라고 하세요",
         "임자 없는 물건인데 챙겨야지!",
-        "짐을 들자 매어둔 줄이 딸려 올라간다. 안쪽에서 무언가가 이쪽으로 오는 소리가 난다.",
+        "짐을 나눠 지고 얼마 가지 않아 뒤에서 발소리가 따라붙는다. 불이 아직 따뜻했던 것은 주인들이 멀리 가지 않았다는 뜻이었다.",
         ["sabotage"],
       ),
       advice(
