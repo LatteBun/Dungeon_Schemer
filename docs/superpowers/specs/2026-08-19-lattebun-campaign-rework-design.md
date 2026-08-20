@@ -171,8 +171,8 @@
 ```text
 GameShell
 ├─ TopStatusBar   길잡이 등급 · 명성 · 골드 · 승급 가능 여부 · 남은 던전
-├─ MainContent    좌측 약 75%
-└─ RightPanel     우측 약 25%
+├─ MainContent    좌측 약 60%
+└─ RightPanel     우측 약 40%
 ```
 
 기준 해상도는 1280×720, 최소 지원은 1024×640이다. 그 아래에서는 세로 스크롤을 허용하되 가로 스크롤은 만들지 않는다.
