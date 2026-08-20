@@ -19,7 +19,7 @@ interface StatusItemProps {
 
 function StatusItem({ label, value }: StatusItemProps) {
   return (
-    <div className="game-shell__status-item">
+    <div className="game-shell__status-item game-shell__status-chip">
       <dt className="text-xs text-muted">{label}</dt>
       <dd className="text-sm font-semibold tabular-nums text-parchment">{value}</dd>
     </div>

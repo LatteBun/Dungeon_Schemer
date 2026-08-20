@@ -31,6 +31,10 @@ describe("GameShell", () => {
     expect(html).toContain('data-testid="game-shell-main"');
     expect(html).toContain('data-testid="game-shell-right-panel"');
     expect(html).toContain('aria-label="계약 상세"');
+    expect(html).toContain('class="game-shell game-shell--reference"');
+    expect(html).toContain('class="game-shell__main game-shell__surface"');
+    expect(html).toContain('class="game-shell__right-panel game-shell__surface"');
+    expect(html).toContain("game-shell__status-chip");
     expect(html).toContain("게시판");
     expect(html).toContain("공고 본문");
     expect(html).toContain("계약 상세");
@@ -48,6 +52,7 @@ describe("GameShell", () => {
     expect(html).toContain('data-testid="game-shell-right-panel"');
     expect(html).toContain('aria-hidden="true"');
     expect(html).toContain('class="game-shell__body"');
+    expect(html).toContain('class="game-shell__right-panel game-shell__surface"');
   });
 
   it("승급 가능 여부를 색상 외 문구로 표시한다", () => {

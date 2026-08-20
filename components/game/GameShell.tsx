@@ -20,11 +20,11 @@ export function GameShell({
   const hasRightPanel = rightPanel !== undefined && rightPanel !== null;
 
   return (
-    <div className="game-shell" data-testid="game-shell">
+    <div className="game-shell game-shell--reference" data-testid="game-shell">
       <TopStatusBar status={status} />
       <main className="game-shell__body" data-testid="game-shell-body">
         <section
-          className="game-shell__main"
+          className="game-shell__main game-shell__surface"
           data-testid="game-shell-main"
           aria-labelledby="game-shell-screen-title"
         >
@@ -32,7 +32,7 @@ export function GameShell({
           {main}
         </section>
         <aside
-          className="game-shell__right-panel"
+          className="game-shell__right-panel game-shell__surface"
           data-testid="game-shell-right-panel"
           aria-label={
             hasRightPanel ? rightPanelLabel ?? "우측 정보 패널" : undefined
