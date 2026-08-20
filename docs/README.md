@@ -45,7 +45,7 @@
 
 - [CHARACTERS_AND_TRUST.md](systems/CHARACTERS_AND_TRUST.md): 캐릭터 상태, 직업, 성격, 신뢰 판정과 신뢰 0 누적
 - [CHARACTER_POOL_AND_WORLDTURN.md](systems/CHARACTER_POOL_AND_WORLDTURN.md): 풀 30명, 임시 파티 편성, 월드턴과 중상
-- [INFORMATION_AND_DECEPTION.md](systems/INFORMATION_AND_DECEPTION.md): 생태 규칙으로 판정하는 진실·거짓·중립 카드와 사후 검증
+- [INFORMATION_AND_DECEPTION.md](systems/INFORMATION_AND_DECEPTION.md): 생태 규칙과 현장 단서로 판단하는 도움·방해·중립 조언과 사후 검증
 - [DUNGEON_THEMES_AND_ECOLOGY.md](systems/DUNGEON_THEMES_AND_ECOLOGY.md): 테마 3종, 생태 규칙과 활성 규칙, 몬스터·보스 계약
 - [DUNGEON_EVENTS_AND_BOSSES.md](systems/DUNGEON_EVENTS_AND_BOSSES.md): 위험도별 지도, 진입 한계, 사건 행동, 자동 보스전과 재도전
 - [PROGRESSION_AND_ENDINGS.md](systems/PROGRESSION_AND_ENDINGS.md): 위험도별 보상, 명성·골드 승급, 엔딩 5종과 판정 순서
