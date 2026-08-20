@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { validateThemes } from "@/lib/content/theme-validation";
+import { RuleError } from "@/lib/domain";
 import type {
   BossDef,
   BossId,
+  EcologyProfile,
+  EcologyProfileId,
   EcologyRule,
   MonsterDef,
   MonsterId,
@@ -30,6 +33,31 @@ function boss(id: string, minRiskLevel: 1 | 2 | 3 | 4): BossDef {
   };
 }
 
+function profile(id: string, initialRiskLevel: 1 | 2 | 3 | 4 | 5): EcologyProfile {
+  const conditional = initialRiskLevel >= 4;
+  return {
+    id: id as EcologyProfileId,
+    theme: "spider",
+    initialRiskLevel,
+    activeRuleIds: [
+      (conditional ? "r1" : "r2") as RuleId,
+      "r3" as RuleId,
+      (conditional ? "r4" : "r5") as RuleId,
+    ],
+    activeMonsterIds: ["m1" as MonsterId],
+  };
+}
+
+function expectInvalidGeneration(run: () => void): void {
+  try {
+    run();
+    throw new Error("INVALID_GENERATION이 발생하지 않았다");
+  } catch (error) {
+    expect(error).toBeInstanceOf(RuleError);
+    expect((error as RuleError).code).toBe("INVALID_GENERATION");
+  }
+}
+
 /** 계약을 만족하는 최소 fixture. 개별 위반 테스트가 이 값을 부분적으로 망가뜨린다. */
 function validTheme(overrides: Partial<ThemeContent> = {}): ThemeContent {
   return {
@@ -51,6 +79,13 @@ function validTheme(overrides: Partial<ThemeContent> = {}): ThemeContent {
       monster("m5"),
     ],
     bosses: [boss("b1", 1), boss("b2", 2), boss("b3", 3), boss("b4", 4)],
+    ecologyProfiles: [
+      profile("p1", 1),
+      profile("p2", 2),
+      profile("p3", 3),
+      profile("p4", 4),
+      profile("p5", 5),
+    ],
     ...overrides,
   };
 }
@@ -109,5 +144,82 @@ describe("validateThemes", () => {
       bosses: [{ ...bosses[0], name: "" }, ...bosses.slice(1)],
     });
     expect(() => validateThemes([theme])).toThrow(/보스 이름이 비어 있다/);
+  });
+
+  it("생태 패키지가 테마마다 정확히 5개가 아니면 거부한다", () => {
+    const theme = validTheme({ ecologyProfiles: validTheme().ecologyProfiles.slice(0, 4) });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("생태 패키지 ID가 중복이면 거부한다", () => {
+    const profiles = validTheme().ecologyProfiles;
+    const theme = validTheme({ ecologyProfiles: [profiles[0], profiles[0], ...profiles.slice(2)] });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("생태 패키지의 규칙이 정확히 3개가 아니거나 테마 밖이면 거부한다", () => {
+    const profiles = validTheme().ecologyProfiles;
+    const theme = validTheme({
+      ecologyProfiles: [
+        { ...profiles[0], activeRuleIds: ["r2" as RuleId, "r3" as RuleId] },
+        ...profiles.slice(1),
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+
+    const foreignRuleTheme = validTheme({
+      ecologyProfiles: [
+        {
+          ...profiles[0],
+          activeRuleIds: ["r2" as RuleId, "r3" as RuleId, "outside" as RuleId],
+        },
+        ...profiles.slice(1),
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([foreignRuleTheme]));
+  });
+
+  it("생태 패키지의 잡몹 목록이 비었거나 테마 밖이면 거부한다", () => {
+    const profiles = validTheme().ecologyProfiles;
+    const emptyMonsterTheme = validTheme({
+      ecologyProfiles: [{ ...profiles[0], activeMonsterIds: [] }, ...profiles.slice(1)],
+    });
+    expectInvalidGeneration(() => validateThemes([emptyMonsterTheme]));
+
+    const foreignMonsterTheme = validTheme({
+      ecologyProfiles: [
+        { ...profiles[0], activeMonsterIds: ["outside" as MonsterId] },
+        ...profiles.slice(1),
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([foreignMonsterTheme]));
+  });
+
+  it("저위험도 패키지의 조건부 규칙은 거부한다", () => {
+    const profiles = validTheme().ecologyProfiles;
+    const theme = validTheme({
+      ecologyProfiles: [
+        { ...profiles[1], activeRuleIds: ["r1" as RuleId, "r2" as RuleId, "r3" as RuleId] },
+        profiles[0],
+        profiles[2],
+        profiles[3],
+        profiles[4],
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("고위험도 패키지에 조건부 규칙이 없으면 거부한다", () => {
+    const profiles = validTheme().ecologyProfiles;
+    const theme = validTheme({
+      ecologyProfiles: [
+        profiles[0],
+        profiles[1],
+        profiles[2],
+        { ...profiles[3], activeRuleIds: ["r2" as RuleId, "r3" as RuleId, "r5" as RuleId] },
+        profiles[4],
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
   });
 });
