@@ -22,3 +22,4 @@ export type OfferId = Brand<string, "OfferId">;
 export type RuleId = Brand<string, "RuleId">;
 export type MonsterId = Brand<string, "MonsterId">;
 export type EcologyProfileId = Brand<string, "EcologyProfileId">;
+export type PublicEnvironmentTagId = Brand<string, "PublicEnvironmentTagId">;

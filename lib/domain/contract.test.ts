@@ -23,7 +23,16 @@ import {
   THEME_IDS,
   canDeploy,
 } from "@/lib/domain";
-import type { Character, CharacterId, ClassId } from "@/lib/domain";
+import type {
+  BoardOffer,
+  Character,
+  CharacterId,
+  ClassId,
+  DungeonId,
+  EnvironmentTagDefinition,
+  OfferId,
+  PublicEnvironmentTagId,
+} from "@/lib/domain";
 
 function character(overrides: Partial<Character> = {}): Character {
   return {
@@ -108,5 +117,28 @@ describe("출전 가능 판정", () => {
   it("신뢰 1은 출전할 수 있다", () => {
     // 신뢰 0만 후보에서 빠진다. 낮은 신뢰는 위험할 뿐 자격이 아니다.
     expect(canDeploy(character({ trust: 1 }))).toBe(true);
+  });
+});
+
+describe("공개 환경 특성 계약", () => {
+  it("환경 특성 정의와 공고 공개값이 public barrel에서 표현된다", () => {
+    const tag: EnvironmentTagDefinition = {
+      id: "spider-dark-ambush" as PublicEnvironmentTagId,
+      label: "어둠 잠복",
+      evidenceMonsterTraits: ["어둠 속에서만 활동"],
+    };
+    const offer = {
+      id: "offer-0-dungeon-spider-01" as OfferId,
+      dungeonId: "dungeon-spider-01" as DungeonId,
+      riskLevel: 1,
+      party: { memberIds: [] },
+      lockReason: null,
+      publicEnvironmentTag: { id: tag.id, label: tag.label },
+    } satisfies BoardOffer;
+
+    expect(offer.publicEnvironmentTag).toEqual({
+      id: "spider-dark-ambush",
+      label: "어둠 잠복",
+    });
   });
 });

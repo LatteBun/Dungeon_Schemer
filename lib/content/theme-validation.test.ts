@@ -7,8 +7,10 @@ import type {
   EcologyProfile,
   EcologyProfileId,
   EcologyRule,
+  EnvironmentTagDefinition,
   MonsterDef,
   MonsterId,
+  PublicEnvironmentTagId,
   RuleId,
   ThemeContent,
 } from "@/lib/domain";
@@ -18,7 +20,12 @@ function rule(id: string, conditional = false): EcologyRule {
 }
 
 function monster(id: string): MonsterDef {
-  return { id: id as MonsterId, theme: "spider", name: `몬스터 ${id}`, traits: [] };
+  return {
+    id: id as MonsterId,
+    theme: "spider",
+    name: `몬스터 ${id}`,
+    traits: ["특성"],
+  };
 }
 
 function boss(id: string, minRiskLevel: 1 | 2 | 3 | 4): BossDef {
@@ -45,6 +52,7 @@ function profile(id: string, initialRiskLevel: 1 | 2 | 3 | 4 | 5): EcologyProfil
       (conditional ? "r4" : "r5") as RuleId,
     ],
     activeMonsterIds: ["m1" as MonsterId],
+    publicEnvironmentTagId: `tag-${(Number(id.slice(1)) % 3) + 1}` as PublicEnvironmentTagId,
   };
 }
 
@@ -78,6 +86,13 @@ function validTheme(overrides: Partial<ThemeContent> = {}): ThemeContent {
       monster("m4"),
       monster("m5"),
     ],
+    publicEnvironmentTags: [1, 2, 3].map(
+      (index): EnvironmentTagDefinition => ({
+        id: `tag-${index}` as PublicEnvironmentTagId,
+        label: `환경 ${index}`,
+        evidenceMonsterTraits: ["특성"],
+      }),
+    ),
     bosses: [boss("b1", 1), boss("b2", 2), boss("b3", 3), boss("b4", 4)],
     ecologyProfiles: [
       profile("p1", 1),
