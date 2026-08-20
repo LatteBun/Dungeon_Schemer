@@ -13,5 +13,6 @@ describe("U2Preview", () => {
     expect(html).toContain("30 / B 60");
     expect(html).toContain("남은 던전");
     expect(html).toContain("15");
+    expect(html).toContain("href=\"/u1-test?screen=board\"");
   });
 });

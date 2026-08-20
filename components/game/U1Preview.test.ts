@@ -20,4 +20,14 @@ describe("U1Preview", () => {
     expect(html).toContain("길잡이의 시작");
     expect(html).toContain('data-testid="game-shell-right-panel"');
   });
+
+  it("게시판을 초기 화면으로 선택할 수 있다", () => {
+    const html = renderToStaticMarkup(
+      createElement(U1Preview, { initialScreen: "board" }),
+    );
+
+    expect(html).toContain('aria-pressed="true">게시판</button>');
+    expect(html).toContain("길드 공고");
+    expect(html).toContain("계약 상세");
+  });
 });

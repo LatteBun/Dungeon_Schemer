@@ -13,8 +13,14 @@ import {
 } from "./u1-preview-data";
 import type { U1PreviewScreen } from "./u1-preview-data";
 
-export function U1Preview() {
-  const [selectedScreen, setSelectedScreen] = useState<U1PreviewScreen>("intro");
+export interface U1PreviewProps {
+  initialScreen?: U1PreviewScreen;
+}
+
+export function U1Preview({
+  initialScreen = "intro",
+}: U1PreviewProps) {
+  const [selectedScreen, setSelectedScreen] = useState<U1PreviewScreen>(initialScreen);
   const definition =
     U1_PREVIEW_SCREENS.find((screen) => screen.id === selectedScreen) ??
     U1_PREVIEW_SCREENS[0];
