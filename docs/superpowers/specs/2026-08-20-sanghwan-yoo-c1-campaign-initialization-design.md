@@ -6,7 +6,7 @@
 - 작성 도구: Codex
 - 최초 작성일: 2026-08-20
 - 작업 항목: `C1`
-- 상태: 사용자 검토 요청
+- 상태: 승인됨
 - 근거 문서: [게임 원칙](../../GAME_PRINCIPLES.md), [핵심 게임 루프](../../design/CORE_GAME_LOOP.md), [캐릭터 풀과 월드턴](../../systems/CHARACTER_POOL_AND_WORLDTURN.md), [던전 테마와 생태](../../systems/DUNGEON_THEMES_AND_ECOLOGY.md), [성장과 엔딩](../../systems/PROGRESSION_AND_ENDINGS.md)
 
 ## 1. 목적과 범위
