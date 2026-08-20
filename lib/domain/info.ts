@@ -1,35 +1,34 @@
 import type { CardId, ClaimId, CharacterId } from "./ids";
 
-export type TruthType = "truth" | "lie" | "neutral";
+/**
+ * 조언의 유형. 플레이어의 의도를 가리킨다.
+ *
+ * 진위 축은 여기 있지 않다. 조언이 생태 규칙과 어떤 관계인지는
+ * EcologyRelation이 따로 들고 있다.
+ * docs/systems/INFORMATION_AND_DECEPTION.md
+ */
+export type AdviceOutcome = "help" | "harm" | "neutral";
 
-export const TRUTH_TYPES = [
-  "truth",
-  "lie",
+export const ADVICE_OUTCOMES = [
+  "help",
+  "harm",
   "neutral",
-] as const satisfies readonly TruthType[];
+] as const satisfies readonly AdviceOutcome[];
 
-/** 정보 카드의 수신자는 살아 있는 용사 개인으로 제한한다. */
+/** 조언이 참조 규칙과 맺는 관계. 중립은 unrelated다. */
+export type EcologyRelation = "consistent" | "contradictory" | "unrelated";
+
+export const ECOLOGY_RELATIONS = [
+  "consistent",
+  "contradictory",
+  "unrelated",
+] as const satisfies readonly EcologyRelation[];
+
+/** 조언의 수신자는 살아 있는 용사 개인으로 제한한다. */
 export type Target = { kind: "member"; id: CharacterId };
 
 /** 사건 행동은 역사적 호환성을 위해 보스를 대상으로 삼을 수 있다. */
 export type EventTarget = Target | { kind: "boss" };
-
-export type InfoSubject =
-  | "route"
-  | "event"
-  | "monster"
-  | "rest"
-  | "merchant"
-  | "boss";
-
-export const INFO_SUBJECTS = [
-  "route",
-  "event",
-  "monster",
-  "rest",
-  "merchant",
-  "boss",
-] as const satisfies readonly InfoSubject[];
 
 export interface InfoCard {
   id: CardId;

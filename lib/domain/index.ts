@@ -5,6 +5,7 @@ export type {
   CharacterId,
   ChoiceId,
   ClaimId,
+  ClueId,
   ClassId,
   DungeonId,
   EventId,
@@ -96,7 +97,7 @@ export type {
   ExpeditionStatus,
 } from "./expedition";
 
-export { INFO_SUBJECTS, TRUTH_TYPES } from "./info";
+export { ADVICE_OUTCOMES, ECOLOGY_RELATIONS } from "./info";
 export type {
   EventTarget,
   InfoCard,
