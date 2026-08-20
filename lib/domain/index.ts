@@ -111,12 +111,13 @@ export type {
 
 export { EVENT_EFFECT_TAGS, EVENT_KINDS, ITEM_KINDS } from "./content";
 export type {
-  DungeonEvent,
-  EventChoice,
+  AdviceOption,
+  AdviceUpgrade,
   EventEffectTag,
   EventKind,
   ItemDef,
   ItemKind,
+  SituationEvent,
 } from "./content";
 
 export { SEED_STREAMS } from "./seeds";
