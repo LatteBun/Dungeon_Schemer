@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateSituationEvent } from "@/lib/content/situation-validation";
+import { validateSituationEvent, validateSituationEvents } from "@/lib/content/situation-validation";
 import { RuleError } from "@/lib/domain";
 import type {
   AdviceOption,
@@ -289,5 +289,89 @@ describe("validateSituationEvent 강화판", () => {
       ],
     });
     expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+});
+
+/** 규칙 하나에 도움·방해를 두 개씩 공급하는 테마 사건 묶음. */
+function themedSupply(ruleId: string): SituationEvent[] {
+  return [0, 1].map((n) =>
+    themedEvent({
+      id: `${ruleId}-event-${n}` as EventId,
+      advice: [
+        themedAdvice(`${ruleId}-h${n}`, "help", { ruleId: ruleId as RuleId }),
+        themedAdvice(`${ruleId}-x${n}`, "harm", { ruleId: ruleId as RuleId }),
+        themedAdvice(`${ruleId}-n${n}`, "neutral"),
+      ],
+    }),
+  );
+}
+
+/** 분류마다 다섯 개씩인 공용 사건 15개. */
+function sharedSupply(): SituationEvent[] {
+  const kinds = ["rest", "merchant", "special"] as const;
+  return kinds.flatMap((kind) =>
+    [0, 1, 2, 3, 4].map((n) =>
+      sharedEvent({
+        id: `shared-${kind}-${n}` as EventId,
+        kind,
+        advice: [
+          advice(`${kind}${n}-a`, "help"),
+          advice(`${kind}${n}-b`, "harm"),
+          advice(`${kind}${n}-c`, "neutral"),
+        ],
+      }),
+    ),
+  );
+}
+
+describe("validateSituationEvents 모음", () => {
+  it("사건 ID가 중복되면 생성 오류다", () => {
+    expect(() =>
+      validateSituationEvents([...sharedSupply(), sharedSupply()[0]]),
+    ).toThrow(RuleError);
+  });
+
+  it("공용 15개가 분류별 5개면 통과한다", () => {
+    expect(() => validateSituationEvents(sharedSupply())).not.toThrow();
+  });
+
+  it("공용이 분류당 5개보다 적으면 생성 오류다", () => {
+    const short = sharedSupply().filter((event) => event.id !== "shared-rest-4");
+    expect(() => validateSituationEvents(short)).toThrow(RuleError);
+  });
+
+  it("공용이 분류당 5개보다 많아도 통과한다", () => {
+    // 수량은 하한이다. F3-4가 30개로 늘려도 검증기가 깨지면 안 된다.
+    const extra = [
+      ...sharedSupply(),
+      sharedEvent({ id: "shared-rest-5" as EventId, kind: "rest" }),
+    ];
+    expect(() => validateSituationEvents(extra)).not.toThrow();
+  });
+
+  it("규칙마다 도움·방해가 2개씩이면 통과한다", () => {
+    expect(() =>
+      validateSituationEvents([...sharedSupply(), ...themedSupply("spider-fire")]),
+    ).not.toThrow();
+  });
+
+  it("규칙의 도움이 2개보다 적으면 생성 오류다", () => {
+    const supply = themedSupply("spider-fire");
+    const broken = supply.map((event, index) =>
+      index === 0
+        ? {
+            ...event,
+            advice: [
+              // 도움을 다른 규칙으로 옮겨 spider-fire의 도움을 1개로 만든다.
+              themedAdvice("moved-help", "help", { ruleId: "spider-shadow" as RuleId }),
+              event.advice[1],
+              event.advice[2],
+            ],
+          }
+        : event,
+    );
+    expect(() =>
+      validateSituationEvents([...sharedSupply(), ...broken]),
+    ).toThrow(RuleError);
   });
 });

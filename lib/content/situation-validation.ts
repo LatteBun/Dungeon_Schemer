@@ -1,5 +1,11 @@
-import { ADVICE_OUTCOMES, RuleError } from "@/lib/domain";
-import type { AdviceOption, AdviceOutcome, EcologyRelation, SituationEvent } from "@/lib/domain";
+import { ADVICE_OUTCOMES, EVENT_KINDS, RuleError } from "@/lib/domain";
+import type {
+  AdviceOption,
+  AdviceOutcome,
+  EcologyRelation,
+  SituationEvent,
+  ThemeId,
+} from "@/lib/domain";
 
 /** 사건 하나가 담는 조언 수. 도움·방해·중립을 한 개씩이다. */
 const ADVICE_PER_EVENT = 3;
@@ -182,4 +188,95 @@ export function validateSituationEvent(event: SituationEvent): void {
   );
   validateAdviceSet(event);
   validateUpgrades(event);
+}
+
+/**
+ * 공용 사건의 분류별 하한.
+ *
+ * 상한이 아니다. 던전 하나가 6~8지점이고 네 분류가 각 1회 이상 보장되므로
+ * 여유 지점이 한 분류로 몰리면 최대 5개가 필요하다. 정확히 5개를 요구하면
+ * F3-4가 30개로 늘릴 때 검증기가 깨진다.
+ */
+const SHARED_EVENTS_PER_KIND_MIN = 5;
+
+/** 규칙 하나가 공급해야 하는 도움·방해 수. */
+const RULE_ADVICE_MIN = 2;
+
+function validateEventIds(events: readonly SituationEvent[]): void {
+  const seen = new Set<string>();
+  for (const event of events) {
+    if (seen.has(event.id)) {
+      invalid(`사건 ID가 중복된다: ${event.id}`, {
+        contentType: "situationEvent",
+        eventId: event.id,
+      });
+    }
+    seen.add(event.id);
+  }
+}
+
+function validateSharedSupply(events: readonly SituationEvent[]): void {
+  const shared = events.filter((event) => event.theme === undefined);
+  // monster는 전부 생태 규칙 위에서 판정되므로 공용일 수 없다.
+  for (const kind of EVENT_KINDS) {
+    if (kind === "monster") continue;
+    const count = shared.filter((event) => event.kind === kind).length;
+    if (count < SHARED_EVENTS_PER_KIND_MIN) {
+      invalid(`공용 ${kind} 사건이 ${SHARED_EVENTS_PER_KIND_MIN}개 미만이다`, {
+        contentType: "situationEvent",
+        kind,
+        expected: SHARED_EVENTS_PER_KIND_MIN,
+        actual: count,
+      });
+    }
+  }
+}
+
+function validateThemeSupply(events: readonly SituationEvent[]): void {
+  const themed = events.filter((event) => event.theme !== undefined);
+  const themes = new Set<ThemeId>(themed.map((event) => event.theme as ThemeId));
+
+  for (const theme of themes) {
+    const options = themed
+      .filter((event) => event.theme === theme)
+      .flatMap((event) => event.advice);
+
+    // 던전이 규칙 6개 중 어느 3개를 활성으로 뽑아도 재료가 있어야 한다.
+    const ruleIds = new Set(
+      options.flatMap((option) => (option.ruleId === undefined ? [] : [option.ruleId])),
+    );
+    for (const ruleId of ruleIds) {
+      for (const outcome of ["help", "harm"] as const) {
+        const count = options.filter(
+          (option) => option.ruleId === ruleId && option.outcome === outcome,
+        ).length;
+        if (count < RULE_ADVICE_MIN) {
+          invalid(`규칙 ${ruleId}의 ${outcome} 조언이 ${RULE_ADVICE_MIN}개 미만이다`, {
+            contentType: "advice",
+            theme,
+            ruleId,
+            outcome,
+            expected: RULE_ADVICE_MIN,
+            actual: count,
+          });
+        }
+      }
+    }
+  }
+}
+
+/**
+ * 조언 콘텐츠 모음 전체가 던전을 만들기에 충분한지 검사한다.
+ *
+ * 사건마다 {@link validateSituationEvent}를 돌린 뒤, ID 전역 중복과 공급
+ * 하한(공용 분류별 5개, 규칙마다 도움·방해 2개)을 본다.
+ */
+export function validateSituationEvents(events: readonly SituationEvent[]): void {
+  for (const event of events) {
+    validateSituationEvent(event);
+  }
+
+  validateEventIds(events);
+  validateSharedSupply(events);
+  validateThemeSupply(events);
 }
