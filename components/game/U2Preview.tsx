@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { IntroScreen } from "./IntroScreen";
 import type { TopStatusView } from "./TopStatusBar";
 
@@ -14,17 +13,12 @@ const U2_START_STATUS: TopStatusView = {
 };
 
 export function U2Preview() {
-  const [entryRequested, setEntryRequested] = useState(false);
-
   return (
     <div className="u2-preview">
       <IntroScreen
         status={U2_START_STATUS}
-        onEnterBoard={() => setEntryRequested(true)}
+        boardHref="/u1-test?screen=board"
       />
-      <p className="u2-preview__feedback" aria-live="polite">
-        {entryRequested ? "게시판 진입 요청됨" : ""}
-      </p>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import type { TopStatusView } from "./TopStatusBar";
 
 export interface IntroScreenProps {
   status: TopStatusView;
-  onEnterBoard: () => void;
+  boardHref: string;
 }
 
 const introCards = [
@@ -27,7 +27,7 @@ const introCards = [
   },
 ] as const;
 
-function IntroMainContent({ onEnterBoard }: { onEnterBoard: () => void }) {
+function IntroMainContent({ boardHref }: { boardHref: string }) {
   return (
     <main className="u2-intro-stage" aria-labelledby="u2-intro-title">
       <div className="u2-intro" data-testid="u2-intro">
@@ -54,21 +54,21 @@ function IntroMainContent({ onEnterBoard }: { onEnterBoard: () => void }) {
           ))}
         </div>
 
-        <button className="u2-intro__cta" type="button" onClick={onEnterBoard}>
+        <a className="u2-intro__cta" href={boardHref}>
           <img src="/assets/u2/intro-contract.svg" alt="" aria-hidden="true" width={40} height={40} />
           <strong>길드 게시판으로</strong>
           <span className="u2-intro__cta-arrow" aria-hidden="true">→</span>
-        </button>
+        </a>
       </div>
     </main>
   );
 }
 
-export function IntroScreen({ status, onEnterBoard }: IntroScreenProps) {
+export function IntroScreen({ status, boardHref }: IntroScreenProps) {
   return (
     <div className="u2-intro-shell">
       <TopStatusBar status={status} />
-      <IntroMainContent onEnterBoard={onEnterBoard} />
+      <IntroMainContent boardHref={boardHref} />
     </div>
   );
 }
