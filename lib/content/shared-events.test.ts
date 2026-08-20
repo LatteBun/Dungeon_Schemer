@@ -18,4 +18,8 @@ describe("SHARED_EVENTS", () => {
       expect(event.description.length).toBeGreaterThanOrEqual(20);
     }
   });
+
+  it("상인 사건이 5개다", () => {
+    expect(SHARED_EVENTS.filter((event) => event.kind === "merchant")).toHaveLength(5);
+  });
 });
