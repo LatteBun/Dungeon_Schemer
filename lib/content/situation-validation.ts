@@ -4,6 +4,7 @@ import type {
   AdviceOutcome,
   EcologyRelation,
   SituationEvent,
+  ThemeContent,
   ThemeId,
 } from "@/lib/domain";
 
@@ -36,9 +37,14 @@ const REQUIRED_RELATION: Readonly<Record<AdviceOutcome, EcologyRelation>> = {
   neutral: "unrelated",
 };
 
-function validateThemedAdvice(option: AdviceOption, eventId: string): void {
+function validateThemedAdvice(
+  option: AdviceOption,
+  eventId: string,
+  theme?: ThemeContent,
+): void {
   const details = { contentType: "advice", eventId, adviceId: option.id };
   const required = REQUIRED_RELATION[option.outcome];
+  const source = option.source;
 
   if (option.relation !== required) {
     invalid(`조언 유형과 규칙 관계가 맞지 않는다: ${option.id}`, {
@@ -50,15 +56,80 @@ function validateThemedAdvice(option: AdviceOption, eventId: string): void {
   }
 
   // 정합·모순은 무엇에 대해 정합인지 가리켜야 한다. 무관은 가리킬 것이 없다.
-  const needsRule = option.relation !== "unrelated";
-  if (needsRule && option.ruleId === undefined) {
-    invalid(`참조 규칙이 없다: ${option.id}`, { ...details, relation: option.relation });
+  const needsSource = option.relation !== "unrelated";
+  if (needsSource && option.source === undefined) {
+    invalid(`참조 근거가 없다: ${option.id}`, { ...details, relation: option.relation });
   }
-  if (!needsRule && option.ruleId !== undefined) {
-    invalid(`무관한 조언이 참조 규칙을 갖는다: ${option.id}`, {
+  if (!needsSource && option.source !== undefined) {
+    invalid(`무관한 조언이 참조 근거를 갖는다: ${option.id}`, {
       ...details,
-      ruleId: option.ruleId,
+      source: option.source,
     });
+  }
+  if (source?.kind === "boss") {
+    invalid(`일반 테마 조언이 보스 특징을 참조한다: ${option.id}`, {
+      ...details,
+      bossRuleId: source.bossRuleId,
+    });
+  }
+  if (theme !== undefined && source?.kind === "ecology") {
+    if (!theme.rules.some((rule) => rule.id === source.ruleId)) {
+      invalid(`테마 밖 생태 규칙을 참조한다: ${option.id} → ${source.ruleId}`, {
+        ...details,
+        theme: theme.id,
+        ruleId: source.ruleId,
+      });
+    }
+  }
+}
+
+function validateBossAdvice(
+  option: AdviceOption,
+  event: SituationEvent,
+  theme?: ThemeContent,
+): void {
+  const details = { contentType: "advice", eventId: event.id, adviceId: option.id };
+  const required = REQUIRED_RELATION[option.outcome];
+  const source = option.source;
+  if (option.relation !== required) {
+    invalid(`조언 유형과 규칙 관계가 맞지 않는다: ${option.id}`, {
+      ...details,
+      outcome: option.outcome,
+      expected: required,
+      actual: option.relation,
+    });
+  }
+  if (option.outcome === "neutral") {
+    if (source !== undefined) {
+      invalid(`보스 정보 중립 조언이 근거를 갖는다: ${option.id}`, details);
+    }
+  } else if (source?.kind !== "boss") {
+    invalid(`보스 정보 조언이 보스 특징을 참조하지 않는다: ${option.id}`, details);
+  }
+  if (option.bossDamageModifier === undefined) {
+    invalid(`보스 정보 조언의 보스 피해 보정이 없다: ${option.id}`, details);
+  }
+  if (theme !== undefined && source?.kind === "boss") {
+    const targetBoss = theme.bosses.find((boss) => boss.id === event.targetBossId);
+    if (targetBoss === undefined) {
+      invalid(`테마에 대상 보스가 없다: ${event.targetBossId}`, {
+        ...details,
+        targetBossId: event.targetBossId,
+      });
+    }
+    if (!targetBoss.rules.some((rule) => rule.id === source.bossRuleId)) {
+      const belongsToOtherBoss = theme.bosses.some(
+        (boss) =>
+          boss.id !== targetBoss.id &&
+          boss.rules.some((rule) => rule.id === source.bossRuleId),
+      );
+      invalid(
+        belongsToOtherBoss
+          ? `다른 보스의 특징을 참조한다: ${option.id}`
+          : `대상 보스에 없는 특징을 참조한다: ${option.id}`,
+        { ...details, targetBossId: event.targetBossId, bossRuleId: source.bossRuleId },
+      );
+    }
   }
 }
 
@@ -72,10 +143,10 @@ function validateSharedAdvice(option: AdviceOption, eventId: string): void {
       actual: option.relation,
     });
   }
-  if (option.ruleId !== undefined) {
-    invalid(`공용 조언이 참조 규칙을 갖는다: ${option.id}`, {
+  if (option.source !== undefined) {
+    invalid(`공용 조언이 참조 근거를 갖는다: ${option.id}`, {
       ...details,
-      ruleId: option.ruleId,
+      source: option.source,
     });
   }
   // 보스는 테마에 속한다. 모든 테마에 나오는 사건이 특정 보스의 피해를 바꿀 수 없다.
@@ -87,7 +158,7 @@ function validateSharedAdvice(option: AdviceOption, eventId: string): void {
   }
 }
 
-function validateAdviceSet(event: SituationEvent): void {
+function validateAdviceSet(event: SituationEvent, theme?: ThemeContent): void {
   const details = { contentType: "situationEvent", eventId: event.id };
 
   if (event.advice.length !== ADVICE_PER_EVENT) {
@@ -110,8 +181,10 @@ function validateAdviceSet(event: SituationEvent): void {
     validateAdviceText(option, event.id);
     if (event.theme === undefined) {
       validateSharedAdvice(option, event.id);
+    } else if (event.targetBossId !== undefined) {
+      validateBossAdvice(option, event, theme);
     } else {
-      validateThemedAdvice(option, event.id);
+      validateThemedAdvice(option, event.id, theme);
     }
   }
 
@@ -129,7 +202,7 @@ function validateAdviceSet(event: SituationEvent): void {
   }
 }
 
-function validateUpgrades(event: SituationEvent): void {
+function validateUpgrades(event: SituationEvent, theme?: ThemeContent): void {
   if (event.upgrades === undefined) return;
 
   for (const upgrade of event.upgrades) {
@@ -164,8 +237,10 @@ function validateUpgrades(event: SituationEvent): void {
     validateAdviceText(replacement, event.id);
     if (event.theme === undefined) {
       validateSharedAdvice(replacement, event.id);
+    } else if (event.targetBossId !== undefined) {
+      validateBossAdvice(replacement, event, theme);
     } else {
-      validateThemedAdvice(replacement, event.id);
+      validateThemedAdvice(replacement, event.id, theme);
     }
   }
 }
@@ -177,13 +252,38 @@ function validateUpgrades(event: SituationEvent): void {
  * 보스 피해 보정은 규칙(E2)의 몫이다. 한 던전 안의 중복 방지는 배치(E3)가 한다.
  * docs/systems/INFORMATION_AND_DECEPTION.md
  */
-export function validateSituationEvent(event: SituationEvent): void {
+export function validateSituationEvent(event: SituationEvent, theme?: ThemeContent): void {
   const details = { contentType: "situationEvent", eventId: event.id };
   if (event.theme === undefined && event.kind === "monster") {
     invalid(`몬스터 사건은 공용일 수 없다: ${event.id}`, {
       ...details,
       kind: event.kind,
     });
+  }
+  if (event.theme === undefined && event.targetBossId !== undefined) {
+    invalid(`공용 사건은 대상 보스를 가질 수 없다: ${event.id}`, {
+      ...details,
+      targetBossId: event.targetBossId,
+    });
+  }
+  if (event.theme !== undefined && theme !== undefined && event.theme !== theme.id) {
+    invalid(`사건의 테마가 검증 대상과 다르다: ${event.id}`, {
+      ...details,
+      eventTheme: event.theme,
+      expectedTheme: theme.id,
+    });
+  }
+  if (event.targetBossId !== undefined && event.kind !== "special") {
+    invalid(`보스 정보 사건은 special이어야 한다: ${event.id}`, {
+      ...details,
+      kind: event.kind,
+    });
+  }
+  if (
+    event.targetBossId === undefined &&
+    event.advice.some((option) => option.bossDamageModifier !== undefined)
+  ) {
+    invalid(`보스 대상이 없는 사건이 보스 피해 보정을 갖는다: ${event.id}`, details);
   }
   requireText(event.title, `사건 제목이 비어 있다: ${event.id}`, details);
   requireText(event.description, `사건 묘사가 비어 있다: ${event.id}`, details);
@@ -192,8 +292,8 @@ export function validateSituationEvent(event: SituationEvent): void {
     `기본 결과 문구가 비어 있다: ${event.id}`,
     details,
   );
-  validateAdviceSet(event);
-  validateUpgrades(event);
+  validateAdviceSet(event, theme);
+  validateUpgrades(event, theme);
 }
 
 /**
@@ -238,23 +338,38 @@ function validateSharedSupply(events: readonly SituationEvent[]): void {
   }
 }
 
-function validateThemeSupply(events: readonly SituationEvent[]): void {
+function validateThemeSupply(
+  events: readonly SituationEvent[],
+  themeContent?: ThemeContent,
+): void {
   const themed = events.filter((event) => event.theme !== undefined);
-  const themes = new Set<ThemeId>(themed.map((event) => event.theme as ThemeId));
+  const themes = themeContent === undefined
+    ? new Set<ThemeId>(themed.map((event) => event.theme as ThemeId))
+    : new Set<ThemeId>([themeContent.id]);
 
   for (const theme of themes) {
+    const contentRules = themeContent?.id === theme
+      ? themeContent.rules.map((rule) => rule.id)
+      : undefined;
     const options = themed
       .filter((event) => event.theme === theme)
       .flatMap((event) => event.advice);
 
     // 던전이 규칙 6개 중 어느 3개를 활성으로 뽑아도 재료가 있어야 한다.
-    const ruleIds = new Set(
-      options.flatMap((option) => (option.ruleId === undefined ? [] : [option.ruleId])),
-    );
+    const ruleIds = contentRules === undefined
+      ? new Set(
+        options.flatMap((option) =>
+          option.source?.kind === "ecology" ? [option.source.ruleId] : [],
+        ),
+      )
+      : new Set(contentRules);
     for (const ruleId of ruleIds) {
       for (const outcome of ["help", "harm"] as const) {
         const count = options.filter(
-          (option) => option.ruleId === ruleId && option.outcome === outcome,
+          (option) =>
+            option.source?.kind === "ecology" &&
+            option.source.ruleId === ruleId &&
+            option.outcome === outcome,
         ).length;
         if (count < RULE_ADVICE_MIN) {
           invalid(`규칙 ${ruleId}의 ${outcome} 조언이 ${RULE_ADVICE_MIN}개 미만이다`, {
@@ -277,12 +392,25 @@ function validateThemeSupply(events: readonly SituationEvent[]): void {
  * 사건마다 {@link validateSituationEvent}를 돌린 뒤, ID 전역 중복과 공급
  * 하한(공용 분류별 5개, 규칙마다 도움·방해 2개)을 본다.
  */
-export function validateSituationEvents(events: readonly SituationEvent[]): void {
+export function validateSituationEvents(
+  events: readonly SituationEvent[],
+  theme?: ThemeContent,
+): void {
   for (const event of events) {
-    validateSituationEvent(event);
+    validateSituationEvent(event, theme);
   }
 
   validateEventIds(events);
-  validateSharedSupply(events);
-  validateThemeSupply(events);
+  if (theme === undefined) {
+    validateSharedSupply(events);
+    validateThemeSupply(events);
+  } else {
+    if (events.some((event) => event.theme !== theme.id)) {
+      invalid(`테마 검증 대상 밖 사건이 포함되어 있다: ${theme.id}`, {
+        contentType: "situationEvent",
+        theme: theme.id,
+      });
+    }
+    validateThemeSupply(events, theme);
+  }
 }
