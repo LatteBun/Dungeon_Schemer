@@ -47,7 +47,7 @@ export interface ExpeditionState {
   map: GeneratedMap;
   currentNodeId: NodeId;
   visitedNodeIds: readonly NodeId[];
-  /** 전달한 카드와 개인별 반응. 보스전과 사후 검증의 입력이다. */
+  /** 수용한 지연형 조언과 개인별 반응. 보스전과 사후 검증의 입력이다. */
   infoRecords: readonly InfoRecord[];
   bossResult: BossResult | null;
   result: ExpeditionResult | null;

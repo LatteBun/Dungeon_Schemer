@@ -22,3 +22,6 @@ export type OfferId = Brand<string, "OfferId">;
 export type RuleId = Brand<string, "RuleId">;
 export type MonsterId = Brand<string, "MonsterId">;
 export type EcologyProfileId = Brand<string, "EcologyProfileId">;
+
+/** 상황 묘사가 남기는 관찰 결과. 약한 연계와 강한 연계의 유일한 화폐다. */
+export type ClueId = Brand<string, "ClueId">;

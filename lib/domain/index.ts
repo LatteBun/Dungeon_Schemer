@@ -5,6 +5,7 @@ export type {
   CharacterId,
   ChoiceId,
   ClaimId,
+  ClueId,
   ClassId,
   DungeonId,
   EcologyProfileId,
@@ -98,26 +99,25 @@ export type {
   ExpeditionStatus,
 } from "./expedition";
 
-export { INFO_SUBJECTS, TRUTH_TYPES } from "./info";
+export { ADVICE_OUTCOMES, ECOLOGY_RELATIONS } from "./info";
 export type {
+  AdviceOutcome,
+  EcologyRelation,
   EventTarget,
-  InfoCard,
-  InfoClaim,
   InfoReaction,
   InfoRecord,
-  InfoSubject,
   Target,
-  TruthType,
 } from "./info";
 
 export { EVENT_EFFECT_TAGS, EVENT_KINDS, ITEM_KINDS } from "./content";
 export type {
-  DungeonEvent,
-  EventChoice,
+  AdviceOption,
+  AdviceUpgrade,
   EventEffectTag,
   EventKind,
   ItemDef,
   ItemKind,
+  SituationEvent,
 } from "./content";
 
 export { SEED_STREAMS } from "./seeds";
