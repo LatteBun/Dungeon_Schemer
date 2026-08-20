@@ -123,6 +123,47 @@ function validateAdviceSet(event: SituationEvent): void {
   }
 }
 
+function validateUpgrades(event: SituationEvent): void {
+  if (event.upgrades === undefined) return;
+
+  for (const upgrade of event.upgrades) {
+    const details = {
+      contentType: "adviceUpgrade",
+      eventId: event.id,
+      clueId: upgrade.clueId,
+      slotIndex: upgrade.slotIndex,
+    };
+
+    if (
+      !Number.isInteger(upgrade.slotIndex) ||
+      upgrade.slotIndex < 0 ||
+      upgrade.slotIndex >= ADVICE_PER_EVENT
+    ) {
+      invalid(`강화판의 slotIndex가 범위를 벗어난다: ${event.id}`, details);
+    }
+
+    const replaced = event.advice[upgrade.slotIndex];
+    const replacement = upgrade.replacement;
+
+    // 도움 슬롯을 방해로 바꾸면 각 한 개씩이 깨진다.
+    // 단서를 본 플레이어에게만 불변식이 다르게 적용될 이유가 없다.
+    if (replacement.outcome !== replaced.outcome) {
+      invalid(`강화판의 유형이 교체할 슬롯과 다르다: ${event.id}`, {
+        ...details,
+        expected: replaced.outcome,
+        actual: replacement.outcome,
+      });
+    }
+
+    validateAdviceText(replacement, event.id);
+    if (event.theme === undefined) {
+      validateSharedAdvice(replacement, event.id);
+    } else {
+      validateThemedAdvice(replacement, event.id);
+    }
+  }
+}
+
 /**
  * 조언 콘텐츠 하나가 계약을 만족하는지 검사한다.
  *
@@ -140,4 +181,5 @@ export function validateSituationEvent(event: SituationEvent): void {
     details,
   );
   validateAdviceSet(event);
+  validateUpgrades(event);
 }

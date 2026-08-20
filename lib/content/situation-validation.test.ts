@@ -5,6 +5,7 @@ import type {
   AdviceOption,
   AdviceOutcome,
   ChoiceId,
+  ClueId,
   EventId,
   RuleId,
   SituationEvent,
@@ -217,6 +218,74 @@ describe("validateSituationEvent 공용", () => {
         advice("a", "help", { bossDamageModifier: -0.2 }),
         advice("b", "harm"),
         advice("c", "neutral"),
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+});
+
+describe("validateSituationEvent 강화판", () => {
+  it("계약을 만족하는 강화판은 통과한다", () => {
+    const event = themedEvent({
+      upgrades: [
+        {
+          clueId: "spider-molt-seen" as ClueId,
+          slotIndex: 0,
+          replacement: themedAdvice("a-up", "help"),
+        },
+      ],
+    });
+    expect(() => validateSituationEvent(event)).not.toThrow();
+  });
+
+  it.each([-1, 3])("slotIndex가 %i이면 생성 오류다", (slotIndex) => {
+    const event = themedEvent({
+      upgrades: [
+        {
+          clueId: "spider-molt-seen" as ClueId,
+          slotIndex,
+          replacement: themedAdvice("a-up", "help"),
+        },
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("대체 조언의 유형이 원래 슬롯과 다르면 생성 오류다", () => {
+    // 0번 슬롯은 도움인데 방해로 바꾸면 각 한 개씩이 깨진다.
+    const event = themedEvent({
+      upgrades: [
+        {
+          clueId: "spider-molt-seen" as ClueId,
+          slotIndex: 0,
+          replacement: themedAdvice("a-up", "harm"),
+        },
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("대체 조언의 문구가 비어 있으면 생성 오류다", () => {
+    const event = themedEvent({
+      upgrades: [
+        {
+          clueId: "spider-molt-seen" as ClueId,
+          slotIndex: 0,
+          replacement: themedAdvice("a-up", "help", { resultText: "" }),
+        },
+      ],
+    });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
+
+  it("공용 사건의 대체 조언도 공용 규칙을 따른다", () => {
+    const event = sharedEvent({
+      upgrades: [
+        {
+          clueId: "shared-clue" as ClueId,
+          slotIndex: 0,
+          replacement: advice("a-up", "help", { ruleId: "spider-fire" as RuleId }),
+        },
       ],
     });
     expect(() => validateSituationEvent(event)).toThrow(RuleError);
