@@ -12,25 +12,27 @@
  * 것은 여기 다시 적지 않는다. 같은 계약을 두 곳에 두면 한쪽만 고쳐진다.
  */
 import type {
+  ADVICE_OUTCOMES,
   CAMPAIGN_PHASES,
+  ECOLOGY_RELATIONS,
   ENDING_ORDER,
   GUIDE_RANKS,
   PERSONALITIES,
   RISK_LEVELS,
   SEED_STREAMS,
   THEME_IDS,
-  TRUTH_TYPES,
   WORLD_TURN_ACTIVITIES,
 } from "./index";
 import type {
+  AdviceOutcome,
   CampaignPhase,
+  EcologyRelation,
   EndingKind,
   GuideRank,
   Personality,
   RiskLevel,
   SeedStream,
   ThemeId,
-  TruthType,
   WorldTurnActivity,
 } from "./index";
 
@@ -56,8 +58,11 @@ export type ThemeListCoversEveryTheme = Assert<
 export type PersonalityListCoversEveryPersonality = Assert<
   IsExhaustive<Personality, typeof PERSONALITIES>
 >;
-export type TruthListCoversEveryTruthType = Assert<
-  IsExhaustive<TruthType, typeof TRUTH_TYPES>
+export type OutcomeListCoversEveryOutcome = Assert<
+  IsExhaustive<AdviceOutcome, typeof ADVICE_OUTCOMES>
+>;
+export type RelationListCoversEveryRelation = Assert<
+  IsExhaustive<EcologyRelation, typeof ECOLOGY_RELATIONS>
 >;
 export type StreamListCoversEveryStream = Assert<
   IsExhaustive<SeedStream, typeof SEED_STREAMS>
