@@ -237,4 +237,45 @@ describe("validateThemes", () => {
     });
     expectInvalidGeneration(() => validateThemes([theme]));
   });
+
+  it("환경 특성 후보가 정확히 세 개가 아니면 거부한다", () => {
+    const theme = validTheme({
+      publicEnvironmentTags: validTheme().publicEnvironmentTags.slice(0, 2),
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("환경 특성 후보 ID가 중복이면 거부한다", () => {
+    const tags = validTheme().publicEnvironmentTags;
+    const theme = validTheme({
+      publicEnvironmentTags: [tags[0], { ...tags[1], id: tags[0].id }, tags[2]],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("생태 패키지가 존재하지 않는 환경 특성을 참조하면 거부한다", () => {
+    const profiles = validTheme().ecologyProfiles;
+    const theme = validTheme({
+      ecologyProfiles: [
+        {
+          ...profiles[0],
+          publicEnvironmentTagId: "outside" as PublicEnvironmentTagId,
+        },
+        ...profiles.slice(1),
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("환경 특성의 몬스터 근거가 출현 목록에 없으면 거부한다", () => {
+    const tags = validTheme().publicEnvironmentTags;
+    const theme = validTheme({
+      publicEnvironmentTags: [
+        { ...tags[0], evidenceMonsterTraits: ["존재하지 않는 특성"] },
+        tags[1],
+        tags[2],
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
 });
