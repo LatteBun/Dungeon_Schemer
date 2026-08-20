@@ -27,7 +27,6 @@
 
 | 파일 | 책임 |
 | --- | --- |
-| `app/globals.test.ts` | 3:2 CSS 선언, 비세로 적층, 레퍼런스 PNG 미사용을 정적으로 고정 |
 | `app/globals.css` | 게임 셸 3:2 grid, 다크 판타지 토큰·프레임·상태 칩·프리뷰 스타일 |
 | `components/game/GameShell.tsx` | 전체 폭 상태 바와 3:2 main/right landmark, 게임 셸 크롬 class |
 | `components/game/TopStatusBar.tsx` | 라벨·값·상태 기호를 가진 상태 칩 |
@@ -49,7 +48,6 @@
 
 **Files:**
 
-- Create: `app/globals.test.ts`
 - Modify: `components/game/GameShell.test.ts`
 - Modify: `components/game/GameShell.tsx`
 - Modify: `components/game/TopStatusBar.tsx`
@@ -61,28 +59,23 @@
 - Produces: `game-shell--reference`, `game-shell__body`, `game-shell__status-chip`, `game-shell__main`, `game-shell__right-panel` CSS/markup 계약
 - Invariant: `game-shell__body`는 `minmax(0, 3fr) minmax(0, 2fr)`만 사용하고 두 열을 합치지 않는다.
 
-- [ ] **Step 1: 3:2 CSS의 실패하는 정적 테스트를 추가한다.**
-
-`app/globals.test.ts`에서 `readFileSync(join(import.meta.dirname, "globals.css"), "utf8")`로 CSS를 읽고 다음 계약을 단정한다.
-
-```ts
-expect(styles).toMatch(
-  /\.game-shell__body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 3fr\) minmax\(0, 2fr\);/s,
-);
-expect(styles).not.toMatch(
-  /\.game-shell__body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s,
-);
-expect(styles).not.toContain("REFERENCE_UI_");
-expect(styles).not.toMatch(/overflow-x:\s*hidden/);
-```
+- [ ] **Step 1: 셸 markup과 실제 grid 비율의 실패하는 검증을 준비한다.**
 
 `GameShell.test.ts`의 첫 렌더 계약에는 `game-shell--reference`, `game-shell__surface`, `game-shell__status-chip` class가 나오는지 추가 단정한다. 인트로 테스트에는 우측 레일이 `game-shell__surface`를 함께 갖고 `aria-hidden="true"`인지를 단정한다.
 
-- [ ] **Step 2: 테스트가 현재 3:1 구현에서 실패하는지 확인한다.**
+Run: `pnpm test components/game/GameShell.test.ts`
 
-Run: `pnpm test app/globals.test.ts components/game/GameShell.test.ts`
+Expected: FAIL. 새 게임 셸 크롬 class가 아직 없어서 실패한다.
 
-Expected: FAIL. `globals.css`의 3:1 선언과 아직 없는 reference chrome class 때문에 실패한다.
+실제 CSS 동작은 소스 텍스트가 아니라 현재 브라우저 computed grid로 RED를 남긴다.
+
+```bash
+agent-browser open http://127.0.0.1:3000/u1-test
+agent-browser set viewport 1280 720
+agent-browser eval 'JSON.stringify((()=>{const body=document.querySelector("[data-testid=game-shell-body]");const tracks=getComputedStyle(body).gridTemplateColumns.split(" ").map(parseFloat);return {tracks,ratio:tracks[0]/tracks[1]}})())'
+```
+
+Expected: 기존 구현은 ratio 약 `3.00`으로, 목표 `1.50 ± 0.01` 검증에 실패한다.
 
 - [ ] **Step 3: 최소 셸·상태 바 구현으로 3:2와 공통 크롬을 만든다.**
 
@@ -134,14 +127,14 @@ Expected: FAIL. `globals.css`의 3:1 선언과 아직 없는 reference chrome cl
 
 - [ ] **Step 4: 셸 계약 테스트와 타입 검사를 통과시킨다.**
 
-Run: `pnpm test app/globals.test.ts components/game/GameShell.test.ts && pnpm typecheck`
+Run: `pnpm test components/game/GameShell.test.ts && pnpm typecheck`
 
 Expected: PASS.
 
 - [ ] **Step 5: 첫 구현 단위를 커밋한다.**
 
 ```bash
-git add app/globals.css app/globals.test.ts components/game/GameShell.tsx components/game/GameShell.test.ts components/game/TopStatusBar.tsx
+git add app/globals.css components/game/GameShell.tsx components/game/GameShell.test.ts components/game/TopStatusBar.tsx
 git commit -m "화면: 3대2 공통 셸과 상태 바 크롬을 적용한다" -m "모든 상태에서 좌 60%·우 40%를 유지하고 게임 전용 프레임과 상태 칩을 추가한다."
 ```
 
