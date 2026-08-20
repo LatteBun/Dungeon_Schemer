@@ -122,6 +122,12 @@ export interface BossDef {
 
 거미굴 보스는 각 2개씩 총 8개의 보스 특징을 가진다.
 
+`rules`는 모든 `BossDef`의 필수 필드다. F3-2에서는 거미굴 보스만 각 2개를
+채우고, 사막·묘지 보스는 F3-3에서 전용 정보를 작성할 때까지 빈 배열을 둔다.
+이렇게 하면 보스 특징을 한 모델로 유지하면서도 아직 작성하지 않은 테마의
+특징을 임의로 창작하지 않는다. 테마 검증기는 `rules` 배열 자체와 배열 안의
+ID·문구 중복·빈 값을 검사하되, F3-2 시점에 빈 배열인 것을 오류로 보지 않는다.
+
 ## 2.4 보스 대상 사건
 
 `SituationEvent`에 다음 필드를 추가한다.
@@ -135,6 +141,10 @@ targetBossId?: BossId;
 - 일반 거미 사건: `targetBossId` 없음
 - 보스 정보 사건: `targetBossId` 필수
 - 보스 정보 사건은 이번 F3-2에서 모두 `kind: "special"`
+- `targetBossId`가 없으면 어떤 조언도 `source.kind: "boss"` 또는
+  `bossDamageModifier`를 가질 수 없다.
+- `targetBossId`가 있으면 세 조언 모두 `bossDamageModifier`를 가지며,
+  도움·방해의 source는 `kind: "boss"`여야 한다.
 
 ---
 
@@ -990,12 +1000,18 @@ targetBossId?: BossId;
 ## 7.2 테마 전체를 기준으로 검증
 
 기존 `validateSituationEvents(events)` 호출은 공용 콘텐츠를 위해 유지한다.
+이 호출은 현재처럼 공용 사건의 분류별 공급량을 검사한다.
 
 테마 콘텐츠를 검증할 때는 개념적으로 다음 호출을 허용한다.
 
 ```ts
 validateSituationEvents(SPIDER_EVENTS, SPIDER_THEME)
 ```
+
+두 번째 인자를 받은 호출은 **테마 전용 검증 모드**다. 이 모드에서는 공용
+사건 공급량을 검사하지 않고, 모든 사건의 `theme`이 전달받은 `ThemeContent.id`와
+같은지 확인한다. 반대로 인자 하나인 기존 호출은 공용 콘텐츠와 기존의 혼합
+검증 호환성을 유지한다.
 
 `ThemeContent`를 받았을 때는 실제 콘텐츠에 등장한 ruleId만 검사하지 않고, **테마가 가진 6개 규칙 전체를 기준으로 공급량을 검사한다.**
 
@@ -1014,6 +1030,10 @@ validateSituationEvents(SPIDER_EVENTS, SPIDER_THEME)
 - 다른 보스 특징을 참조하면 오류
 - 중립은 source 없음
 - 세 조언 모두 `bossDamageModifier`를 가짐
+
+보스 대상이 없는 사건은 boss source와 `bossDamageModifier`를 가지면 오류다.
+보스 대상 사건이 생태 source를 가지거나, 대상 보스가 전달받은 테마에 없거나,
+사건의 `theme`과 대상 보스의 theme이 다르면 오류다.
 
 수치 자체의 산술 적용과 합산 상한은 E2/E4의 책임이다. F3-2는 정보 사건인데 보정값을 빠뜨리는 구조 오류까지만 막는다.
 
