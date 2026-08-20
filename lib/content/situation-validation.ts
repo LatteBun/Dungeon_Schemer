@@ -179,6 +179,12 @@ function validateUpgrades(event: SituationEvent): void {
  */
 export function validateSituationEvent(event: SituationEvent): void {
   const details = { contentType: "situationEvent", eventId: event.id };
+  if (event.theme === undefined && event.kind === "monster") {
+    invalid(`몬스터 사건은 공용일 수 없다: ${event.id}`, {
+      ...details,
+      kind: event.kind,
+    });
+  }
   requireText(event.title, `사건 제목이 비어 있다: ${event.id}`, details);
   requireText(event.description, `사건 묘사가 비어 있다: ${event.id}`, details);
   requireText(

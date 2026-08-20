@@ -222,6 +222,11 @@ describe("validateSituationEvent 공용", () => {
     });
     expect(() => validateSituationEvent(event)).toThrow(RuleError);
   });
+
+  it("몬스터 사건에 테마가 없으면 생성 오류다", () => {
+    const event = sharedEvent({ kind: "monster" });
+    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+  });
 });
 
 describe("validateSituationEvent 강화판", () => {
@@ -353,6 +358,25 @@ describe("validateSituationEvents 모음", () => {
     expect(() =>
       validateSituationEvents([...sharedSupply(), ...themedSupply("spider-fire")]),
     ).not.toThrow();
+  });
+
+  it("사건 하나가 구조를 어기면 나머지가 하한을 채워도 생성 오류다", () => {
+    // 공급·중복 검사는 모두 만족시키고, 오직 사건 하나의 도움·방해·중립
+    // 구성만 깨서 개별 사건 검사(validateSituationEvent)만 걸리게 한다.
+    const supply = sharedSupply();
+    const broken = supply.map((event, index) =>
+      index === 0
+        ? {
+            ...event,
+            advice: [
+              advice(`${event.id}-a`, "help"),
+              advice(`${event.id}-b`, "help"),
+              advice(`${event.id}-c`, "help"),
+            ],
+          }
+        : event,
+    );
+    expect(() => validateSituationEvents(broken)).toThrow(RuleError);
   });
 
   it("규칙의 도움이 2개보다 적으면 생성 오류다", () => {

@@ -13,7 +13,7 @@ describe("SHARED_EVENTS", () => {
     }
   });
 
-  it("묘사에 결론이 아니라 사실을 적는다", () => {
+  it("묘사가 관찰할 사실을 담을 만큼 길다", () => {
     // 묘사가 짧으면 관찰할 사실을 담지 못한다. 추론의 근거가 여기에만 있다.
     for (const event of SHARED_EVENTS) {
       expect(event.description.length).toBeGreaterThanOrEqual(20);
