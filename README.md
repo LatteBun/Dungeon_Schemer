@@ -10,6 +10,13 @@ Dungeon Schemer는 용사 파티를 안내하는 던전 길잡이가 되어 정�
 - [AI 개발 전 사전 점검표](docs/technical/AI_DEVELOPMENT_PRECHECK.md)
 - [작업 배정표](docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md): 구현 영역, 선행 관계, 구현 순서, 담당자 배정 확인
 
+### C2 게시판·임시 파티
+
+- [C2 설계](docs/superpowers/specs/2026-08-20-sanghwan-yoo-c2-campaign-board-party-design.md)
+- [C2 구현 계획](docs/superpowers/plans/2026-08-20-sanghwan-yoo-c2-campaign-board-party.md)
+
+C2는 위험도·진입 가능성에 따른 최대 5개 공고, 공고별 공개 환경 특성, 게시판 안 캐릭터 중복이 없는 3인 임시 파티를 다룬다.
+
 ## AI 작업 규칙
 
 새 기능 또는 기존 동작 변경은 다음 순서로 진행합니다.
