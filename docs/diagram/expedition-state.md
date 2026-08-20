@@ -26,7 +26,7 @@ stateDiagram-v2
     infoOpportunity --> event: 개인 반응 기록
     event --> pathChoice: 사건 해결·생존
     pathChoice --> bossFight: 보스방
-    bossFight --> settlement: 턴 단위 자동 전투·사후 검증
+    bossFight --> settlement: 순차 턴제 전투·사후 검증
     infoOpportunity --> settlement: 처리 중 전멸
     event --> settlement: 사건 중 전멸
     settlement --> worldTurn: 보상·위험도 반영
@@ -48,7 +48,7 @@ stateDiagram-v2
 | `pathChoice` | 공개 지도에서 다음 지점 선택 |
 | `infoOpportunity` | 일부 지점에서 카드 선택과 파티원별 독립 반응 |
 | `event` | 정보와 별도로 사건 행동 선택 |
-| `bossFight` | 누적 상태로 턴 단위 자동 전투와 사후 검증 |
+| `bossFight` | 누적 상태로 순차 턴제 전투와 사후 검증 |
 | `settlement` | 보상·유품 → 던전 위험도 → 명성 → 승급 순서 처리 |
 | `worldTurn` | 비출전 캐릭터의 휴식·백그라운드·중상 처리와 엔딩 판정 |
 | `campaignEnded` | 정상 완주 또는 조기 종료 표시 |

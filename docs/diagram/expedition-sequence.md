@@ -43,7 +43,7 @@ sequenceDiagram
     else 일반 지점 생존
         Flow-->>UI: 지도 복귀
     else 보스방 도달
-        Flow->>Event: 누적 상태로 턴 단위 자동 보스전
+        Flow->>Event: 파티 선공·보스 반격을 턴 단위로 기록하는 순차 턴제 전투
         Event->>State: 턴별 행동·피해 기록과 생존 결과
         Event->>Info: 거짓·의심 사후 검증
         Info->>State: 최종 신뢰와 정산 입력
