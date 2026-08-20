@@ -13,4 +13,18 @@ describe("U1TestPage", () => {
     expect(html).toContain('aria-pressed="true">게시판</button>');
     expect(html).toContain("길드 공고");
   });
+
+  it("screen이 없거나 알 수 없는 값이면 인트로를 유지한다", async () => {
+    const missing = await U1TestPage({ searchParams: Promise.resolve({}) });
+    const unknown = await U1TestPage({
+      searchParams: Promise.resolve({ screen: "unknown" }),
+    });
+
+    expect(renderToStaticMarkup(missing)).toContain(
+      'aria-pressed="true">인트로</button>',
+    );
+    expect(renderToStaticMarkup(unknown)).toContain(
+      'aria-pressed="true">인트로</button>',
+    );
+  });
 });

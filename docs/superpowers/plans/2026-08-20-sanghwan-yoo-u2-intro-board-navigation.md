@@ -53,7 +53,7 @@
 - Consumes: 기존 `U1PreviewScreen`, `U1_PREVIEW_SCREENS`, `U1_PREVIEW_SCREEN_IDS`와 U1 게시판 프리뷰.
 - Produces: `U1Preview({ initialScreen?: U1PreviewScreen })`와 `U1TestPage({ searchParams })`가 `screen=board`를 게시판 초기 선택으로 전달한다.
 
-- [ ] **Step 1: U1 컴포넌트와 route page의 실패 테스트를 작성한다.**
+- [x] **Step 1: U1 컴포넌트와 route page의 실패 테스트를 작성한다.**
 
 `components/game/U1Preview.test.ts`에 기본 초기 화면과 게시판 초기 화면을 각각 검사한다.
 
@@ -102,13 +102,13 @@ it("screen이 없거나 알 수 없는 값이면 인트로로 돌아간다", asy
 
 `page.tsx`에서 테스트할 수 있도록 named export `U1TestPage`를 제공하고 default export도 같은 함수를 가리키도록 테스트에 필요한 최소한의 공개 경계를 정한다.
 
-- [ ] **Step 2: 실패를 확인한다.**
+- [x] **Step 2: 실패를 확인한다.**
 
 Run: `pnpm test components/game/U1Preview.test.ts app/u1-test/page.test.ts`
 
 Expected: FAIL. 현재 `U1Preview`는 `initialScreen`을 받지 않고 `/u1-test` 페이지는 `searchParams`를 읽지 않으므로 게시판 초기 선택 계약이 없다.
 
-- [ ] **Step 3: 초기 화면 prop과 query 정규화를 구현한다.**
+- [x] **Step 3: 초기 화면 prop과 query 정규화를 구현한다.**
 
 `components/game/U1Preview.tsx`에 선택적 prop을 추가하고 state 초기값에만 사용한다. 기존 버튼 클릭과 화면 정의는 변경하지 않는다.
 
@@ -149,13 +149,13 @@ export async function U1TestPage({
 export default U1TestPage;
 ```
 
-- [ ] **Step 4: 단위 테스트와 타입 검사를 통과시킨다.**
+- [x] **Step 4: 단위 테스트와 타입 검사를 통과시킨다.**
 
 Run: `pnpm test components/game/U1Preview.test.ts app/u1-test/page.test.ts && pnpm typecheck`
 
 Expected: PASS. 기본 `/u1-test`는 인트로이고 `?screen=board`는 게시판이며, 알 수 없는 query는 인트로다.
 
-- [ ] **Step 5: 이 단위를 커밋한다.**
+- [x] **Step 5: 이 단위를 커밋한다.**
 
 ```bash
 git add components/game/U1Preview.tsx components/game/U1Preview.test.ts app/u1-test/page.tsx app/u1-test/page.test.ts
@@ -177,7 +177,7 @@ git commit -m "화면: U1 게시판 프리뷰 초기 진입을 지원한다" -m 
 - Consumes: Task 1의 `/u1-test?screen=board` 목적지와 기존 U2 시작 상태 fixture.
 - Produces: `IntroScreen({ status, boardHref })`가 `href`를 가진 CTA를 렌더링하고 `U2Preview`가 고정 게시판 href를 전달한다.
 
-- [ ] **Step 1: 콜백 계약을 링크 계약으로 바꾸는 실패 테스트를 작성한다.**
+- [x] **Step 1: 콜백 계약을 링크 계약으로 바꾸는 실패 테스트를 작성한다.**
 
 `IntroScreen.test.ts`의 모든 fixture를 `boardHref` prop으로 바꾸고, 역할·수단·목표 문구와 목적지 링크를 검사한다.
 
@@ -205,13 +205,13 @@ expect(html).toContain('href="/u1-test?screen=board"');
 expect(html).toContain("게시판");
 ```
 
-- [ ] **Step 2: 실패를 확인한다.**
+- [x] **Step 2: 실패를 확인한다.**
 
 Run: `pnpm test components/game/IntroScreen.test.ts components/game/U2Preview.test.ts`
 
 Expected: FAIL. 현재 `IntroScreen`은 callback을 요구하고 `<button>`을 렌더링하며, `U2Preview`는 href를 출력하지 않는다.
 
-- [ ] **Step 3: `IntroScreen`을 네이티브 링크로 구현한다.**
+- [x] **Step 3: `IntroScreen`을 네이티브 링크로 구현한다.**
 
 `IntroScreenProps`를 아래 계약으로 바꾼다.
 
@@ -224,7 +224,7 @@ export interface IntroScreenProps {
 
 CTA의 기존 `className`, 아이콘, 문구, 화살표를 유지하면서 외부 요소만 `<button type="button" onClick={...}>`에서 `<a href={boardHref}>`로 바꾼다. 이동 상태, `aria-live` 피드백, callback prop은 제거한다.
 
-- [ ] **Step 4: U2 프리뷰에서 숨김 피드백 상태를 제거하고 목적지를 고정한다.**
+- [x] **Step 4: U2 프리뷰에서 숨김 피드백 상태를 제거하고 목적지를 고정한다.**
 
 `components/game/U2Preview.tsx`에서 `useState` import, `entryRequested`, 숨김 `<p>`를 제거하고 다음처럼 렌더링한다.
 
@@ -241,17 +241,17 @@ export function U2Preview() {
 }
 ```
 
-- [ ] **Step 5: CTA 링크의 기존 시각·포커스 스타일을 보존한다.**
+- [x] **Step 5: CTA 링크의 기존 시각·포커스 스타일을 보존한다.**
 
 `app/u2-intro.css`의 `.u2-intro__cta`에 `text-decoration: none;`을 추가한다. 기존 `display`, 색상, hover, `focus-visible`, cursor, 내부 아이콘·문구 스타일은 유지한다. 새 breakpoint나 색상 규칙을 만들지 않는다.
 
-- [ ] **Step 6: U2 관련 테스트와 타입 검사를 통과시킨다.**
+- [x] **Step 6: U2 관련 테스트와 타입 검사를 통과시킨다.**
 
 Run: `pnpm test components/game/IntroScreen.test.ts components/game/U2Preview.test.ts && pnpm typecheck`
 
 Expected: PASS. U2 정적 렌더에는 시작 상태와 `/u1-test?screen=board` 링크가 있고, CTA는 버튼 피드백 상태를 생성하지 않는다.
 
-- [ ] **Step 7: 이 단위를 커밋한다.**
+- [x] **Step 7: 이 단위를 커밋한다.**
 
 ```bash
 git add components/game/IntroScreen.tsx components/game/IntroScreen.test.ts components/game/U2Preview.tsx components/game/U2Preview.test.ts app/u2-intro.css
@@ -270,7 +270,7 @@ git commit -m "화면: U2 인트로 CTA를 게시판 링크로 연결한다" -m 
 - Consumes: Task 1·2의 실제 URL과 U2 완료 구현, 승인된 spec·이 plan.
 - Produces: 공식 문서 색인과 작업 배정표가 U2 구현 상태·담당자·의존성 그래프와 일치한다.
 
-- [ ] **Step 1: README의 이번 개편 색인에 U2 문서를 추가한다.**
+- [x] **Step 1: README의 이번 개편 색인에 U2 문서를 추가한다.**
 
 `docs/README.md`의 `## 이번 개편 설계` 아래에 다음 두 링크를 추가한다.
 
@@ -279,7 +279,7 @@ git commit -m "화면: U2 인트로 CTA를 게시판 링크로 연결한다" -m 
 - [U2 인트로 게시판 진입 연결 구현 계획](superpowers/plans/2026-08-20-sanghwan-yoo-u2-intro-board-navigation.md)
 ```
 
-- [ ] **Step 2: 작업 배정표의 U2 행을 완료 상태로 갱신한다.**
+- [x] **Step 2: 작업 배정표의 U2 행을 완료 상태로 갱신한다.**
 
 `docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md`에서 U2 행을 다음 의미로 갱신한다.
 
@@ -289,7 +289,7 @@ git commit -m "화면: U2 인트로 CTA를 게시판 링크로 연결한다" -m 
 
 같은 표의 `I2` 선행에서 완료된 `U2`를 제거해 `U3 U4 U5 U6 I1`만 남긴다. 다른 완료 ID와 의존성은 변경하지 않는다.
 
-- [ ] **Step 3: U2 완료 기록을 추가한다.**
+- [x] **Step 3: U2 완료 기록을 추가한다.**
 
 `U1 완료 기록` 다음에 아래 기록을 추가한다.
 
@@ -300,13 +300,13 @@ git commit -m "화면: U2 인트로 CTA를 게시판 링크로 연결한다" -m 
 - U2는 캠페인 상태 머신이나 게시판 규칙을 소유하지 않고, U3 구현 전까지 기존 U1 게시판 프리뷰를 다음 화면으로 재사용한다.
 ```
 
-- [ ] **Step 4: 문서 링크·무결성 검사를 실행한다.**
+- [x] **Step 4: 문서 링크·무결성 검사를 실행한다.**
 
 Run: `git diff --check && pnpm test docs/DOCUMENT_LINKS.test.ts docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.test.ts`
 
 Expected: PASS. 새 README 링크가 실제 파일을 가리키고, 작업 배정표의 행·의존성·담당자·상태가 무결성 검사를 통과한다.
 
-- [ ] **Step 5: 문서 단위를 커밋한다.**
+- [x] **Step 5: 문서 단위를 커밋한다.**
 
 ```bash
 git add docs/README.md docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md
@@ -326,7 +326,7 @@ git commit -m "문서: U2 게시판 진입 구현과 계획을 색인한다" -m 
 - Consumes: Task 1~3의 구현·테스트·문서.
 - Produces: PR에 첨부할 자동 검사와 브라우저 흐름의 재현 가능한 증거.
 
-- [ ] **Step 1: 전체 정적 검사와 테스트를 실행한다.**
+- [x] **Step 1: 전체 정적 검사와 테스트를 실행한다.**
 
 Run:
 
@@ -339,13 +339,13 @@ pnpm build
 
 Expected: 네 명령 모두 exit code 0이며 Next build가 `/u1-test`와 `/u2-test` route를 오류 없이 생성한다.
 
-- [ ] **Step 2: 개발 서버를 실행하고 브라우저에서 U2를 연다.**
+- [x] **Step 2: 개발 서버를 실행하고 브라우저에서 U2를 연다.**
 
 Run: `pnpm dev`
 
 `vercel:agent-browser`로 `http://localhost:3000/u2-test`를 연다. 페이지 오류, console 오류, Next 오류 overlay가 없는지 먼저 확인한다.
 
-- [ ] **Step 3: CTA 클릭과 목적지 내용을 검증한다.**
+- [x] **Step 3: CTA 클릭과 목적지 내용을 검증한다.**
 
 브라우저에서 다음 순서로 확인한다.
 
@@ -356,14 +356,14 @@ Run: `pnpm dev`
 5. 좌측에 `길드 공고`, 우측에 `계약 상세`, `출전 파티`가 보인다.
 6. 새 페이지에서 page error와 console error가 발생하지 않는다.
 
-- [ ] **Step 4: 기본·잘못된 query의 회귀를 검증한다.**
+- [x] **Step 4: 기본·잘못된 query의 회귀를 검증한다.**
 
 브라우저에서 다음 두 URL도 확인한다.
 
 - `http://localhost:3000/u1-test`: `인트로` 버튼이 `aria-pressed="true"`다.
 - `http://localhost:3000/u1-test?screen=unknown`: `인트로` 버튼이 `aria-pressed="true"`다.
 
-- [ ] **Step 5: 작업 트리와 diff를 최종 확인한다.**
+- [x] **Step 5: 작업 트리와 diff를 최종 확인한다.**
 
 Run:
 
@@ -387,7 +387,7 @@ Expected: 의도한 소스·테스트·문서·spec·plan 파일만 변경되고
 - Consumes: Task 4의 성공한 검사 결과와 한글 커밋 3개, 승인된 spec·plan.
 - Produces: origin에 push된 기능 브랜치와 `main` 대상 PR.
 
-- [ ] **Step 1: 커밋 목록과 브랜치 상태를 확인한다.**
+- [x] **Step 1: 커밋 목록과 브랜치 상태를 확인한다.**
 
 Run:
 
