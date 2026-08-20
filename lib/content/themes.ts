@@ -3,13 +3,32 @@ import { validateThemes } from "@/lib/content/theme-validation";
 import type {
   BossDef,
   BossId,
+  EcologyProfile,
+  EcologyProfileId,
   EcologyRule,
   MonsterDef,
   MonsterId,
   RiskLevel,
   RuleId,
+  ThemeId,
   ThemeContent,
 } from "@/lib/domain";
+
+function ecologyProfile(
+  theme: ThemeId,
+  id: string,
+  initialRiskLevel: RiskLevel,
+  activeRuleIds: readonly string[],
+  activeMonsterIds: readonly string[],
+): EcologyProfile {
+  return {
+    id: id as EcologyProfileId,
+    theme,
+    initialRiskLevel,
+    activeRuleIds: activeRuleIds.map((ruleId) => ruleId as RuleId),
+    activeMonsterIds: activeMonsterIds.map((monsterId) => monsterId as MonsterId),
+  };
+}
 
 /**
  * 거미굴 생태 규칙 6개.
@@ -90,6 +109,44 @@ const SPIDER_MONSTERS: readonly MonsterDef[] = [
   },
 ];
 
+const SPIDER_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
+  ecologyProfile(
+    "spider",
+    "spider-shallow-a",
+    1,
+    ["spider-fire", "spider-vibration", "spider-carrion"],
+    ["spider-cave", "spider-corpse"],
+  ),
+  ecologyProfile(
+    "spider",
+    "spider-shallow-b",
+    1,
+    ["spider-fire", "spider-vibration", "spider-shadow"],
+    ["spider-cave", "spider-shadow"],
+  ),
+  ecologyProfile(
+    "spider",
+    "spider-carrion-route",
+    2,
+    ["spider-fire", "spider-carrion", "spider-shadow"],
+    ["spider-corpse", "spider-shadow"],
+  ),
+  ecologyProfile(
+    "spider",
+    "spider-dark-passage",
+    3,
+    ["spider-vibration", "spider-carrion", "spider-shadow"],
+    ["spider-cave", "spider-corpse", "spider-shadow"],
+  ),
+  ecologyProfile(
+    "spider",
+    "spider-queens-forecourt",
+    4,
+    ["spider-brood-light", "spider-armor-vibration", "spider-shadow"],
+    ["spider-hatchling", "spider-armored", "spider-shadow"],
+  ),
+];
+
 /**
  * 거미굴 보스 4종. minRiskLevel 오름차순.
  *
@@ -142,7 +199,7 @@ const SPIDER_THEME: ThemeContent = {
   name: "거미굴",
   rules: SPIDER_RULES,
   monsters: SPIDER_MONSTERS,
-  ecologyProfiles: [],
+  ecologyProfiles: SPIDER_ECOLOGY_PROFILES,
   bosses: SPIDER_BOSSES,
 };
 
@@ -225,6 +282,44 @@ const DESERT_MONSTERS: readonly MonsterDef[] = [
   },
 ];
 
+const DESERT_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
+  ecologyProfile(
+    "desert",
+    "desert-scorched-well",
+    1,
+    ["desert-heat", "desert-water", "desert-mummy-silent"],
+    ["desert-cobra", "desert-scorpion", "desert-mummy"],
+  ),
+  ecologyProfile(
+    "desert",
+    "desert-wind-well",
+    2,
+    ["desert-heat", "desert-water", "desert-wind-track"],
+    ["desert-cobra", "desert-scorpion"],
+  ),
+  ecologyProfile(
+    "desert",
+    "desert-buried-trail",
+    2,
+    ["desert-heat", "desert-mummy-silent", "desert-wind-track"],
+    ["desert-cobra", "desert-mummy"],
+  ),
+  ecologyProfile(
+    "desert",
+    "desert-dry-trail",
+    3,
+    ["desert-water", "desert-mummy-silent", "desert-wind-track"],
+    ["desert-scorpion", "desert-mummy"],
+  ),
+  ecologyProfile(
+    "desert",
+    "desert-burning-waste",
+    4,
+    ["desert-lizard-heat", "desert-spirit-dry", "desert-wind-track"],
+    ["desert-lizard", "desert-spirit"],
+  ),
+];
+
 /** 보스 수치는 SPIDER_BOSSES와 같은 위험도 구간별 값을 그대로 재사용한다. */
 const DESERT_BOSSES: readonly BossDef[] = [
   {
@@ -270,7 +365,7 @@ const DESERT_THEME: ThemeContent = {
   name: "사막",
   rules: DESERT_RULES,
   monsters: DESERT_MONSTERS,
-  ecologyProfiles: [],
+  ecologyProfiles: DESERT_ECOLOGY_PROFILES,
   bosses: DESERT_BOSSES,
 };
 
@@ -353,6 +448,44 @@ const GRAVEYARD_MONSTERS: readonly MonsterDef[] = [
   },
 ];
 
+const GRAVEYARD_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
+  ecologyProfile(
+    "graveyard",
+    "graveyard-quiet-guard",
+    2,
+    ["graveyard-silence", "graveyard-light", "graveyard-guard"],
+    ["graveyard-zombie", "graveyard-mage", "graveyard-soldier"],
+  ),
+  ecologyProfile(
+    "graveyard",
+    "graveyard-dim-crypt",
+    3,
+    ["graveyard-silence", "graveyard-light", "graveyard-desecration"],
+    ["graveyard-zombie", "graveyard-mage"],
+  ),
+  ecologyProfile(
+    "graveyard",
+    "graveyard-grave-robber",
+    3,
+    ["graveyard-silence", "graveyard-guard", "graveyard-desecration"],
+    ["graveyard-zombie", "graveyard-soldier"],
+  ),
+  ecologyProfile(
+    "graveyard",
+    "graveyard-hunters",
+    4,
+    ["graveyard-ghoul-sound", "graveyard-archer-light", "graveyard-guard"],
+    ["graveyard-ghoul", "graveyard-archer", "graveyard-soldier"],
+  ),
+  ecologyProfile(
+    "graveyard",
+    "graveyard-blighted-tomb",
+    5,
+    ["graveyard-ghoul-sound", "graveyard-archer-light", "graveyard-desecration"],
+    ["graveyard-ghoul", "graveyard-archer"],
+  ),
+];
+
 /** 보스 수치는 SPIDER_BOSSES와 같은 위험도 구간별 값을 그대로 재사용한다. */
 const GRAVEYARD_BOSSES: readonly BossDef[] = [
   {
@@ -398,7 +531,7 @@ const GRAVEYARD_THEME: ThemeContent = {
   name: "묘지",
   rules: GRAVEYARD_RULES,
   monsters: GRAVEYARD_MONSTERS,
-  ecologyProfiles: [],
+  ecologyProfiles: GRAVEYARD_ECOLOGY_PROFILES,
   bosses: GRAVEYARD_BOSSES,
 };
 

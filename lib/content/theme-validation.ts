@@ -1,5 +1,13 @@
 import { RuleError } from "@/lib/domain";
-import type { BossDef, EcologyRule, MonsterDef, RiskLevel, ThemeContent } from "@/lib/domain";
+import {
+  ACTIVE_ECOLOGY_RULES,
+  type BossDef,
+  type EcologyRule,
+  type EcologyProfile,
+  type MonsterDef,
+  type RiskLevel,
+  type ThemeContent,
+} from "@/lib/domain";
 
 /** 보스 minRiskLevel이 빠짐없이 담아야 하는 구간. */
 const REQUIRED_BOSS_TIERS: readonly RiskLevel[] = [1, 2, 3, 4];
@@ -7,6 +15,7 @@ const REQUIRED_BOSS_TIERS: readonly RiskLevel[] = [1, 2, 3, 4];
 const RULES_PER_THEME = 6;
 const MONSTERS_PER_THEME = 5;
 const BOSSES_PER_THEME = 4;
+const ECOLOGY_PROFILES_PER_THEME = 5;
 
 function invalid(message: string, details: Record<string, unknown>): never {
   throw new RuleError("INVALID_GENERATION", message, details);
@@ -119,6 +128,100 @@ function validateBosses(bosses: readonly BossDef[], theme: string): void {
   }
 }
 
+function validateEcologyProfiles(
+  profiles: readonly EcologyProfile[],
+  rules: readonly EcologyRule[],
+  monsters: readonly MonsterDef[],
+  theme: string,
+): void {
+  if (profiles.length !== ECOLOGY_PROFILES_PER_THEME) {
+    invalid(`생태 패키지가 ${ECOLOGY_PROFILES_PER_THEME}개가 아니다: ${theme}`, {
+      contentType: "ecologyProfile",
+      theme,
+      expected: ECOLOGY_PROFILES_PER_THEME,
+      actual: profiles.length,
+    });
+  }
+
+  requireUniqueIds(profiles.map((profile) => profile.id), "ecologyProfile", theme);
+
+  const ruleById = new Map(rules.map((rule) => [rule.id, rule]));
+  const monsterIds = new Set(monsters.map((monster) => monster.id));
+
+  for (const profile of profiles) {
+    if (profile.theme !== theme) {
+      invalid(`생태 패키지의 테마가 콘텐츠와 다르다: ${profile.id}`, {
+        contentType: "ecologyProfile",
+        theme,
+        profileId: profile.id,
+        actualTheme: profile.theme,
+      });
+    }
+
+    if (profile.activeRuleIds.length !== ACTIVE_ECOLOGY_RULES) {
+      invalid(`생태 패키지의 활성 규칙이 ${ACTIVE_ECOLOGY_RULES}개가 아니다: ${profile.id}`, {
+        contentType: "ecologyProfile",
+        theme,
+        profileId: profile.id,
+        expected: ACTIVE_ECOLOGY_RULES,
+        actual: profile.activeRuleIds.length,
+      });
+    }
+    requireUniqueIds(profile.activeRuleIds, "ecologyProfileRule", theme);
+
+    const activeRules: EcologyRule[] = [];
+    for (const ruleId of profile.activeRuleIds) {
+      const rule = ruleById.get(ruleId);
+      if (rule === undefined) {
+        invalid(`생태 패키지가 테마 밖 규칙을 참조한다: ${profile.id} → ${ruleId}`, {
+          contentType: "ecologyProfile",
+          theme,
+          profileId: profile.id,
+          ruleId,
+        });
+      }
+      activeRules.push(rule);
+    }
+
+    if (profile.activeMonsterIds.length === 0) {
+      invalid(`생태 패키지의 출현 잡몹이 비어 있다: ${profile.id}`, {
+        contentType: "ecologyProfile",
+        theme,
+        profileId: profile.id,
+      });
+    }
+    requireUniqueIds(profile.activeMonsterIds, "ecologyProfileMonster", theme);
+    for (const monsterId of profile.activeMonsterIds) {
+      if (!monsterIds.has(monsterId)) {
+        invalid(`생태 패키지가 테마 밖 잡몹을 참조한다: ${profile.id} → ${monsterId}`, {
+          contentType: "ecologyProfile",
+          theme,
+          profileId: profile.id,
+          monsterId,
+        });
+      }
+    }
+
+    const hasConditionalRule = activeRules.some((rule) => rule.conditional);
+    if (profile.initialRiskLevel <= 3 && hasConditionalRule) {
+      invalid(`저위험도 생태 패키지에 조건부 규칙이 있다: ${profile.id}`, {
+        contentType: "ecologyProfile",
+        theme,
+        profileId: profile.id,
+        initialRiskLevel: profile.initialRiskLevel,
+      });
+    }
+    if (profile.initialRiskLevel >= 4 && !hasConditionalRule) {
+      invalid(`고위험도 생태 패키지에 조건부 규칙이 없다: ${profile.id}`, {
+        contentType: "ecologyProfile",
+        theme,
+        profileId: profile.id,
+        initialRiskLevel: profile.initialRiskLevel,
+      });
+    }
+  }
+}
+
 /**
  * 테마 콘텐츠 배열을 검증한다.
  *
@@ -130,6 +233,7 @@ export function validateThemes(themes: readonly ThemeContent[]): void {
   for (const theme of themes) {
     validateRules(theme.rules, theme.id);
     validateMonsters(theme.monsters, theme.id);
+    validateEcologyProfiles(theme.ecologyProfiles, theme.rules, theme.monsters, theme.id);
     validateBosses(theme.bosses, theme.id);
   }
 }
