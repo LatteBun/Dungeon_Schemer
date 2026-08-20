@@ -54,7 +54,8 @@ export interface ItemDef {
  *
  * outcome은 플레이어의 의도이고 relation은 생태 규칙과의 관계다. 둘을 따로
  * 두는 이유가 있다. 유형 이름만으로는 `왜 이것이 도움인가`를 데이터가 설명하지
- * 못해, 검증기가 활성 규칙마다 세 유형이 갖춰졌는지 셀 수 없다.
+ * 못해, 검증기가 규칙마다 도움·방해가 갖춰졌는지 셀 수 없다. 중립은 참조 규칙이
+ * 없어 규칙별이 아니라 테마 전체로 센다.
  * docs/systems/INFORMATION_AND_DECEPTION.md
  */
 export interface AdviceOption {
