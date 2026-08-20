@@ -55,3 +55,13 @@
 - [던전 이벤트와 보스](../systems/DUNGEON_EVENTS_AND_BOSSES.md)
 - [성장과 엔딩](../systems/PROGRESSION_AND_ENDINGS.md)
 - [온보딩과 인터페이스](../experience/ONBOARDING_AND_INTERFACE.md)
+
+## 시각 레퍼런스
+
+U1 공통 게임 셸의 시각 언어와 정보 위계를 검토할 때만 다음 PNG를 참고한다. 이 파일들은 공식 규칙보다 낮은 파생 자료이며, 규칙·수치·구현 API의 근거는 [화면 규격](../experience/SCREEN_LAYOUT.md)과 시스템 문서다.
+
+- [REFERENCE_UI_01_CAMPAIGN_BOARD.png](png/REFERENCE_UI_01_CAMPAIGN_BOARD.png): 게시판의 좌 공고 목록과 우 계약 상세·파티·보상 구획
+- [REFERENCE_UI_02_DUNGEON_MAP.png](png/REFERENCE_UI_02_DUNGEON_MAP.png): 지도 경로와 우측 파티·다음 행동 구획
+- [REFERENCE_UI_03_DUNGEON_PROGRESS.png](png/REFERENCE_UI_03_DUNGEON_PROGRESS.png): 진행 장면·선택 카드·최근 반응 구획
+
+세 PNG는 앱 번들에 임베드하거나 화면에 복제하지 않는다. 구현은 어두운 프레임, 양피지 명도, 금속·금색 강조와 좌 조작/우 상세의 정보 밀도만 CSS와 컴포넌트 구조로 반영한다.

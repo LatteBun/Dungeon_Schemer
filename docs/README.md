@@ -52,7 +52,7 @@
 
 ### 사용자 경험
 
-- [SCREEN_LAYOUT.md](experience/SCREEN_LAYOUT.md): 3:1 게임 셸, 기준 해상도, 화면별 좌·우 구조와 색 외 단서 원칙
+- [SCREEN_LAYOUT.md](experience/SCREEN_LAYOUT.md): 3:2 게임 셸(좌 60%·우 40%), 기준 해상도, 화면별 좌·우 구조와 색 외 단서 원칙
 - [ONBOARDING_AND_INTERFACE.md](experience/ONBOARDING_AND_INTERFACE.md): 인트로부터 엔딩까지 화면 정보 구조, 30초 온보딩과 결과 피드백
 
 ### 시각 자료
@@ -71,7 +71,7 @@
 논의한 날의 기록이다. 이후 규칙이 바뀌어도 고치지 않는다. 지금 규칙은 위의 공식 문서를 따른다.
 
 - [2026-08-17 캠페인 개편 회의](meetings/DUNGEON_SCHEMER_MEETING_2026-08-17.md): 캐릭터 풀, 위험도, 생태 규칙, 엔딩 재정의
-- [2026-08-18 화면 방향 논의](meetings/SCREEN_UI_DIRECTION_2026-08-18.md): 3:1 셸, 화면별 구조와 참고 시안
+- [2026-08-18 화면 방향 논의](meetings/SCREEN_UI_DIRECTION_2026-08-18.md): 당시 3:1 셸 논의 기록, 화면별 구조와 참고 시안
 
 ## 기존 원본 자료
 
