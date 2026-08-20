@@ -14,6 +14,7 @@ export type {
   MonsterId,
   NodeId,
   OfferId,
+  PublicEnvironmentTagId,
   RuleId,
 } from "./ids";
 
@@ -41,10 +42,12 @@ export type {
   DungeonNode,
   DungeonStatus,
   EcologyRule,
+  EnvironmentTagDefinition,
   EcologyProfile,
   GeneratedMap,
   MonsterDef,
   NodeKind,
+  PublicEnvironmentTag,
   RiskLevel,
   ThemeContent,
   ThemeId,

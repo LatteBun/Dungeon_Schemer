@@ -1,6 +1,7 @@
 import type { CampaignDungeon, RiskLevel } from "./dungeon";
 import type { CharacterPool, ExpeditionParty } from "./pool";
 import type { DungeonId, OfferId } from "./ids";
+import type { PublicEnvironmentTag } from "./dungeon";
 
 /**
  * 길잡이 등급이다. 어느 위험도까지 들어갈 수 있는지만 정한다.
@@ -81,6 +82,8 @@ export interface BoardOffer {
   dungeonId: DungeonId;
   /** 계약 시점의 위험도. 정산의 명성 손실도 이 값을 쓴다. */
   riskLevel: RiskLevel;
+  /** 테마명을 반복하지 않는 넓은 환경 위험 표시값이다. */
+  publicEnvironmentTag: PublicEnvironmentTag;
   /** 계약 화면에서 본 위험이 정산에서 달라지지 않도록 공고에 고정한다. */
   party: ExpeditionParty;
   lockReason: OfferLockReason | null;

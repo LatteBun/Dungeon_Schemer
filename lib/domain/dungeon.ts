@@ -4,6 +4,7 @@ import type {
   EcologyProfileId,
   MonsterId,
   NodeId,
+  PublicEnvironmentTagId,
   RuleId,
 } from "./ids";
 
@@ -50,6 +51,17 @@ export interface MonsterDef {
   traits: readonly string[];
 }
 
+/** 공고에서 공개하는 넓은 환경 위험의 표시값이다. */
+export interface PublicEnvironmentTag {
+  id: PublicEnvironmentTagId;
+  label: string;
+}
+
+/** 환경 특성과 그 특성을 뒷받침하는 몬스터 특성의 콘텐츠 정의다. */
+export interface EnvironmentTagDefinition extends PublicEnvironmentTag {
+  evidenceMonsterTraits: readonly string[];
+}
+
 /** 규칙과 그 규칙이 허용하는 잡몹을 함께 묶은 생태 패키지다. */
 export interface EcologyProfile {
   id: EcologyProfileId;
@@ -57,6 +69,7 @@ export interface EcologyProfile {
   initialRiskLevel: RiskLevel;
   activeRuleIds: readonly RuleId[];
   activeMonsterIds: readonly MonsterId[];
+  publicEnvironmentTagId: PublicEnvironmentTagId;
 }
 
 /**
@@ -85,6 +98,7 @@ export interface ThemeContent {
   name: string;
   rules: readonly EcologyRule[];
   monsters: readonly MonsterDef[];
+  publicEnvironmentTags: readonly EnvironmentTagDefinition[];
   ecologyProfiles: readonly EcologyProfile[];
   /** minRiskLevel 1·2·3·4 오름차순 4개. */
   bosses: readonly BossDef[];

@@ -6,8 +6,10 @@ import type {
   EcologyProfile,
   EcologyProfileId,
   EcologyRule,
+  EnvironmentTagDefinition,
   MonsterDef,
   MonsterId,
+  PublicEnvironmentTagId,
   RiskLevel,
   RuleId,
   ThemeId,
@@ -20,6 +22,7 @@ function ecologyProfile(
   initialRiskLevel: RiskLevel,
   activeRuleIds: readonly string[],
   activeMonsterIds: readonly string[],
+  publicEnvironmentTagId: string,
 ): EcologyProfile {
   return {
     id: id as EcologyProfileId,
@@ -27,6 +30,7 @@ function ecologyProfile(
     initialRiskLevel,
     activeRuleIds: activeRuleIds.map((ruleId) => ruleId as RuleId),
     activeMonsterIds: activeMonsterIds.map((monsterId) => monsterId as MonsterId),
+    publicEnvironmentTagId: publicEnvironmentTagId as PublicEnvironmentTagId,
   };
 }
 
@@ -109,6 +113,24 @@ const SPIDER_MONSTERS: readonly MonsterDef[] = [
   },
 ];
 
+const SPIDER_PUBLIC_ENVIRONMENT_TAGS: readonly EnvironmentTagDefinition[] = [
+  {
+    id: "spider-vibration-alert" as PublicEnvironmentTagId,
+    label: "진동 경계",
+    evidenceMonsterTraits: ["진동 감지"],
+  },
+  {
+    id: "spider-carrion-trace" as PublicEnvironmentTagId,
+    label: "시체 흔적",
+    evidenceMonsterTraits: ["부패한 시체를 먹음"],
+  },
+  {
+    id: "spider-dark-ambush" as PublicEnvironmentTagId,
+    label: "어둠 잠복",
+    evidenceMonsterTraits: ["어둠 속에서만 활동"],
+  },
+];
+
 const SPIDER_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
   ecologyProfile(
     "spider",
@@ -116,6 +138,7 @@ const SPIDER_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     1,
     ["spider-fire", "spider-vibration", "spider-carrion"],
     ["spider-cave", "spider-corpse"],
+    "spider-vibration-alert",
   ),
   ecologyProfile(
     "spider",
@@ -123,6 +146,7 @@ const SPIDER_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     1,
     ["spider-fire", "spider-vibration", "spider-shadow"],
     ["spider-cave", "spider-shadow"],
+    "spider-dark-ambush",
   ),
   ecologyProfile(
     "spider",
@@ -130,6 +154,7 @@ const SPIDER_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     2,
     ["spider-fire", "spider-carrion", "spider-shadow"],
     ["spider-corpse", "spider-shadow"],
+    "spider-carrion-trace",
   ),
   ecologyProfile(
     "spider",
@@ -137,6 +162,7 @@ const SPIDER_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     3,
     ["spider-vibration", "spider-carrion", "spider-shadow"],
     ["spider-cave", "spider-corpse", "spider-shadow"],
+    "spider-dark-ambush",
   ),
   ecologyProfile(
     "spider",
@@ -144,6 +170,7 @@ const SPIDER_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     4,
     ["spider-brood-light", "spider-armor-vibration", "spider-shadow"],
     ["spider-hatchling", "spider-armored", "spider-shadow"],
+    "spider-dark-ambush",
   ),
 ];
 
@@ -199,6 +226,7 @@ const SPIDER_THEME: ThemeContent = {
   name: "거미굴",
   rules: SPIDER_RULES,
   monsters: SPIDER_MONSTERS,
+  publicEnvironmentTags: SPIDER_PUBLIC_ENVIRONMENT_TAGS,
   ecologyProfiles: SPIDER_ECOLOGY_PROFILES,
   bosses: SPIDER_BOSSES,
 };
@@ -282,6 +310,24 @@ const DESERT_MONSTERS: readonly MonsterDef[] = [
   },
 ];
 
+const DESERT_PUBLIC_ENVIRONMENT_TAGS: readonly EnvironmentTagDefinition[] = [
+  {
+    id: "desert-heat-exposure" as PublicEnvironmentTagId,
+    label: "열기 노출",
+    evidenceMonsterTraits: ["열기에 예민", "열을 저장함"],
+  },
+  {
+    id: "desert-water-zone" as PublicEnvironmentTagId,
+    label: "수분 지대",
+    evidenceMonsterTraits: ["물가 근처에 굴을 팜"],
+  },
+  {
+    id: "desert-erased-tracks" as PublicEnvironmentTagId,
+    label: "발자국 소실",
+    evidenceMonsterTraits: ["발자국을 남기지 않음"],
+  },
+];
+
 const DESERT_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
   ecologyProfile(
     "desert",
@@ -289,6 +335,7 @@ const DESERT_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     1,
     ["desert-heat", "desert-water", "desert-mummy-silent"],
     ["desert-cobra", "desert-scorpion", "desert-mummy"],
+    "desert-water-zone",
   ),
   ecologyProfile(
     "desert",
@@ -296,6 +343,7 @@ const DESERT_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     2,
     ["desert-heat", "desert-water", "desert-wind-track"],
     ["desert-cobra", "desert-scorpion"],
+    "desert-heat-exposure",
   ),
   ecologyProfile(
     "desert",
@@ -303,6 +351,7 @@ const DESERT_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     2,
     ["desert-heat", "desert-mummy-silent", "desert-wind-track"],
     ["desert-cobra", "desert-mummy"],
+    "desert-erased-tracks",
   ),
   ecologyProfile(
     "desert",
@@ -310,6 +359,7 @@ const DESERT_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     3,
     ["desert-water", "desert-mummy-silent", "desert-wind-track"],
     ["desert-scorpion", "desert-mummy"],
+    "desert-water-zone",
   ),
   ecologyProfile(
     "desert",
@@ -317,6 +367,7 @@ const DESERT_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     4,
     ["desert-lizard-heat", "desert-spirit-dry", "desert-wind-track"],
     ["desert-lizard", "desert-spirit"],
+    "desert-heat-exposure",
   ),
 ];
 
@@ -365,6 +416,7 @@ const DESERT_THEME: ThemeContent = {
   name: "사막",
   rules: DESERT_RULES,
   monsters: DESERT_MONSTERS,
+  publicEnvironmentTags: DESERT_PUBLIC_ENVIRONMENT_TAGS,
   ecologyProfiles: DESERT_ECOLOGY_PROFILES,
   bosses: DESERT_BOSSES,
 };
@@ -448,6 +500,24 @@ const GRAVEYARD_MONSTERS: readonly MonsterDef[] = [
   },
 ];
 
+const GRAVEYARD_PUBLIC_ENVIRONMENT_TAGS: readonly EnvironmentTagDefinition[] = [
+  {
+    id: "graveyard-sound-alert" as PublicEnvironmentTagId,
+    label: "소리 경계",
+    evidenceMonsterTraits: ["소리에 민감"],
+  },
+  {
+    id: "graveyard-light-exposure" as PublicEnvironmentTagId,
+    label: "빛 노출",
+    evidenceMonsterTraits: ["빛에 이끌림"],
+  },
+  {
+    id: "graveyard-burial-guard" as PublicEnvironmentTagId,
+    label: "매장물 수호",
+    evidenceMonsterTraits: ["부장품 수호"],
+  },
+];
+
 const GRAVEYARD_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
   ecologyProfile(
     "graveyard",
@@ -455,6 +525,7 @@ const GRAVEYARD_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     2,
     ["graveyard-silence", "graveyard-light", "graveyard-guard"],
     ["graveyard-zombie", "graveyard-mage", "graveyard-soldier"],
+    "graveyard-burial-guard",
   ),
   ecologyProfile(
     "graveyard",
@@ -462,6 +533,7 @@ const GRAVEYARD_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     3,
     ["graveyard-silence", "graveyard-light", "graveyard-desecration"],
     ["graveyard-zombie", "graveyard-mage"],
+    "graveyard-light-exposure",
   ),
   ecologyProfile(
     "graveyard",
@@ -469,6 +541,7 @@ const GRAVEYARD_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     3,
     ["graveyard-silence", "graveyard-guard", "graveyard-desecration"],
     ["graveyard-zombie", "graveyard-soldier"],
+    "graveyard-burial-guard",
   ),
   ecologyProfile(
     "graveyard",
@@ -476,6 +549,7 @@ const GRAVEYARD_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     4,
     ["graveyard-ghoul-sound", "graveyard-archer-light", "graveyard-guard"],
     ["graveyard-ghoul", "graveyard-archer", "graveyard-soldier"],
+    "graveyard-sound-alert",
   ),
   ecologyProfile(
     "graveyard",
@@ -483,6 +557,7 @@ const GRAVEYARD_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     5,
     ["graveyard-ghoul-sound", "graveyard-archer-light", "graveyard-desecration"],
     ["graveyard-ghoul", "graveyard-archer"],
+    "graveyard-sound-alert",
   ),
 ];
 
@@ -531,6 +606,7 @@ const GRAVEYARD_THEME: ThemeContent = {
   name: "묘지",
   rules: GRAVEYARD_RULES,
   monsters: GRAVEYARD_MONSTERS,
+  publicEnvironmentTags: GRAVEYARD_PUBLIC_ENVIRONMENT_TAGS,
   ecologyProfiles: GRAVEYARD_ECOLOGY_PROFILES,
   bosses: GRAVEYARD_BOSSES,
 };

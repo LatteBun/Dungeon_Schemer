@@ -98,6 +98,38 @@
 | `graveyard-hunters` | ★4 | `graveyard-ghoul-sound` · `graveyard-archer-light` · `graveyard-guard` | 구울 · 스켈레톤 궁수 · 스켈레톤 병사 |
 | `graveyard-blighted-tomb` | ★5 | `graveyard-ghoul-sound` · `graveyard-archer-light` · `graveyard-desecration` | 구울 · 스켈레톤 궁수 |
 
+### 공고 공개 환경 특성
+
+각 테마는 플레이어에게 보여줄 환경 특성 후보를 **정확히 3개** 가진다. 던전 이름(`거미굴 1` 등)은 슬롯을 식별할 뿐 테마의 정답 단서로 사용하지 않는다. 공고를 생성할 때는 생태 패키지의 출현 잡몹이 실제로 뒷받침하는 후보 하나를 골라 공개한다.
+
+| 테마 | 후보 환경 특성 (`id` · 표시명 · 근거 잡몹 특성) |
+| --- | --- |
+| 거미굴 | `spider-vibration-alert` · 진동 경계 · 진동 감지 / `spider-carrion-trace` · 시체 흔적 · 부패한 시체를 먹음 / `spider-dark-ambush` · 어둠 잠복 · 어둠 속에서만 활동 |
+| 사막 | `desert-heat-exposure` · 열기 노출 · 열기에 예민·열을 저장함 / `desert-water-zone` · 수분 지대 · 물가 근처에 굴을 팜 / `desert-erased-tracks` · 발자국 소실 · 발자국을 남기지 않음 |
+| 묘지 | `graveyard-sound-alert` · 소리 경계 · 소리에 민감 / `graveyard-light-exposure` · 빛 노출 · 빛에 이끌림 / `graveyard-burial-guard` · 매장물 수호 · 부장품 수호 |
+
+후보 셋은 테마의 모든 패키지에서 고정한다. 패키지의 활성 잡몹 특성과 맞지 않는 후보는 선택하지 않는다.
+
+| 생태 패키지 | 공개 환경 특성 |
+| --- | --- |
+| `spider-shallow-a` | 진동 경계 |
+| `spider-shallow-b` | 어둠 잠복 |
+| `spider-carrion-route` | 시체 흔적 |
+| `spider-dark-passage` | 어둠 잠복 |
+| `spider-queens-forecourt` | 어둠 잠복 |
+| `desert-scorched-well` | 수분 지대 |
+| `desert-wind-well` | 열기 노출 |
+| `desert-buried-trail` | 발자국 소실 |
+| `desert-dry-trail` | 수분 지대 |
+| `desert-burning-waste` | 열기 노출 |
+| `graveyard-quiet-guard` | 매장물 수호 |
+| `graveyard-dim-crypt` | 빛 노출 |
+| `graveyard-grave-robber` | 매장물 수호 |
+| `graveyard-hunters` | 소리 경계 |
+| `graveyard-blighted-tomb` | 소리 경계 |
+
+같은 캠페인 시드에서는 이 매핑이 고정되며, 다음 월드턴에 게시판을 다시 만들더라도 던전의 공개 특성은 바뀌지 않는다.
+
 ## 공개와 은폐
 
 활성 규칙 중 일부를 계약 화면의 `답사 기록`에서 공개한다. 공개 수는 던전의 **현재 위험도**를 따른다.
@@ -181,6 +213,7 @@
 - 초기 위험도별 패키지 수가 고정 슬롯 분포와 맞지 않거나, ★1~3에 조건부 규칙이 있거나 ★4~5에 조건부 규칙이 없는 경우
 - 규칙·몬스터·보스의 식별자가 중복되거나 문구가 빈 경우
 - 활성 규칙에 대해 도움·방해·중립이 각각 2개 미만인 경우
+- 테마의 공개 환경 특성이 정확히 3개가 아니거나 식별자가 중복되고, 생태 패키지의 출현 잡몹 특성으로 근거를 확인할 수 없는 경우
 
 부족한 것을 조용히 메우면 밸런스가 아니라 계약이 무너진 것을 아무도 모르게 된다.
 

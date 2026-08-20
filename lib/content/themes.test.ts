@@ -39,6 +39,47 @@ describe("THEMES", () => {
       }
     }
   });
+
+  it("각 테마는 세 후보 환경 특성과 패키지별 태그 참조를 가진다", () => {
+    for (const theme of THEMES) {
+      expect(theme.publicEnvironmentTags).toHaveLength(3);
+      expect(new Set(theme.publicEnvironmentTags.map((tag) => tag.id)).size).toBe(3);
+      expect(theme.ecologyProfiles.every((profile) =>
+        theme.publicEnvironmentTags.some((tag) => tag.id === profile.publicEnvironmentTagId),
+      )).toBe(true);
+    }
+  });
+
+  it("15개 생태 패키지의 공개 환경 특성 매핑이 고정돼 있다", () => {
+    const labelsByProfileId = Object.fromEntries(
+      THEMES.flatMap((theme) =>
+        theme.ecologyProfiles.map((profile) => [
+          profile.id,
+          theme.publicEnvironmentTags.find(
+            (tag) => tag.id === profile.publicEnvironmentTagId,
+          )?.label,
+        ]),
+      ),
+    );
+
+    expect(labelsByProfileId).toEqual({
+      "spider-shallow-a": "진동 경계",
+      "spider-shallow-b": "어둠 잠복",
+      "spider-carrion-route": "시체 흔적",
+      "spider-dark-passage": "어둠 잠복",
+      "spider-queens-forecourt": "어둠 잠복",
+      "desert-scorched-well": "수분 지대",
+      "desert-wind-well": "열기 노출",
+      "desert-buried-trail": "발자국 소실",
+      "desert-dry-trail": "수분 지대",
+      "desert-burning-waste": "열기 노출",
+      "graveyard-quiet-guard": "매장물 수호",
+      "graveyard-dim-crypt": "빛 노출",
+      "graveyard-grave-robber": "매장물 수호",
+      "graveyard-hunters": "소리 경계",
+      "graveyard-blighted-tomb": "소리 경계",
+    });
+  });
 });
 
 describe("selectThemeBoss", () => {

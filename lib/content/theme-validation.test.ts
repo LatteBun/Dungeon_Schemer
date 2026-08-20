@@ -7,8 +7,10 @@ import type {
   EcologyProfile,
   EcologyProfileId,
   EcologyRule,
+  EnvironmentTagDefinition,
   MonsterDef,
   MonsterId,
+  PublicEnvironmentTagId,
   RuleId,
   ThemeContent,
 } from "@/lib/domain";
@@ -18,7 +20,12 @@ function rule(id: string, conditional = false): EcologyRule {
 }
 
 function monster(id: string): MonsterDef {
-  return { id: id as MonsterId, theme: "spider", name: `몬스터 ${id}`, traits: [] };
+  return {
+    id: id as MonsterId,
+    theme: "spider",
+    name: `몬스터 ${id}`,
+    traits: ["특성"],
+  };
 }
 
 function boss(id: string, minRiskLevel: 1 | 2 | 3 | 4): BossDef {
@@ -45,6 +52,7 @@ function profile(id: string, initialRiskLevel: 1 | 2 | 3 | 4 | 5): EcologyProfil
       (conditional ? "r4" : "r5") as RuleId,
     ],
     activeMonsterIds: ["m1" as MonsterId],
+    publicEnvironmentTagId: `tag-${(Number(id.slice(1)) % 3) + 1}` as PublicEnvironmentTagId,
   };
 }
 
@@ -78,6 +86,13 @@ function validTheme(overrides: Partial<ThemeContent> = {}): ThemeContent {
       monster("m4"),
       monster("m5"),
     ],
+    publicEnvironmentTags: [1, 2, 3].map(
+      (index): EnvironmentTagDefinition => ({
+        id: `tag-${index}` as PublicEnvironmentTagId,
+        label: `환경 ${index}`,
+        evidenceMonsterTraits: ["특성"],
+      }),
+    ),
     bosses: [boss("b1", 1), boss("b2", 2), boss("b3", 3), boss("b4", 4)],
     ecologyProfiles: [
       profile("p1", 1),
@@ -218,6 +233,47 @@ describe("validateThemes", () => {
         profiles[2],
         { ...profiles[3], activeRuleIds: ["r2" as RuleId, "r3" as RuleId, "r5" as RuleId] },
         profiles[4],
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("환경 특성 후보가 정확히 세 개가 아니면 거부한다", () => {
+    const theme = validTheme({
+      publicEnvironmentTags: validTheme().publicEnvironmentTags.slice(0, 2),
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("환경 특성 후보 ID가 중복이면 거부한다", () => {
+    const tags = validTheme().publicEnvironmentTags;
+    const theme = validTheme({
+      publicEnvironmentTags: [tags[0], { ...tags[1], id: tags[0].id }, tags[2]],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("생태 패키지가 존재하지 않는 환경 특성을 참조하면 거부한다", () => {
+    const profiles = validTheme().ecologyProfiles;
+    const theme = validTheme({
+      ecologyProfiles: [
+        {
+          ...profiles[0],
+          publicEnvironmentTagId: "outside" as PublicEnvironmentTagId,
+        },
+        ...profiles.slice(1),
+      ],
+    });
+    expectInvalidGeneration(() => validateThemes([theme]));
+  });
+
+  it("환경 특성의 몬스터 근거가 출현 목록에 없으면 거부한다", () => {
+    const tags = validTheme().publicEnvironmentTags;
+    const theme = validTheme({
+      publicEnvironmentTags: [
+        { ...tags[0], evidenceMonsterTraits: ["존재하지 않는 특성"] },
+        tags[1],
+        tags[2],
       ],
     });
     expectInvalidGeneration(() => validateThemes([theme]));
