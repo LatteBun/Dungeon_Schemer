@@ -3,6 +3,8 @@ import { validateThemes } from "@/lib/content/theme-validation";
 import type {
   BossDef,
   BossId,
+  EcologyProfile,
+  EcologyProfileId,
   EcologyRule,
   MonsterDef,
   MonsterId,
@@ -30,6 +32,21 @@ function boss(id: string, minRiskLevel: 1 | 2 | 3 | 4): BossDef {
   };
 }
 
+function profile(id: string, initialRiskLevel: 1 | 2 | 3 | 4 | 5): EcologyProfile {
+  const conditional = initialRiskLevel >= 4;
+  return {
+    id: id as EcologyProfileId,
+    theme: "spider",
+    initialRiskLevel,
+    activeRuleIds: [
+      `${id}-r1` as RuleId,
+      `${id}-r2` as RuleId,
+      `${id}-${conditional ? "r3-conditional" : "r3"}` as RuleId,
+    ],
+    activeMonsterIds: [`${id}-m1` as MonsterId],
+  };
+}
+
 /** 계약을 만족하는 최소 fixture. 개별 위반 테스트가 이 값을 부분적으로 망가뜨린다. */
 function validTheme(overrides: Partial<ThemeContent> = {}): ThemeContent {
   return {
@@ -51,6 +68,13 @@ function validTheme(overrides: Partial<ThemeContent> = {}): ThemeContent {
       monster("m5"),
     ],
     bosses: [boss("b1", 1), boss("b2", 2), boss("b3", 3), boss("b4", 4)],
+    ecologyProfiles: [
+      profile("p1", 1),
+      profile("p2", 2),
+      profile("p3", 3),
+      profile("p4", 4),
+      profile("p5", 5),
+    ],
     ...overrides,
   };
 }

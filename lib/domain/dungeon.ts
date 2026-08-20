@@ -1,4 +1,11 @@
-import type { BossId, DungeonId, MonsterId, NodeId, RuleId } from "./ids";
+import type {
+  BossId,
+  DungeonId,
+  EcologyProfileId,
+  MonsterId,
+  NodeId,
+  RuleId,
+} from "./ids";
 
 /**
  * 던전의 위험도다. 지도 크기·보상·정보 기회를 모두 이 축이 정한다.
@@ -43,6 +50,15 @@ export interface MonsterDef {
   traits: readonly string[];
 }
 
+/** 규칙과 그 규칙이 허용하는 잡몹을 함께 묶은 생태 패키지다. */
+export interface EcologyProfile {
+  id: EcologyProfileId;
+  theme: ThemeId;
+  initialRiskLevel: RiskLevel;
+  activeRuleIds: readonly RuleId[];
+  activeMonsterIds: readonly MonsterId[];
+}
+
 /**
  * 위험도 구간 하나를 담당하는 보스다. 재도전해도 같은 구간이면 유지된다.
  *
@@ -69,6 +85,7 @@ export interface ThemeContent {
   name: string;
   rules: readonly EcologyRule[];
   monsters: readonly MonsterDef[];
+  ecologyProfiles: readonly EcologyProfile[];
   /** minRiskLevel 1·2·3·4 오름차순 4개. */
   bosses: readonly BossDef[];
 }
@@ -93,6 +110,10 @@ export interface CampaignDungeon {
   riskLevel: RiskLevel;
   /** 그 던전에서 참인 규칙 3개. 재도전해도 유지된다. */
   activeRuleIds: readonly RuleId[];
+  /** 생태 규칙과 의미적으로 연결된 출현 잡몹 후보다. */
+  activeMonsterIds: readonly MonsterId[];
+  /** 배정된 생태 패키지다. 재도전해도 유지된다. */
+  ecologyProfileId: EcologyProfileId;
   bossId: BossId;
   status: DungeonStatus;
   /** 실패 횟수. 위험도 상승 이력을 설명할 때 쓴다. */

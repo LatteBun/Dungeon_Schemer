@@ -21,3 +21,4 @@ export type OfferId = Brand<string, "OfferId">;
 /** 생태 규칙 한 줄. 카드가 이 ID로 자기가 참조하는 규칙을 가리킨다. */
 export type RuleId = Brand<string, "RuleId">;
 export type MonsterId = Brand<string, "MonsterId">;
+export type EcologyProfileId = Brand<string, "EcologyProfileId">;

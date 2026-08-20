@@ -142,6 +142,7 @@ const SPIDER_THEME: ThemeContent = {
   name: "거미굴",
   rules: SPIDER_RULES,
   monsters: SPIDER_MONSTERS,
+  ecologyProfiles: [],
   bosses: SPIDER_BOSSES,
 };
 
@@ -269,6 +270,7 @@ const DESERT_THEME: ThemeContent = {
   name: "사막",
   rules: DESERT_RULES,
   monsters: DESERT_MONSTERS,
+  ecologyProfiles: [],
   bosses: DESERT_BOSSES,
 };
 
@@ -396,6 +398,7 @@ const GRAVEYARD_THEME: ThemeContent = {
   name: "묘지",
   rules: GRAVEYARD_RULES,
   monsters: GRAVEYARD_MONSTERS,
+  ecologyProfiles: [],
   bosses: GRAVEYARD_BOSSES,
 };
 
