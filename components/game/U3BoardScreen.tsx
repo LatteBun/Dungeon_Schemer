@@ -49,7 +49,7 @@ function RewardPair({
 }) {
   return (
     <span className={compact ? "u3-reward u3-reward--compact" : "u3-reward"}>
-      <span>
+      <span title="명성">
         <img
           src="/assets/u2/status-reputation.svg"
           alt=""
@@ -57,9 +57,10 @@ function RewardPair({
           width={18}
           height={18}
         />
+        <span className="u3-reward__label">명성</span>
         {reputation}
       </span>
-      <span>
+      <span title="골드">
         <img
           src="/assets/u2/status-gold.svg"
           alt=""
@@ -67,6 +68,7 @@ function RewardPair({
           width={18}
           height={18}
         />
+        <span className="u3-reward__label">골드</span>
         {gold}
       </span>
     </span>
@@ -92,29 +94,23 @@ function NoticeCard({
       aria-pressed={selected}
       onClick={onSelect}
     >
-      <img
-        className="u3-notice__pin"
-        src="/assets/u3/board-pin.svg"
-        alt=""
-        aria-hidden="true"
-        width={24}
-        height={24}
-      />
-      <img
-        className="u3-notice__theme-mark"
-        src={THEME_ICON[notice.theme]}
-        alt=""
-        aria-hidden="true"
-        width={74}
-        height={74}
-      />
-
       <span className="u3-notice__heading">
         <strong>{notice.dungeonName}</strong>
         <small>{notice.themeLabel}</small>
       </span>
 
       <RiskStars riskLevel={notice.riskLevel} />
+
+      <span className="u3-notice__theme-visual" aria-hidden="true">
+        <img
+          className="u3-notice__theme-art"
+          data-testid="u3-notice-theme-art"
+          src={THEME_ICON[notice.theme]}
+          alt=""
+          width={120}
+          height={120}
+        />
+      </span>
 
       <span className="u3-notice__label">3명 생존 보상</span>
       <RewardPair
@@ -194,7 +190,13 @@ function NoticeBoard({
   );
 }
 
-function PartyCard({ member, index }: { member: U3OfferDetailView["party"][number]; index: number }) {
+function PartyCard({
+  member,
+  index,
+}: {
+  member: U3OfferDetailView["party"][number];
+  index: number;
+}) {
   return (
     <article className="u3-party-card" data-testid="u3-party-member">
       <span className="u3-party-card__number" aria-hidden="true">
