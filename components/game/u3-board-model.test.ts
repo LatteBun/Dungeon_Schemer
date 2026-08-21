@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { CharacterId } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createBoardOffers } from "@/lib/rules/board";
 import {
@@ -70,7 +71,8 @@ describe("U3 board model", () => {
     expect(detail?.party).toHaveLength(3);
 
     for (const member of detail?.party ?? []) {
-      const source = campaign.pool.byId[member.id];
+      const memberId: CharacterId = member.id;
+      const source = campaign.pool.byId[memberId];
       expect(source).toBeDefined();
       expect(member.hp).toBe(source?.hp);
       expect(member.maxHp).toBe(source?.maxHp);

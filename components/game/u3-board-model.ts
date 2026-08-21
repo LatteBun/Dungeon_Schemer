@@ -3,6 +3,7 @@ import { RANK_RISK_LIMIT } from "@/lib/domain";
 import type {
   BoardOffer,
   CampaignState,
+  CharacterId,
   Personality,
   RiskLevel,
   ThemeId,
@@ -41,7 +42,7 @@ export interface U3ContractOutcomeView {
 }
 
 export interface U3PartyMemberView {
-  id: string;
+  id: CharacterId;
   name: string;
   classLabel: string;
   personalityLabel: string;
@@ -77,7 +78,7 @@ export interface U3BoardView {
   detailsByOfferId: Readonly<Record<string, U3OfferDetailView>>;
 }
 
-export type U3PortraitMap = Readonly<Record<string, string>>;
+export type U3PortraitMap = Readonly<Partial<Record<CharacterId, string>>>;
 
 export function contractOutcomesForRisk(
   riskLevel: RiskLevel,

@@ -32,6 +32,7 @@
 
 **Files:**
 - Modify: `components/game/u3-board-model.test.ts:1-79`
+- Modify: `components/game/U3BoardScreen.test.ts:1-21`
 - Modify: `components/game/u3-board-model.ts:1-84`
 
 **Interfaces:**
@@ -85,7 +86,7 @@ export interface U3PartyMemberView {
 export type U3PortraitMap = Readonly<Partial<Record<CharacterId, string>>>;
 ```
 
-Keep `character.id` as the returned value in `createU3BoardView`; do not cast to a plain string and do not change runtime data.
+Keep `character.id` as the returned value in `createU3BoardView`; do not cast to a plain string and do not change runtime data. Update the static `U3BoardScreen.test.ts` party fixture to cast its three representative IDs to `CharacterId`, because it is a consumer of the same screen-model contract.
 
 - [ ] **Step 4: Run the focused type and behavior checks**
 

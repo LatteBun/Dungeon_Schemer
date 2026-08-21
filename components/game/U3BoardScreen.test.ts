@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import type { CharacterId } from "@/lib/domain";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U3BoardView, U3OfferDetailView } from "./u3-board-model";
 import { U3BoardScreen } from "./U3BoardScreen";
@@ -15,9 +16,9 @@ const status: TopStatusView = {
 };
 
 const party = [
-  { id: "character-1", name: "아델", classLabel: "전사", personalityLabel: "신중한", hp: 40, maxHp: 45, trust: 72, gold: 24, portraitSrc: "/assets/characters/adel.webp" },
-  { id: "character-2", name: "보른", classLabel: "도적", personalityLabel: "의심 많은", hp: 27, maxHp: 32, trust: 61, gold: 31 },
-  { id: "character-3", name: "세라", classLabel: "성직자", personalityLabel: "정의로운", hp: 28, maxHp: 28, trust: 80, gold: 20 },
+  { id: "character-1" as CharacterId, name: "아델", classLabel: "전사", personalityLabel: "신중한", hp: 40, maxHp: 45, trust: 72, gold: 24, portraitSrc: "/assets/characters/adel.webp" },
+  { id: "character-2" as CharacterId, name: "보른", classLabel: "도적", personalityLabel: "의심 많은", hp: 27, maxHp: 32, trust: 61, gold: 31 },
+  { id: "character-3" as CharacterId, name: "세라", classLabel: "성직자", personalityLabel: "정의로운", hp: 28, maxHp: 28, trust: 80, gold: 20 },
 ] as const;
 
 function detail(offerId: string, dungeonName: string, environmentLabel: string, locked: boolean): U3OfferDetailView {
