@@ -10,6 +10,9 @@ const extractedPngAssets = [
   "notice-parchment.png",
   "board-wood-tile.png",
   "screen-texture-tile.png",
+  "contract-emblem.png",
+  "arrow-right.png",
+  "section-divider.png",
 ] as const;
 
 function readExtractedAsset(name: string): Buffer {
