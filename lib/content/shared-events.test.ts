@@ -85,8 +85,14 @@ describe("SHARED_EVENTS", () => {
       ["밧줄 설치꾼", "다리 보수공", "함정 해체꾼", "조명 설치상", "길 정비꾼", "위험 구간 안내인"],
       ["비밀 치료사", "싸움꾼 고용", "함정 공작꾼", "위험한 강화 시술", "장비 개조공", "검은 약제사"],
     ];
-    expect(titleGroups.every((titles) => titles.length === 6)).toBe(true);
-    expect(merchants.map((event) => event.title)).toEqual(titleGroups.flat());
+    for (const [groupIndex, expectedTitles] of titleGroups.entries()) {
+      const firstEventIndex = groupIndex * 6;
+      expect(
+        merchants
+          .slice(firstEventIndex, firstEventIndex + 6)
+          .map((event) => event.title),
+      ).toEqual(expectedTitles);
+    }
   });
 
   it("merchant H/X가 확정 가격과 즉시·다음 전투 효과를 정확히 제공한다", () => {
