@@ -21,9 +21,20 @@ function ThemeScene({ theme, testId }: { theme: U3BoardNoticeView["theme"]; test
 function RiskStars({ riskLevel }: { riskLevel: number }) {
   return (
     <span className="u3-risk-stars" aria-label={`위험도 ${riskLevel}`}>
-      {Array.from({ length: 5 }, (_, index) => (
-        <img key={index} className={index < riskLevel ? "is-active" : ""} src="/assets/u3/extracted/risk-star.png" alt="" aria-hidden="true" width={16} height={16} />
-      ))}
+      {Array.from({ length: 5 }, (_, index) => {
+        const active = index < riskLevel;
+        return (
+          <img
+            key={index}
+            className={active ? "is-active" : ""}
+            src={active ? "/assets/u3/risk-star-filled.svg" : "/assets/u3/extracted/risk-star.png"}
+            alt=""
+            aria-hidden="true"
+            width={16}
+            height={16}
+          />
+        );
+      })}
     </span>
   );
 }
@@ -86,7 +97,7 @@ function ContractOutcomes({ detail }: { detail: U3OfferDetailView }) {
       <div className="u3-contract-outcomes__rows">
         {detail.contractOutcomes.map((outcome) => <div key={outcome.survivors} className={outcome.survivors === 0 ? "is-death" : ""}>
           <strong>{outcome.label}</strong>
-          {outcome.survivors === 0 ? <span>계약 보상 없음 · 명성 -{outcome.reputationLoss}<small>전멸 시 파티원 유품 골드 회수</small></span> : <RewardPair reputation={outcome.reputation} gold={outcome.gold} compact />}
+          {outcome.survivors === 0 ? <span>계약 보상 없음 · 명성 -{outcome.reputationLoss}<small>전멸 시 파티원 유품 골드 회수</small></span> : <span className="u3-contract-outcome__reward"><RewardPair reputation={outcome.reputation} gold={outcome.gold} compact /></span>}
         </div>)}
       </div>
     </section>
