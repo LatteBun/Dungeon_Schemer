@@ -11,8 +11,8 @@ describe("U3Preview", () => {
     expect((html.match(/data-testid=\"u3-notice\"/g) ?? []).length).toBeGreaterThan(0);
     expect((html.match(/data-testid=\"u3-notice\"/g) ?? []).length).toBeLessThanOrEqual(5);
     expect(html).toContain("환경 특성");
+    expect(html).toContain("답사 기록");
     expect((html.match(/data-testid=\"u3-party-member\"/g) ?? [])).toHaveLength(3);
     expect(html).not.toContain("의뢰 갱신");
-    expect(html).not.toContain("정찰 보고");
   });
 });
