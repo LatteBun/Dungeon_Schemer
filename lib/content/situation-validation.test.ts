@@ -266,6 +266,17 @@ function merchantEventWithNeutralAdvice(
 }
 
 describe("merchantAdvice builder", () => {
+  it("H/X의 명시적 비용·효과가 빠지면 생성 오류다", () => {
+    expect(() => Reflect.apply(buildMerchantAdvice, undefined, [
+      "merchant-help",
+      "help",
+      "치료를 부탁하세요",
+      "지금 치료하자고 하세요.",
+      "상처를 봉합한다.",
+      ["trade"],
+    ])).toThrow(/효과/);
+  });
+
   it("H/X에 전달한 비용과 효과를 그대로 보존한다", () => {
     const effect: MerchantEffect = {
       immediateHpDeltaPerMember: 8,
@@ -285,7 +296,7 @@ describe("merchantAdvice builder", () => {
   });
 
   it("N은 0G이고 merchant 효과가 없다", () => {
-    expect(buildMerchantAdvice(
+    const neutral = buildMerchantAdvice(
       "merchant-neutral",
       "neutral",
       "거래하지 마세요",
@@ -293,7 +304,10 @@ describe("merchantAdvice builder", () => {
       "파티가 거래하지 않고 떠난다.",
       ["observe"],
       0,
-    )).toMatchObject({ outcome: "neutral", goldCost: 0 });
+    );
+
+    expect(neutral).toMatchObject({ outcome: "neutral", goldCost: 0 });
+    expect(neutral).not.toHaveProperty("merchantEffect");
   });
 });
 
@@ -354,6 +368,24 @@ describe("validateSituationEvent merchant", () => {
   it("neutral 비용이 0G가 아니면 생성 오류다", () => {
     expect(() => validateSituationEvent(merchantEventWithNeutralAdvice({ goldCost: 1 })))
       .toThrow(/비용/);
+  });
+
+  it("공용 merchant의 relation이 unrelated가 아니면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      relation: "consistent",
+    }))).toThrow(/관계/);
+  });
+
+  it("공용 merchant에 source가 있으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      source: { kind: "ecology", ruleId: "spider-fire" },
+    }))).toThrow(/참조 근거/);
+  });
+
+  it("공용 merchant에 bossDamageModifier가 있으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      bossDamageModifier: -0.2,
+    }))).toThrow(/보스.*피해/);
   });
 });
 

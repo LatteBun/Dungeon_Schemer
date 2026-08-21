@@ -1,10 +1,162 @@
-import type { AdviceOutcome, EventEffectTag, MerchantSituationEvent } from "@/lib/domain";
+import type {
+  AdviceOutcome,
+  EventEffectTag,
+  MerchantEffect,
+  MerchantSituationEvent,
+} from "@/lib/domain";
 import { merchantAdvice, sharedMerchantEvent } from "@/lib/content/shared-event-builders";
 
 type Choice = readonly [AdviceOutcome, string, string, string, EventEffectTag[]];
 
+interface PaidMerchantTerms {
+  readonly goldCost: number;
+  readonly merchantEffect: MerchantEffect;
+}
+
+interface MerchantTerms {
+  readonly help: PaidMerchantTerms;
+  readonly harm: PaidMerchantTerms;
+}
+
+const MERCHANT_TERMS = {
+  "shared-merchant-scale": {
+    help: { goldCost: 5, merchantEffect: { immediateHpDeltaPerMember: 8 } },
+    harm: { goldCost: 4, merchantEffect: { immediateHpDeltaPerMember: -3 } },
+  },
+  "shared-merchant-barter": {
+    help: { goldCost: 7, merchantEffect: { immediateHpDeltaPerMember: 8 } },
+    harm: { goldCost: 8, merchantEffect: { immediateHpDeltaPerMember: -6 } },
+  },
+  "shared-merchant-counting-hands": {
+    help: { goldCost: 6, merchantEffect: { immediateHpDeltaPerMember: 4 } },
+    harm: { goldCost: 5, merchantEffect: { immediateHpDeltaPerMember: -6 } },
+  },
+  "shared-merchant-bundle-discount": {
+    help: { goldCost: 3, merchantEffect: { immediateHpDeltaPerMember: 4 } },
+    harm: { goldCost: 4, merchantEffect: { immediateHpDeltaPerMember: -3 } },
+  },
+  "shared-merchant-last-one": {
+    help: { goldCost: 4, merchantEffect: { nextBattle: { incomingDamageMultiplier: 0.9 } } },
+    harm: { goldCost: 6, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.7 } } },
+  },
+  "shared-merchant-potion": {
+    help: { goldCost: 11, merchantEffect: { immediateHpDeltaPerMember: 14 } },
+    harm: { goldCost: 9, merchantEffect: { immediateHpDeltaPerMember: -10 } },
+  },
+  "shared-merchant-cracked-bottle-cap": {
+    help: { goldCost: 3, merchantEffect: { immediateHpDeltaPerMember: 4 } },
+    harm: { goldCost: 2, merchantEffect: { immediateHpDeltaPerMember: -3 } },
+  },
+  "shared-merchant-new-blade-scratch": {
+    help: { goldCost: 4, merchantEffect: { immediateHpDeltaPerMember: 4 } },
+    harm: { goldCost: 5, merchantEffect: { immediateHpDeltaPerMember: -3 } },
+  },
+  "shared-merchant-same-scent-potions": {
+    help: { goldCost: 6, merchantEffect: { immediateHpDeltaPerMember: 8 } },
+    harm: { goldCost: 4, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.85 } } },
+  },
+  "shared-merchant-too-clean-map": {
+    help: { goldCost: 5, merchantEffect: { nextBattle: { partyDamageMultiplier: 1.3 } } },
+    harm: { goldCost: 7, merchantEffect: { nextBattle: { incomingDamageMultiplier: 1.25 } } },
+  },
+  "shared-merchant-credit": {
+    help: { goldCost: 4, merchantEffect: { nextBattle: { incomingDamageMultiplier: 0.9 } } },
+    harm: { goldCost: 5, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.85 } } },
+  },
+  "shared-merchant-blank-receipt": {
+    help: {
+      goldCost: 8,
+      merchantEffect: {
+        immediateHpDeltaPerMember: 8,
+        nextBattle: { incomingDamageMultiplier: 0.9 },
+      },
+    },
+    harm: {
+      goldCost: 9,
+      merchantEffect: {
+        immediateHpDeltaPerMember: -3,
+        nextBattle: { partyDamageMultiplier: 0.85 },
+      },
+    },
+  },
+  "shared-merchant-collateral-necklace": {
+    help: { goldCost: 5, merchantEffect: { nextBattle: { partyDamageMultiplier: 1.3 } } },
+    harm: { goldCost: 3, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.85 } } },
+  },
+  "shared-merchant-two-dates": {
+    help: { goldCost: 6, merchantEffect: { nextBattle: { incomingDamageMultiplier: 0.75 } } },
+    harm: { goldCost: 7, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.85 } } },
+  },
+  "shared-merchant-free-repair": {
+    help: { goldCost: 5, merchantEffect: { nextBattle: { incomingDamageMultiplier: 0.75 } } },
+    harm: { goldCost: 5, merchantEffect: { nextBattle: { incomingDamageMultiplier: 1.25 } } },
+  },
+  "shared-merchant-scout": {
+    help: { goldCost: 6, merchantEffect: { nextBattle: { partyDamageMultiplier: 1.3 } } },
+    harm: { goldCost: 4, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.85 } } },
+  },
+  "shared-merchant-old-rumor": {
+    help: { goldCost: 8, merchantEffect: { nextBattle: { partyDamageMultiplier: 1.5 } } },
+    harm: { goldCost: 9, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.6 } } },
+  },
+  "shared-merchant-two-roads": {
+    help: { goldCost: 7, merchantEffect: { nextBattle: { incomingDamageMultiplier: 0.75 } } },
+    harm: { goldCost: 5, merchantEffect: { nextBattle: { incomingDamageMultiplier: 1.1 } } },
+  },
+  "shared-merchant-too-specific-time": {
+    help: { goldCost: 4, merchantEffect: { immediateHpDeltaPerMember: 4 } },
+    harm: { goldCost: 3, merchantEffect: { immediateHpDeltaPerMember: -3 } },
+  },
+  "shared-merchant-free-first-sentence": {
+    help: { goldCost: 6, merchantEffect: { immediateHpDeltaPerMember: 8 } },
+    harm: { goldCost: 7, merchantEffect: { immediateHpDeltaPerMember: -3 } },
+  },
+  "shared-merchant-closing-box": {
+    help: { goldCost: 7, merchantEffect: { immediateHpDeltaPerMember: 8 } },
+    harm: { goldCost: 8, merchantEffect: { immediateHpDeltaPerMember: -6 } },
+  },
+  "shared-merchant-changing-name": {
+    help: { goldCost: 3, merchantEffect: { immediateHpDeltaPerMember: 4 } },
+    harm: { goldCost: 2, merchantEffect: { immediateHpDeltaPerMember: -3 } },
+  },
+  "shared-merchant-moving-spot": {
+    help: { goldCost: 5, merchantEffect: { immediateHpDeltaPerMember: 4 } },
+    harm: { goldCost: 6, merchantEffect: { immediateHpDeltaPerMember: -3 } },
+  },
+  "shared-merchant-avoids-customers": {
+    help: { goldCost: 6, merchantEffect: { immediateHpDeltaPerMember: 8 } },
+    harm: { goldCost: 5, merchantEffect: { immediateHpDeltaPerMember: -3 } },
+  },
+  "shared-merchant-friendly-prepayment": {
+    help: { goldCost: 12, merchantEffect: { immediateHpDeltaPerMember: 14 } },
+    harm: { goldCost: 10, merchantEffect: { immediateHpDeltaPerMember: -10 } },
+  },
+  "shared-merchant-leaking-oil-bottle": {
+    help: { goldCost: 10, merchantEffect: { nextBattle: { partyDamageMultiplier: 1.5 } } },
+    harm: { goldCost: 11, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.6 } } },
+  },
+  "shared-merchant-cracked-arrowheads": {
+    help: { goldCost: 9, merchantEffect: { nextBattle: { partyDamageMultiplier: 1.3 } } },
+    harm: { goldCost: 11, merchantEffect: { nextBattle: { incomingDamageMultiplier: 1.4 } } },
+  },
+  "shared-merchant-hot-amulet": {
+    help: { goldCost: 13, merchantEffect: { nextBattle: { partyDamageMultiplier: 1.5 } } },
+    harm: { goldCost: 9, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.6 } } },
+  },
+  "shared-merchant-rattling-smoke-bomb": {
+    help: { goldCost: 10, merchantEffect: { nextBattle: { incomingDamageMultiplier: 0.6 } } },
+    harm: { goldCost: 11, merchantEffect: { nextBattle: { partyDamageMultiplier: 0.7 } } },
+  },
+  "shared-merchant-strong-torch-powder": {
+    help: { goldCost: 14, merchantEffect: { nextBattle: { partyDamageMultiplier: 1.7 } } },
+    harm: { goldCost: 14, merchantEffect: { nextBattle: { incomingDamageMultiplier: 1.5 } } },
+  },
+} as const satisfies Readonly<Record<string, MerchantTerms>>;
+
+type MerchantEventId = keyof typeof MERCHANT_TERMS;
+
 function merchantEvent(
-  id: string,
+  id: MerchantEventId,
   title: string,
   description: string,
   choices: readonly [Choice, Choice, Choice],
@@ -14,15 +166,23 @@ function merchantEvent(
     id,
     title,
     description,
-    choices.map(([outcome, label, line, result, tags]) =>
-      merchantAdvice(
-        `${id}-${outcome === "help" ? "a" : outcome === "harm" ? "b" : "c"}`,
+    choices.map(([outcome, label, line, result, tags]) => {
+      const choiceId = `${id}-${outcome === "help" ? "a" : outcome === "harm" ? "b" : "c"}`;
+      if (outcome === "neutral") {
+        return merchantAdvice(choiceId, outcome, label, line, result, tags, 0);
+      }
+      const terms = MERCHANT_TERMS[id][outcome];
+      return merchantAdvice(
+        choiceId,
         outcome,
         label,
         line,
         result,
         tags,
-      )),
+        terms.goldCost,
+        terms.merchantEffect,
+      );
+    }),
     defaultResultText,
   );
 }
