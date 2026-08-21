@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { merchantAdvice as buildMerchantAdvice } from "@/lib/content/shared-event-builders";
 import { validateSituationEvent, validateSituationEvents } from "@/lib/content/situation-validation";
 import { SPIDER_THEME } from "@/lib/content/themes";
 import { RuleError } from "@/lib/domain";
@@ -11,6 +12,7 @@ import type {
   ClueId,
   EventId,
   MerchantAdviceOption,
+  MerchantEffect,
   MerchantSituationEvent,
   NonMerchantSituationEvent,
   RuleId,
@@ -238,6 +240,122 @@ function merchantEvent(overrides: Partial<MerchantSituationEvent> = {}): Merchan
     ...overrides,
   };
 }
+
+function merchantEventWithPaidAdvice(
+  overrides: Record<string, unknown>,
+): MerchantSituationEvent {
+  const event = merchantEvent();
+  return {
+    ...event,
+    advice: [{ ...event.advice[0], ...overrides }, event.advice[1], event.advice[2]],
+  } as unknown as MerchantSituationEvent;
+}
+
+function merchantEventWithNeutralAdvice(
+  overrides: Record<string, unknown>,
+): MerchantSituationEvent {
+  const event = merchantEvent();
+  return {
+    ...event,
+    advice: [
+      event.advice[0],
+      event.advice[1],
+      { ...event.advice[2], ...overrides },
+    ],
+  } as unknown as MerchantSituationEvent;
+}
+
+describe("merchantAdvice builder", () => {
+  it("H/X에 전달한 비용과 효과를 그대로 보존한다", () => {
+    const effect: MerchantEffect = {
+      immediateHpDeltaPerMember: 8,
+      nextBattle: { incomingDamageMultiplier: 0.75 },
+    };
+
+    expect(buildMerchantAdvice(
+      "merchant-help",
+      "help",
+      "치료를 부탁하세요",
+      "지금 치료하자고 하세요.",
+      "상처를 봉합한다.",
+      ["trade"],
+      9,
+      effect,
+    )).toMatchObject({ goldCost: 9, merchantEffect: effect });
+  });
+
+  it("N은 0G이고 merchant 효과가 없다", () => {
+    expect(buildMerchantAdvice(
+      "merchant-neutral",
+      "neutral",
+      "거래하지 마세요",
+      "지금은 사지 말자고 하세요.",
+      "파티가 거래하지 않고 떠난다.",
+      ["observe"],
+      0,
+    )).toMatchObject({ outcome: "neutral", goldCost: 0 });
+  });
+});
+
+describe("validateSituationEvent merchant", () => {
+  it("계약을 만족하는 merchant 사건은 통과한다", () => {
+    expect(() => validateSituationEvent(merchantEvent())).not.toThrow();
+  });
+
+  it.each([0, -1, 1.5])("H/X 비용이 %s이면 생성 오류다", (goldCost) => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({ goldCost })))
+      .toThrow(/비용/);
+  });
+
+  it("H/X 효과가 없으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      merchantEffect: undefined,
+    }))).toThrow(/효과/);
+  });
+
+  it.each([0, 1.5])("즉시 HP 변화가 %s이면 생성 오류다", (immediateHpDeltaPerMember) => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      merchantEffect: { immediateHpDeltaPerMember },
+    }))).toThrow(/즉시 HP/);
+  });
+
+  it.each([0, Number.NaN, Number.POSITIVE_INFINITY])(
+    "다음 전투 보정이 %s이면 생성 오류다",
+    (incomingDamageMultiplier) => {
+      expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+        merchantEffect: { nextBattle: { incomingDamageMultiplier } },
+      }))).toThrow(/보정/);
+    },
+  );
+
+  it("다음 전투 보정이 둘 다 있으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      merchantEffect: {
+        nextBattle: {
+          incomingDamageMultiplier: 0.75,
+          partyDamageMultiplier: 1.3,
+        },
+      },
+    }))).toThrow(/보정/);
+  });
+
+  it("다음 전투 보정이 하나도 없으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      merchantEffect: { nextBattle: {} },
+    }))).toThrow(/보정/);
+  });
+
+  it("neutral에 merchant 효과가 있으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithNeutralAdvice({
+      merchantEffect: { immediateHpDeltaPerMember: 1 },
+    }))).toThrow(/neutral/);
+  });
+
+  it("neutral 비용이 0G가 아니면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithNeutralAdvice({ goldCost: 1 })))
+      .toThrow(/비용/);
+  });
+});
 
 describe("validateSituationEvent 테마 전용", () => {
   it("계약을 만족하는 테마 사건은 통과한다", () => {

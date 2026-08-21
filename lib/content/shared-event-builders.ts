@@ -4,6 +4,7 @@ import type {
   EventEffectTag,
   EventId,
   MerchantAdviceOption,
+  MerchantEffect,
   MerchantSituationEvent,
   NonMerchantAdviceOption,
   NonMerchantSituationEvent,
@@ -38,6 +39,8 @@ export function merchantAdvice(
   line: string,
   resultText: string,
   effectTags: readonly EventEffectTag[],
+  goldCost: number = outcome === "neutral" ? 0 : 5,
+  merchantEffect?: MerchantEffect,
 ): MerchantAdviceOption {
   const base = {
     id: id as ChoiceId,
@@ -56,8 +59,8 @@ export function merchantAdvice(
   return {
     ...base,
     outcome,
-    goldCost: 5,
-    merchantEffect: {
+    goldCost,
+    merchantEffect: merchantEffect ?? {
       immediateHpDeltaPerMember: outcome === "help" ? 1 : -1,
     },
   };

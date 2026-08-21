@@ -4,7 +4,6 @@ import type {
   BaseAdviceOption,
   EcologyRelation,
   MerchantAdviceOption,
-  MerchantSituationEvent,
   NonMerchantAdviceOption,
   NonMerchantSituationEvent,
   SituationEvent,
@@ -162,8 +161,97 @@ function validateSharedAdvice(option: BaseAdviceOption, eventId: string): void {
   }
 }
 
+function validateMerchantEffect(
+  effect: unknown,
+  eventId: string,
+  adviceId: string,
+): void {
+  const details = { contentType: "advice", eventId, adviceId };
+  if (effect === null || typeof effect !== "object") {
+    invalid(`merchant 효과 형태가 잘못됐다: ${adviceId}`, details);
+  }
+
+  const immediate: unknown = Reflect.get(effect, "immediateHpDeltaPerMember");
+  const nextBattle: unknown = Reflect.get(effect, "nextBattle");
+
+  if (
+    immediate !== undefined &&
+    (typeof immediate !== "number" || !Number.isInteger(immediate) || immediate === 0)
+  ) {
+    invalid(`merchant 즉시 HP 변화는 0이 아닌 정수여야 한다: ${adviceId}`, {
+      ...details,
+      immediateHpDeltaPerMember: immediate,
+    });
+  }
+
+  if (nextBattle !== undefined) {
+    if (nextBattle === null || typeof nextBattle !== "object") {
+      invalid(`merchant 다음 전투 보정 형태가 잘못됐다: ${adviceId}`, details);
+    }
+
+    const incoming: unknown = Reflect.get(nextBattle, "incomingDamageMultiplier");
+    const party: unknown = Reflect.get(nextBattle, "partyDamageMultiplier");
+    const multipliers = [incoming, party].filter((multiplier) => multiplier !== undefined);
+
+    if (
+      multipliers.length !== 1 ||
+      typeof multipliers[0] !== "number" ||
+      !Number.isFinite(multipliers[0]) ||
+      multipliers[0] <= 0
+    ) {
+      invalid(`merchant 다음 전투 보정은 유한한 양수 하나여야 한다: ${adviceId}`, {
+        ...details,
+        incomingDamageMultiplier: incoming,
+        partyDamageMultiplier: party,
+      });
+    }
+  }
+
+  if (immediate === undefined && nextBattle === undefined) {
+    invalid(`merchant 효과가 비어 있다: ${adviceId}`, details);
+  }
+}
+
 function validateMerchantAdvice(option: MerchantAdviceOption, eventId: string): void {
   validateSharedAdvice(option, eventId);
+
+  const runtimeOption: BaseAdviceOption & {
+    readonly goldCost?: unknown;
+    readonly merchantEffect?: unknown;
+  } = option;
+  const details = { contentType: "advice", eventId, adviceId: option.id };
+  if (runtimeOption.outcome === "neutral") {
+    if (runtimeOption.goldCost !== 0) {
+      invalid(`merchant neutral 비용은 0G여야 한다: ${option.id}`, {
+        ...details,
+        goldCost: runtimeOption.goldCost,
+      });
+    }
+    if (runtimeOption.merchantEffect !== undefined) {
+      invalid(`merchant neutral 조언은 효과를 가질 수 없다: ${option.id}`, details);
+    }
+    return;
+  }
+
+  if (
+    typeof runtimeOption.goldCost !== "number" ||
+    !Number.isInteger(runtimeOption.goldCost) ||
+    runtimeOption.goldCost <= 0
+  ) {
+    invalid(`merchant H/X 비용은 양의 정수여야 한다: ${option.id}`, {
+      ...details,
+      goldCost: runtimeOption.goldCost,
+    });
+  }
+  if (
+    runtimeOption.merchantEffect === undefined ||
+    runtimeOption.merchantEffect === null ||
+    typeof runtimeOption.merchantEffect !== "object"
+  ) {
+    invalid(`merchant H/X 조언에 효과가 없다: ${option.id}`, details);
+  }
+
+  validateMerchantEffect(runtimeOption.merchantEffect, eventId, option.id);
 }
 
 function validateAdviceSet(event: SituationEvent, theme?: ThemeContent): void {
