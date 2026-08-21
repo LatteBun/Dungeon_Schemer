@@ -291,6 +291,14 @@ function ContractDetail({
             <RewardPair reputation={detail.reputationReward} gold={detail.goldReward} compact />
           </span>
         </div>
+        <div className="u3-scouted-rules" aria-labelledby="u3-scouted-rules-title">
+          <h3 id="u3-scouted-rules-title">답사 기록</h3>
+          <ul>
+            {detail.scoutedRules.map((rule, index) => (
+              <li key={`${detail.offerId}-scout-${index}`}>{rule}</li>
+            ))}
+          </ul>
+        </div>
         {detail.lockReasonLabel === null ? null : (
           <p className="u3-dungeon-summary__lock">
             <img src="/assets/u3/notice-lock.svg" alt="" aria-hidden="true" width={18} height={18} />
