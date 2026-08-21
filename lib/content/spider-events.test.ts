@@ -4,10 +4,11 @@ import { SPIDER_EVENTS } from "@/lib/content/events/spider-events";
 import { validateSituationEvents } from "@/lib/content/situation-validation";
 
 describe("SPIDER_EVENTS", () => {
-  it("거미굴 사건 20개를 제공한다", () => {
-    expect(SPIDER_EVENTS).toHaveLength(20);
-    expect(SPIDER_EVENTS.filter((event) => event.kind === "monster")).toHaveLength(12);
-    expect(SPIDER_EVENTS.filter((event) => event.kind === "special")).toHaveLength(8);
+  it("거미굴 사건 30개를 제공한다", () => {
+    expect(SPIDER_EVENTS).toHaveLength(30);
+    expect(SPIDER_EVENTS.filter((event) => event.kind === "monster")).toHaveLength(18);
+    expect(SPIDER_EVENTS.filter((event) => event.kind === "special" && event.targetBossId === undefined)).toHaveLength(4);
+    expect(SPIDER_EVENTS.filter((event) => event.targetBossId !== undefined)).toHaveLength(8);
     expect(SPIDER_EVENTS.every((event) => event.theme === "spider")).toBe(true);
   });
 
