@@ -4,10 +4,11 @@ import { GRAVEYARD_EVENTS } from "@/lib/content/events/graveyard-events";
 import { validateSituationEvents } from "@/lib/content/situation-validation";
 
 describe("GRAVEYARD_EVENTS", () => {
-  it("묘지 사건 20개를 제공한다", () => {
-    expect(GRAVEYARD_EVENTS).toHaveLength(20);
-    expect(GRAVEYARD_EVENTS.filter((event) => event.kind === "monster")).toHaveLength(12);
-    expect(GRAVEYARD_EVENTS.filter((event) => event.kind === "special")).toHaveLength(8);
+  it("묘지 사건 30개를 제공한다", () => {
+    expect(GRAVEYARD_EVENTS).toHaveLength(30);
+    expect(GRAVEYARD_EVENTS.filter((event) => event.kind === "monster")).toHaveLength(18);
+    expect(GRAVEYARD_EVENTS.filter((event) => event.kind === "special" && event.targetBossId === undefined)).toHaveLength(4);
+    expect(GRAVEYARD_EVENTS.filter((event) => event.targetBossId !== undefined)).toHaveLength(8);
     expect(GRAVEYARD_EVENTS.every((event) => event.theme === "graveyard")).toBe(true);
     expect(GRAVEYARD_EVENTS.filter((event) => event.requiresClue !== undefined)).toHaveLength(2);
     expect(() => validateSituationEvents(GRAVEYARD_EVENTS, GRAVEYARD_THEME)).not.toThrow();
