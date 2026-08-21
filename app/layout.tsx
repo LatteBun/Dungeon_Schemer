@@ -5,6 +5,7 @@ import "./u2-intro.css";
 import "./u3-board.css";
 import "./u3-u2-status-sync.css";
 import "./u3-card-theme.css";
+import "./u3-large-screen.css";
 
 export const metadata: Metadata = {
   title: "Dungeon Schemer",
