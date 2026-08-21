@@ -134,6 +134,26 @@ lib/content/
 
 기존 `situation-validation.ts` 계약은 변경하지 않는 것이 기본 원칙이다.
 
+### 4.1 런타임 콘텐츠 필수 필드
+
+Section 5의 H/X/N 표기는 선택 문구와 선택 결과를 확정하는 축약 표기다. 구현 데이터는
+기존 `AdviceOption` / `SituationEvent` 계약에 따라 아래 필드를 **모두** 채운다.
+
+- 각 조언은 `label`, 고블린의 근거 대사 `line`, `resultText`, `effectTags`를 가진다.
+- 사건은 제목·`description`·조언 3개와, 아무도 수용하지 않았을 때의
+  `defaultResultText`를 가진다.
+- `line`은 길잡이가 파티에게 건네는 조언이어야 하며, 선택의 유형이나 정답을
+  직접 드러내지 않는다. 판단 근거는 `description`의 관찰 가능한 사실을 다시
+  짚는다.
+- `defaultResultText`는 파티가 길잡이 조언을 수용하지 않고 스스로 처리한 결과다.
+  중립보다 강한 이득을 주지 않으며, 선택이 실행되지 않았음을 드러낸다.
+- 모든 조언의 `effectTags`에는 현존 tag를 하나 이상 넣는다. tag의 실제 수치·난수
+  해석은 F3-4 범위 밖이며, 새 tag는 만들지 않는다.
+
+이 필드들은 새 콘텐츠를 코드로 옮길 때 누락 없이 작성한다. Section 5의 문구와
+인과를 바꾸지 않고, 현재 공용 사건의 문체와 `advice()` / `sharedEvent()` 호출
+형식을 따른다.
+
 반드시 만족할 것:
 
 - 사건마다 조언 정확히 3개
@@ -154,6 +174,8 @@ F3-4 테스트에서는 추가로:
 - 제목 완전 중복 없음
 - description 완전 중복 없음
 - advice label 완전 중복은 가능한 한 방지
+- 전체 공용 풀에서 advice ID 중복 없음
+- 모든 advice의 `effectTags`가 하나 이상
 
 다음은 자동 테스트가 아니라 콘텐츠 리뷰 체크리스트로 관리한다.
 
@@ -437,13 +459,13 @@ F3-4 테스트에서는 추가로:
 - X: `저울을 믿고 값을 치르라고 하세요` → 숨겨진 무게 때문에 골드를 더 낸다.
 - N: `그냥 부른 값에 사라고 하세요` → 손해 여부는 확인하지 못하지만 거래는 빨리 끝난다.
 
-### M02 [직관] 두 개의 가격표
+### M02 [직관] 이름표 — 기존 유지
 
-**상황:** 같은 횃불 묶음 두 개에 서로 다른 가격표가 붙어 있다. 더 비싼 쪽도 수량과 상태가 똑같다.
+**상황:** 상인이 물자와 바꾸자며 파티의 짐을 살핀다. 파티가 챙겨 나온 유품에는 아직 주인의 이름표가 달려 있다.
 
-- H: `싼 가격표와 같은 값으로 달라고 하세요` → 상인이 실수라며 가격을 맞춘다.
-- X: `비싼 쪽이 좋은 물건일 거라며 그걸 사라고 하세요` → 같은 물건에 더 많은 돈을 낸다.
-- N: `횃불은 사지 말자고 하세요` → 골드는 지키지만 보급도 못 한다.
+- H: `유품 말고 여분의 무기를 내주라고 하세요` → 여분 무기와 물자를 바꾸고 유품은 그대로 남긴다.
+- X: `유품을 이름표째 넘기라고 하세요` → 이름표가 달린 유품이 시장에 돌아 길드에 소문이 들어간다.
+- N: `교환하지 말라고 하세요` → 아무것도 바꾸지 않고 거래를 끝낸다.
 
 ### M03 [추론] 동전 세는 손
 
@@ -925,7 +947,7 @@ F3-4 테스트에서는 추가로:
 - X: `목소리가 더 큰 전사의 기억대로 가자고 하세요` → 근거 대신 주장으로 결정해 길을 잃는다.
 - N: `둘 다 조금씩 확인하자고 하세요` → 갈등은 줄지만 시간이 든다.
 
-### S30 [함정] 계약서 사본 대체 — 무거운 전리품
+### S30 [함정] 무거운 전리품
 
 **상황:** 파티가 큰 금속 상자를 발견했다. 전사는 보상 때문에 가져가자고 하고 도적은 버리자고 한다. 상자를 한 명이 들어보자 걸음이 눈에 띄게 느려지고 금속이 바닥에 계속 긁힌다.
 
@@ -950,7 +972,7 @@ F3-4 테스트에서는 추가로:
 - `shared-merchant-potion` → M06
 - `shared-merchant-credit` → M11
 - `shared-merchant-scout` → M16
-- 기존 barter 사건은 merchant 상황군 중 가장 가까운 위치에 유지하되 최종 구현 시 본 Spec의 30개와 겹치지 않게 배치/문구 정리
+- `shared-merchant-barter` → M02 `이름표`
 - `shared-special-tripwire` → S01
 - `shared-special-camp` → S06
 - `shared-special-chasm` → S11
@@ -960,9 +982,8 @@ F3-4 테스트에서는 추가로:
 
 - `shared-special-contract` → S30 `무거운 전리품`
 
-기존 `shared-merchant-barter`는 좋은 소재이므로 삭제하지 않는다. 구현 Plan 단계에서 M01~M30 중 가장 유사성이 낮은 신규 사건 하나와 교환하여 **merchant 총량 30은 유지**한다. 추천 위치는 `수상한 상인 행동` 또는 `가격/흥정`이 아니라 별도의 신규 사건 한 개를 대체하는 방식이며, 런타임 subcategory 필드가 없으므로 분류는 문서상 균형만 맞추면 된다.
-
-> 구현 Plan 작성 전 사용자 리뷰에서 `shared-merchant-barter`의 정확한 편입 위치를 최종 확정한다. 이 한 항목은 수량을 31로 늘리라는 의미가 아니다.
+`shared-merchant-barter`는 merchant `가격/흥정` 상황군의 M02로 확정한다. 원래
+신규 M02였던 `두 개의 가격표`는 삭제하며, merchant 총량은 정확히 30개다.
 
 # 7. ID 규칙
 
@@ -980,6 +1001,10 @@ shared-special-<slug>
 
 단, a/b/c 자체가 help/harm/neutral을 의미한다는 계약은 만들지 않는다. 실제 `outcome` 필드가 진실의 원천이다.
 
+event ID와 advice ID는 각각 공용 풀 전체에서 유일해야 한다. 기존 validator는 사건
+내 advice ID와 전역 event ID만 검사하므로, 전역 advice ID 검사는
+`shared-events.test.ts`의 F3-4 콘텐츠 테스트가 담당한다.
+
 # 8. Effect tag 사용
 
 F3-4는 신규 effect tag를 추가하지 않는다.
@@ -995,6 +1020,7 @@ F3-4는 신규 effect tag를 추가하지 않는다.
 - `observe`
 
 정확한 tag 배치는 구현 시 기존 domain 정의와 테스트를 기준으로 한다.
+각 조언은 이 목록 중 의미에 맞는 tag를 하나 이상 가져야 한다.
 
 # 9. 범위 밖
 
@@ -1022,14 +1048,16 @@ F3-4 완료 조건:
 5. 기존 15개 중 좋은 콘텐츠는 유지, 약한 단서 및 중복 트릭은 보수
 6. 기존 `validateSituationEvents(SHARED_EVENTS)` 통과
 7. event/advice ID 중복 없음
-8. 제목/description의 명백한 완전 중복 없음
+8. 제목/description/advice label의 명백한 완전 중복 없음
 9. 모든 사건이 description 내부 단서만으로 판단 가능
 10. harm 선택지가 얼핏 합리적으로 보임
-11. `pnpm lint` 통과
-12. `pnpm typecheck` 통과
-13. `pnpm test` 통과
-14. `pnpm build` 통과
-15. 작업 배정표 F3-4를 완료 상태로 갱신
+11. 모든 조언에 비어 있지 않은 `line`과 하나 이상의 `effectTags`가 있고, 모든 사건에 비어 있지 않은 `defaultResultText`가 있음
+12. `shared-events.test.ts`가 분류별 30개·전체 90개·전역 event/advice ID·제목/description/advice label 중복·tag 비어 있음 검사를 수행
+13. `pnpm lint` 통과
+14. `pnpm typecheck` 통과
+15. `pnpm test` 통과
+16. `pnpm build` 통과
+17. 작업 배정표 F3-4를 완료 상태로 갱신
 
 # 11. 구현 전 사용자 리뷰 포인트
 
@@ -1038,7 +1066,6 @@ Spec 승인 시 다음을 최종 확인한다.
 1. 90개 사건의 소재/문체가 현재 게임 분위기에 맞는가
 2. 너무 현실 전문지식에 기대는 사건이 없는가
 3. harm이 지나치게 티 나는 사건이 없는가
-4. `shared-merchant-barter`를 어느 신규 merchant 사건 대신 유지할지
-5. S30 `무거운 전리품`이 기존 `shared-special-contract` 대체로 적절한가
+4. S30 `무거운 전리품`이 기존 `shared-special-contract` 대체로 적절한가
 
 이 Spec 승인 후 다음 단계는 Superpowers `writing-plans`를 사용한 상세 구현 Plan 작성이다.
