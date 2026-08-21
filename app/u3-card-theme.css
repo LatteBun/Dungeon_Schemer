@@ -123,7 +123,6 @@
   background: transparent;
 }
 
-/* All dungeon art uses the exact same 16:9 crop window from the approved board. */
 .u3-theme-scene {
   display: block;
   width: min(100%, 10.4rem);
@@ -139,17 +138,9 @@
     0 2px 5px rgb(48 29 12 / 34%);
 }
 
-.u3-theme-scene--desert {
-  background-position: 10.2% 30.7%;
-}
-
-.u3-theme-scene--spider {
-  background-position: 29.1% 30.7%;
-}
-
-.u3-theme-scene--graveyard {
-  background-position: 46.8% 30.7%;
-}
+.u3-theme-scene--desert { background-position: 10.2% 30.7%; }
+.u3-theme-scene--spider { background-position: 29.1% 30.7%; }
+.u3-theme-scene--graveyard { background-position: 46.8% 30.7%; }
 
 .u3-notice.is-locked .u3-theme-scene {
   opacity: 0.72;
@@ -162,14 +153,8 @@
   font-weight: 900;
 }
 
-.u3-notice__environment {
-  padding-left: 0.08rem;
-}
-
-.u3-notice__environment > span {
-  width: 100%;
-}
-
+.u3-notice__environment { padding-left: 0.08rem; }
+.u3-notice__environment > span { width: 100%; }
 .u3-notice__environment strong {
   color: #2f2518;
   font-size: clamp(0.72rem, 0.94vw, 0.82rem);
@@ -181,10 +166,7 @@
   font-size: clamp(0.7rem, 0.9vw, 0.8rem);
   font-weight: 900;
 }
-
-.u3-notice.is-locked .u3-notice__state {
-  color: #883f34;
-}
+.u3-notice.is-locked .u3-notice__state { color: #883f34; }
 
 .u3-dungeon-summary__motif {
   display: grid;
@@ -239,14 +221,13 @@
   object-fit: cover;
 }
 
-/* Icon / text / arrow share one visual centerline. */
 .u3-contract-button {
   display: grid;
-  grid-template-columns: 4rem minmax(0, 1fr) 3rem;
+  grid-template-columns: 4.5rem minmax(0, 1fr) 3.5rem;
   align-items: center;
-  column-gap: 0.8rem;
-  min-height: 5.15rem;
-  padding: 0.42rem 1rem;
+  column-gap: 0.85rem;
+  min-height: 5.55rem;
+  padding: 0.4rem 1rem;
 }
 
 .u3-contract-button strong {
@@ -259,8 +240,8 @@
 }
 
 .u3-contract-button__emblem {
-  width: 4rem;
-  height: 4rem;
+  width: 4.5rem;
+  height: 4.5rem;
   align-self: center;
   justify-self: center;
   object-fit: contain;
@@ -268,51 +249,28 @@
 }
 
 .u3-contract-button__arrow {
-  width: 3rem;
-  height: 2rem;
+  width: 3.5rem;
+  height: 2.25rem;
   align-self: center;
   justify-self: center;
   object-fit: contain;
+  transform: scale(1.18);
+  transform-origin: center;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 65%));
 }
 
 @media (max-width: 64rem) {
-  .u3-notice {
-    grid-template-rows: auto auto minmax(3.7rem, 1fr) auto auto auto auto;
-  }
-
-  .u3-theme-scene {
-    width: min(100%, 8.7rem);
-  }
-
-  .u3-notice__pin {
-    width: 1.55rem;
-    height: 1.85rem;
-    top: -0.46rem;
-  }
-
-  .u3-dungeon-summary__motif {
-    width: clamp(5.5rem, 9vw, 6.8rem);
-  }
-
-  .u3-detail-section h3::after {
-    height: 0.42rem;
-  }
-
+  .u3-notice { grid-template-rows: auto auto minmax(3.7rem, 1fr) auto auto auto auto; }
+  .u3-theme-scene { width: min(100%, 8.7rem); }
+  .u3-notice__pin { width: 1.55rem; height: 1.85rem; top: -0.46rem; }
+  .u3-dungeon-summary__motif { width: clamp(5.5rem, 9vw, 6.8rem); }
+  .u3-detail-section h3::after { height: 0.42rem; }
   .u3-contract-button {
-    grid-template-columns: 3.5rem minmax(0, 1fr) 2.65rem;
+    grid-template-columns: 4rem minmax(0, 1fr) 3rem;
     column-gap: 0.55rem;
-    min-height: 4.65rem;
-    padding-inline: 0.72rem;
+    min-height: 5rem;
+    padding-inline: 0.7rem;
   }
-
-  .u3-contract-button__emblem {
-    width: 3.5rem;
-    height: 3.5rem;
-  }
-
-  .u3-contract-button__arrow {
-    width: 2.65rem;
-    height: 1.8rem;
-  }
+  .u3-contract-button__emblem { width: 4rem; height: 4rem; }
+  .u3-contract-button__arrow { width: 3rem; height: 2rem; }
 }
