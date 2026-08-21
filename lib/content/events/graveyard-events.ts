@@ -117,6 +117,56 @@ const GRAVEYARD_MONSTER_EVENTS: readonly SituationEvent[] = [
     ecologyAdvice("graveyard-desecration-archer-shadow-harm", "harm", "graveyard-archer-light", "횃불을 끄면 궁수가 그림자에서 나올 테니 어둡게 만들고 접근하세요.", "아까 빛을 피해 숨었으니 빛이 없으면 오히려 밖으로 나오겠죠.", "궁수는 어두운 자리에서 그대로 사격 위치를 잡고 파티를 향해 화살을 퍼붓는다."),
     neutralAdvice("graveyard-desecration-archer-shadow-neutral", "무덤 반대편 묘비 뒤에서 궁수의 사선을 피해 돌아가세요.", "보물도 빛도 건드리지 말고 멀리 갑시다.", "파티가 먼 길을 택하지만 추가 위험을 피한다."),
   ], "파티가 열린 무덤과 궁수를 모두 피해 묘역 외곽으로 우회한다.", { requiresClue: "clue-graveyard-archer-shadow" as ClueId }),
+  graveyardEvent("graveyard-silence-fallen-bell", "무심한 좀비", "쓰러진 작은 종을 건드려 금속 소리가 났지만, 멀리 서 있던 썩은 좀비는 고개조차 돌리지 않고 같은 방향만 보고 있다.", [
+    ecologyAdvice("graveyard-silence-fallen-bell-help", "help", "graveyard-silence", "소리에 반응하지 않으니 거리를 유지한 채 지나가라고 하세요.", "저 좀비는 소리보다 눈앞을 보고 있어요.", "좀비가 눈치채지 못한 사이 통과한다."),
+    ecologyAdvice("graveyard-silence-fallen-bell-harm", "harm", "graveyard-silence", "소리가 났으니 더 큰 소리로 반대편에 유인하자고 하세요.", "소리를 키우면 움직일지도 몰라요.", "좀비는 움직이지 않고 파티만 오래 머무르게 된다."),
+    neutralAdvice("graveyard-silence-fallen-bell-neutral", "좀비가 떠날 때까지 기다리자고 하세요.", "움직일 때까지 지켜보죠.", "위험은 없지만 시간이 흐른다."),
+  ], "파티가 좀비를 경계하며 멀리 돌아서 지나간다."),
+  graveyardEvent("graveyard-ghoul-sound-small-bell", "바닥의 작은 방울", "통로에는 작은 장식 방울들이 떨어져 있다. 파티가 하나를 발끝으로 살짝 건드리자 멀리 시체더미 속 구울이 즉시 고개를 든다.", [
+    ecologyAdvice("graveyard-ghoul-sound-small-bell-help", "help", "graveyard-ghoul-sound", "방울을 피해 발소리까지 최대한 줄이라고 하세요.", "작은 소리에도 바로 고개를 들었어요.", "구울이 다시 시체더미 쪽으로 시선을 돌린다."),
+    ecologyAdvice("graveyard-ghoul-sound-small-bell-harm", "harm", "graveyard-ghoul-sound", "이 정도 작은 소리는 괜찮으니 빠르게 뛰자고 하세요.", "한 번 들킨 김에 빨리 지나가면 돼요.", "연달아 방울이 울리고 구울들이 통로로 달려온다."),
+    neutralAdvice("graveyard-ghoul-sound-small-bell-neutral", "방울을 하나씩 치우자고 하세요.", "시간을 써서 소리 나는 물건부터 없애죠.", "안전해지지만 시간이 많이 든다."),
+  ], "파티가 방울을 치우며 조용히 통로를 만든다."),
+  graveyardEvent("graveyard-light-candle-mage", "촛불을 보는 해골", "해골 마법사가 어두운 제단 옆에 서 있다. 파티가 촛불 하나를 켜자 마법사는 파티가 아니라 촛불 쪽으로 먼저 몸을 돌린다.", [
+    ecologyAdvice("graveyard-light-candle-mage-help", "help", "graveyard-light", "촛불을 파티 반대편에 두어 시선을 끌라고 하세요.", "마법사는 우리보다 촛불을 먼저 봤어요.", "마법사가 빛을 따라 움직이는 사이 지나간다."),
+    ecologyAdvice("graveyard-light-candle-mage-harm", "harm", "graveyard-light", "빛을 모두 끄고 바로 접근하자고 하세요.", "어두우면 우리를 못 찾을 거예요.", "유인 수단을 잃고 마법사와 정면으로 마주친다."),
+    neutralAdvice("graveyard-light-candle-mage-neutral", "현재 거리에서 관찰만 하자고 하세요.", "움직임을 더 확인하고 가죠.", "위험은 늘지 않지만 진행하지 못한다."),
+  ], "파티가 촛불과 마법사의 움직임을 지켜본다."),
+  graveyardEvent("graveyard-archer-light-column", "그림자로 물러난 궁수", "스켈레톤 궁수가 무너진 기둥 뒤에 서 있다. 횃불 빛이 닿자 궁수는 밝은 자리에서 물러나 더 깊은 그림자 뒤로 몸을 숨긴다.", [
+    ecologyAdvice("graveyard-archer-light-column-help", "help", "graveyard-archer-light", "빛을 궁수 쪽으로 유지해 사격 위치를 제한하라고 하세요.", "빛을 피해서 그림자로만 움직이고 있어요.", "궁수가 그림자 뒤에 묶여 파티가 다른 길로 빠진다."),
+    ecologyAdvice("graveyard-archer-light-column-harm", "harm", "graveyard-archer-light", "궁수를 잘 보려고 횃불을 거두고 어둠에 눈을 익히자고 하세요.", "불을 끄면 우리도 궁수를 더 잘 볼 수 있을 거예요.", "궁수가 그림자에서 더 자유롭게 자리를 옮긴다."),
+    neutralAdvice("graveyard-archer-light-column-neutral", "엄폐물을 늘리며 천천히 이동하자고 하세요.", "빛과 상관없이 숨을 곳을 늘리죠.", "위험은 줄지만 시간이 든다."),
+  ], "파티가 무너진 기둥을 엄폐물로 삼아 천천히 이동한다."),
+  graveyardEvent("graveyard-guard-intact-offerings", "손대지 않은 부장품", "오래된 무덤인데도 칼과 동전, 장식품이 먼지만 쌓인 채 그대로 놓여 있다. 벽 틈에는 갑옷 조각 같은 흰 뼈가 서 있다.", [
+    ecologyAdvice("graveyard-guard-intact-offerings-help", "help", "graveyard-guard", "부장품을 건드리지 말고 수호자가 있을 수 있다고 보라고 하세요.", "값나가는 물건이 그대로인 건 지키는 존재가 있다는 뜻일 수 있어요.", "파티가 매복을 피하며 무덤 가장자리로 지나간다."),
+    ecologyAdvice("graveyard-guard-intact-offerings-harm", "harm", "graveyard-guard", "아무도 가져가지 않았으니 운이 좋다며 물건부터 챙기자고 하세요.", "아무도 안 가져갔으니 지금이 기회예요.", "정지해 있던 스켈레톤 병사가 움직인다."),
+    neutralAdvice("graveyard-guard-intact-offerings-neutral", "무덤 자체를 지나치자고 하세요.", "보상과 위험을 모두 피하죠.", "위험과 보상을 모두 피한다."),
+  ], "파티가 부장품을 그대로 두고 무덤 가장자리로 지나간다."),
+  graveyardEvent("graveyard-desecration-open-chest", "빈 제단의 분노", "관 옆 보물함은 이미 열려 있고 안의 장식품 일부가 사라졌다. 근처 스켈레톤 병사의 자세가 다른 무덤보다 훨씬 공격적으로 앞으로 기울어 있다.", [
+    ecologyAdvice("graveyard-desecration-open-chest-help", "help", "graveyard-desecration", "남은 물건은 건드리지 말고 바로 물러나라고 하세요.", "이미 훼손된 무덤을 더 자극하면 안 돼요.", "이미 훼손된 무덤을 더 자극하지 않고 빠져나온다."),
+    ecologyAdvice("graveyard-desecration-open-chest-harm", "harm", "graveyard-desecration", "이미 털린 곳이니 남은 것도 가져가자고 하세요.", "이미 화난 곳이라도 남은 건 챙기죠.", "수호자가 더 사납게 달려든다."),
+    neutralAdvice("graveyard-desecration-open-chest-neutral", "멀리서 상태만 기록하고 지나가자고 하세요.", "더 가까이 가지 말고 본 것만 남기죠.", "추가 위험 없이 정보를 남긴다."),
+  ], "파티가 빈 보물함을 멀리서 기록하고 지나간다."),
+  graveyardEvent("graveyard-special-guard-desecration-tomb", "온전한 왕의 무덤", "오래된 왕의 무덤인데 부장품이 거의 손대지 않은 채 남아 있다. 입구 양쪽에는 갑옷을 입은 스켈레톤 병사가 움직이지 않고 서 있다.", [
+    ecologyAdvice("graveyard-special-guard-desecration-tomb-help", "help", "graveyard-desecration", "부장품을 그대로 두고 중앙을 피해 지나가라고 하세요.", "온전한 무덤을 건드리면 수호자가 움직일 수 있어요.", "수호자들을 자극하지 않고 통과한다."),
+    ecologyAdvice("graveyard-special-guard-desecration-tomb-harm", "harm", "graveyard-desecration", "병사들이 멈춰 있으니 작은 장식품 하나만 가져가자고 하세요.", "움직이지 않는 지금 하나쯤 가져가도 되겠어요.", "도굴이 시작되자 두 수호자가 동시에 움직인다."),
+    neutralAdvice("graveyard-special-guard-desecration-tomb-neutral", "무덤 안으로 들어가지 말자고 하세요.", "보물보다 안전이 먼저예요.", "위험과 보상을 모두 포기한다."),
+  ], "파티가 무덤 입구를 피해 외곽으로 돌아간다.", { kind: "special" }),
+  graveyardEvent("graveyard-special-sound-light-hall", "종소리와 횃불", "어두운 예배당 한쪽에는 구울이 시체더미를 뒤지고 있고 반대편에는 해골 마법사가 서 있다. 바닥에는 종줄이 떨어져 있고 파티에게 횃불 하나가 있다.", [
+    ecologyAdvice("graveyard-special-sound-light-hall-help", "help", "graveyard-ghoul-sound", "종은 건드리지 말고 횃불을 마법사 반대편에 두어 길을 만들라고 하세요.", "구울은 소리를 듣고 마법사는 빛을 따라가니 서로 반대로 유도하죠.", "구울을 소리로 자극하지 않으면서 마법사의 위치만 빛으로 이동시킨다."),
+    ecologyAdvice("graveyard-special-sound-light-hall-harm", "harm", "graveyard-ghoul-sound", "종을 울려 둘을 한쪽으로 몰자고 하세요.", "한꺼번에 소리를 내면 둘 다 몰아낼 수 있을 거예요.", "구울이 즉시 소리에 반응하고 마법사의 행동은 통제되지 않는다."),
+    neutralAdvice("graveyard-special-sound-light-hall-neutral", "입구에서 두 적이 움직일 때까지 기다리자고 하세요.", "둘의 움직임을 더 보고 결정하죠.", "안전하지만 불확실하게 시간이 흐른다."),
+  ], "파티가 예배당 입구에서 적들의 움직임을 관찰한다.", { kind: "special" }),
+  graveyardEvent("graveyard-special-mage-archer-light", "하나의 불빛, 두 해골", "해골 마법사와 스켈레톤 궁수가 같은 복도에 있다. 횃불을 들자 마법사는 빛 쪽으로 다가오고 궁수는 반대로 그림자 깊숙이 물러난다.", [
+    ecologyAdvice("graveyard-special-mage-archer-light-help", "help", "graveyard-light", "횃불을 빈 측면 통로에 두고 두 적의 위치를 갈라놓으라고 하세요.", "마법사는 빛으로, 궁수는 그림자로 움직여요. 서로 갈라놓죠.", "마법사는 빛을 따라가고 궁수는 반대 그림자로 물러나 중앙 통로가 열린다."),
+    ecologyAdvice("graveyard-special-mage-archer-light-harm", "harm", "graveyard-archer-light", "빛을 꺼 둘 다 움직이지 못하게 하자고 하세요.", "어둡게 만들면 둘 다 멈출 거예요.", "마법사의 유인은 사라지고 궁수는 어둠 속에서 자유롭게 위치를 잡는다."),
+    neutralAdvice("graveyard-special-mage-archer-light-neutral", "횃불을 그대로 유지하며 엄폐 뒤에서 기다리자고 하세요.", "위치를 바꾸지 말고 틈을 보죠.", "위치는 유지되지만 진전이 없다."),
+  ], "파티가 엄폐 뒤에서 두 해골의 움직임을 지켜본다.", { kind: "special" }),
+  graveyardEvent("graveyard-special-zombie-ghoul-sound-trap", "조용한 시체실", "시체실 앞쪽에는 썩은 좀비가 멍하니 서 있고, 뒤쪽 시체더미 사이에서는 구울의 손톱이 돌을 긁는 작은 소리가 난다. 좀비는 파티의 발소리에도 반응하지 않는다.", [
+    ecologyAdvice("graveyard-special-zombie-ghoul-sound-trap-help", "help", "graveyard-ghoul-sound", "좀비 반응만 보고 안심하지 말고 최대한 조용히 지나가라고 하세요.", "좀비는 무시해도 구울은 작은 소리까지 듣고 있어요.", "좀비와 구울의 서로 다른 청각 반응을 모두 고려해 통과한다."),
+    ecologyAdvice("graveyard-special-zombie-ghoul-sound-trap-harm", "harm", "graveyard-ghoul-sound", "좀비가 소리를 못 듣는 걸 확인했으니 빠르게 뛰자고 하세요.", "좀비가 반응하지 않으니 뛰어도 괜찮겠어요.", "좀비는 그대로지만 뒤쪽 구울들이 작은 소리에도 반응해 달려온다."),
+    neutralAdvice("graveyard-special-zombie-ghoul-sound-trap-neutral", "시체실을 우회하자고 하세요.", "둘 다 피하는 길을 택하죠.", "위험은 피하지만 길이 길어진다."),
+  ], "파티가 시체실을 피해 묘역 외곽으로 우회한다.", { kind: "special" }),
 ];
 
 const GRAVEYARD_BOSS_EVENTS: readonly SituationEvent[] = [

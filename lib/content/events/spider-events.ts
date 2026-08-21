@@ -272,6 +272,120 @@ const SPIDER_MONSTER_EVENTS: readonly SituationEvent[] = [
     ],
     "파티가 예비 불씨를 찾아 횃불을 다시 켠 뒤 움직인다.",
   ),
+  spiderEvent(
+    "spider-fire-smoke-gap",
+    "불길 앞의 동굴거미",
+    "좁은 통로 앞을 동굴거미 한 마리가 막고 있다. 옆에는 아직 불씨가 남은 횃불통이 있고, 거미는 불씨가 튈 때마다 몸을 뒤로 뺀다.",
+    [
+      ecologyAdvice("spider-fire-smoke-gap-help", "help", "spider-fire", "불씨를 살려 통로 옆으로 밀어붙이라고 하세요.", "불 가까이는 싫어하는 것 같아요. 불씨를 이용해 길을 열죠.", "불길을 피해 거미가 벽 쪽으로 물러나며 길이 열린다."),
+      ecologyAdvice("spider-fire-smoke-gap-harm", "harm", "spider-fire", "불씨를 끄고 어둠 속에서 천천히 다가가라고 하세요.", "빛이 사라지면 거미가 우리를 못 볼 거예요.", "불빛이 사라지자 거미가 통로 중앙으로 돌아와 파티를 막는다."),
+      neutralAdvice("spider-fire-smoke-gap-neutral", "다른 길을 찾아보라고 하세요.", "괜히 부딪히지 말고 우회하죠.", "충돌은 피하지만 시간이 더 든다."),
+    ],
+    "파티가 거미를 피해 우회할 길을 찾느라 시간을 쓴다.",
+  ),
+  spiderEvent(
+    "spider-brood-lantern-cluster",
+    "고치방의 등불",
+    "천장 고치 여러 개가 갓 찢어진 방이다. 바닥에는 손바닥만 한 새끼거미들이 흩어져 있고, 파티의 등불이 흔들릴 때마다 가까운 개체들이 빛 쪽으로 방향을 튼다.",
+    [
+      ecologyAdvice("spider-brood-lantern-cluster-help", "help", "spider-brood-light", "등불을 가리고 벽을 따라 조용히 빠져나가라고 하세요.", "빛이 줄면 새끼들이 흩어질 거예요.", "빛이 줄자 새끼거미 떼가 흩어져 길이 열린다."),
+      ecologyAdvice("spider-brood-lantern-cluster-harm", "harm", "spider-brood-light", "횃불을 더 밝게 들어 거미들을 겁주라고 하세요.", "더 밝은 불이면 가까이 오지 못할 거예요.", "새끼거미들이 불빛 쪽으로 한꺼번에 몰려든다."),
+      neutralAdvice("spider-brood-lantern-cluster-neutral", "고치방 밖에서 잠시 기다리라고 하세요.", "무리가 움직일 때까지 기다리죠.", "당장은 안전하지만 길이 막힌 채 시간이 흐른다."),
+    ],
+    "파티가 고치방 밖에서 새끼거미 무리가 흩어지기를 기다린다.",
+  ),
+  spiderEvent(
+    "spider-vibration-loose-gravel",
+    "자갈 깔린 바닥",
+    "천장에 동굴거미 두 마리가 붙어 있다. 아래 바닥은 작은 자갈과 깨진 금속 조각으로 덮여 있어 평소처럼 걸으면 계속 소리가 나고 바닥이 울린다.",
+    [
+      ecologyAdvice("spider-vibration-loose-gravel-help", "help", "spider-vibration", "천천히 발을 디딜 자리를 골라 진동을 줄이라고 하세요.", "자갈이 계속 울리니 발을 놓을 곳을 골라야 해요.", "천장 거미들이 움직이지 않는 사이 통로를 빠져나간다."),
+      ecologyAdvice("spider-vibration-loose-gravel-harm", "harm", "spider-vibration", "한 번에 뛰어 지나가라고 하세요.", "한꺼번에 지나가면 금방 끝날 거예요.", "자갈이 크게 튀며 진동이 퍼지고 거미들이 동시에 내려온다."),
+      neutralAdvice("spider-vibration-loose-gravel-neutral", "자갈을 치우며 길을 만들라고 하세요.", "시간을 들여 바닥부터 정리하죠.", "안전해지지만 준비에 시간이 오래 걸린다."),
+    ],
+    "파티가 자갈을 치우며 조심스럽게 통로를 건넌다.",
+  ),
+  spiderEvent(
+    "spider-armor-vibration-hammer",
+    "움직이지 않는 철갑거미",
+    "철갑거미 한 마리가 통로 벽에 붙어 있다. 파티가 조금 전 돌을 떨어뜨려 바닥이 크게 울렸는데도 거미는 고개조차 돌리지 않았다.",
+    [
+      ecologyAdvice("spider-armor-vibration-hammer-help", "help", "spider-armor-vibration", "진동에 반응하지 않으니 시야 밖으로 붙어 지나가라고 하세요.", "이렇게 울렸는데도 반응이 없어요. 눈만 피하면 돼요.", "거미가 눈치채지 못한 사이 파티가 통과한다."),
+      ecologyAdvice("spider-armor-vibration-hammer-harm", "harm", "spider-armor-vibration", "바닥을 두드려 반대편으로 유인하라고 하세요.", "큰 소리면 움직일지도 몰라요.", "아무 반응도 없어 파티가 가까이 접근한 뒤에야 거미와 맞닥뜨린다."),
+      neutralAdvice("spider-armor-vibration-hammer-neutral", "멀리서 계속 관찰하라고 하세요.", "움직임을 더 확인하고 결정하죠.", "위험은 늘지 않지만 진전도 없다."),
+    ],
+    "파티가 철갑거미의 반응을 더 살피며 통로 입구에 머문다.",
+  ),
+  spiderEvent(
+    "spider-carrion-bloody-cloth",
+    "썩은 냄새가 밴 천",
+    "전투 뒤 피 묻은 천 조각을 짐에 묶어 두었다. 앞쪽 통로에서 시체거미 한 마리가 나타나더니 파티보다 천 조각 쪽으로 먼저 방향을 튼다.",
+    [
+      ecologyAdvice("spider-carrion-bloody-cloth-help", "help", "spider-carrion", "피 묻은 천을 멀리 던지고 반대쪽으로 지나가라고 하세요.", "거미가 천 냄새를 먼저 따라가고 있어요.", "시체거미가 냄새를 따라가며 길이 비어진다."),
+      ecologyAdvice("spider-carrion-bloody-cloth-harm", "harm", "spider-carrion", "천을 짐 안쪽에 숨기고 그대로 지나가라고 하세요.", "냄새를 숨기면 우리를 못 찾을 거예요.", "냄새를 맡은 거미가 짐 쪽으로 달라붙는다."),
+      neutralAdvice("spider-carrion-bloody-cloth-neutral", "천을 버리고 뒤로 물러나라고 하세요.", "미끼도 포기하고 거리를 벌리죠.", "위험은 줄지만 이동은 지연된다."),
+    ],
+    "파티가 피 묻은 천을 버리고 거미가 지나가기를 기다린다.",
+  ),
+  spiderEvent(
+    "spider-shadow-light-edge",
+    "사라지는 다리",
+    "횃불 빛이 닿는 벽에는 아무것도 없지만, 불빛 경계 바로 밖 어둠 속에서 가느다란 다리 모양이 나타났다 사라진다.",
+    [
+      ecologyAdvice("spider-shadow-light-edge-help", "help", "spider-shadow", "빛의 범위를 넓혀 어둠을 줄이라고 하세요.", "빛의 끝에서만 다리가 보여요. 어둠을 없애야 해요.", "그림자거미의 은신 공간이 줄어 모습을 드러낸 채 뒤로 물러난다."),
+      ecologyAdvice("spider-shadow-light-edge-harm", "harm", "spider-shadow", "횃불을 끄고 눈을 어둠에 익히자고 하세요.", "어둠에 익숙해지면 우리도 더 잘 움직일 수 있어요.", "방 전체가 어두워지자 여러 방향에서 움직임이 시작된다."),
+      neutralAdvice("spider-shadow-light-edge-neutral", "현재 불빛 안에서 움직이지 말라고 하세요.", "확실한 곳에서 잠시 멈추죠.", "당장은 안전하지만 앞으로 나아가지 못한다."),
+    ],
+    "파티가 횃불이 닿는 범위 안에서 움직임을 멈춘다.",
+  ),
+  spiderEvent(
+    "spider-special-carrion-dark-store",
+    "검은 고치 저장소",
+    "빛이 거의 들지 않는 방에 오래된 시체 고치가 여러 개 쌓여 있다. 썩은 냄새가 강하고, 벽 끝 어둠에서는 가끔 다리 윤곽이 움직인다.",
+    [
+      ecologyAdvice("spider-special-carrion-dark-store-help", "help", "spider-shadow", "불을 밝히고 고치와 거리를 둔 채 가장자리로 지나가라고 하세요.", "어둠과 시체 냄새를 함께 피해야 해요.", "어둠을 줄이고 시체 냄새 중심부를 피하면서 두 종류의 위험을 모두 낮춘다."),
+      ecologyAdvice("spider-special-carrion-dark-store-harm", "harm", "spider-carrion", "고치 사이 어두운 틈으로 몸을 숨겨 지나가라고 하세요.", "고치 사이가 우리를 숨겨줄 거예요.", "시체 냄새와 어둠이 겹친 곳으로 들어가 거미들의 움직임이 한꺼번에 시작된다."),
+      neutralAdvice("spider-special-carrion-dark-store-neutral", "방을 포기하고 돌아가라고 하세요.", "위험한 방은 우회하는 게 낫겠어요.", "위험은 피하지만 우회한다."),
+    ],
+    "파티가 고치방 입구에서 물러나 다른 통로를 찾는다.",
+    { kind: "special" },
+  ),
+  spiderEvent(
+    "spider-special-fire-shadow-lane",
+    "횃불 하나뿐인 갈림방",
+    "한쪽 통로에는 작은 거미 여러 마리가 불빛을 피해 물러나 있고, 다른 쪽은 완전히 어두워 가끔 검은 다리만 보인다. 파티에게 남은 횃불은 하나뿐이다.",
+    [
+      ecologyAdvice("spider-special-fire-shadow-lane-help", "help", "spider-shadow", "횃불을 어두운 통로 쪽에 두고 밝은 가장자리로 움직이라고 하세요.", "어둠을 줄이면서 거미에게 불을 가까이 두면 돼요.", "그림자거미의 은신을 막으면서 일반 거미도 불 가까이 오지 못한다."),
+      ecologyAdvice("spider-special-fire-shadow-lane-harm", "harm", "spider-shadow", "횃불을 끄고 두 무리를 모두 자극하지 말자고 하세요.", "불을 끄면 아무도 우리를 못 볼 거예요.", "일반 거미는 조용해지지만 어둠 속 그림자거미가 활동하기 시작한다."),
+      neutralAdvice("spider-special-fire-shadow-lane-neutral", "횃불을 들고 입구에서 상황만 더 보자고 하세요.", "한 번 더 확인한 뒤 움직이죠.", "안전하지만 이동이 지연된다."),
+    ],
+    "파티가 횃불을 지키며 갈림방 입구에서 상황을 관찰한다.",
+    { kind: "special" },
+  ),
+  spiderEvent(
+    "spider-special-vibration-carrion-floor",
+    "끌린 시체와 울리는 판자",
+    "통로 중앙에 오래된 시체가 놓여 있고 그 주변 바닥에는 비어 있는 나무판이 깔려 있다. 판자를 밟으면 아래가 울리고, 안쪽에서는 시체거미가 시체 냄새 쪽으로 움직이고 있다.",
+    [
+      ecologyAdvice("spider-special-vibration-carrion-floor-help", "help", "spider-vibration", "시체를 건드리지 말고 판자 가장자리를 골라 진동을 줄이며 지나가라고 하세요.", "냄새도 울림도 피하는 가장자리를 골라야 해요.", "시체거미의 관심과 동굴거미의 진동 감지를 모두 피한다."),
+      ecologyAdvice("spider-special-vibration-carrion-floor-harm", "harm", "spider-vibration", "시체를 판자 위로 끌어 반대편에 던지라고 하세요.", "시체를 미끼로 던지면 길이 바로 열릴 거예요.", "썩은 냄새와 큰 진동이 동시에 퍼져 여러 거미가 반응한다."),
+      neutralAdvice("spider-special-vibration-carrion-floor-neutral", "판자를 치우고 길을 만들라고 하세요.", "시간이 걸려도 바닥을 정리하죠.", "안전하지만 시간이 많이 든다."),
+    ],
+    "파티가 판자를 치우며 시체와 거리를 두고 통로를 만든다.",
+    { kind: "special" },
+  ),
+  spiderEvent(
+    "spider-special-fire-brood-trap",
+    "새끼거미가 깨어난 둥지",
+    "성체 거미 두 마리는 횃불을 보자 뒤로 물러나지만, 찢어진 고치 아래의 새끼거미 떼는 반대로 횃불 빛을 향해 조금씩 모여든다.",
+    [
+      ecologyAdvice("spider-special-fire-brood-trap-help", "help", "spider-brood-light", "횃불을 둥지 반대편에 내려놓고 파티는 빛에서 멀어지라고 하세요.", "성체는 불을 피하고 새끼는 빛을 따라가니 서로 반대로 이용하죠.", "성체는 불을 피하고 새끼들은 파티 대신 떨어진 불빛 쪽으로 몰린다."),
+      ecologyAdvice("spider-special-fire-brood-trap-harm", "harm", "spider-brood-light", "횃불을 높이 들고 정면으로 밀어붙이라고 하세요.", "성체가 물러나니 빛을 앞세워 밀고 가면 돼요.", "성체는 물러나지만 새끼거미 떼가 파티 쪽 빛으로 몰려든다."),
+      neutralAdvice("spider-special-fire-brood-trap-neutral", "불을 유지한 채 뒤로 물러나자고 하세요.", "둥지와 거리를 두고 다시 생각하죠.", "당장은 안전하지만 통과하지 못한다."),
+    ],
+    "파티가 불을 유지하며 둥지에서 물러난다.",
+    { kind: "special" },
+  ),
 ];
 
 const SPIDER_BOSS_EVENTS: readonly SituationEvent[] = [

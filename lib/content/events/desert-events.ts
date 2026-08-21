@@ -107,6 +107,56 @@ const DESERT_MONSTER_EVENTS: readonly SituationEvent[] = [
     ecologyAdvice("desert-wind-mummy-courtyard-harm", "harm", "desert-mummy-silent", "발자국 없는 무덤문 바로 앞이 가장 안전해요.", "아까와 달리 여기엔 정말 발자국이 하나도 없어요. 아무것도 없겠죠.", "발자국을 남기지 않는 미이라가 문 뒤에서 나와 파티를 덮친다."),
     neutralAdvice("desert-wind-mummy-courtyard-neutral", "바람이 약해질 때까지 돌담 뒤에서 기다리세요.", "지금은 뭐가 지나갔는지 보기 어려워요. 잠깐 기다리죠.", "파티가 시간을 쓰지만 바람이 잦아든 뒤 더 조심스럽게 움직인다."),
   ], "파티가 묘역 바깥 돌길로 크게 우회한다.", { requiresClue: "clue-desert-mummy-no-tracks" as ClueId }),
+  desertEvent("desert-heat-shadow-rock", "그늘 아래의 코브라", "햇볕이 내리쬐는 모래 위에는 움직임이 없지만, 큰 바위가 만든 좁은 그늘 안에서 코브라의 꼬리가 천천히 움직인다.", [
+    ecologyAdvice("desert-heat-shadow-rock-help", "help", "desert-heat", "그늘을 피해 햇볕 쪽으로 돌아가라고 하세요.", "코브라는 더위를 피하려고 저기에 있어요.", "코브라가 머무는 그늘을 벗어나 안전하게 통과한다."),
+    ecologyAdvice("desert-heat-shadow-rock-harm", "harm", "desert-heat", "더 시원한 그늘 안으로 붙어 지나가라고 하세요.", "그늘이 더 편하고 안전해 보여요.", "코브라와 거리가 가까워져 공격을 받는다."),
+    neutralAdvice("desert-heat-shadow-rock-neutral", "해가 움직일 때까지 기다리자고 하세요.", "빛이 바뀌면 상황도 달라질 거예요.", "위험은 줄지만 시간이 많이 흐른다."),
+  ], "파티가 바위에서 거리를 둔 채 천천히 모래길을 지난다."),
+  desertEvent("desert-lizard-heat-hot-ridge", "뜨거운 모래 위의 도마뱀", "한낮이라 모래가 뜨겁게 달아올랐다. 파티는 생물이 없을 거라 생각하지만, 모래 언덕 위에서는 도마뱀 여러 마리가 몸을 모래에 붙인 채 활발하게 움직인다.", [
+    ecologyAdvice("desert-lizard-heat-hot-ridge-help", "help", "desert-lizard-heat", "뜨거운 능선을 피하고 그늘진 낮은 길로 내려가라고 하세요.", "저 도마뱀들은 뜨거운 곳에서도 활발해요.", "도마뱀 무리와 거리를 둔다."),
+    ecologyAdvice("desert-lizard-heat-hot-ridge-harm", "harm", "desert-lizard-heat", "더 뜨거운 능선이면 몬스터가 없을 테니 그쪽으로 가자고 하세요.", "이렇게 뜨거우면 다른 생물은 버티지 못할 거예요.", "열을 즐기는 도마뱀 무리 한가운데로 들어간다."),
+    neutralAdvice("desert-lizard-heat-hot-ridge-neutral", "현재 자리에서 무리가 지나가길 기다리라고 하세요.", "무리가 빠질 때까지 움직이지 말죠.", "안전하지만 이동이 늦어진다."),
+  ], "파티가 도마뱀 무리가 지나가기를 기다린다."),
+  desertEvent("desert-water-damp-stone-ring", "젖은 돌 가장자리", "말라붙은 우물 주위는 건조하지만 돌 하나 아래만 젖어 있다. 그 주변 모래에는 작은 구멍이 여러 개 나 있다.", [
+    ecologyAdvice("desert-water-damp-stone-ring-help", "help", "desert-water", "젖은 돌 주변을 피해서 넓게 돌아가라고 하세요.", "젖은 곳 주변에만 구멍이 몰려 있어요.", "숨어 있던 전갈의 굴을 건드리지 않는다."),
+    ecologyAdvice("desert-water-damp-stone-ring-harm", "harm", "desert-water", "물기가 있으니 쉬어가기 좋은 곳이라고 하세요.", "젖은 돌 옆이면 잠깐 쉬기 좋겠어요.", "젖은 돌 옆에 앉자 모래 속 전갈들이 튀어나온다."),
+    neutralAdvice("desert-water-damp-stone-ring-neutral", "우물 자체를 포기하고 지나가자고 하세요.", "물은 포기하고 충돌부터 피하죠.", "물은 얻지 못하지만 충돌은 피한다."),
+  ], "파티가 젖은 돌을 피해 우물가를 돌아간다."),
+  desertEvent("desert-spirit-dry-white-basin", "완전히 마른 분지", "앞쪽 분지는 풀 한 포기 없고 모래가 희게 갈라져 있다. 물자루에서 떨어진 한 방울도 닿자마자 흔적만 남기고 사라질 만큼 건조하다.", [
+    ecologyAdvice("desert-spirit-dry-white-basin-help", "help", "desert-spirit-dry", "남은 물을 조금씩 뿌리며 가장자리로 이동하라고 하세요.", "물이 닿자마자 사라져요. 마른 중앙은 피해야 해요.", "완전한 건조 구간을 줄여 모래정령이 접근하지 못한다."),
+    ecologyAdvice("desert-spirit-dry-white-basin-harm", "harm", "desert-spirit-dry", "물이 아까우니 가장 마른 중앙을 빠르게 가로지르자고 하세요.", "물을 아끼려면 짧게 중앙을 지나야 해요.", "건조한 모래가 솟아오르며 정령이 형체를 만든다."),
+    neutralAdvice("desert-spirit-dry-white-basin-neutral", "분지를 우회하라고 하세요.", "돌아가더라도 완전히 피하는 게 낫겠어요.", "안전하지만 길이 길어진다."),
+  ], "파티가 완전히 마른 분지를 우회한다."),
+  desertEvent("desert-mummy-silent-dust-door", "흔적 없는 미이라", "닫힌 무덤문 앞 먼지는 고르게 쌓여 있어 발자국이 하나도 없다. 그런데 문틈 안쪽에서 낡은 붕대 끝이 천천히 끌려 들어간다.", [
+    ecologyAdvice("desert-mummy-silent-dust-door-help", "help", "desert-mummy-silent", "발자국이 없다고 비었다고 단정하지 말고 문에서 떨어지라고 하세요.", "발자국은 없어도 붕대가 움직였어요.", "숨어 있던 미이라와 거리를 유지한다."),
+    ecologyAdvice("desert-mummy-silent-dust-door-harm", "harm", "desert-mummy-silent", "흔적이 없으니 아무도 없다고 보고 문을 바로 열라고 하세요.", "아무도 드나든 흔적이 없으니 비어 있을 거예요.", "문 뒤에 있던 미이라와 정면으로 마주친다."),
+    neutralAdvice("desert-mummy-silent-dust-door-neutral", "문을 표시만 해두고 지나가자고 하세요.", "지금은 위험과 보상을 모두 미루죠.", "위험과 보상을 모두 미룬다."),
+  ], "파티가 무덤문을 표시하고 바깥길로 지나간다."),
+  desertEvent("desert-wind-track-half-print", "절반만 남은 발자국", "모래 위 발자국이 몇 걸음만 남아 있고 그 뒤는 깨끗하다. 바람은 같은 방향으로 강하게 불며 새로 찍힌 파티의 발자국도 금방 흐려지고 있다.", [
+    ecologyAdvice("desert-wind-track-half-print-help", "help", "desert-wind-track", "흔적이 끊긴 지점만 보고 사라졌다고 판단하지 말라고 하세요.", "바람이 뒤쪽 흔적을 지웠을 가능성이 있어요.", "바람에 지워진 경로를 고려해 주변을 살피며 매복을 피한다."),
+    ecologyAdvice("desert-wind-track-half-print-harm", "harm", "desert-wind-track", "발자국이 끝났으니 대상이 여기서 사라졌다고 보고 바로 따라붙자고 하세요.", "여기서 사라진 것 같으니 바로 따라가죠.", "지워진 흔적 너머의 적과 갑자기 마주친다."),
+    neutralAdvice("desert-wind-track-half-print-neutral", "추적을 포기하자고 하세요.", "확실하지 않은 길은 더 쫓지 않죠.", "위험은 줄지만 정보도 얻지 못한다."),
+  ], "파티가 추적을 멈추고 바람 부는 길을 벗어난다."),
+  desertEvent("desert-special-water-dry-split", "젖은 웅덩이와 마른 제단", "방 한쪽에는 새는 항아리 때문에 모래가 축축하고, 반대쪽 제단 주변은 먼지가 날릴 만큼 완전히 말라 있다. 젖은 쪽에는 작은 굴 구멍이 있고 마른 쪽에는 모래 소용돌이가 생겼다 사라진다.", [
+    ecologyAdvice("desert-special-water-dry-split-help", "help", "desert-spirit-dry", "두 위험이 겹치지 않는 가운데 돌바닥을 골라 지나가라고 하세요.", "젖은 굴과 마른 소용돌이를 모두 피하는 길을 골라야 해요.", "전갈 굴과 모래정령이 활동하기 좋은 지대를 모두 피한다."),
+    ecologyAdvice("desert-special-water-dry-split-harm", "harm", "desert-water", "물이 있는 쪽이 정령에게 안전하니 그쪽에 붙어 가자고 하세요.", "젖은 쪽이면 모래정령은 가까이 오지 못할 거예요.", "정령은 피하지만 전갈 굴 한가운데로 들어간다."),
+    neutralAdvice("desert-special-water-dry-split-neutral", "입구에서 더 기다리자고 하세요.", "상황이 바뀔 때까지 멈춰 있죠.", "상황은 유지되고 시간만 흐른다."),
+  ], "파티가 입구에서 위험 지대가 바뀌기를 기다린다.", { kind: "special" }),
+  desertEvent("desert-special-heat-water-well", "그늘진 우물", "바위 그늘 안에 작은 우물이 있고 물이 넘쳐 주변 모래가 젖어 있다. 그늘 끝에는 코브라 허물이 있고 젖은 모래에는 작은 굴들이 보인다.", [
+    ecologyAdvice("desert-special-heat-water-well-help", "help", "desert-water", "그늘과 젖은 모래를 모두 피해 우물 바깥쪽에서 물만 길어 올리라고 하세요.", "코브라의 그늘과 전갈의 젖은 굴을 함께 피해야 해요.", "코브라와 전갈 위험을 동시에 줄인다."),
+    ecologyAdvice("desert-special-heat-water-well-harm", "harm", "desert-water", "시원하고 물도 있으니 우물 옆에서 쉬자고 하세요.", "그늘과 물이 모두 있으니 여기서 쉬면 돼요.", "두 종류 몬스터가 선호하는 조건이 겹친 곳에 머무르게 된다."),
+    neutralAdvice("desert-special-heat-water-well-neutral", "물을 포기하고 지나가자고 하세요.", "자원보다 안전을 먼저 챙기죠.", "자원은 얻지 못하지만 위험을 피한다."),
+  ], "파티가 우물을 포기하고 바위 그늘 밖으로 이동한다.", { kind: "special" }),
+  desertEvent("desert-special-mummy-wind-trace", "사라진 추적 흔적", "무덤에서 나온 오래된 천 조각이 모래 위에 떨어져 있지만 주변에는 발자국이 없다. 동시에 강한 바람이 불어 파티가 남긴 흔적도 몇 분 만에 지워지고 있다.", [
+    ecologyAdvice("desert-special-mummy-wind-trace-help", "help", "desert-wind-track", "발자국 부재만으로 미이라라고 단정하지 말고 천 조각과 주변 움직임을 함께 보라고 하세요.", "발자국이 없는 이유가 하나뿐이라고 생각하면 안 돼요.", "바람이 지운 흔적과 원래 흔적을 남기지 않는 적을 구분하며 안전하게 탐색한다."),
+    ecologyAdvice("desert-special-mummy-wind-trace-harm", "harm", "desert-wind-track", "발자국이 없으니 반드시 미이라가 근처라고 보고 무덤 안으로 들어가자고 하세요.", "흔적이 없다는 건 미이라가 있다는 뜻일 거예요.", "바람 때문일 가능성을 무시해 불필요한 위험에 들어간다."),
+    neutralAdvice("desert-special-mummy-wind-trace-neutral", "추적 자체를 중단하자고 하세요.", "확실한 정보가 없으니 여기서 멈추죠.", "위험은 줄지만 단서를 놓친다."),
+  ], "파티가 천 조각을 남겨두고 바람 부는 묘역을 빠져나간다.", { kind: "special" }),
+  desertEvent("desert-special-heat-lizard-trap", "한낮의 안전지대", "강한 햇볕 아래 그늘에는 코브라 흔적이 보이지 않지만, 뜨거운 모래 능선 곳곳에는 작은 발톱 자국과 도마뱀 비늘이 반짝인다.", [
+    ecologyAdvice("desert-special-heat-lizard-trap-help", "help", "desert-lizard-heat", "코브라만 생각하지 말고 도마뱀 흔적이 적은 단단한 돌길로 가라고 하세요.", "코브라가 없어도 뜨거운 능선에는 도마뱀이 있어요.", "두 규칙을 함께 적용해 안전한 길을 고른다."),
+    ecologyAdvice("desert-special-heat-lizard-trap-harm", "harm", "desert-lizard-heat", "뜨거운 곳이면 코브라가 없으니 능선으로 가자고 하세요.", "코브라가 없는 뜨거운 길이면 괜찮을 거예요.", "코브라는 피하지만 열을 좋아하는 도마뱀 무리와 맞닥뜨린다."),
+    neutralAdvice("desert-special-heat-lizard-trap-neutral", "해가 기울 때까지 기다리자고 하세요.", "열기가 줄어들 때까지 기다리죠.", "현재 위험은 피하지만 시간이 흐른다."),
+  ], "파티가 해가 기울 때까지 그늘에서 기다린다.", { kind: "special" }),
 ];
 
 const DESERT_BOSS_EVENTS: readonly SituationEvent[] = [

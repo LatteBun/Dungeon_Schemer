@@ -4,10 +4,11 @@ import { DESERT_EVENTS } from "@/lib/content/events/desert-events";
 import { validateSituationEvents } from "@/lib/content/situation-validation";
 
 describe("DESERT_EVENTS", () => {
-  it("사막 사건 20개를 제공한다", () => {
-    expect(DESERT_EVENTS).toHaveLength(20);
-    expect(DESERT_EVENTS.filter((event) => event.kind === "monster")).toHaveLength(12);
-    expect(DESERT_EVENTS.filter((event) => event.kind === "special")).toHaveLength(8);
+  it("사막 사건 30개를 제공한다", () => {
+    expect(DESERT_EVENTS).toHaveLength(30);
+    expect(DESERT_EVENTS.filter((event) => event.kind === "monster")).toHaveLength(18);
+    expect(DESERT_EVENTS.filter((event) => event.kind === "special" && event.targetBossId === undefined)).toHaveLength(4);
+    expect(DESERT_EVENTS.filter((event) => event.targetBossId !== undefined)).toHaveLength(8);
     expect(DESERT_EVENTS.every((event) => event.theme === "desert")).toBe(true);
     expect(DESERT_EVENTS.filter((event) => event.requiresClue !== undefined)).toHaveLength(2);
     expect(() => validateSituationEvents(DESERT_EVENTS, DESERT_THEME)).not.toThrow();
