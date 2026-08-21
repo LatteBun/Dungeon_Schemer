@@ -98,6 +98,13 @@ describe("U3BoardScreen", () => {
     expect(html).toContain("/assets/u2/status-gold.svg");
   });
 
+  it("파티 소지 골드는 아이콘과 라벨을 같은 행에 한 번만 표시한다", () => {
+    const html = render("offer-1");
+    expect((html.match(/data-testid=\"u3-party-gold-row\"/g) ?? [])).toHaveLength(3);
+    expect((html.match(/class=\"u3-party-card__gold-label\"/g) ?? [])).toHaveLength(3);
+    expect((html.match(/>소지 골드<\/span>/g) ?? [])).toHaveLength(3);
+  });
+
   it("계약 CTA는 크게 확대한 악수 엠블럼과 화살표를 같은 행에 둔다", () => {
     const html = render("offer-1");
     expect(html).toContain("/assets/u3/extracted/contract-emblem.png");
@@ -120,7 +127,8 @@ describe("U3BoardScreen", () => {
     expect(html).toContain("아델");
     expect(html).toContain("40 / 45");
     expect(html).toContain("신뢰 72");
-    expect(html).toContain("소지 골드 24");
+    expect(html).toContain("소지 골드");
+    expect(html).toContain(">24<");
     expect(html).toContain("전원 생존 시");
     expect(html).toContain("2명 생존 시");
     expect(html).toContain("1명 생존 시");
