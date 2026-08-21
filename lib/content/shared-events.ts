@@ -1,49 +1,6 @@
-import type {
-  AdviceOption,
-  AdviceOutcome,
-  ChoiceId,
-  EventEffectTag,
-  EventId,
-  EventKind,
-  SituationEvent,
-} from "@/lib/domain";
-
-function advice(
-  id: string,
-  outcome: AdviceOutcome,
-  label: string,
-  line: string,
-  resultText: string,
-  effectTags: readonly EventEffectTag[],
-): AdviceOption {
-  return {
-    id: id as ChoiceId,
-    label,
-    line,
-    outcome,
-    relation: "unrelated",
-    effectTags,
-    resultText,
-  };
-}
-
-function sharedEvent(
-  id: string,
-  kind: EventKind,
-  title: string,
-  description: string,
-  advices: readonly AdviceOption[],
-  defaultResultText: string,
-): SituationEvent {
-  return {
-    id: id as EventId,
-    kind,
-    title,
-    description,
-    advice: advices,
-    defaultResultText,
-  };
-}
+import type { SituationEvent } from "@/lib/domain";
+import { advice, sharedEvent } from "@/lib/content/shared-event-builders";
+import { SHARED_REST_EVENTS } from "@/lib/content/shared-rest-events";
 
 /**
  * 공용 사건. 생태 규칙을 참조하지 않으므로 모든 테마의 던전에 나온다.
@@ -53,7 +10,8 @@ function sharedEvent(
  * 사실이고 `이 상인은 도둑이다`는 결론이다.
  * docs/superpowers/specs/2026-08-20-lattebun-f3-1-advice-content-contract-design.md
  */
-const REST_EVENTS: readonly SituationEvent[] = [
+// Kept during the staged migration; the public entry point uses the expanded rest file below.
+export const LEGACY_REST_EVENTS: readonly SituationEvent[] = [
   sharedEvent(
     "shared-rest-wound",
     "rest",
@@ -558,7 +516,7 @@ const SPECIAL_EVENTS: readonly SituationEvent[] = [
 ];
 
 export const SHARED_EVENTS: readonly SituationEvent[] = [
-  ...REST_EVENTS,
+  ...SHARED_REST_EVENTS,
   ...MERCHANT_EVENTS,
   ...SPECIAL_EVENTS,
 ];
