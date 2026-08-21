@@ -165,12 +165,12 @@
     font-size: clamp(1.28rem, 1.25vw, 2rem);
   }
 
-  .u3-contract-button__emblem {
+  .u3-contract-button .u3-contract-button__emblem {
     width: clamp(4.5rem, 4.6vw, 7.25rem);
     height: clamp(4.5rem, 4.6vw, 7.25rem);
   }
 
-  .u3-contract-button__arrow {
+  .u3-contract-button .u3-contract-button__arrow {
     width: clamp(3.5rem, 3.9vw, 6rem);
     height: auto;
     transform: scale(1.12);
