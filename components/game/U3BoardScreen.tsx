@@ -201,7 +201,17 @@ function PartyCard({ member, index }: { member: U3OfferDetailView["party"][numbe
         {String(index + 1).padStart(2, "0")}
       </span>
       <div className="u3-party-card__portrait" aria-hidden="true">
-        <span />
+        {member.portraitSrc === undefined ? (
+          <span />
+        ) : (
+          <img
+            className="u3-party-card__portrait-image"
+            src={member.portraitSrc}
+            alt=""
+            width={64}
+            height={64}
+          />
+        )}
       </div>
       <div className="u3-party-card__identity">
         <strong>{member.name}</strong>
@@ -219,7 +229,17 @@ function PartyCard({ member, index }: { member: U3OfferDetailView["party"][numbe
         </div>
         <div>
           <dt>소지 골드</dt>
-          <dd>소지 골드 {member.gold}</dd>
+          <dd className="u3-party-card__gold">
+            <img
+              data-testid="u3-party-gold-icon"
+              src="/assets/u2/status-gold.svg"
+              alt=""
+              aria-hidden="true"
+              width={14}
+              height={14}
+            />
+            소지 골드 {member.gold}
+          </dd>
         </div>
       </dl>
     </article>
@@ -290,14 +310,6 @@ function ContractDetail({
             3명 생존 보상
             <RewardPair reputation={detail.reputationReward} gold={detail.goldReward} compact />
           </span>
-        </div>
-        <div className="u3-scouted-rules" aria-labelledby="u3-scouted-rules-title">
-          <h3 id="u3-scouted-rules-title">답사 기록</h3>
-          <ul>
-            {detail.scoutedRules.map((rule, index) => (
-              <li key={`${detail.offerId}-scout-${index}`}>{rule}</li>
-            ))}
-          </ul>
         </div>
         {detail.lockReasonLabel === null ? null : (
           <p className="u3-dungeon-summary__lock">
