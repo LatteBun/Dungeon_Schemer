@@ -62,8 +62,8 @@ describe("U3 extracted asset-board assets", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
 
     expect(css).toContain(".u3-party-card__stats > div");
-    expect(css).toContain("clamp(0.61rem, 0.52vw, 0.88rem)");
+    expect(css).toContain("clamp(0.7rem, 0.65vw, 1rem)");
     expect(css).toContain(".u3-contract-outcomes__rows > div");
-    expect(css).toContain("clamp(0.69rem, 0.58vw, 0.95rem)");
+    expect(css).toContain("clamp(0.75rem, 0.65vw, 1rem)");
   });
 });
