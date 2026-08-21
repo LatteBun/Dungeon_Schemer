@@ -94,6 +94,16 @@ function NoticeCard({
       aria-pressed={selected}
       onClick={onSelect}
     >
+      <img
+        className="u3-notice__pin"
+        data-testid="u3-notice-pin"
+        src="/assets/u3/extracted/board-pin.png"
+        alt=""
+        aria-hidden="true"
+        width={30}
+        height={36}
+      />
+
       <span className="u3-notice__heading">
         <strong>{notice.dungeonName}</strong>
         <small>{notice.themeLabel}</small>
@@ -317,8 +327,8 @@ function ContractDetail({
           src="/assets/u3/extracted/contract-emblem.png"
           alt=""
           aria-hidden="true"
-          width={38}
-          height={38}
+          width={52}
+          height={52}
         />
         <strong>{detail.locked ? "진입 불가" : "이 공고 계약하기"}</strong>
         <img
@@ -326,8 +336,8 @@ function ContractDetail({
           src="/assets/u3/extracted/arrow-right.png"
           alt=""
           aria-hidden="true"
-          width={32}
-          height={24}
+          width={38}
+          height={26}
         />
       </button>
     </div>
