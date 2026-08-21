@@ -1,0 +1,66 @@
+/* U3 notice theme art: one clear illustration, no pin/watermark decoration. */
+.u3-notice {
+  grid-template-rows: auto auto minmax(4.6rem, 1fr) auto auto auto auto;
+}
+
+.u3-notice__theme-visual {
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  margin: 0.28rem 0 0.34rem;
+  border-top: 1px solid rgb(93 65 33 / 22%);
+  border-bottom: 1px solid rgb(93 65 33 / 22%);
+  background:
+    radial-gradient(circle at 50% 45%, rgb(122 84 37 / 12%), transparent 72%),
+    rgb(99 69 33 / 3%);
+}
+
+.u3-notice__theme-art {
+  display: block;
+  width: min(76%, 7.4rem);
+  height: min(100%, 7.2rem);
+  min-height: 4.2rem;
+  object-fit: contain;
+  opacity: 0.92;
+  filter: sepia(0.22) saturate(0.88) contrast(1.06);
+}
+
+.u3-notice.is-locked .u3-notice__theme-art {
+  opacity: 0.68;
+}
+
+.u3-notice__environment > img {
+  width: 1.05rem;
+  height: 1.05rem;
+  max-width: 1.05rem;
+  max-height: 1.05rem;
+  object-fit: contain;
+}
+
+.u3-reward__label {
+  margin-right: 0.08rem;
+  color: currentColor;
+  font-size: 0.54rem;
+  font-weight: 700;
+  opacity: 0.72;
+}
+
+.u3-party-card__portrait-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 64rem) {
+  .u3-notice {
+    grid-template-rows: auto auto minmax(3.8rem, 1fr) auto auto auto auto;
+  }
+
+  .u3-notice__theme-art {
+    width: min(72%, 6.2rem);
+    height: min(100%, 5.8rem);
+    min-height: 3.4rem;
+  }
+}
