@@ -234,3 +234,4 @@
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
 - [던전 이벤트와 보스](DUNGEON_EVENTS_AND_BOSSES.md)
 - [정보와 기만](INFORMATION_AND_DECEPTION.md)
+- [사막 몬스터 UI 에셋](../experience/DESERT_MONSTER_ASSETS.md): 사막 잡몹·보스의 정적 경로, 해상도, UI 재사용 규칙
