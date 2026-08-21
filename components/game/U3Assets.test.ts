@@ -7,12 +7,14 @@ const extractedPngAssets = [
   "theme-spider.png",
   "theme-graveyard.png",
   "risk-star.png",
-  "notice-parchment.png",
+  "notice-parchment-clean.png",
   "board-wood-tile.png",
   "screen-texture-tile.png",
   "contract-emblem.png",
   "arrow-right.png",
   "section-divider.png",
+  "board-pin.png",
+  "status-dungeon.png",
 ] as const;
 
 function readExtractedAsset(name: string): Buffer {
@@ -37,5 +39,17 @@ describe("U3 extracted asset-board PNG assets", () => {
     expect(desert.equals(spider)).toBe(false);
     expect(spider.equals(graveyard)).toBe(false);
     expect(desert.equals(graveyard)).toBe(false);
+  });
+
+  it("공고 스타일은 깨끗한 양피지와 분리 배치·확대 CTA를 사용한다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-card-theme.css"), "utf8");
+
+    expect(css).toContain("notice-parchment-clean.png");
+    expect(css).toContain(".u3-notice--3");
+    expect(css).toContain("grid-column: 1");
+    expect(css).toContain(".u3-notice--4");
+    expect(css).toContain("grid-column: 3");
+    expect(css).toContain(".u3-contract-button__emblem");
+    expect(css).toContain("width: 3.25rem");
   });
 });
