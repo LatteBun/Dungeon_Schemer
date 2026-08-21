@@ -67,6 +67,13 @@ function detail(
     lockReasonLabel: locked
       ? "현재 C급은 ★3 던전에 진입할 수 없습니다. (최대 ★2)"
       : null,
+    scoutedRules: locked
+      ? ["거미는 진동에 민감하다.", "어둠 속 개체는 빛을 피한다."]
+      : [
+          "열기에 오래 노출되면 움직임이 둔해진다.",
+          "물가 근처에는 굴 흔적이 남는다.",
+          "미이라는 조용한 움직임에 반응이 늦다.",
+        ],
     party,
     contractOutcomes: [
       { survivors: 3, label: "전원 생존 시", reputation: 10, gold: 20, reputationLoss: 0 },
@@ -111,10 +118,18 @@ describe("U3BoardScreen", () => {
     expect(html).toContain("진동 경계");
     expect(html).not.toContain("의뢰 갱신");
     expect(html).not.toContain("소요 시간");
-    expect(html).not.toContain("정찰 보고");
     expect(html).not.toContain("계약 기간");
     expect(html).not.toContain("중도 포기");
     expect(html).not.toContain("실패 패널티");
+  });
+
+  it("선택한 공고의 답사 기록을 문장 목록으로 보여준다", () => {
+    const html = render("offer-1");
+
+    expect(html).toContain("답사 기록");
+    expect(html).toContain("열기에 오래 노출되면 움직임이 둔해진다.");
+    expect(html).toContain("물가 근처에는 굴 흔적이 남는다.");
+    expect(html).toContain("미이라는 조용한 움직임에 반응이 늦다.");
   });
 
   it("선택한 공고의 실제 파티 3명과 생존 인원별 계약 조건을 보여준다", () => {
@@ -138,6 +153,6 @@ describe("U3BoardScreen", () => {
 
     expect(html).toContain("진입 불가");
     expect(html).toContain("현재 C급은 ★3 던전에 진입할 수 없습니다. (최대 ★2)");
-    expect(html).toMatch(/<button[^>]*disabled=\"\"[^>]*>[^<]*|disabled=\"\"/);
+    expect(html).toMatch(/disabled=\"\"/);
   });
 });
