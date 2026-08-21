@@ -14,11 +14,21 @@ export interface U3BoardScreenProps {
   onContract: (offerId: string) => void;
 }
 
-const THEME_IMAGE = {
-  spider: "/assets/u3/extracted/theme-spider.png",
-  desert: "/assets/u3/extracted/theme-desert.png",
-  graveyard: "/assets/u3/extracted/theme-graveyard.png",
-} as const;
+function ThemeScene({
+  theme,
+  testId,
+}: {
+  theme: U3BoardNoticeView["theme"];
+  testId?: string;
+}) {
+  return (
+    <span
+      className={`u3-theme-scene u3-theme-scene--${theme}`}
+      data-testid={testId}
+      aria-hidden="true"
+    />
+  );
+}
 
 function RiskStars({ riskLevel }: { riskLevel: number }) {
   return (
@@ -111,15 +121,8 @@ function NoticeCard({
 
       <RiskStars riskLevel={notice.riskLevel} />
 
-      <span className="u3-notice__theme-visual" aria-hidden="true">
-        <img
-          className="u3-notice__theme-art"
-          data-testid="u3-notice-theme-art"
-          src={THEME_IMAGE[notice.theme]}
-          alt=""
-          width={120}
-          height={120}
-        />
+      <span className="u3-notice__theme-visual">
+        <ThemeScene theme={notice.theme} testId="u3-notice-theme-scene" />
       </span>
 
       <span className="u3-notice__label">3명 생존 보상</span>
@@ -278,13 +281,7 @@ function ContractDetail({
     <div className="u3-contract-detail">
       <section className="u3-detail-section u3-dungeon-summary" aria-labelledby="u3-dungeon-title">
         <div className="u3-dungeon-summary__motif">
-          <img
-            src={THEME_IMAGE[detail.theme]}
-            alt=""
-            aria-hidden="true"
-            width={78}
-            height={78}
-          />
+          <ThemeScene theme={detail.theme} />
         </div>
         <div className="u3-dungeon-summary__copy">
           <span>{detail.themeLabel}</span>
@@ -327,8 +324,8 @@ function ContractDetail({
           src="/assets/u3/extracted/contract-emblem.png"
           alt=""
           aria-hidden="true"
-          width={52}
-          height={52}
+          width={64}
+          height={64}
         />
         <strong>{detail.locked ? "진입 불가" : "이 공고 계약하기"}</strong>
         <img
@@ -336,8 +333,8 @@ function ContractDetail({
           src="/assets/u3/extracted/arrow-right.png"
           alt=""
           aria-hidden="true"
-          width={38}
-          height={26}
+          width={48}
+          height={32}
         />
       </button>
     </div>
