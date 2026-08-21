@@ -1,5 +1,4 @@
 import { CLASSES } from "@/lib/content/classes";
-import { THEMES } from "@/lib/content/themes";
 import { RANK_RISK_LIMIT } from "@/lib/domain";
 import type {
   BoardOffer,
@@ -50,6 +49,8 @@ export interface U3PartyMemberView {
   maxHp: number;
   trust: number;
   gold: number;
+  /** 향후 캐릭터 고유 초상 자산이 준비되면 ID 매핑으로 주입한다. */
+  portraitSrc?: string;
 }
 
 export interface U3BoardNoticeView {
@@ -67,7 +68,6 @@ export interface U3BoardNoticeView {
 }
 
 export interface U3OfferDetailView extends U3BoardNoticeView {
-  scoutedRules: readonly string[];
   party: readonly U3PartyMemberView[];
   contractOutcomes: readonly U3ContractOutcomeView[];
 }
@@ -76,6 +76,8 @@ export interface U3BoardView {
   notices: readonly U3BoardNoticeView[];
   detailsByOfferId: Readonly<Record<string, U3OfferDetailView>>;
 }
+
+export type U3PortraitMap = Readonly<Record<string, string>>;
 
 export function contractOutcomesForRisk(
   riskLevel: RiskLevel,
@@ -114,12 +116,6 @@ export function contractOutcomesForRisk(
   ];
 }
 
-export function scoutedRuleCountForRisk(riskLevel: RiskLevel): 1 | 2 | 3 {
-  if (riskLevel <= 2) return 3;
-  if (riskLevel === 3) return 2;
-  return 1;
-}
-
 function classLabel(classId: string): string {
   return CLASSES.find((candidate) => candidate.id === classId)?.name ?? classId;
 }
@@ -137,36 +133,10 @@ function lockReasonLabel(
   return "현재 이 공고에는 진입할 수 없습니다.";
 }
 
-function scoutedRules(
-  campaign: CampaignState,
-  offer: BoardOffer,
-): readonly string[] {
-  const dungeon = campaign.dungeons.find(
-    (candidate) => candidate.id === offer.dungeonId,
-  );
-  if (dungeon === undefined) {
-    throw new Error(`U3 공고의 던전을 찾을 수 없습니다: ${offer.dungeonId}`);
-  }
-
-  const theme = THEMES.find((candidate) => candidate.id === dungeon.theme);
-  if (theme === undefined) {
-    throw new Error(`U3 던전 테마를 찾을 수 없습니다: ${dungeon.theme}`);
-  }
-
-  return dungeon.activeRuleIds
-    .slice(0, scoutedRuleCountForRisk(offer.riskLevel))
-    .map((ruleId) => {
-      const rule = theme.rules.find((candidate) => candidate.id === ruleId);
-      if (rule === undefined) {
-        throw new Error(`U3 답사 규칙을 찾을 수 없습니다: ${ruleId}`);
-      }
-      return rule.text;
-    });
-}
-
 export function createU3BoardView(
   campaign: CampaignState,
   offers: readonly BoardOffer[],
+  portraitByCharacterId: U3PortraitMap = {},
 ): U3BoardView {
   const notices: U3BoardNoticeView[] = [];
   const detailsByOfferId: Record<string, U3OfferDetailView> = {};
@@ -200,6 +170,7 @@ export function createU3BoardView(
         throw new Error(`U3 파티원을 찾을 수 없습니다: ${memberId}`);
       }
 
+      const portraitSrc = portraitByCharacterId[character.id];
       return {
         id: character.id,
         name: character.name,
@@ -209,13 +180,13 @@ export function createU3BoardView(
         maxHp: character.maxHp,
         trust: character.trust,
         gold: character.gold,
+        ...(portraitSrc === undefined ? {} : { portraitSrc }),
       } satisfies U3PartyMemberView;
     });
 
     notices.push(notice);
     detailsByOfferId[offer.id] = {
       ...notice,
-      scoutedRules: scoutedRules(campaign, offer),
       party,
       contractOutcomes: contractOutcomesForRisk(offer.riskLevel),
     };
