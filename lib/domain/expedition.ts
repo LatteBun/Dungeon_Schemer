@@ -1,7 +1,7 @@
 import type { GeneratedMap, RiskLevel } from "./dungeon";
 import type { ExpeditionParty } from "./pool";
 import type { InfoRecord } from "./info";
-import type { CharacterId, DungeonId, NodeId, RuleId } from "./ids";
+import type { ChoiceId, CharacterId, DungeonId, NodeId, RuleId } from "./ids";
 
 export type ExpeditionStatus = "cleared" | "wiped";
 
@@ -28,6 +28,11 @@ export interface ExpeditionResult {
   salvagedGold: number;
 }
 
+export interface PendingMerchantEffect {
+  adviceId: ChoiceId;
+  nextBattle: import("./content").NextBattleMerchantEffect;
+}
+
 /**
  * 한 번의 원정 상태다.
  *
@@ -49,6 +54,7 @@ export interface ExpeditionState {
   visitedNodeIds: readonly NodeId[];
   /** 수용한 지연형 조언과 개인별 반응. 보스전과 사후 검증의 입력이다. */
   infoRecords: readonly InfoRecord[];
+  pendingMerchantEffect: PendingMerchantEffect | null;
   bossResult: BossResult | null;
   result: ExpeditionResult | null;
 }

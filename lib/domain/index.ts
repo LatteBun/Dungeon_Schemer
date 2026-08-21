@@ -11,7 +11,6 @@ export type {
   DungeonId,
   EcologyProfileId,
   EventId,
-  ItemId,
   MonsterId,
   NodeId,
   OfferId,
@@ -102,6 +101,7 @@ export type {
   ExpeditionResult,
   ExpeditionState,
   ExpeditionStatus,
+  PendingMerchantEffect,
 } from "./expedition";
 
 export { ADVICE_OUTCOMES, ECOLOGY_RELATIONS } from "./info";
@@ -114,15 +114,20 @@ export type {
   Target,
 } from "./info";
 
-export { EVENT_EFFECT_TAGS, EVENT_KINDS, ITEM_KINDS } from "./content";
+export { EVENT_EFFECT_TAGS, EVENT_KINDS } from "./content";
 export type {
   AdviceOption,
-  AdviceUpgrade,
   AdviceSource,
+  AdviceUpgrade,
+  BaseAdviceOption,
   EventEffectTag,
   EventKind,
-  ItemDef,
-  ItemKind,
+  MerchantAdviceOption,
+  MerchantEffect,
+  MerchantSituationEvent,
+  NextBattleMerchantEffect,
+  NonMerchantAdviceOption,
+  NonMerchantSituationEvent,
   SituationEvent,
 } from "./content";
 

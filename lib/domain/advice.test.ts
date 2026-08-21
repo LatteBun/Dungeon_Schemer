@@ -7,8 +7,12 @@ import type {
   CharacterId,
   ChoiceId,
   ClueId,
+  ExpeditionState,
   EventId,
   InfoRecord,
+  MerchantAdviceOption,
+  MerchantSituationEvent,
+  PendingMerchantEffect,
   RuleId,
   SituationEvent,
 } from "@/lib/domain";
@@ -116,6 +120,56 @@ describe("SituationEvent", () => {
       bossRuleId: "boss-ragna-turning",
     });
   });
+
+  it("merchant 사건은 골드 비용과 상인 효과를 담는다", () => {
+    const merchantHelp: MerchantAdviceOption = {
+      id: "merchant-help" as ChoiceId,
+      outcome: "help",
+      label: "치료를 부탁하세요",
+      line: "상처가 깊으니 지금 치료하자고 하세요.",
+      relation: "unrelated",
+      effectTags: ["trade"],
+      resultText: "상처를 봉합한다.",
+      goldCost: 5,
+      merchantEffect: { immediateHpDeltaPerMember: 8 },
+    };
+    const event: MerchantSituationEvent = {
+      id: "shared-merchant-healer" as EventId,
+      kind: "merchant",
+      title: "약초 장수",
+      description: "갈라진 약병에서 쌉싸래한 냄새가 난다.",
+      advice: [
+        merchantHelp,
+        {
+          id: "merchant-harm" as ChoiceId,
+          outcome: "harm",
+          label: "독한 약을 사세요",
+          line: "효과가 강하니 빨리 낫는다고 우기세요.",
+          relation: "unrelated",
+          effectTags: ["trade"],
+          resultText: "약이 속을 뒤튼다.",
+          goldCost: 4,
+          merchantEffect: {
+            nextBattle: { incomingDamageMultiplier: 1.25 },
+          },
+        },
+        {
+          id: "merchant-neutral" as ChoiceId,
+          outcome: "neutral",
+          label: "그냥 지나치세요",
+          line: "지금은 살 것이 없다고 하세요.",
+          relation: "unrelated",
+          effectTags: ["trade"],
+          resultText: "상인이 어깨를 으쓱한다.",
+          goldCost: 0,
+        },
+      ],
+      defaultResultText: "파티가 그냥 지나친다.",
+    };
+
+    expect(merchantHelp.goldCost).toBe(5);
+    expect(event.kind).toBe("merchant");
+  });
 });
 
 describe("InfoRecord", () => {
@@ -132,5 +186,43 @@ describe("InfoRecord", () => {
 
     expect(record.outcome).toBe("help");
     expect(record.modifier).toBeLessThan(0);
+  });
+});
+
+describe("ExpeditionState", () => {
+  it("pending merchant effect 슬롯 하나를 들고 있다", () => {
+    const pendingMerchantEffect: PendingMerchantEffect = {
+      adviceId: "merchant-harm" as ChoiceId,
+      nextBattle: { incomingDamageMultiplier: 1.25 },
+    };
+    const state: ExpeditionState = {
+      dungeonId: "dungeon-001" as never,
+      riskLevel: 2,
+      party: {
+        memberIds: [
+          "character-001" as CharacterId,
+          "character-002" as CharacterId,
+          "character-003" as CharacterId,
+        ],
+      },
+      activeRuleIds: ["rule-a" as RuleId, "rule-b" as RuleId, "rule-c" as RuleId],
+      disclosedRuleIds: ["rule-a" as RuleId],
+      map: {
+        entryNodeId: "node-entry" as never,
+        bossNodeId: "node-boss" as never,
+        nodes: [
+          { id: "node-entry" as never, kind: "entry", nextNodeIds: ["node-boss" as never] },
+          { id: "node-boss" as never, kind: "boss", nextNodeIds: [] },
+        ],
+      },
+      currentNodeId: "node-entry" as never,
+      visitedNodeIds: ["node-entry" as never],
+      infoRecords: [],
+      pendingMerchantEffect,
+      bossResult: null,
+      result: null,
+    };
+
+    expect(state.pendingMerchantEffect?.adviceId).toBe("merchant-harm");
   });
 });

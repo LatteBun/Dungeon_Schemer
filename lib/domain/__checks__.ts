@@ -29,6 +29,11 @@ import type {
   EcologyRelation,
   EndingKind,
   GuideRank,
+  MerchantAdviceOption,
+  MerchantEffect,
+  MerchantSituationEvent,
+  NextBattleMerchantEffect,
+  PendingMerchantEffect,
   Personality,
   RiskLevel,
   SeedStream,
@@ -42,6 +47,7 @@ type IsExhaustive<TUnion, TList extends readonly unknown[]> =
 
 /** false가 들어오면 제약을 만족하지 못해 타입 검사가 실패한다. */
 type Assert<T extends true> = T;
+type DomainExports = typeof import("./index");
 
 export type EndingOrderCoversEveryEnding = Assert<
   IsExhaustive<EndingKind, typeof ENDING_ORDER>
@@ -72,4 +78,12 @@ export type ActivityListCoversEveryActivity = Assert<
 >;
 export type RiskListCoversEveryLevel = Assert<
   IsExhaustive<RiskLevel, typeof RISK_LEVELS>
+>;
+export type MerchantAdviceOptionIsExported = MerchantAdviceOption;
+export type MerchantEffectIsExported = MerchantEffect;
+export type MerchantEventIsExported = MerchantSituationEvent;
+export type NextBattleMerchantEffectIsExported = NextBattleMerchantEffect;
+export type PendingMerchantEffectIsExported = PendingMerchantEffect;
+export type ItemIdIsNotExported = Assert<
+  "ItemId" extends keyof DomainExports ? false : true
 >;
