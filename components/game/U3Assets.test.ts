@@ -80,7 +80,7 @@ describe("U3 extracted asset-board assets", () => {
   });
 
   it("계약 조건 보상은 명성과 골드를 항상 한 줄에 유지한다", () => {
-    const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
+    const css = readFileSync(join(process.cwd(), "app", "u3-contract-layout.css"), "utf8");
 
     expect(css).toContain(".u3-contract-outcome__reward .u3-reward");
     expect(css).toContain("flex-wrap: nowrap");
@@ -91,5 +91,36 @@ describe("U3 extracted asset-board assets", () => {
     const svg = readFileSync(join(process.cwd(), "public", "assets", "u3", "risk-star-filled.svg"), "utf8");
     expect(svg).toContain("<polygon");
     expect(svg).toContain("fill=\"#d4ad4e\"");
+  });
+
+  it("노트북처럼 세로가 짧은 화면에서는 높이 기준으로 공고와 계약 패널을 압축한다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
+    const layout = readFileSync(join(process.cwd(), "app", "layout.tsx"), "utf8");
+
+    expect(layout).toContain('import "./u3-responsive-layout.css"');
+    expect(css).toContain("@media (max-height: 54rem)");
+    expect(css).toContain("@media (max-height: 46rem)");
+    expect(css).toContain("grid-template-rows: auto minmax(0, 1fr) auto auto");
+    expect(css).toContain("width: min(100%, clamp(7.5rem, 17vh, 10.5rem))");
+    expect(css).toContain("min-height: 0");
+  });
+
+  it("반응형 텍스트는 vw와 vh를 함께 사용하고 명성·골드 라벨을 크게 유지한다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
+
+    expect(css).toContain("calc(0.68rem + 0.18vw + 0.12vh)");
+    expect(css).toContain(".u3-board-screen .u3-reward__label");
+    expect(css).toContain("clamp(0.72rem");
+    expect(css).toContain(".u3-notice__environment strong");
+    expect(css).toContain(".u3-contract-outcomes__rows > div");
+  });
+
+  it("탐험대 골드 행은 아이콘과 소지 골드 라벨을 같은 줄에 고정한다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
+
+    expect(css).toContain(".u3-party-card__gold-row");
+    expect(css).toContain(".u3-party-card__gold-label");
+    expect(css).toContain("white-space: nowrap");
+    expect(css).toContain("align-items: center");
   });
 });
