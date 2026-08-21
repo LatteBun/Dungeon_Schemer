@@ -1,8 +1,11 @@
 import { ADVICE_OUTCOMES, EVENT_KINDS, RuleError } from "@/lib/domain";
 import type {
-  AdviceOption,
   AdviceOutcome,
+  BaseAdviceOption,
   EcologyRelation,
+  MerchantAdviceOption,
+  NonMerchantAdviceOption,
+  NonMerchantSituationEvent,
   SituationEvent,
   ThemeContent,
   ThemeId,
@@ -23,7 +26,7 @@ function requireText(
   if (value.trim() === "") invalid(message, details);
 }
 
-function validateAdviceText(option: AdviceOption, eventId: string): void {
+function validateAdviceText(option: BaseAdviceOption, eventId: string): void {
   const details = { contentType: "advice", eventId, adviceId: option.id };
   requireText(option.label, `조언 문구가 비어 있다: ${option.id}`, details);
   requireText(option.line, `조언의 근거 대사가 비어 있다: ${option.id}`, details);
@@ -38,7 +41,7 @@ const REQUIRED_RELATION: Readonly<Record<AdviceOutcome, EcologyRelation>> = {
 };
 
 function validateThemedAdvice(
-  option: AdviceOption,
+  option: NonMerchantAdviceOption,
   eventId: string,
   theme?: ThemeContent,
 ): void {
@@ -84,8 +87,8 @@ function validateThemedAdvice(
 }
 
 function validateBossAdvice(
-  option: AdviceOption,
-  event: SituationEvent,
+  option: NonMerchantAdviceOption,
+  event: NonMerchantSituationEvent,
   theme?: ThemeContent,
 ): void {
   const details = { contentType: "advice", eventId: event.id, adviceId: option.id };
@@ -133,7 +136,7 @@ function validateBossAdvice(
   }
 }
 
-function validateSharedAdvice(option: AdviceOption, eventId: string): void {
+function validateSharedAdvice(option: BaseAdviceOption, eventId: string): void {
   const details = { contentType: "advice", eventId, adviceId: option.id };
 
   // 공용 사건은 생태 규칙을 참조하지 않는다. 그것이 공용의 정의다.
@@ -158,6 +161,99 @@ function validateSharedAdvice(option: AdviceOption, eventId: string): void {
   }
 }
 
+function validateMerchantEffect(
+  effect: unknown,
+  eventId: string,
+  adviceId: string,
+): void {
+  const details = { contentType: "advice", eventId, adviceId };
+  if (effect === null || typeof effect !== "object") {
+    invalid(`merchant 효과 형태가 잘못됐다: ${adviceId}`, details);
+  }
+
+  const immediate: unknown = Reflect.get(effect, "immediateHpDeltaPerMember");
+  const nextBattle: unknown = Reflect.get(effect, "nextBattle");
+
+  if (
+    immediate !== undefined &&
+    (typeof immediate !== "number" || !Number.isInteger(immediate) || immediate === 0)
+  ) {
+    invalid(`merchant 즉시 HP 변화는 0이 아닌 정수여야 한다: ${adviceId}`, {
+      ...details,
+      immediateHpDeltaPerMember: immediate,
+    });
+  }
+
+  if (nextBattle !== undefined) {
+    if (nextBattle === null || typeof nextBattle !== "object") {
+      invalid(`merchant 다음 전투 보정 형태가 잘못됐다: ${adviceId}`, details);
+    }
+
+    const incoming: unknown = Reflect.get(nextBattle, "incomingDamageMultiplier");
+    const party: unknown = Reflect.get(nextBattle, "partyDamageMultiplier");
+    const multipliers = [incoming, party].filter((multiplier) => multiplier !== undefined);
+
+    if (
+      multipliers.length !== 1 ||
+      typeof multipliers[0] !== "number" ||
+      !Number.isFinite(multipliers[0]) ||
+      multipliers[0] <= 0
+    ) {
+      invalid(`merchant 다음 전투 보정은 유한한 양수 하나여야 한다: ${adviceId}`, {
+        ...details,
+        incomingDamageMultiplier: incoming,
+        partyDamageMultiplier: party,
+      });
+    }
+  }
+
+  if (immediate === undefined && nextBattle === undefined) {
+    invalid(`merchant 효과가 비어 있다: ${adviceId}`, details);
+  }
+}
+
+function validateMerchantAdvice(option: MerchantAdviceOption, eventId: string): void {
+  validateSharedAdvice(option, eventId);
+
+  const runtimeOption: BaseAdviceOption & {
+    readonly goldCost?: unknown;
+    readonly merchantEffect?: unknown;
+  } = option;
+  const details = { contentType: "advice", eventId, adviceId: option.id };
+  if (runtimeOption.outcome === "neutral") {
+    if (runtimeOption.goldCost !== 0) {
+      invalid(`merchant neutral 비용은 0G여야 한다: ${option.id}`, {
+        ...details,
+        goldCost: runtimeOption.goldCost,
+      });
+    }
+    if (runtimeOption.merchantEffect !== undefined) {
+      invalid(`merchant neutral 조언은 효과를 가질 수 없다: ${option.id}`, details);
+    }
+    return;
+  }
+
+  if (
+    typeof runtimeOption.goldCost !== "number" ||
+    !Number.isInteger(runtimeOption.goldCost) ||
+    runtimeOption.goldCost <= 0
+  ) {
+    invalid(`merchant H/X 비용은 양의 정수여야 한다: ${option.id}`, {
+      ...details,
+      goldCost: runtimeOption.goldCost,
+    });
+  }
+  if (
+    runtimeOption.merchantEffect === undefined ||
+    runtimeOption.merchantEffect === null ||
+    typeof runtimeOption.merchantEffect !== "object"
+  ) {
+    invalid(`merchant H/X 조언에 효과가 없다: ${option.id}`, details);
+  }
+
+  validateMerchantEffect(runtimeOption.merchantEffect, eventId, option.id);
+}
+
 function validateAdviceSet(event: SituationEvent, theme?: ThemeContent): void {
   const details = { contentType: "situationEvent", eventId: event.id };
 
@@ -170,21 +266,35 @@ function validateAdviceSet(event: SituationEvent, theme?: ThemeContent): void {
   }
 
   const seenIds = new Set<string>();
-  for (const option of event.advice) {
-    if (seenIds.has(option.id)) {
-      invalid(`조언 ID가 사건 안에서 중복된다: ${option.id}`, {
-        ...details,
-        adviceId: option.id,
-      });
+  if (event.kind === "merchant") {
+    for (const option of event.advice) {
+      if (seenIds.has(option.id)) {
+        invalid(`조언 ID가 사건 안에서 중복된다: ${option.id}`, {
+          ...details,
+          adviceId: option.id,
+        });
+      }
+      seenIds.add(option.id);
+      validateAdviceText(option, event.id);
+      validateMerchantAdvice(option, event.id);
     }
-    seenIds.add(option.id);
-    validateAdviceText(option, event.id);
-    if (event.theme === undefined) {
-      validateSharedAdvice(option, event.id);
-    } else if (event.targetBossId !== undefined) {
-      validateBossAdvice(option, event, theme);
-    } else {
-      validateThemedAdvice(option, event.id, theme);
+  } else {
+    for (const option of event.advice) {
+      if (seenIds.has(option.id)) {
+        invalid(`조언 ID가 사건 안에서 중복된다: ${option.id}`, {
+          ...details,
+          adviceId: option.id,
+        });
+      }
+      seenIds.add(option.id);
+      validateAdviceText(option, event.id);
+      if (event.theme === undefined) {
+        validateSharedAdvice(option, event.id);
+      } else if (event.targetBossId !== undefined) {
+        validateBossAdvice(option, event, theme);
+      } else {
+        validateThemedAdvice(option, event.id, theme);
+      }
     }
   }
 
@@ -342,7 +452,7 @@ function validateThemeSupply(
   events: readonly SituationEvent[],
   themeContent?: ThemeContent,
 ): void {
-  const themed = events.filter((event) => event.theme !== undefined);
+  const themed = events.filter((event): event is NonMerchantSituationEvent => event.theme !== undefined);
   const themes = themeContent === undefined
     ? new Set<ThemeId>(themed.map((event) => event.theme as ThemeId))
     : new Set<ThemeId>([themeContent.id]);
@@ -353,7 +463,7 @@ function validateThemeSupply(
       : undefined;
     const options = themed
       .filter((event) => event.theme === theme)
-      .flatMap((event) => event.advice);
+      .flatMap((event): readonly NonMerchantAdviceOption[] => event.advice);
 
     // 던전이 규칙 6개 중 어느 3개를 활성으로 뽑아도 재료가 있어야 한다.
     const ruleIds = contentRules === undefined

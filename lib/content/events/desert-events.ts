@@ -9,8 +9,8 @@ import type {
   ClueId,
   EventEffectTag,
   EventId,
+  NonMerchantSituationEvent,
   RuleId,
-  SituationEvent,
 } from "@/lib/domain";
 
 function ecology(ruleId: string): AdviceSource {
@@ -33,7 +33,7 @@ function neutralAdvice(id: string, label: string, line: string, resultText: stri
   return advice(id, "neutral", label, line, resultText, ["observe"]);
 }
 
-function desertEvent(id: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string, extras: Partial<SituationEvent> = {}): SituationEvent {
+function desertEvent(id: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string, extras: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
   return { id: id as EventId, kind: "monster", theme: "desert", title, description, advice: adviceOptions, defaultResultText, ...extras };
 }
 
@@ -42,11 +42,11 @@ function bossAdvice(id: string, outcome: AdviceOutcome, bossRuleId: string | und
   return advice(id, outcome, label, line, resultText, [outcome === "harm" ? "sabotage" : "information"], bossRuleId === undefined ? undefined : boss(bossRuleId), modifier);
 }
 
-function bossEvent(id: string, targetBossId: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string): SituationEvent {
+function bossEvent(id: string, targetBossId: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string): NonMerchantSituationEvent {
   return { id: id as EventId, kind: "special", theme: "desert", targetBossId: targetBossId as BossId, title, description, advice: adviceOptions, defaultResultText };
 }
 
-const DESERT_MONSTER_EVENTS: readonly SituationEvent[] = [
+const DESERT_MONSTER_EVENTS: readonly NonMerchantSituationEvent[] = [
   desertEvent("desert-heat-moving-shadow", "움직이는 그늘", "한낮의 햇빛이 폐허를 달구고 있다. 무너진 기둥 아래 좁은 그늘 속에서 가느다란 비늘 자국이 움직이다가 햇빛이 닿는 경계 바로 앞에서 멈춘다.", [
     ecologyAdvice("desert-heat-moving-shadow-help", "help", "desert-heat", "그늘을 피해 햇빛이 드는 쪽으로 돌아가세요.", "저 자국, 밝은 쪽으로는 안 나오네요. 조금 덥더라도 밖으로 돌아가죠.", "파티가 뜨거운 모래로 돌아가는 동안 그늘 속 코브라는 모습을 드러내지 않는다."),
     ecologyAdvice("desert-heat-moving-shadow-harm", "harm", "desert-heat", "그늘을 따라 빠르게 지나가세요.", "햇빛보다는 저쪽이 걷기 편하겠어요.", "파티가 그늘로 들어서자 돌 틈에서 코브라들이 몸을 일으킨다."),
@@ -159,7 +159,7 @@ const DESERT_MONSTER_EVENTS: readonly SituationEvent[] = [
   ], "파티가 해가 기울 때까지 그늘에서 기다린다.", { kind: "special" }),
 ];
 
-const DESERT_BOSS_EVENTS: readonly SituationEvent[] = [
+const DESERT_BOSS_EVENTS: readonly NonMerchantSituationEvent[] = [
   bossEvent("desert-boss-zakar-burrow-trace", "boss-desert-1", "모래 위의 가는 선", "넓은 모래밭은 평평해 보이지만 한가운데에 가느다란 선이 길게 이어져 있다. 선 끝의 모래만 일정한 간격으로 살짝 솟았다 내려간다.", [
     bossAdvice("desert-boss-zakar-burrow-trace-help", "help", "boss-zakar-burrow-trace", "가는 선의 끝을 피해서 움직이라고 알려주세요.", "저 선 밑에 큰 게 숨어 움직이는 것 같아요.", "파티가 자카르의 매복 위치를 읽는 방법을 기억한다."), bossAdvice("desert-boss-zakar-burrow-trace-harm", "harm", "boss-zakar-burrow-trace", "선은 바람 자국이니 가장 평평한 끝부분으로 가라고 하세요.", "바람이 만든 흔적 같아요. 신경 쓰지 않아도 돼요.", "파티가 자카르의 매복 흔적을 자연 현상으로 오해한다."), bossAdvice("desert-boss-zakar-burrow-trace-neutral", "neutral", undefined, "긴 무기로 앞 모래를 확인하며 가라고 하세요.", "모래 아래 뭐가 있는지만 조심하죠.", "파티가 특별한 약점은 모르지만 매복을 경계하게 된다."),
   ], "파티는 선을 피해 넓게 돌아가지만 그 의미까지는 알아내지 못한다."),
@@ -186,7 +186,7 @@ const DESERT_BOSS_EVENTS: readonly SituationEvent[] = [
   ], "파티는 빛나는 장식을 수상하게 여기지만 해석을 확정하지 않는다."),
 ];
 
-export const DESERT_EVENTS: readonly SituationEvent[] = [
+export const DESERT_EVENTS: readonly NonMerchantSituationEvent[] = [
   ...DESERT_MONSTER_EVENTS,
   ...DESERT_BOSS_EVENTS,
 ];

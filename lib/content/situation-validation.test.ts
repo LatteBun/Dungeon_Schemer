@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { merchantAdvice as buildMerchantAdvice } from "@/lib/content/shared-event-builders";
 import { validateSituationEvent, validateSituationEvents } from "@/lib/content/situation-validation";
 import { SPIDER_THEME } from "@/lib/content/themes";
 import { RuleError } from "@/lib/domain";
@@ -10,6 +11,10 @@ import type {
   ChoiceId,
   ClueId,
   EventId,
+  MerchantAdviceOption,
+  MerchantEffect,
+  MerchantSituationEvent,
+  NonMerchantSituationEvent,
   RuleId,
   SituationEvent,
   ThemeId,
@@ -34,7 +39,7 @@ function advice(
 }
 
 /** 계약을 만족하는 공용 사건 하나. */
-function sharedEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
+function sharedEvent(overrides: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
   return {
     id: "shared-rest-wound" as EventId,
     kind: "rest",
@@ -76,7 +81,7 @@ describe("validateSituationEvent 구조", () => {
     expect(() => validateSituationEvent(event)).toThrow(RuleError);
   });
 
-  it.each<[string, Partial<SituationEvent>]>([
+  it.each<[string, Partial<NonMerchantSituationEvent>]>([
     ["제목", { title: "  " }],
     ["묘사", { description: "" }],
     ["기본 결과", { defaultResultText: "" }],
@@ -131,7 +136,7 @@ function themedAdvice(
   return advice(id, outcome, { ...byOutcome[outcome], ...overrides });
 }
 
-function themedEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
+function themedEvent(overrides: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
   return {
     id: "spider-webbed-hunter" as EventId,
     kind: "monster",
@@ -148,7 +153,7 @@ function themedEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
   };
 }
 
-function bossEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
+function bossEvent(overrides: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
   const source = {
     kind: "boss" as const,
     bossRuleId: "boss-ragna-turning" as BossRuleId,
@@ -169,6 +174,220 @@ function bossEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
     ...overrides,
   };
 }
+
+function merchantAdvice(
+  id: string,
+  outcome: "neutral",
+  overrides?: Partial<Extract<MerchantAdviceOption, { outcome: "neutral" }>>,
+): Extract<MerchantAdviceOption, { outcome: "neutral" }>;
+function merchantAdvice(
+  id: string,
+  outcome: "help" | "harm",
+  overrides?: Partial<Extract<MerchantAdviceOption, { outcome: "help" | "harm" }>>,
+): Extract<MerchantAdviceOption, { outcome: "help" | "harm" }>;
+function merchantAdvice(
+  id: string,
+  outcome: AdviceOutcome,
+  overrides:
+    | Partial<Extract<MerchantAdviceOption, { outcome: "neutral" }>>
+    | Partial<Extract<MerchantAdviceOption, { outcome: "help" | "harm" }>> = {},
+): MerchantAdviceOption {
+  if (outcome === "neutral") {
+    const neutralOverrides = overrides as Partial<
+      Extract<MerchantAdviceOption, { outcome: "neutral" }>
+    >;
+    return {
+      id: id as ChoiceId,
+      label: "상인을 통해 상황을 바꾸세요",
+      line: "지금은 사지 말자고 하세요.",
+      outcome,
+      relation: "unrelated",
+      effectTags: ["trade"],
+      resultText: "상인이 값을 부른다.",
+      goldCost: 0,
+      ...neutralOverrides,
+    };
+  }
+  const paidOverrides = overrides as Partial<
+    Extract<MerchantAdviceOption, { outcome: "help" | "harm" }>
+  >;
+  return {
+    id: id as ChoiceId,
+    label: "상인을 통해 상황을 바꾸세요",
+    line: "지금 골드를 써서 바로 처리하자고 하세요.",
+    outcome,
+    relation: "unrelated",
+    effectTags: ["trade"],
+    resultText: "상인이 값을 부른다.",
+    goldCost: 5,
+    merchantEffect: { immediateHpDeltaPerMember: outcome === "help" ? 1 : -1 },
+    ...paidOverrides,
+  };
+}
+
+function merchantEvent(overrides: Partial<MerchantSituationEvent> = {}): MerchantSituationEvent {
+  return {
+    id: "shared-merchant-wound" as EventId,
+    kind: "merchant",
+    title: "붕대 상인",
+    description: "상인이 골드를 받고 지금 파티 상태에 개입하겠다고 제안한다.",
+    advice: [
+      merchantAdvice("m-a", "help"),
+      merchantAdvice("m-b", "harm"),
+      merchantAdvice("m-c", "neutral"),
+    ],
+    defaultResultText: "파티가 거래를 하지 않고 지나간다.",
+    ...overrides,
+  };
+}
+
+function merchantEventWithPaidAdvice(
+  overrides: Record<string, unknown>,
+): MerchantSituationEvent {
+  const event = merchantEvent();
+  return {
+    ...event,
+    advice: [{ ...event.advice[0], ...overrides }, event.advice[1], event.advice[2]],
+  } as unknown as MerchantSituationEvent;
+}
+
+function merchantEventWithNeutralAdvice(
+  overrides: Record<string, unknown>,
+): MerchantSituationEvent {
+  const event = merchantEvent();
+  return {
+    ...event,
+    advice: [
+      event.advice[0],
+      event.advice[1],
+      { ...event.advice[2], ...overrides },
+    ],
+  } as unknown as MerchantSituationEvent;
+}
+
+describe("merchantAdvice builder", () => {
+  it("H/X의 명시적 비용·효과가 빠지면 생성 오류다", () => {
+    expect(() => Reflect.apply(buildMerchantAdvice, undefined, [
+      "merchant-help",
+      "help",
+      "치료를 부탁하세요",
+      "지금 치료하자고 하세요.",
+      "상처를 봉합한다.",
+      ["trade"],
+    ])).toThrow(/효과/);
+  });
+
+  it("H/X에 전달한 비용과 효과를 그대로 보존한다", () => {
+    const effect: MerchantEffect = {
+      immediateHpDeltaPerMember: 8,
+      nextBattle: { incomingDamageMultiplier: 0.75 },
+    };
+
+    expect(buildMerchantAdvice(
+      "merchant-help",
+      "help",
+      "치료를 부탁하세요",
+      "지금 치료하자고 하세요.",
+      "상처를 봉합한다.",
+      ["trade"],
+      9,
+      effect,
+    )).toMatchObject({ goldCost: 9, merchantEffect: effect });
+  });
+
+  it("N은 0G이고 merchant 효과가 없다", () => {
+    const neutral = buildMerchantAdvice(
+      "merchant-neutral",
+      "neutral",
+      "거래하지 마세요",
+      "지금은 사지 말자고 하세요.",
+      "파티가 거래하지 않고 떠난다.",
+      ["observe"],
+      0,
+    );
+
+    expect(neutral).toMatchObject({ outcome: "neutral", goldCost: 0 });
+    expect(neutral).not.toHaveProperty("merchantEffect");
+  });
+});
+
+describe("validateSituationEvent merchant", () => {
+  it("계약을 만족하는 merchant 사건은 통과한다", () => {
+    expect(() => validateSituationEvent(merchantEvent())).not.toThrow();
+  });
+
+  it.each([0, -1, 1.5])("H/X 비용이 %s이면 생성 오류다", (goldCost) => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({ goldCost })))
+      .toThrow(/비용/);
+  });
+
+  it("H/X 효과가 없으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      merchantEffect: undefined,
+    }))).toThrow(/효과/);
+  });
+
+  it.each([0, 1.5])("즉시 HP 변화가 %s이면 생성 오류다", (immediateHpDeltaPerMember) => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      merchantEffect: { immediateHpDeltaPerMember },
+    }))).toThrow(/즉시 HP/);
+  });
+
+  it.each([0, Number.NaN, Number.POSITIVE_INFINITY])(
+    "다음 전투 보정이 %s이면 생성 오류다",
+    (incomingDamageMultiplier) => {
+      expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+        merchantEffect: { nextBattle: { incomingDamageMultiplier } },
+      }))).toThrow(/보정/);
+    },
+  );
+
+  it("다음 전투 보정이 둘 다 있으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      merchantEffect: {
+        nextBattle: {
+          incomingDamageMultiplier: 0.75,
+          partyDamageMultiplier: 1.3,
+        },
+      },
+    }))).toThrow(/보정/);
+  });
+
+  it("다음 전투 보정이 하나도 없으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      merchantEffect: { nextBattle: {} },
+    }))).toThrow(/보정/);
+  });
+
+  it("neutral에 merchant 효과가 있으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithNeutralAdvice({
+      merchantEffect: { immediateHpDeltaPerMember: 1 },
+    }))).toThrow(/neutral/);
+  });
+
+  it("neutral 비용이 0G가 아니면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithNeutralAdvice({ goldCost: 1 })))
+      .toThrow(/비용/);
+  });
+
+  it("공용 merchant의 relation이 unrelated가 아니면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      relation: "consistent",
+    }))).toThrow(/관계/);
+  });
+
+  it("공용 merchant에 source가 있으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      source: { kind: "ecology", ruleId: "spider-fire" },
+    }))).toThrow(/참조 근거/);
+  });
+
+  it("공용 merchant에 bossDamageModifier가 있으면 생성 오류다", () => {
+    expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
+      bossDamageModifier: -0.2,
+    }))).toThrow(/보스.*피해/);
+  });
+});
 
 describe("validateSituationEvent 테마 전용", () => {
   it("계약을 만족하는 테마 사건은 통과한다", () => {
@@ -359,7 +578,7 @@ describe("validateSituationEvent 강화판", () => {
 });
 
 /** 규칙 하나에 도움·방해를 두 개씩 공급하는 테마 사건 묶음. */
-function themedSupply(ruleId: string): SituationEvent[] {
+function themedSupply(ruleId: string): NonMerchantSituationEvent[] {
   return [0, 1].map((n) =>
     themedEvent({
       id: `${ruleId}-event-${n}` as EventId,
@@ -378,20 +597,39 @@ function themedSupply(ruleId: string): SituationEvent[] {
 
 /** 분류마다 다섯 개씩인 공용 사건 15개. */
 function sharedSupply(): SituationEvent[] {
-  const kinds = ["rest", "merchant", "special"] as const;
-  return kinds.flatMap((kind) =>
-    [0, 1, 2, 3, 4].map((n) =>
-      sharedEvent({
-        id: `shared-${kind}-${n}` as EventId,
-        kind,
-        advice: [
-          advice(`${kind}${n}-a`, "help"),
-          advice(`${kind}${n}-b`, "harm"),
-          advice(`${kind}${n}-c`, "neutral"),
-        ],
-      }),
-    ),
+  const rest = [0, 1, 2, 3, 4].map((n) =>
+    sharedEvent({
+      id: `shared-rest-${n}` as EventId,
+      kind: "rest",
+      advice: [
+        advice(`rest${n}-a`, "help"),
+        advice(`rest${n}-b`, "harm"),
+        advice(`rest${n}-c`, "neutral"),
+      ],
+    }),
   );
+  const merchant = [0, 1, 2, 3, 4].map((n) =>
+    merchantEvent({
+      id: `shared-merchant-${n}` as EventId,
+      advice: [
+        merchantAdvice(`merchant${n}-a`, "help"),
+        merchantAdvice(`merchant${n}-b`, "harm"),
+        merchantAdvice(`merchant${n}-c`, "neutral"),
+      ],
+    }),
+  );
+  const special = [0, 1, 2, 3, 4].map((n) =>
+    sharedEvent({
+      id: `shared-special-${n}` as EventId,
+      kind: "special",
+      advice: [
+        advice(`special${n}-a`, "help"),
+        advice(`special${n}-b`, "harm"),
+        advice(`special${n}-c`, "neutral"),
+      ],
+    }),
+  );
+  return [...rest, ...merchant, ...special];
 }
 
 describe("validateSituationEvents 모음", () => {
@@ -429,18 +667,18 @@ describe("validateSituationEvents 모음", () => {
     // 공급·중복 검사는 모두 만족시키고, 오직 사건 하나의 도움·방해·중립
     // 구성만 깨서 개별 사건 검사(validateSituationEvent)만 걸리게 한다.
     const supply = sharedSupply();
-    const broken = supply.map((event, index) =>
-      index === 0
-        ? {
-            ...event,
-            advice: [
-              advice(`${event.id}-a`, "help"),
-              advice(`${event.id}-b`, "help"),
-              advice(`${event.id}-c`, "help"),
-            ],
-          }
-        : event,
-    );
+    const broken = [
+      sharedEvent({
+        id: supply[0].id,
+        kind: "rest",
+        advice: [
+          advice(`${supply[0].id}-a`, "help"),
+          advice(`${supply[0].id}-b`, "help"),
+          advice(`${supply[0].id}-c`, "help"),
+        ],
+      }),
+      ...supply.slice(1),
+    ];
     expect(() => validateSituationEvents(broken)).toThrow(RuleError);
   });
 

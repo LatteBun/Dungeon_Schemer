@@ -1,4 +1,4 @@
-import type { BossId, ChoiceId, ClueId, EventId, ItemId, RuleId, BossRuleId } from "./ids";
+import type { BossId, BossRuleId, ChoiceId, ClueId, EventId, RuleId } from "./ids";
 import type { AdviceOutcome, EcologyRelation } from "./info";
 import type { ThemeId } from "./dungeon";
 
@@ -31,34 +31,7 @@ export const EVENT_EFFECT_TAGS = [
   "observe",
 ] as const satisfies readonly EventEffectTag[];
 
-export type ItemKind = "remedy" | "poison" | "food" | "scroll" | "bait";
-
-export const ITEM_KINDS = [
-  "remedy",
-  "poison",
-  "food",
-  "scroll",
-  "bait",
-] as const satisfies readonly ItemKind[];
-
-export interface ItemDef {
-  id: ItemId;
-  kind: ItemKind;
-  name: string;
-  description: string;
-  price: number;
-}
-
-/**
- * 조언 하나. 상황 안에서 고블린이 건네는 말이다.
- *
- * outcome은 플레이어의 의도이고 relation은 생태 규칙과의 관계다. 둘을 따로
- * 두는 이유가 있다. 유형 이름만으로는 `왜 이것이 도움인가`를 데이터가 설명하지
- * 못해, 검증기가 규칙마다 도움·방해가 갖춰졌는지 셀 수 없다. 중립은 참조 규칙이
- * 없어 규칙별이 아니라 테마 전체로 센다.
- * docs/systems/INFORMATION_AND_DECEPTION.md
- */
-export interface AdviceOption {
+export interface BaseAdviceOption {
   id: ChoiceId;
   /** "횃불을 하나 집어 거미들 사이의 바닥에 던지세요" */
   label: string;
@@ -75,6 +48,38 @@ export interface AdviceOption {
   resultText: string;
 }
 
+export type NextBattleMerchantEffect =
+  | { incomingDamageMultiplier: number; partyDamageMultiplier?: never }
+  | { incomingDamageMultiplier?: never; partyDamageMultiplier: number };
+
+export type MerchantEffect =
+  | { immediateHpDeltaPerMember: number; nextBattle?: NextBattleMerchantEffect }
+  | { immediateHpDeltaPerMember?: never; nextBattle: NextBattleMerchantEffect };
+
+/**
+ * 조언 하나. 상황 안에서 고블린이 건네는 말이다.
+ *
+ * outcome은 플레이어의 의도이고 relation은 생태 규칙과의 관계다. 둘을 따로
+ * 두는 이유가 있다. 유형 이름만으로는 `왜 이것이 도움인가`를 데이터가 설명하지
+ * 못해, 검증기가 규칙마다 도움·방해가 갖춰졌는지 셀 수 없다. 중립은 참조 규칙이
+ * 없어 규칙별이 아니라 테마 전체로 센다.
+ * docs/systems/INFORMATION_AND_DECEPTION.md
+ */
+export type MerchantAdviceOption =
+  | (BaseAdviceOption & { outcome: "neutral"; goldCost: 0; merchantEffect?: never })
+  | (BaseAdviceOption & {
+    outcome: "help" | "harm";
+    goldCost: number;
+    merchantEffect: MerchantEffect;
+  });
+
+export type NonMerchantAdviceOption = BaseAdviceOption & {
+  goldCost?: never;
+  merchantEffect?: never;
+};
+
+export type AdviceOption = NonMerchantAdviceOption;
+
 export type AdviceSource =
   | { kind: "ecology"; ruleId: RuleId }
   | { kind: "boss"; bossRuleId: BossRuleId };
@@ -84,7 +89,40 @@ export interface AdviceUpgrade {
   clueId: ClueId;
   /** 교체할 슬롯. 0·1·2 */
   slotIndex: number;
-  replacement: AdviceOption;
+  replacement: NonMerchantAdviceOption;
+}
+
+interface BaseSituationEvent<TAdviceOption extends BaseAdviceOption> {
+  id: EventId;
+  kind: EventKind;
+  title: string;
+  /** 관찰 가능한 사실을 담는다. 단서가 여기 실린다. */
+  description: string;
+  /** 도움·방해·중립을 한 개씩, 정확히 3개. */
+  advice: readonly TAdviceOption[];
+  /** 아무도 수용하지 않았을 때. 파티가 자기 방식대로 처리한 결과다. */
+  defaultResultText: string;
+  /** 이 사건을 방문하면 얻는 단서. */
+  revealsClue?: ClueId;
+  /** 강한 연계. 이 단서가 없으면 배치되지 않는다. */
+  requiresClue?: ClueId;
+}
+
+export interface MerchantSituationEvent extends BaseSituationEvent<MerchantAdviceOption> {
+  kind: "merchant";
+  theme?: never;
+  targetBossId?: never;
+  upgrades?: never;
+}
+
+export interface NonMerchantSituationEvent extends BaseSituationEvent<NonMerchantAdviceOption> {
+  kind: Exclude<EventKind, "merchant">;
+  /** 생태 규칙을 참조하면 테마 전용이고, 공용이면 없다. */
+  theme?: ThemeId;
+  /** 보스 정보 사건이면 대상 보스, 일반 사건이면 없다. */
+  targetBossId?: BossId;
+  /** 약한 연계. */
+  upgrades?: readonly AdviceUpgrade[];
 }
 
 /**
@@ -95,24 +133,4 @@ export interface AdviceUpgrade {
  * 된다.
  * docs/superpowers/specs/2026-08-20-lattebun-advice-event-merge-design.md
  */
-export interface SituationEvent {
-  id: EventId;
-  kind: EventKind;
-  /** 생태 규칙을 참조하면 테마 전용이고, 공용이면 없다. */
-  theme?: ThemeId;
-  /** 보스 정보 사건이면 대상 보스, 일반 사건이면 없다. */
-  targetBossId?: BossId;
-  title: string;
-  /** 관찰 가능한 사실을 담는다. 단서가 여기 실린다. */
-  description: string;
-  /** 도움·방해·중립을 한 개씩, 정확히 3개. */
-  advice: readonly AdviceOption[];
-  /** 아무도 수용하지 않았을 때. 파티가 자기 방식대로 처리한 결과다. */
-  defaultResultText: string;
-  /** 이 사건을 방문하면 얻는 단서. */
-  revealsClue?: ClueId;
-  /** 강한 연계. 이 단서가 없으면 배치되지 않는다. */
-  requiresClue?: ClueId;
-  /** 약한 연계. */
-  upgrades?: readonly AdviceUpgrade[];
-}
+export type SituationEvent = MerchantSituationEvent | NonMerchantSituationEvent;
