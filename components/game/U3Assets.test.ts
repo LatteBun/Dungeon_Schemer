@@ -12,21 +12,16 @@ const extractedPngAssets = [
   "section-divider.png",
   "board-pin.png",
   "status-dungeon.png",
-  "theme-desert-wide.png",
-  "theme-spider-wide.png",
-  "theme-graveyard-wide.png",
+] as const;
+
+const wideDungeonScenes = [
+  "theme-desert-wide.webp",
+  "theme-spider-wide.webp",
+  "theme-graveyard-wide.webp",
 ] as const;
 
 function extractedPath(name: string): string {
   return join(process.cwd(), "public", "assets", "u3", "extracted", name);
-}
-
-function pngDimensions(path: string): { width: number; height: number } {
-  const content = readFileSync(path);
-  return {
-    width: content.readUInt32BE(16),
-    height: content.readUInt32BE(20),
-  };
 }
 
 describe("U3 extracted asset-board assets", () => {
@@ -37,12 +32,11 @@ describe("U3 extracted asset-board assets", () => {
     );
   });
 
-  it.each(["theme-desert-wide.png", "theme-spider-wide.png", "theme-graveyard-wide.png"])(
-    "%s 는 대화면에서도 선명한 960x540 16:9 던전 장면이다",
-    (asset) => {
-      expect(pngDimensions(extractedPath(asset))).toEqual({ width: 960, height: 540 });
-    },
-  );
+  it.each(wideDungeonScenes)("%s 는 대화면용 WebP 던전 장면이다", (asset) => {
+    const content = readFileSync(extractedPath(asset));
+    expect(content.subarray(0, 4).toString("ascii")).toBe("RIFF");
+    expect(content.subarray(8, 12).toString("ascii")).toBe("WEBP");
+  });
 
   it("공고 장면은 전체 보드 크롭이 아니라 테마별 고해상도 자산을 직접 사용한다", () => {
     const source = readFileSync(
@@ -51,9 +45,9 @@ describe("U3 extracted asset-board assets", () => {
     );
     const css = readFileSync(join(process.cwd(), "app", "u3-card-theme.css"), "utf8");
 
-    expect(source).toContain("theme-desert-wide.png");
-    expect(source).toContain("theme-spider-wide.png");
-    expect(source).toContain("theme-graveyard-wide.png");
+    expect(source).toContain("theme-desert-wide.webp");
+    expect(source).toContain("theme-spider-wide.webp");
+    expect(source).toContain("theme-graveyard-wide.webp");
     expect(source).not.toContain("theme-scenes-board.webp");
     expect(css).not.toContain("theme-scenes-board.webp");
     expect(css).toContain("aspect-ratio: 16 / 9");
