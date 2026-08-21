@@ -1,0 +1,189 @@
+/* U3 wide-screen fidelity overrides. Keep the 60:40 GameShell contract intact. */
+
+/* Use a dedicated dungeon-scene sprite instead of magnifying a tiny crop of the full UI board. */
+.u3-theme-scene {
+  aspect-ratio: 16 / 9;
+  background-image: url("/assets/u3/extracted/theme-scenes-wide.avif");
+  background-repeat: no-repeat;
+  background-size: 300% 100%;
+  background-position-y: center;
+}
+
+.u3-theme-scene--desert {
+  background-position: 0% center;
+}
+
+.u3-theme-scene--spider {
+  background-position: 50% center;
+}
+
+.u3-theme-scene--graveyard {
+  background-position: 100% center;
+}
+
+@media (min-width: 90rem) {
+  .u3-board-screen .game-shell__main,
+  .u3-board-screen .game-shell__right-panel {
+    padding: clamp(0.8rem, 0.9vw, 1.6rem);
+  }
+
+  .u3-board-screen .game-shell__main > h1 {
+    margin-bottom: clamp(0.5rem, 0.55vw, 0.85rem);
+    font-size: clamp(1.2rem, 1.05vw, 1.65rem);
+  }
+
+  .u3-guild-board {
+    padding: clamp(1rem, 1.15vw, 1.75rem);
+    background-size:
+      auto,
+      auto,
+      clamp(31.875rem, 30vw, 45rem) auto;
+    background-repeat: no-repeat, no-repeat, repeat;
+  }
+
+  .u3-guild-board__wood {
+    inset: clamp(0.45rem, 0.45vw, 0.8rem);
+  }
+
+  .u3-guild-board__notices {
+    gap: clamp(0.9rem, 1vw, 1.7rem);
+    padding: clamp(0.2rem, 0.25vw, 0.45rem);
+  }
+
+  .u3-notice {
+    grid-template-rows: auto auto minmax(8rem, 1fr) auto auto auto auto;
+    padding:
+      clamp(0.85rem, 0.8vw, 1.35rem)
+      clamp(0.75rem, 0.8vw, 1.3rem)
+      clamp(0.75rem, 0.7vw, 1.1rem);
+    background-size:
+      100% 100%,
+      clamp(9rem, 10vw, 18rem) auto;
+  }
+
+  .u3-notice__pin {
+    top: -0.62rem;
+    width: clamp(1.8rem, 1.4vw, 2.8rem);
+    height: auto;
+  }
+
+  .u3-notice__heading {
+    padding-top: clamp(0.45rem, 0.45vw, 0.75rem);
+  }
+
+  .u3-notice__heading strong {
+    font-size: clamp(1.05rem, 1vw, 1.45rem);
+  }
+
+  .u3-notice__heading small,
+  .u3-notice__label,
+  .u3-notice__environment small {
+    font-size: clamp(0.64rem, 0.58vw, 0.9rem);
+  }
+
+  .u3-risk-stars {
+    gap: clamp(0.12rem, 0.14vw, 0.22rem);
+    margin-block: clamp(0.28rem, 0.3vw, 0.48rem);
+  }
+
+  .u3-risk-stars img {
+    width: clamp(0.9rem, 0.8vw, 1.25rem);
+    height: clamp(0.9rem, 0.8vw, 1.25rem);
+  }
+
+  .u3-notice__theme-visual {
+    margin: clamp(0.22rem, 0.25vw, 0.42rem) 0 clamp(0.35rem, 0.35vw, 0.6rem);
+  }
+
+  .u3-theme-scene {
+    width: min(100%, clamp(15rem, 18vw, 32rem));
+  }
+
+  .u3-notice .u3-reward,
+  .u3-notice__environment strong,
+  .u3-notice__state {
+    font-size: clamp(0.82rem, 0.72vw, 1.05rem);
+  }
+
+  .u3-reward img {
+    width: clamp(1rem, 0.85vw, 1.35rem);
+    height: clamp(1rem, 0.85vw, 1.35rem);
+  }
+
+  .u3-notice__environment {
+    margin-top: clamp(0.4rem, 0.38vw, 0.65rem);
+    padding-top: clamp(0.35rem, 0.34vw, 0.58rem);
+  }
+
+  .u3-dungeon-summary__motif {
+    width: clamp(9rem, 10vw, 16rem);
+  }
+
+  .u3-detail-section {
+    padding: clamp(0.72rem, 0.8vw, 1.25rem);
+  }
+
+  .u3-detail-section h3 {
+    margin-bottom: clamp(0.42rem, 0.42vw, 0.72rem);
+    font-size: clamp(1rem, 0.9vw, 1.35rem);
+  }
+
+  .u3-detail-section h3::after {
+    width: min(100%, clamp(18rem, 22vw, 32rem));
+    height: clamp(0.55rem, 0.5vw, 0.8rem);
+  }
+
+  .u3-dungeon-summary__copy > span,
+  .u3-dungeon-summary__facts,
+  .u3-party-card__identity span,
+  .u3-party-card__identity small,
+  .u3-party-card__stats,
+  .u3-contract-outcomes__rows {
+    font-size: clamp(0.72rem, 0.6vw, 0.95rem);
+  }
+
+  .u3-dungeon-summary__copy h2 {
+    font-size: clamp(1.05rem, 1.05vw, 1.55rem);
+  }
+
+  .u3-party-card__portrait {
+    width: clamp(2.8rem, 2.6vw, 4.2rem);
+    height: clamp(2.8rem, 2.6vw, 4.2rem);
+  }
+
+  .u3-contract-button {
+    grid-template-columns:
+      clamp(4.5rem, 4.6vw, 7.25rem)
+      minmax(0, 1fr)
+      clamp(3.5rem, 3.9vw, 6rem);
+    column-gap: clamp(0.85rem, 1vw, 1.5rem);
+    min-height: clamp(5.55rem, 6.4vw, 9.5rem);
+    padding-inline: clamp(1rem, 1.2vw, 2rem);
+  }
+
+  .u3-contract-button strong {
+    font-size: clamp(1.28rem, 1.25vw, 2rem);
+  }
+
+  .u3-contract-button__emblem {
+    width: clamp(4.5rem, 4.6vw, 7.25rem);
+    height: clamp(4.5rem, 4.6vw, 7.25rem);
+  }
+
+  .u3-contract-button__arrow {
+    width: clamp(3.5rem, 3.9vw, 6rem);
+    height: auto;
+    transform: scale(1.12);
+  }
+}
+
+/* Very wide monitors gain space horizontally, but the artwork never stretches beyond its source panel. */
+@media (min-width: 120rem) {
+  .u3-guild-board__notices {
+    gap: clamp(1.1rem, 1.2vw, 2rem);
+  }
+
+  .u3-notice {
+    padding-inline: clamp(1rem, 1vw, 1.6rem);
+  }
+}
