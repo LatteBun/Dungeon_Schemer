@@ -26,16 +26,16 @@ describe("U3 extracted asset-board assets", () => {
     );
   });
 
-  it("theme-scenes-wide.webp 는 던전 장면만 담은 대화면용 WebP다", () => {
-    const content = readFileSync(extractedPath("theme-scenes-wide.webp"));
-    expect(content.subarray(0, 4).toString("ascii")).toBe("RIFF");
-    expect(content.subarray(8, 12).toString("ascii")).toBe("WEBP");
+  it("theme-scenes-wide.avif 는 던전 장면만 담은 대화면용 AVIF다", () => {
+    const content = readFileSync(extractedPath("theme-scenes-wide.avif"));
+    expect(content.subarray(4, 8).toString("ascii")).toBe("ftyp");
+    expect(content.subarray(8, 12).toString("ascii")).toMatch(/avif|avis/);
   });
 
   it("공고 장면은 전체 UI 보드 크롭이 아니라 전용 3장 스프라이트를 사용한다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-card-theme.css"), "utf8");
 
-    expect(css).toContain("theme-scenes-wide.webp");
+    expect(css).toContain("theme-scenes-wide.avif");
     expect(css).not.toContain("theme-scenes-board.webp");
     expect(css).toContain("background-size: 300% 100%");
     expect(css).toContain("aspect-ratio: 16 / 9");
