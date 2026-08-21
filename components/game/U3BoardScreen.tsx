@@ -14,10 +14,10 @@ export interface U3BoardScreenProps {
   onContract: (offerId: string) => void;
 }
 
-const THEME_ICON = {
-  spider: "/assets/u3/theme-spider.svg",
-  desert: "/assets/u3/theme-desert.svg",
-  graveyard: "/assets/u3/theme-graveyard.svg",
+const THEME_IMAGE = {
+  spider: "/assets/u3/extracted/theme-spider.png",
+  desert: "/assets/u3/extracted/theme-desert.png",
+  graveyard: "/assets/u3/extracted/theme-graveyard.png",
 } as const;
 
 function RiskStars({ riskLevel }: { riskLevel: number }) {
@@ -27,7 +27,7 @@ function RiskStars({ riskLevel }: { riskLevel: number }) {
         <img
           key={index}
           className={index < riskLevel ? "is-active" : ""}
-          src="/assets/u3/risk-star.svg"
+          src="/assets/u3/extracted/risk-star.png"
           alt=""
           aria-hidden="true"
           width={16}
@@ -105,7 +105,7 @@ function NoticeCard({
         <img
           className="u3-notice__theme-art"
           data-testid="u3-notice-theme-art"
-          src={THEME_ICON[notice.theme]}
+          src={THEME_IMAGE[notice.theme]}
           alt=""
           width={120}
           height={120}
@@ -120,13 +120,6 @@ function NoticeCard({
       />
 
       <span className="u3-notice__environment" data-testid="u3-notice-environment">
-        <img
-          src="/assets/u3/environment.svg"
-          alt=""
-          aria-hidden="true"
-          width={18}
-          height={18}
-        />
         <span>
           <small>환경 특성</small>
           <strong>{notice.environmentLabel}</strong>
@@ -134,22 +127,7 @@ function NoticeCard({
       </span>
 
       <span className="u3-notice__state">
-        {notice.locked ? (
-          <>
-            <img
-              src="/assets/u3/notice-lock.svg"
-              alt=""
-              aria-hidden="true"
-              width={18}
-              height={18}
-            />
-            진입 불가
-          </>
-        ) : selected ? (
-          "선택 중"
-        ) : (
-          "진입 가능"
-        )}
+        {notice.locked ? "진입 불가" : selected ? "선택 중" : "진입 가능"}
       </span>
     </button>
   );
@@ -291,7 +269,7 @@ function ContractDetail({
       <section className="u3-detail-section u3-dungeon-summary" aria-labelledby="u3-dungeon-title">
         <div className="u3-dungeon-summary__motif">
           <img
-            src={THEME_ICON[detail.theme]}
+            src={THEME_IMAGE[detail.theme]}
             alt=""
             aria-hidden="true"
             width={78}
@@ -305,7 +283,6 @@ function ContractDetail({
         </div>
         <div className="u3-dungeon-summary__facts">
           <span>
-            <img src="/assets/u3/environment.svg" alt="" aria-hidden="true" width={18} height={18} />
             환경 특성 <strong>{detail.environmentLabel}</strong>
           </span>
           <span>
@@ -314,10 +291,7 @@ function ContractDetail({
           </span>
         </div>
         {detail.lockReasonLabel === null ? null : (
-          <p className="u3-dungeon-summary__lock">
-            <img src="/assets/u3/notice-lock.svg" alt="" aria-hidden="true" width={18} height={18} />
-            {detail.lockReasonLabel}
-          </p>
+          <p className="u3-dungeon-summary__lock">{detail.lockReasonLabel}</p>
         )}
       </section>
 
