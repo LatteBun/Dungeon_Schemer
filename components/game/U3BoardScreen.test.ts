@@ -24,6 +24,7 @@ const party = [
     maxHp: 45,
     trust: 72,
     gold: 24,
+    portraitSrc: "/assets/characters/adel.webp",
   },
   {
     id: "character-2",
@@ -121,15 +122,16 @@ describe("U3BoardScreen", () => {
     expect(html).not.toContain("계약 기간");
     expect(html).not.toContain("중도 포기");
     expect(html).not.toContain("실패 패널티");
+    expect(html).not.toContain("답사 기록");
+    expect(html).not.toContain("정찰 보고");
   });
 
-  it("선택한 공고의 답사 기록을 문장 목록으로 보여준다", () => {
+  it("파티 초상 매핑 슬롯과 기존 골드 SVG를 데이터 행에 재사용한다", () => {
     const html = render("offer-1");
 
-    expect(html).toContain("답사 기록");
-    expect(html).toContain("열기에 오래 노출되면 움직임이 둔해진다.");
-    expect(html).toContain("물가 근처에는 굴 흔적이 남는다.");
-    expect(html).toContain("미이라는 조용한 움직임에 반응이 늦다.");
+    expect(html).toContain("/assets/characters/adel.webp");
+    expect((html.match(/data-testid=\"u3-party-gold-icon\"/g) ?? [])).toHaveLength(3);
+    expect(html).toContain("/assets/u2/status-gold.svg");
   });
 
   it("선택한 공고의 실제 파티 3명과 생존 인원별 계약 조건을 보여준다", () => {
