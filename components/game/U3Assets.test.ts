@@ -2,37 +2,41 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const assets = [
-  "risk-star.svg",
-  "environment.svg",
-  "notice-lock.svg",
-  "theme-spider.svg",
-  "theme-desert.svg",
-  "theme-graveyard.svg",
+const extractedPngAssets = [
+  "theme-desert.png",
+  "theme-spider.png",
+  "theme-graveyard.png",
+  "risk-star.png",
+  "locked-seal.png",
+  "contract-emblem.png",
+  "arrow-right.png",
+  "notice-parchment.png",
+  "detail-panel-frame.png",
+  "board-wood-tile.png",
+  "screen-texture-tile.png",
 ] as const;
 
-describe("U3 fixed SVG assets", () => {
-  it.each(assets)("%s 는 24x24 viewBox를 가진다", (asset) => {
-    const content = readFileSync(
-      join(process.cwd(), "public", "assets", "u3", asset),
-      "utf8",
-    );
+function readExtractedAsset(name: string): Buffer {
+  return readFileSync(
+    join(process.cwd(), "public", "assets", "u3", "extracted", name),
+  );
+}
 
-    expect(content).toContain('<svg xmlns="http://www.w3.org/2000/svg"');
-    expect(content).toContain('viewBox="0 0 24 24"');
+describe("U3 extracted asset-board PNG assets", () => {
+  it.each(extractedPngAssets)("%s 는 실제 PNG 파일이다", (asset) => {
+    const content = readExtractedAsset(asset);
+    expect(content.subarray(0, 8)).toEqual(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
   });
 
-  it("사막과 거미굴 테마는 바로 알아볼 수 있는 도형을 가진다", () => {
-    const desert = readFileSync(
-      join(process.cwd(), "public", "assets", "u3", "theme-desert.svg"),
-      "utf8",
-    );
-    const spider = readFileSync(
-      join(process.cwd(), "public", "assets", "u3", "theme-spider.svg"),
-      "utf8",
-    );
+  it("던전 3종은 보드에서 추출한 별도 이미지로 분리된다", () => {
+    const desert = readExtractedAsset("theme-desert.png");
+    const spider = readExtractedAsset("theme-spider.png");
+    const graveyard = readExtractedAsset("theme-graveyard.png");
 
-    expect(desert).toContain('data-motif="desert-dunes"');
-    expect(spider).toContain('data-motif="spider"');
+    expect(desert.equals(spider)).toBe(false);
+    expect(spider.equals(graveyard)).toBe(false);
+    expect(desert.equals(graveyard)).toBe(false);
   });
 });
