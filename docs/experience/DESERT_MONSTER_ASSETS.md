@@ -28,6 +28,12 @@
 
 보스의 위험도 구간은 초기 위험도에 따른 공식 테마 계약을 따른다. 이미지 파일명이나 표시 순서만으로 위험도·피해·체력·출현 패키지를 새로 계산하지 않는다.
 
+## 검수 manifest
+
+자동 검수와 향후 UI 자산 매핑이 필요할 때는 [`DESERT_MONSTER_ASSETS`](../../components/game/DesertMonsterAssets.ts)의 9종 manifest를 먼저 사용한다. 이 manifest는 `id`, 공식 이름, `kind`, 정적 경로, 설명을 제공하지만 게임 도메인의 출현 규칙이나 위험도를 정의하지 않는다.
+
+manifest와 이 문서의 경로가 달라지면 실제 `public/assets/monsters/dessert/` 파일을 기준으로 수정하고, PNG 계약 테스트와 카탈로그를 함께 확인한다.
+
 ## 향후 UI 사용 규칙
 
 ### 진행 화면
