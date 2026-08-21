@@ -10,6 +10,9 @@ import type {
   ChoiceId,
   ClueId,
   EventId,
+  MerchantAdviceOption,
+  MerchantSituationEvent,
+  NonMerchantSituationEvent,
   RuleId,
   SituationEvent,
   ThemeId,
@@ -34,7 +37,7 @@ function advice(
 }
 
 /** 계약을 만족하는 공용 사건 하나. */
-function sharedEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
+function sharedEvent(overrides: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
   return {
     id: "shared-rest-wound" as EventId,
     kind: "rest",
@@ -76,7 +79,7 @@ describe("validateSituationEvent 구조", () => {
     expect(() => validateSituationEvent(event)).toThrow(RuleError);
   });
 
-  it.each<[string, Partial<SituationEvent>]>([
+  it.each<[string, Partial<NonMerchantSituationEvent>]>([
     ["제목", { title: "  " }],
     ["묘사", { description: "" }],
     ["기본 결과", { defaultResultText: "" }],
@@ -131,7 +134,7 @@ function themedAdvice(
   return advice(id, outcome, { ...byOutcome[outcome], ...overrides });
 }
 
-function themedEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
+function themedEvent(overrides: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
   return {
     id: "spider-webbed-hunter" as EventId,
     kind: "monster",
@@ -148,7 +151,7 @@ function themedEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
   };
 }
 
-function bossEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
+function bossEvent(overrides: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
   const source = {
     kind: "boss" as const,
     bossRuleId: "boss-ragna-turning" as BossRuleId,
@@ -166,6 +169,72 @@ function bossEvent(overrides: Partial<SituationEvent> = {}): SituationEvent {
       themedAdvice("neutral", "neutral", { bossDamageModifier: -0.1 }),
     ],
     defaultResultText: "파티가 흔적을 살피고 이동한다.",
+    ...overrides,
+  };
+}
+
+function merchantAdvice(
+  id: string,
+  outcome: "neutral",
+  overrides?: Partial<Extract<MerchantAdviceOption, { outcome: "neutral" }>>,
+): Extract<MerchantAdviceOption, { outcome: "neutral" }>;
+function merchantAdvice(
+  id: string,
+  outcome: "help" | "harm",
+  overrides?: Partial<Extract<MerchantAdviceOption, { outcome: "help" | "harm" }>>,
+): Extract<MerchantAdviceOption, { outcome: "help" | "harm" }>;
+function merchantAdvice(
+  id: string,
+  outcome: AdviceOutcome,
+  overrides:
+    | Partial<Extract<MerchantAdviceOption, { outcome: "neutral" }>>
+    | Partial<Extract<MerchantAdviceOption, { outcome: "help" | "harm" }>> = {},
+): MerchantAdviceOption {
+  if (outcome === "neutral") {
+    const neutralOverrides = overrides as Partial<
+      Extract<MerchantAdviceOption, { outcome: "neutral" }>
+    >;
+    return {
+      id: id as ChoiceId,
+      label: "상인을 통해 상황을 바꾸세요",
+      line: "지금은 사지 말자고 하세요.",
+      outcome,
+      relation: "unrelated",
+      effectTags: ["trade"],
+      resultText: "상인이 값을 부른다.",
+      goldCost: 0,
+      ...neutralOverrides,
+    };
+  }
+  const paidOverrides = overrides as Partial<
+    Extract<MerchantAdviceOption, { outcome: "help" | "harm" }>
+  >;
+  return {
+    id: id as ChoiceId,
+    label: "상인을 통해 상황을 바꾸세요",
+    line: "지금 골드를 써서 바로 처리하자고 하세요.",
+    outcome,
+    relation: "unrelated",
+    effectTags: ["trade"],
+    resultText: "상인이 값을 부른다.",
+    goldCost: 5,
+    merchantEffect: { immediateHpDeltaPerMember: outcome === "help" ? 1 : -1 },
+    ...paidOverrides,
+  };
+}
+
+function merchantEvent(overrides: Partial<MerchantSituationEvent> = {}): MerchantSituationEvent {
+  return {
+    id: "shared-merchant-wound" as EventId,
+    kind: "merchant",
+    title: "붕대 상인",
+    description: "상인이 골드를 받고 지금 파티 상태에 개입하겠다고 제안한다.",
+    advice: [
+      merchantAdvice("m-a", "help"),
+      merchantAdvice("m-b", "harm"),
+      merchantAdvice("m-c", "neutral"),
+    ],
+    defaultResultText: "파티가 거래를 하지 않고 지나간다.",
     ...overrides,
   };
 }
@@ -359,7 +428,7 @@ describe("validateSituationEvent 강화판", () => {
 });
 
 /** 규칙 하나에 도움·방해를 두 개씩 공급하는 테마 사건 묶음. */
-function themedSupply(ruleId: string): SituationEvent[] {
+function themedSupply(ruleId: string): NonMerchantSituationEvent[] {
   return [0, 1].map((n) =>
     themedEvent({
       id: `${ruleId}-event-${n}` as EventId,
@@ -378,20 +447,39 @@ function themedSupply(ruleId: string): SituationEvent[] {
 
 /** 분류마다 다섯 개씩인 공용 사건 15개. */
 function sharedSupply(): SituationEvent[] {
-  const kinds = ["rest", "merchant", "special"] as const;
-  return kinds.flatMap((kind) =>
-    [0, 1, 2, 3, 4].map((n) =>
-      sharedEvent({
-        id: `shared-${kind}-${n}` as EventId,
-        kind,
-        advice: [
-          advice(`${kind}${n}-a`, "help"),
-          advice(`${kind}${n}-b`, "harm"),
-          advice(`${kind}${n}-c`, "neutral"),
-        ],
-      }),
-    ),
+  const rest = [0, 1, 2, 3, 4].map((n) =>
+    sharedEvent({
+      id: `shared-rest-${n}` as EventId,
+      kind: "rest",
+      advice: [
+        advice(`rest${n}-a`, "help"),
+        advice(`rest${n}-b`, "harm"),
+        advice(`rest${n}-c`, "neutral"),
+      ],
+    }),
   );
+  const merchant = [0, 1, 2, 3, 4].map((n) =>
+    merchantEvent({
+      id: `shared-merchant-${n}` as EventId,
+      advice: [
+        merchantAdvice(`merchant${n}-a`, "help"),
+        merchantAdvice(`merchant${n}-b`, "harm"),
+        merchantAdvice(`merchant${n}-c`, "neutral"),
+      ],
+    }),
+  );
+  const special = [0, 1, 2, 3, 4].map((n) =>
+    sharedEvent({
+      id: `shared-special-${n}` as EventId,
+      kind: "special",
+      advice: [
+        advice(`special${n}-a`, "help"),
+        advice(`special${n}-b`, "harm"),
+        advice(`special${n}-c`, "neutral"),
+      ],
+    }),
+  );
+  return [...rest, ...merchant, ...special];
 }
 
 describe("validateSituationEvents 모음", () => {
@@ -429,18 +517,18 @@ describe("validateSituationEvents 모음", () => {
     // 공급·중복 검사는 모두 만족시키고, 오직 사건 하나의 도움·방해·중립
     // 구성만 깨서 개별 사건 검사(validateSituationEvent)만 걸리게 한다.
     const supply = sharedSupply();
-    const broken = supply.map((event, index) =>
-      index === 0
-        ? {
-            ...event,
-            advice: [
-              advice(`${event.id}-a`, "help"),
-              advice(`${event.id}-b`, "help"),
-              advice(`${event.id}-c`, "help"),
-            ],
-          }
-        : event,
-    );
+    const broken = [
+      sharedEvent({
+        id: supply[0].id,
+        kind: "rest",
+        advice: [
+          advice(`${supply[0].id}-a`, "help"),
+          advice(`${supply[0].id}-b`, "help"),
+          advice(`${supply[0].id}-c`, "help"),
+        ],
+      }),
+      ...supply.slice(1),
+    ];
     expect(() => validateSituationEvents(broken)).toThrow(RuleError);
   });
 

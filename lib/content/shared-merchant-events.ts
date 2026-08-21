@@ -1,5 +1,5 @@
-import type { AdviceOutcome, EventEffectTag, SituationEvent } from "@/lib/domain";
-import { advice, sharedEvent } from "@/lib/content/shared-event-builders";
+import type { AdviceOutcome, EventEffectTag, MerchantSituationEvent } from "@/lib/domain";
+import { merchantAdvice, sharedMerchantEvent } from "@/lib/content/shared-event-builders";
 
 type Choice = readonly [AdviceOutcome, string, string, string, EventEffectTag[]];
 
@@ -9,12 +9,25 @@ function merchantEvent(
   description: string,
   choices: readonly [Choice, Choice, Choice],
   defaultResultText: string,
-): SituationEvent {
-  return sharedEvent(id, "merchant", title, description, choices.map(([outcome, label, line, result, tags]) =>
-    advice(`${id}-${outcome === "help" ? "a" : outcome === "harm" ? "b" : "c"}`, outcome, label, line, result, tags)), defaultResultText);
+): MerchantSituationEvent {
+  return sharedMerchantEvent(
+    id,
+    title,
+    description,
+    choices.map(([outcome, label, line, result, tags]) =>
+      merchantAdvice(
+        `${id}-${outcome === "help" ? "a" : outcome === "harm" ? "b" : "c"}`,
+        outcome,
+        label,
+        line,
+        result,
+        tags,
+      )),
+    defaultResultText,
+  );
 }
 
-const MERCHANT_EVENTS: readonly SituationEvent[] = [
+const MERCHANT_EVENTS: readonly MerchantSituationEvent[] = [
   merchantEvent("shared-merchant-potion", "젖은 흙이 묻은 병", "상인이 물약을 판다. 병 바닥에 젖은 흙이 말라붙어 있고, 상인은 물건을 건넬 때마다 자꾸 뒤를 돌아본다.", [
     ["help", "물약은 두고 식량만 값을 깎아 사라고 하세요", "병 바닥의 흙과 상인의 시선을 먼저 살피자고 하세요.", "값을 깎아 식량을 산다. 골드가 덜 나갔다.", ["trade"]],
     ["harm", "물약을 사서 부상자에게 먹이라고 하세요", "병을 건네는 모습만 보고 바로 써도 된다고 하세요.", "병을 비운 부상자가 곧 토한다. 오래 묻혀 있던 물약이었다.", ["sabotage"]],
@@ -92,6 +105,6 @@ const MERCHANT_EVENT_ORDER = [
   "shared-merchant-leaking-oil-bottle", "shared-merchant-cracked-arrowheads", "shared-merchant-hot-amulet", "shared-merchant-rattling-smoke-bomb", "shared-merchant-strong-torch-powder",
 ] as const;
 
-export const SHARED_MERCHANT_EVENTS: readonly SituationEvent[] = MERCHANT_EVENTS.toSorted(
+export const SHARED_MERCHANT_EVENTS: readonly MerchantSituationEvent[] = MERCHANT_EVENTS.toSorted(
   (a, b) => MERCHANT_EVENT_ORDER.indexOf(a.id as (typeof MERCHANT_EVENT_ORDER)[number]) - MERCHANT_EVENT_ORDER.indexOf(b.id as (typeof MERCHANT_EVENT_ORDER)[number]),
 );

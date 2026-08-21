@@ -1,8 +1,12 @@
 import { ADVICE_OUTCOMES, EVENT_KINDS, RuleError } from "@/lib/domain";
 import type {
-  AdviceOption,
   AdviceOutcome,
+  BaseAdviceOption,
   EcologyRelation,
+  MerchantAdviceOption,
+  MerchantSituationEvent,
+  NonMerchantAdviceOption,
+  NonMerchantSituationEvent,
   SituationEvent,
   ThemeContent,
   ThemeId,
@@ -23,7 +27,7 @@ function requireText(
   if (value.trim() === "") invalid(message, details);
 }
 
-function validateAdviceText(option: AdviceOption, eventId: string): void {
+function validateAdviceText(option: BaseAdviceOption, eventId: string): void {
   const details = { contentType: "advice", eventId, adviceId: option.id };
   requireText(option.label, `조언 문구가 비어 있다: ${option.id}`, details);
   requireText(option.line, `조언의 근거 대사가 비어 있다: ${option.id}`, details);
@@ -38,7 +42,7 @@ const REQUIRED_RELATION: Readonly<Record<AdviceOutcome, EcologyRelation>> = {
 };
 
 function validateThemedAdvice(
-  option: AdviceOption,
+  option: NonMerchantAdviceOption,
   eventId: string,
   theme?: ThemeContent,
 ): void {
@@ -84,8 +88,8 @@ function validateThemedAdvice(
 }
 
 function validateBossAdvice(
-  option: AdviceOption,
-  event: SituationEvent,
+  option: NonMerchantAdviceOption,
+  event: NonMerchantSituationEvent,
   theme?: ThemeContent,
 ): void {
   const details = { contentType: "advice", eventId: event.id, adviceId: option.id };
@@ -133,7 +137,7 @@ function validateBossAdvice(
   }
 }
 
-function validateSharedAdvice(option: AdviceOption, eventId: string): void {
+function validateSharedAdvice(option: BaseAdviceOption, eventId: string): void {
   const details = { contentType: "advice", eventId, adviceId: option.id };
 
   // 공용 사건은 생태 규칙을 참조하지 않는다. 그것이 공용의 정의다.
@@ -158,6 +162,10 @@ function validateSharedAdvice(option: AdviceOption, eventId: string): void {
   }
 }
 
+function validateMerchantAdvice(option: MerchantAdviceOption, eventId: string): void {
+  validateSharedAdvice(option, eventId);
+}
+
 function validateAdviceSet(event: SituationEvent, theme?: ThemeContent): void {
   const details = { contentType: "situationEvent", eventId: event.id };
 
@@ -170,21 +178,35 @@ function validateAdviceSet(event: SituationEvent, theme?: ThemeContent): void {
   }
 
   const seenIds = new Set<string>();
-  for (const option of event.advice) {
-    if (seenIds.has(option.id)) {
-      invalid(`조언 ID가 사건 안에서 중복된다: ${option.id}`, {
-        ...details,
-        adviceId: option.id,
-      });
+  if (event.kind === "merchant") {
+    for (const option of event.advice) {
+      if (seenIds.has(option.id)) {
+        invalid(`조언 ID가 사건 안에서 중복된다: ${option.id}`, {
+          ...details,
+          adviceId: option.id,
+        });
+      }
+      seenIds.add(option.id);
+      validateAdviceText(option, event.id);
+      validateMerchantAdvice(option, event.id);
     }
-    seenIds.add(option.id);
-    validateAdviceText(option, event.id);
-    if (event.theme === undefined) {
-      validateSharedAdvice(option, event.id);
-    } else if (event.targetBossId !== undefined) {
-      validateBossAdvice(option, event, theme);
-    } else {
-      validateThemedAdvice(option, event.id, theme);
+  } else {
+    for (const option of event.advice) {
+      if (seenIds.has(option.id)) {
+        invalid(`조언 ID가 사건 안에서 중복된다: ${option.id}`, {
+          ...details,
+          adviceId: option.id,
+        });
+      }
+      seenIds.add(option.id);
+      validateAdviceText(option, event.id);
+      if (event.theme === undefined) {
+        validateSharedAdvice(option, event.id);
+      } else if (event.targetBossId !== undefined) {
+        validateBossAdvice(option, event, theme);
+      } else {
+        validateThemedAdvice(option, event.id, theme);
+      }
     }
   }
 
@@ -342,7 +364,7 @@ function validateThemeSupply(
   events: readonly SituationEvent[],
   themeContent?: ThemeContent,
 ): void {
-  const themed = events.filter((event) => event.theme !== undefined);
+  const themed = events.filter((event): event is NonMerchantSituationEvent => event.theme !== undefined);
   const themes = themeContent === undefined
     ? new Set<ThemeId>(themed.map((event) => event.theme as ThemeId))
     : new Set<ThemeId>([themeContent.id]);
@@ -353,7 +375,7 @@ function validateThemeSupply(
       : undefined;
     const options = themed
       .filter((event) => event.theme === theme)
-      .flatMap((event) => event.advice);
+      .flatMap((event): readonly NonMerchantAdviceOption[] => event.advice);
 
     // 던전이 규칙 6개 중 어느 3개를 활성으로 뽑아도 재료가 있어야 한다.
     const ruleIds = contentRules === undefined

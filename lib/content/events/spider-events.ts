@@ -9,7 +9,7 @@ import type {
   ClueId,
   EventEffectTag,
   EventId,
-  SituationEvent,
+  NonMerchantSituationEvent,
 } from "@/lib/domain";
 import type { RuleId } from "@/lib/domain";
 
@@ -70,8 +70,8 @@ function spiderEvent(
   description: string,
   adviceOptions: readonly AdviceOption[],
   defaultResultText: string,
-  extras: Partial<SituationEvent> = {},
-): SituationEvent {
+  extras: Partial<NonMerchantSituationEvent> = {},
+): NonMerchantSituationEvent {
   return {
     id: id as EventId,
     kind: "monster",
@@ -112,7 +112,7 @@ function bossEvent(
   description: string,
   adviceOptions: readonly AdviceOption[],
   defaultResultText: string,
-): SituationEvent {
+): NonMerchantSituationEvent {
   return {
     id: id as EventId,
     kind: "special",
@@ -125,7 +125,7 @@ function bossEvent(
   };
 }
 
-const SPIDER_MONSTER_EVENTS: readonly SituationEvent[] = [
+const SPIDER_MONSTER_EVENTS: readonly NonMerchantSituationEvent[] = [
   spiderEvent(
     "spider-fire-floor-torch",
     "떨어진 횃불",
@@ -388,7 +388,7 @@ const SPIDER_MONSTER_EVENTS: readonly SituationEvent[] = [
   ),
 ];
 
-const SPIDER_BOSS_EVENTS: readonly SituationEvent[] = [
+const SPIDER_BOSS_EVENTS: readonly NonMerchantSituationEvent[] = [
   bossEvent(
     "spider-boss-ragna-turning",
     "boss-spider-1",
@@ -487,7 +487,7 @@ const SPIDER_BOSS_EVENTS: readonly SituationEvent[] = [
   ),
 ];
 
-export const SPIDER_EVENTS: readonly SituationEvent[] = [
+export const SPIDER_EVENTS: readonly NonMerchantSituationEvent[] = [
   ...SPIDER_MONSTER_EVENTS,
   ...SPIDER_BOSS_EVENTS,
 ];

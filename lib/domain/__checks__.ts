@@ -24,15 +24,19 @@ import type {
   WORLD_TURN_ACTIVITIES,
 } from "./index";
 import type {
+  AdviceOption,
   AdviceOutcome,
   CampaignPhase,
+  ChoiceId,
   EcologyRelation,
   EndingKind,
+  EventId,
   GuideRank,
   MerchantAdviceOption,
   MerchantEffect,
   MerchantSituationEvent,
   NextBattleMerchantEffect,
+  NonMerchantSituationEvent,
   PendingMerchantEffect,
   Personality,
   RiskLevel,
@@ -87,3 +91,72 @@ export type PendingMerchantEffectIsExported = PendingMerchantEffect;
 export type ItemIdIsNotExported = Assert<
   "ItemId" extends keyof DomainExports ? false : true
 >;
+
+declare const checkChoiceId: ChoiceId;
+declare const checkEventId: EventId;
+declare function acceptAdviceOption(option: AdviceOption): void;
+declare function acceptNonMerchantEvent(event: NonMerchantSituationEvent): void;
+
+export const exactMerchantEventContract: MerchantSituationEvent = {
+  id: checkEventId,
+  kind: "merchant",
+  title: "상인 사건",
+  description: "상인이 거래를 제안한다.",
+  advice: [
+    {
+      id: checkChoiceId,
+      label: "치료를 사세요",
+      line: "지금 골드를 써서 회복하자고 하세요.",
+      outcome: "help",
+      relation: "unrelated",
+      effectTags: ["trade"],
+      resultText: "상인이 상처를 봉합한다.",
+      goldCost: 5,
+      merchantEffect: { immediateHpDeltaPerMember: 2 },
+    },
+    {
+      id: checkChoiceId,
+      label: "수상한 약을 사세요",
+      line: "강한 약이라며 사 보자고 하세요.",
+      outcome: "harm",
+      relation: "unrelated",
+      effectTags: ["trade"],
+      resultText: "상인이 독한 약을 건넨다.",
+      goldCost: 5,
+      merchantEffect: { nextBattle: { incomingDamageMultiplier: 1.1 } },
+    },
+    {
+      id: checkChoiceId,
+      label: "거래하지 마세요",
+      line: "지금은 지나가자고 하세요.",
+      outcome: "neutral",
+      relation: "unrelated",
+      effectTags: ["trade"],
+      resultText: "상인이 어깨를 으쓱한다.",
+      goldCost: 0,
+    },
+  ],
+  defaultResultText: "파티가 거래하지 않고 지나간다.",
+};
+
+acceptAdviceOption({
+  id: checkChoiceId,
+  label: "공용 조언",
+  line: "그냥 지나가자고 하세요.",
+  outcome: "neutral",
+  relation: "unrelated",
+  effectTags: ["observe"],
+  resultText: "아무 일도 없다.",
+  // @ts-expect-error nonmerchant advice must reject merchant-only fields
+  goldCost: 0,
+});
+
+acceptNonMerchantEvent({
+  id: checkEventId,
+  kind: "rest",
+  title: "휴식 사건",
+  description: "부상자를 돌볼 틈이 생겼다.",
+  // @ts-expect-error nonmerchant event must reject merchant advice payloads
+  advice: [exactMerchantEventContract.advice[0], exactMerchantEventContract.advice[1], exactMerchantEventContract.advice[2]],
+  defaultResultText: "파티가 알아서 쉬어 간다.",
+});

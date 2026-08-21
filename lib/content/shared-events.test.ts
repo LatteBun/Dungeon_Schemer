@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EVENT_EFFECT_TAGS } from "@/lib/domain";
+import type { BaseAdviceOption } from "@/lib/domain";
 import { SHARED_EVENTS } from "@/lib/content/shared-events";
 import { validateSituationEvents } from "@/lib/content/situation-validation";
 
@@ -35,7 +36,9 @@ describe("SHARED_EVENTS", () => {
 
   it("공용 사건과 조언 ID가 전체 풀에서 중복되지 않는다", () => {
     const eventIds = SHARED_EVENTS.map((event) => event.id);
-    const adviceIds = SHARED_EVENTS.flatMap((event) => event.advice).map((option) => option.id);
+    const adviceIds = SHARED_EVENTS
+      .flatMap((event): readonly BaseAdviceOption[] => event.advice)
+      .map((option) => option.id);
 
     expect(new Set(eventIds).size).toBe(eventIds.length);
     expect(new Set(adviceIds).size).toBe(adviceIds.length);
@@ -85,7 +88,9 @@ describe("SHARED_EVENTS", () => {
   it("제목·묘사·조언 문구가 전체 풀에서 중복되지 않는다", () => {
     const titles = SHARED_EVENTS.map((event) => event.title);
     const descriptions = SHARED_EVENTS.map((event) => event.description);
-    const labels = SHARED_EVENTS.flatMap((event) => event.advice).map((option) => option.label);
+    const labels = SHARED_EVENTS
+      .flatMap((event): readonly BaseAdviceOption[] => event.advice)
+      .map((option) => option.label);
 
     expect(new Set(titles).size).toBe(titles.length);
     expect(new Set(descriptions).size).toBe(descriptions.length);

@@ -66,19 +66,19 @@ export type MerchantEffect =
  * docs/systems/INFORMATION_AND_DECEPTION.md
  */
 export type MerchantAdviceOption =
-  | (AdviceOption & { outcome: "neutral"; goldCost: 0; merchantEffect?: never })
-  | (AdviceOption & {
+  | (BaseAdviceOption & { outcome: "neutral"; goldCost: 0; merchantEffect?: never })
+  | (BaseAdviceOption & {
     outcome: "help" | "harm";
     goldCost: number;
     merchantEffect: MerchantEffect;
   });
 
-export type AdviceOption = BaseAdviceOption;
-
-export type NonMerchantAdviceOption = AdviceOption & {
+export type NonMerchantAdviceOption = BaseAdviceOption & {
   goldCost?: never;
   merchantEffect?: never;
 };
+
+export type AdviceOption = NonMerchantAdviceOption;
 
 export type AdviceSource =
   | { kind: "ecology"; ruleId: RuleId }
@@ -92,7 +92,7 @@ export interface AdviceUpgrade {
   replacement: NonMerchantAdviceOption;
 }
 
-interface BaseSituationEvent<TAdviceOption extends AdviceOption> {
+interface BaseSituationEvent<TAdviceOption extends BaseAdviceOption> {
   id: EventId;
   kind: EventKind;
   title: string;
@@ -133,11 +133,4 @@ export interface NonMerchantSituationEvent extends BaseSituationEvent<NonMerchan
  * 된다.
  * docs/superpowers/specs/2026-08-20-lattebun-advice-event-merge-design.md
  */
-export interface SituationEvent extends BaseSituationEvent<AdviceOption> {
-  /** 생태 규칙을 참조하면 테마 전용이고, 공용이면 없다. */
-  theme?: ThemeId;
-  /** 보스 정보 사건이면 대상 보스, 일반 사건이면 없다. */
-  targetBossId?: BossId;
-  /** 약한 연계. */
-  upgrades?: readonly AdviceUpgrade[];
-}
+export type SituationEvent = MerchantSituationEvent | NonMerchantSituationEvent;

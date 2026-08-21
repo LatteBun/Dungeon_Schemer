@@ -9,8 +9,8 @@ import type {
   ClueId,
   EventEffectTag,
   EventId,
+  NonMerchantSituationEvent,
   RuleId,
-  SituationEvent,
 } from "@/lib/domain";
 
 function ecology(ruleId: string): AdviceSource {
@@ -48,15 +48,15 @@ function neutralAdvice(id: string, label: string, line: string, resultText: stri
   return advice(id, "neutral", label, line, resultText, ["observe"]);
 }
 
-function graveyardEvent(id: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string, extras: Partial<SituationEvent> = {}): SituationEvent {
+function graveyardEvent(id: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string, extras: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
   return { id: id as EventId, kind: "monster", theme: "graveyard", title, description, advice: adviceOptions, defaultResultText, ...extras };
 }
 
-function bossEvent(id: string, targetBossId: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string): SituationEvent {
+function bossEvent(id: string, targetBossId: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string): NonMerchantSituationEvent {
   return { id: id as EventId, kind: "special", theme: "graveyard", targetBossId: targetBossId as BossId, title, description, advice: adviceOptions, defaultResultText };
 }
 
-const GRAVEYARD_MONSTER_EVENTS: readonly SituationEvent[] = [
+const GRAVEYARD_MONSTER_EVENTS: readonly NonMerchantSituationEvent[] = [
   graveyardEvent("graveyard-silence-zombie-bell", "무너진 종루 아래", "썩은 좀비 한 마리가 무너진 종루 아래를 서성인다. 작은 돌이 굴러가 종 조각에 부딪혀도 좀비는 잠깐 고개만 들 뿐 방향을 바꾸지 않는다.", [
     ecologyAdvice("graveyard-silence-zombie-bell-help", "help", "graveyard-silence", "괜히 큰 소리를 만들지 말고 조용히 옆길로 지나가세요.", "작은 소리에는 거의 반응 안 해요. 그냥 조용히 빠져나가죠.", "파티가 발걸음을 줄여 좀비의 주의를 끌지 않고 지나간다."),
     ecologyAdvice("graveyard-silence-zombie-bell-harm", "harm", "graveyard-silence", "종 조각을 세게 쳐서 좀비를 멀리 유인하세요.", "큰 소리를 내면 저쪽으로 따라가겠죠.", "소리에 둔한 좀비가 기대만큼 움직이지 않아 파티가 가까운 거리에서 마주친다."),
@@ -169,7 +169,7 @@ const GRAVEYARD_MONSTER_EVENTS: readonly SituationEvent[] = [
   ], "파티가 시체실을 피해 묘역 외곽으로 우회한다.", { kind: "special" }),
 ];
 
-const GRAVEYARD_BOSS_EVENTS: readonly SituationEvent[] = [
+const GRAVEYARD_BOSS_EVENTS: readonly NonMerchantSituationEvent[] = [
   bossEvent("graveyard-boss-barkan-command-blade", "boss-graveyard-1", "검끝을 따라 움직이는 대열", "스켈레톤 장군이 검을 왼쪽으로 겨눈다. 잠시 뒤 왼쪽 대열의 해골들이 동시에 앞으로 나가고 오른쪽 대열은 그대로 서 있다.", [
     bossAdvice("graveyard-boss-barkan-command-blade-help", "help", "boss-barkan-command-blade", "장군의 검끝을 보고 다음 대열 움직임을 예측하라고 하세요.", "부하들이 검이 가리킨 쪽부터 움직여요. 장군 손을 보면 돼요.", "파티가 바르칸의 지휘 신호를 읽는 법을 기억한다."),
     bossAdvice("graveyard-boss-barkan-command-blade-harm", "harm", "boss-barkan-command-blade", "부하들은 각자 움직이니 장군은 무시하라고 하세요.", "해골마다 따로 움직이는 것 같아요. 장군을 볼 필요 없어요.", "파티가 바르칸의 지휘 신호를 무시하게 된다."),
@@ -212,7 +212,7 @@ const GRAVEYARD_BOSS_EVENTS: readonly SituationEvent[] = [
   ], "파티는 발드라크가 석관을 중시한다는 정도만 기억한다."),
 ];
 
-export const GRAVEYARD_EVENTS: readonly SituationEvent[] = [
+export const GRAVEYARD_EVENTS: readonly NonMerchantSituationEvent[] = [
   ...GRAVEYARD_MONSTER_EVENTS,
   ...GRAVEYARD_BOSS_EVENTS,
 ];
