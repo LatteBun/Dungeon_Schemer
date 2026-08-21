@@ -4,7 +4,6 @@ import { createBoardOffers } from "@/lib/rules/board";
 import {
   contractOutcomesForRisk,
   createU3BoardView,
-  scoutedRuleCountForRisk,
 } from "./u3-board-model";
 
 describe("U3 board model", () => {
@@ -41,14 +40,6 @@ describe("U3 board model", () => {
     ]);
   });
 
-  it("현재 위험도에 따라 답사 기록 공개 수를 3/2/1개로 줄인다", () => {
-    expect(scoutedRuleCountForRisk(1)).toBe(3);
-    expect(scoutedRuleCountForRisk(2)).toBe(3);
-    expect(scoutedRuleCountForRisk(3)).toBe(2);
-    expect(scoutedRuleCountForRisk(4)).toBe(1);
-    expect(scoutedRuleCountForRisk(5)).toBe(1);
-  });
-
   it("C2 공고의 공개 환경 특성을 공고마다 정확히 하나씩 투영한다", () => {
     const campaign = initializeCampaign("u3-board-model-environment");
     const offers = createBoardOffers(campaign);
@@ -62,23 +53,6 @@ describe("U3 board model", () => {
       expect(board.notices[index]?.environmentLabel).toBe(
         offer.publicEnvironmentTag.label,
       );
-    }
-  });
-
-  it("선택 공고의 답사 기록을 활성 생태 규칙의 실제 문장으로 투영한다", () => {
-    const campaign = initializeCampaign("u3-board-model-scouted-rules");
-    const offers = createBoardOffers(campaign);
-    const board = createU3BoardView(campaign, offers);
-
-    for (const offer of offers) {
-      const detail = board.detailsByOfferId[offer.id];
-      expect(detail).toBeDefined();
-      expect(detail?.scoutedRules).toHaveLength(
-        scoutedRuleCountForRisk(offer.riskLevel),
-      );
-      for (const rule of detail?.scoutedRules ?? []) {
-        expect(rule.length).toBeGreaterThan(0);
-      }
     }
   });
 
@@ -103,5 +77,24 @@ describe("U3 board model", () => {
       expect(member.trust).toBe(source?.trust);
       expect(member.gold).toBe(source?.gold);
     }
+  });
+
+  it("캐릭터 초상 매핑이 있으면 파티 화면 모델에 경로를 전달한다", () => {
+    const campaign = initializeCampaign("u3-board-model-portrait");
+    const offers = createBoardOffers(campaign);
+    const firstMemberId = offers[0]?.party.memberIds[0];
+
+    expect(firstMemberId).toBeDefined();
+    if (firstMemberId === undefined) return;
+
+    const portraitSrc = `/assets/characters/${firstMemberId}.webp`;
+    const board = createU3BoardView(campaign, offers, {
+      [firstMemberId]: portraitSrc,
+    });
+    const firstDetail = offers[0] === undefined
+      ? undefined
+      : board.detailsByOfferId[offers[0].id];
+
+    expect(firstDetail?.party[0]?.portraitSrc).toBe(portraitSrc);
   });
 });
