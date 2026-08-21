@@ -119,6 +119,16 @@ describe("U3BoardScreen", () => {
     expect(html).not.toContain("정찰 보고");
   });
 
+  it("압정·워터마크 장식 없이 공고 중앙에 테마 그림 하나만 렌더링한다", () => {
+    const html = render("offer-1");
+
+    expect(html).not.toContain("board-pin.svg");
+    expect(html).not.toContain("u3-notice__theme-mark");
+    expect((html.match(/data-testid=\"u3-notice-theme-art\"/g) ?? [])).toHaveLength(2);
+    expect(html).toContain("/assets/u3/theme-desert.svg");
+    expect(html).toContain("/assets/u3/theme-spider.svg");
+  });
+
   it("파티 초상 매핑 슬롯과 기존 골드 SVG를 데이터 행에 재사용한다", () => {
     const html = render("offer-1");
 
