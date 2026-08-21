@@ -51,7 +51,7 @@ describe("U3 extracted asset-board assets", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
 
     expect(css).toContain("@media (min-width: 90rem)");
-    expect(css).toContain("clamp(15rem, 18vw, 32rem)");
+    expect(css).toContain("clamp(13rem, 15vw, 24rem)");
     expect(css).toContain(".u3-contract-button .u3-contract-button__emblem");
     expect(css).toContain("clamp(4.5rem, 4.6vw, 7.25rem)");
     expect(css).toContain(".u3-contract-button .u3-contract-button__arrow");
@@ -68,6 +68,15 @@ describe("U3 extracted asset-board assets", () => {
     expect(css).toContain(".u3-party-card__identity strong");
     expect(css).toContain(".u3-party-card__stats > div");
     expect(css).toContain(".u3-contract-outcomes__rows > div");
+  });
+
+  it("공고의 남는 공간은 장면 행에만 배분한다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
+
+    expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto");
+    expect(css).toContain(".u3-notice__theme-visual");
+    expect(css).toContain("max-height: 100%");
+    expect(css).toContain("font-size: clamp(0.78rem, 0.68vw, 1rem);");
   });
 
   it("탐험대 카드도 대화면에서 내용과 함께 커진다", () => {

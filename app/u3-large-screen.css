@@ -107,7 +107,7 @@
   }
 
   .u3-theme-scene {
-    width: min(100%, clamp(15rem, 18vw, 32rem));
+    width: min(100%, clamp(13rem, 15vw, 24rem));
   }
 
   .u3-notice .u3-reward,

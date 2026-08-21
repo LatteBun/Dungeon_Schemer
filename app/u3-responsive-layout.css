@@ -17,9 +17,17 @@
 }
 
 .u3-notice {
-  grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto;
   min-height: 0;
   overflow: hidden;
+}
+
+.u3-notice__theme-visual {
+  min-height: 0;
+}
+
+.u3-notice .u3-theme-scene {
+  max-height: 100%;
 }
 
 .u3-notice__heading strong {
@@ -242,6 +250,14 @@
   gap: clamp(0.45rem, 0.5vw, 0.85rem);
 }
 
+@media (min-width: 90rem) {
+  .u3-notice .u3-reward,
+  .u3-notice__environment strong,
+  .u3-notice__state {
+    font-size: clamp(0.78rem, 0.68vw, 1rem);
+  }
+}
+
 /* Short laptop viewports: protect vertical space before reducing text. */
 @media (max-height: 54rem) {
   .u3-board-screen .game-shell__status-bar {
@@ -277,7 +293,7 @@
   }
 
   .u3-notice {
-    grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto;
     padding: 0.5rem 0.52rem 0.42rem;
   }
 
@@ -412,6 +428,7 @@
   }
 
   .u3-notice {
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto;
     padding: 0.4rem 0.44rem 0.34rem;
   }
 
