@@ -427,6 +427,22 @@ F3-5 신규 30개는 기본적으로 독립 사건으로 작성한다. 기존 cl
 - 신규 일반 special은 `targetBossId`와 `bossDamageModifier`를 사용하지 않는다.
 - 보스 정보 기존 8개는 그대로 유지한다.
 
+### 6.1 축약 콘텐츠 명세의 런타임 문구 보완
+
+5절의 H/X/N은 각각 `label`과 `resultText`를 고정한다. 각 advice의 `line`과 사건의
+`defaultResultText`는 기존 `AdviceOption`/`SituationEvent` 계약상 필수이므로 구현에서
+아래 규칙으로 보완해 작성한다.
+
+- `line`은 label을 그대로 반복하지 않고, 장면에서 관찰한 사실과 해당 생태 규칙의
+  인과를 한두 문장으로 설명한다. 도움·방해는 선택한 대표 source를 뒷받침하고,
+  중립은 안전하지만 제한적인 이유를 말한다.
+- `defaultResultText`는 아무도 조언을 수용하지 않았을 때 파티가 취하는 보수적 행동을
+  설명한다. 도움보다 유리하거나 방해보다 불리한 결말을 새로 만들지 않으며, neutral과
+  같거나 더 약한 진행을 표현한다.
+- 이 보완 문구도 비어 있거나 event 안의 label과 완전히 같을 수 없다. 테마 전용
+  사건 전체의 `line`과 `resultText`까지 전역 유일성 검사 대상으로 넓히지 않는다.
+  F3-5의 중복 방지 대상은 7절에 명시한 ID·title·description이다.
+
 ## 7. 테스트 및 검증
 
 테마별 테스트를 20개 기준에서 30개 기준으로 갱신한다.
@@ -445,6 +461,21 @@ F3-5 신규 30개는 기본적으로 독립 사건으로 작성한다. 기존 cl
 - title/description의 완전 중복 없음
 - 기존 `validateSituationEvents(events, theme)` 통과
 - 기존 약한 연계·강한 연계 테스트 유지
+
+전역 중복 검증의 범위는 세 테마 전용 사건 전체다. 즉 `SPIDER_EVENTS`,
+`DESERT_EVENTS`, `GRAVEYARD_EVENTS`를 합친 90개 사건에서 event ID, advice
+ID, title, description이 각각 유일해야 한다. 테마별 `validateSituationEvents(events,
+theme)`는 테마 안의 계약·공급량을 검증하는 기존 역할로 유지하고, 전역 중복은
+기존 공용 사건 테스트 패턴처럼 전용 사건 전용 테스트에서 검사한다. 이 요구 때문에
+validator의 의미나 runtime API를 바꾸지 않는다.
+
+공식 문서 동기화:
+
+- `docs/systems/INFORMATION_AND_DECEPTION.md`의 대표 콘텐츠 계약을 테마 전용
+  30개, 공용 90개, 한 테마에서 만날 수 있는 후보 120개로 갱신한다.
+- 같은 문서의 기존 `31개` 서술은 위 후보 풀 수량과 모순되지 않는 문장으로 고친다.
+- `docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md`의 F3-5 완료 조건과
+  대표 콘텐츠 요약을 30개 계약으로 갱신하고, 구현 완료 시 F3-5를 `✅`로 처리한다.
 
 리뷰 체크리스트:
 

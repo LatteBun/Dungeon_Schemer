@@ -76,4 +76,27 @@
 5. 전역 ID/문구 중복과 기존 clue·보스 정보 계약 회귀를 확인한다.
 6. 작업 배정표 F3-5를 완료 처리한다.
 
+## 7. 전역 중복 검증과 공식 문서 동기화
+
+테마별 validator 호출은 해당 테마의 구조·source·공급량 계약을 검사한다. F3-5에서
+요구하는 전역 유일성은 세 테마 전용 사건을 합친 90개 배열을 대상으로 별도 테스트로
+고정한다. 검사 대상은 event ID, advice ID, title, description이며, 이 테스트는
+공용 사건의 전체 풀 중복 검사 패턴을 따른다. 이를 위해 `validateSituationEvents`의
+의미나 runtime API를 확장하지 않는다.
+
+구현 변경 단위에서 아래 공식 문서를 함께 갱신한다.
+
+- `docs/systems/INFORMATION_AND_DECEPTION.md`: 테마 전용 30개, 공용 90개,
+  테마별 후보 풀 120개 및 이에 맞는 서술
+- `docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md`: F3-5의 30개 완료 기준,
+  대표 콘텐츠 요약, 완료 상태 `✅`
+
+## 8. 축약 명세의 필수 런타임 문구
+
+원본 5절의 H/X/N은 label과 resultText를 고정한 축약 표기다. 구현은 각 advice에
+비어 있지 않고 label을 반복하지 않는 `line`을 추가하며, 장면 사실과 대표 source의
+인과를 설명한다. 각 사건에는 아무도 수용하지 않았을 때의 보수적 `defaultResultText`를
+추가한다. 이 결과는 도움보다 유리하거나 방해보다 불리하지 않고 neutral과 같거나 더
+약한 진행을 표현한다.
+
 이 보정까지 적용한 상태를 F3-5 구현 계획의 입력으로 사용한다.
