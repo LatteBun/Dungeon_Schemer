@@ -14,20 +14,21 @@ U3에서 플레이어는 한 화면 안에서 다음 순서를 끝낸다.
 1. 최대 5개의 공고를 훑는다.
 2. 공고 하나를 선택한다.
 3. 우측에서 던전과 출전 3인의 실제 상태를 확인한다.
-4. 생존 인원별 계약 결과를 확인한다.
+4. 현재 위험도만큼 공개되는 답사 기록과 생존 인원별 계약 결과를 확인한다.
 5. 진입 가능한 공고만 계약한다.
 
 ## 2. 근거 문서와 우선순위
 
 - `docs/GAME_PRINCIPLES.md`
 - `docs/systems/DUNGEON_THEMES_AND_ECOLOGY.md`
+- `docs/systems/DUNGEON_EVENTS_AND_BOSSES.md`
 - `docs/systems/PROGRESSION_AND_ENDINGS.md`
 - `docs/experience/SCREEN_LAYOUT.md`
 - `docs/experience/ONBOARDING_AND_INTERFACE.md`
 - `docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md`
 - C2 구현 `lib/rules/board.ts`
 
-최신 C2/생태 문서의 `publicEnvironmentTag` 계약을 U3의 공식 `환경 특성`으로 사용한다. `SCREEN_LAYOUT.md`, `ONBOARDING_AND_INTERFACE.md`, U3 배정표에 남아 있는 `공개 위험 태그`·`답사 기록` 표현은 이번 작업에서 최신 UX 결정에 맞게 고친다.
+최신 C2/생태 문서의 `publicEnvironmentTag` 계약을 공고 카드의 공식 `환경 특성`으로 사용한다. `SCREEN_LAYOUT.md`, `ONBOARDING_AND_INTERFACE.md`, U3 배정표에 남아 있는 `공개 위험 태그` 표현은 `공개 환경 특성 1개`로 고친다. 반면 계약 상세의 `답사 기록`은 공식 던전 공개 정보이므로 유지한다.
 
 ## 3. 시각 기준
 
@@ -36,7 +37,7 @@ U3에서 플레이어는 한 화면 안에서 다음 순서를 끝낸다.
 - `docs/diagram/u3/u3-guild-board-concept.webp`
 - `docs/diagram/u3/u3-guild-board-assets.webp`
 
-이미지는 정보 위계·재질·명도·배치의 참고다. 이미지 안에 우연히 남은 `함정`, `모래폭풍`, `독`, `저주`, `보스` 같은 다중 태그는 구현 계약이 아니며 U3 DOM에 넣지 않는다.
+이미지는 정보 위계·재질·명도·배치의 참고다. 이미지 안에 우연히 남은 `함정`, `모래폭풍`, `독`, `저주`, `보스` 같은 다중 태그는 구현 계약이 아니며 U3 공고 카드 DOM에 넣지 않는다.
 
 U2와 연결되는 공통 시각 언어는 다음과 같다.
 
@@ -99,7 +100,7 @@ U2 인트로는 별도 전체 폭 화면이지만, U3에 들어온 순간 공통
 
 우측은 독립 화면이 아니라 같은 `GameShell`의 RightPanel이다.
 
-### 6.1 던전 정보
+### 6.1 던전 정보와 답사 기록
 
 표시:
 
@@ -108,13 +109,21 @@ U2 인트로는 별도 전체 폭 화면이지만, U3에 들어온 순간 공통
 - 현재 위험도
 - `환경 특성` 1개
 - 3명 생존 기준 명성·골드 보상
+- `답사 기록`: 그 던전의 활성 생태 규칙 중 현재 위험도가 공개하는 문장
+
+답사 기록 공개 수는 공식 규칙을 따른다.
+
+- ★1~2: 활성 규칙 3개 전부
+- ★3: 2개
+- ★4~5: 1개
+
+답사 기록은 태그가 아니라 읽을 수 있는 문장 목록이다. 따라서 공고의 다중 태그 제거와 충돌하지 않는다.
 
 표시하지 않음:
 
 - 소요 시간
 - `위험: 인간 적대세력` 같은 임의 위험 문구
-- 정찰 보고 별도 섹션
-- 다중 위험 태그
+- 별도 다중 위험 태그
 
 ### 6.2 탐험대 구성
 
@@ -186,9 +195,14 @@ U3 자체는 I1/I2 상태 머신을 소유하지 않는다. 프리뷰에서는 `
 
 `U3Preview`는 테스트용 시드로 `initializeCampaign(seed)`를 만들고 `createBoardOffers(state)`의 결과를 사용한다. 임의로 공고나 파티를 하드코딩하지 않는다.
 
-화면용 보상 계산 함수는 `riskLevel`을 받아 공식 보상표와 생존 비율을 적용한다. 화면 컴포넌트는 계산식을 다시 만들지 않고 그 뷰 모델을 소비한다.
+화면용 뷰 모델은 다음을 투영한다.
 
-선택된 공고가 바뀌면 우측 던전·파티·계약 조건 전체가 같은 공고 기준으로 함께 바뀐다.
+- `offer.publicEnvironmentTag.label` → 공고/상세의 환경 특성 1개
+- `CampaignDungeon.activeRuleIds` + `THEMES[].rules` → 위험도별 답사 기록 문장
+- `offer.party.memberIds` + `campaign.pool.byId` → 실제 파티 3인 상태
+- `riskLevel` → 생존 인원별 계약 결과
+
+선택된 공고가 바뀌면 우측 던전·답사 기록·파티·계약 조건 전체가 같은 공고 기준으로 함께 바뀐다.
 
 ## 9. 접근성
 
@@ -204,8 +218,8 @@ U3 프리뷰가 생기면 `U2Preview.tsx`의 `boardHref`를 `/u1-test?screen=boa
 
 ## 11. 테스트·완료 기준
 
-- 뷰 모델 테스트: 위험도별 3/2/1/0 생존 결과 계산
-- 화면 테스트: 최대 5개, 환경 특성 1개, 파티 3인, 잠금 이유, CTA disabled/콜백
+- 뷰 모델 테스트: 위험도별 3/2/1/0 생존 결과 계산, 환경 특성 1개, 위험도별 답사 기록 공개 수
+- 화면 테스트: 최대 5개, 공고당 환경 특성 1개, 답사 기록, 파티 3인, 잠금 이유, CTA disabled/콜백
 - U2 테스트: `/u3-test` 링크 확인
 - 자산 테스트: U3 SVG 7개 존재 및 `viewBox` 확인
 - 브라우저: `1280x720`, `1024x640`에서 좌/우 3:2, 가로 스크롤 없음
