@@ -48,7 +48,7 @@ describe("U3 extracted asset-board assets", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-card-theme.css"), "utf8");
 
     expect(css).toContain("@media (min-width: 90rem)");
-    expect(css).toContain("clamp(15rem, 18vw, 30rem)");
+    expect(css).toContain("clamp(15rem, 18vw, 32rem)");
     expect(css).toContain("clamp(4.5rem, 4.6vw, 7.25rem)");
     expect(css).toContain("clamp(3.5rem, 3.9vw, 6rem)");
   });
