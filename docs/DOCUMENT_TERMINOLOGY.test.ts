@@ -53,6 +53,8 @@ const RETIRED_TERMS: readonly string[] = [
   "파티 소진",
   "용사들의 시대가 끝나다",
   "제한 없음",
+  "정보·치료제·독·가짜 지도 등을 구매한다",
+  "식량과 개별 물품은 원정 자원 또는 아이템으로 별도 관리한다",
 ];
 
 /** 개정이 끝난 문서. D2~D6이 진행되면서 늘어난다. */
@@ -82,14 +84,21 @@ const CLEANED_DOCS: readonly string[] = [
  * 새 규칙이 실제로 적혔는지 앵커로 확인한다.
  */
 const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
-  "GAME_PRINCIPLES.md": ["캐릭터 30명", "위험도", "테마 3종"],
+  "GAME_PRINCIPLES.md": ["캐릭터 30명", "위험도", "테마 3종", "상인 사건", "현재 골드"],
   "design/GAME_OVERVIEW.md": ["캐릭터 30명", "위험도", "테마 3종"],
-  "design/CORE_GAME_LOOP.md": ["월드턴", "위험도", "캐릭터 30명"],
+  "design/CORE_GAME_LOOP.md": [
+    "월드턴",
+    "위험도",
+    "캐릭터 30명",
+    "pending merchant effect",
+  ],
   "systems/DUNGEON_EVENTS_AND_BOSSES.md": [
     "위험도별 지도",
     "재도전",
     "★5",
     "생태 규칙",
+    "다음 전투",
+    "정보 판매",
   ],
   "systems/INFORMATION_AND_DECEPTION.md": [
     "현재 위험도",
@@ -114,7 +123,14 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "임시 파티",
   ],
   "experience/SCREEN_LAYOUT.md": ["3:2", "1280×720", "색만으로"],
-  "experience/ONBOARDING_AND_INTERFACE.md": ["인트로", "위험도", "월드턴"],  "systems/PROGRESSION_AND_ENDINGS.md": [
+  "experience/ONBOARDING_AND_INTERFACE.md": [
+    "인트로",
+    "위험도",
+    "월드턴",
+    "골드 부족",
+    "효과 중복 불가",
+  ],
+  "systems/PROGRESSION_AND_ENDINGS.md": [
     "위험도별 보상",
     "하한 0",
     "인력 소진",
