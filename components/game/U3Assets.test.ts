@@ -7,11 +7,7 @@ const extractedPngAssets = [
   "theme-spider.png",
   "theme-graveyard.png",
   "risk-star.png",
-  "locked-seal.png",
-  "contract-emblem.png",
-  "arrow-right.png",
   "notice-parchment.png",
-  "detail-panel-frame.png",
   "board-wood-tile.png",
   "screen-texture-tile.png",
 ] as const;
