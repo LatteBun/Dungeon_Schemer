@@ -85,6 +85,12 @@ describe("U3BoardScreen", () => {
     expect(html).not.toContain("/assets/u3/extracted/theme-spider.png");
   });
 
+  it("활성 위험도 별은 내부가 채워진 별 에셋을 사용한다", () => {
+    const html = render("offer-1");
+    expect(html).toContain("/assets/u3/risk-star-filled.svg");
+    expect(html).toContain("/assets/u3/extracted/risk-star.png");
+  });
+
   it("파티 초상 매핑 슬롯과 기존 골드 SVG를 데이터 행에 재사용한다", () => {
     const html = render("offer-1");
     expect(html).toContain("/assets/characters/adel.webp");
@@ -100,6 +106,11 @@ describe("U3BoardScreen", () => {
     expect(html).toContain('width="72"');
     expect(html).toContain('class="u3-contract-button__arrow"');
     expect(html).toContain('width="56"');
+  });
+
+  it("계약 조건의 명성과 골드는 한 줄 보상 묶음으로 렌더링한다", () => {
+    const html = render("offer-1");
+    expect((html.match(/class=\"u3-contract-outcome__reward\"/g) ?? [])).toHaveLength(3);
   });
 
   it("선택한 공고의 실제 파티 3명과 생존 인원별 계약 조건을 보여준다", () => {
