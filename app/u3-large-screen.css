@@ -138,7 +138,7 @@
   }
 
   .u3-dungeon-summary__copy > span {
-    font-size: clamp(0.67rem, 0.55vw, 0.9rem);
+    font-size: clamp(0.7rem, 0.6vw, 0.95rem);
   }
 
   .u3-dungeon-summary__copy h2 {
@@ -146,7 +146,7 @@
   }
 
   .u3-dungeon-summary__facts > span {
-    font-size: clamp(0.72rem, 0.6vw, 0.95rem);
+    font-size: clamp(0.75rem, 0.65vw, 1rem);
   }
 
   .u3-party__grid {
@@ -163,12 +163,12 @@
   }
 
   .u3-party-card__identity strong {
-    font-size: clamp(0.78rem, 0.7vw, 1.15rem);
+    font-size: clamp(0.85rem, 0.75vw, 1.2rem);
   }
 
   .u3-party-card__identity span,
   .u3-party-card__identity small {
-    font-size: clamp(0.63rem, 0.55vw, 0.9rem);
+    font-size: clamp(0.68rem, 0.6vw, 0.95rem);
   }
 
   .u3-party-card__stats {
@@ -178,7 +178,7 @@
   }
 
   .u3-party-card__stats > div {
-    font-size: clamp(0.61rem, 0.52vw, 0.88rem);
+    font-size: clamp(0.7rem, 0.65vw, 1rem);
   }
 
   .u3-contract-outcomes__rows {
@@ -187,11 +187,11 @@
 
   .u3-contract-outcomes__rows > div {
     padding: clamp(0.2rem, 0.2vw, 0.34rem) clamp(0.12rem, 0.14vw, 0.24rem);
-    font-size: clamp(0.69rem, 0.58vw, 0.95rem);
+    font-size: clamp(0.75rem, 0.65vw, 1rem);
   }
 
   .u3-contract-outcomes__rows small {
-    font-size: clamp(0.55rem, 0.45vw, 0.75rem);
+    font-size: clamp(0.6rem, 0.5vw, 0.8rem);
   }
 
   .u3-contract-button {
