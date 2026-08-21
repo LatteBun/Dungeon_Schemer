@@ -4,7 +4,7 @@
 
 **Goal:** 사막 잡몹 5종과 보스 4종의 PNG를 브랜치에 추가하고, 향후 UI에서 재사용할 수 있는 자산 카탈로그와 공식 테마 문서 연결을 제공한다.
 
-**Architecture:** 기존 `public/assets/monsters/dessert/` 경로와 파일명 계약을 유지한다. 자산 세부 목록과 표시 규칙은 `docs/experience/DESERT_MONSTER_ASSETS.md`가 소유하고, `DUNGEON_THEMES_AND_ECOLOGY.md`는 카탈로그로 연결하는 진입점만 제공한다. 게임 데이터와 UI 코드는 수정하지 않는다.
+**Architecture:** 기존 `public/assets/monsters/dessert/` 경로와 파일명 계약을 유지한다. `components/game/DesertMonsterAssets.ts`는 UI·게임 데이터의 source of truth가 아닌 9종 검수용 manifest를 제공하고, 대응 테스트는 PNG 계약을 고정한다. 자산 세부 목록과 표시 규칙은 `docs/experience/DESERT_MONSTER_ASSETS.md`가 소유하고, `DUNGEON_THEMES_AND_ECOLOGY.md`는 카탈로그로 연결하는 진입점만 제공한다. `/desert-monsters-test` 별도 검수 라우트와 게임 데이터는 추가하지 않는다.
 
 **Tech Stack:** PNG 정적 자산, Markdown, Git, 기존 문서 검증·TypeScript 테스트 명령
 
@@ -17,6 +17,9 @@
 - 모든 이미지 경로는 `/assets/monsters/dessert/<파일명>`으로 문서화한다.
 - 원본 정사각형 비율을 보존하고 UI의 기본 표시 방식은 `object-fit: contain`으로 기록한다.
 - 실제 출현 몬스터·초기 위험도 구간은 공식 테마 문서를 따르며 자산 문서에서 재정의하지 않는다.
+- `DESERT_MONSTER_ASSETS`는 정확히 잡몹 5종·보스 4종, 고유 ID, `/assets/monsters/dessert/` 경로를 가진다.
+- PNG 계약 테스트는 signature, 정사각형 최소 1024px, 허용 color type, palette PNG의 `tRNS` 투명도를 검증한다.
+- `/desert-monsters-test` 검수 라우트는 별도 UI 작업으로 남기고 이 브랜치에 포함하지 않는다.
 - UI 컴포넌트, 게임 데이터, 이미지 변환, 캐릭터·거미굴·묘지 에셋은 변경하지 않는다.
 - 커밋 제목과 본문은 모두 한글로 작성한다.
 
@@ -64,13 +67,99 @@ git add -- public/assets/monsters/dessert
 git commit -m '추가: 사막 몬스터 UI 에셋을 포함한다' -m '사막 잡몹과 보스 이미지 9개를 정적 자산으로 추가한다.'
 ```
 
-### Task 2: 사막 자산 카탈로그 작성
+### Task 2: 사막 자산 manifest와 PNG 계약 테스트
+
+**Files:**
+- Create: `components/game/DesertMonsterAssets.ts`
+- Create: `components/game/DesertMonsterAssets.test.ts`
+
+**Interfaces:**
+- Consumes: Task 1의 PNG 9개와 `DESERT_MONSTER_ASSETS.md`의 공식 매핑
+- Produces: 9종 readonly manifest와 PNG 형식·수량·투명도 자동 계약
+
+- [ ] **Step 1: 실패하는 계약 테스트를 먼저 작성한다**
+
+다음 기준을 테스트에 고정한다.
+
+- manifest가 정확히 9개이며 고유 ID를 가진다.
+- `kind`가 잡몹 5개와 보스 4개로 나뉜다.
+- 각 `src`의 실제 파일이 PNG signature를 갖는다.
+- 각 이미지가 정사각형이고 가로·세로가 1024px 이상이다.
+- PNG color type은 `3`, `4`, `6`만 허용하고 color type `3`은 `tRNS` 청크를 포함한다.
+
+```ts
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { DESERT_MONSTER_ASSETS } from "./DesertMonsterAssets";
+
+function readPngContract(src: string) {
+  const file = readFileSync(join(process.cwd(), "public", src.replace(/^\//, "")));
+  expect(file.subarray(0, 8)).toEqual(
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+  );
+
+  return {
+    width: file.readUInt32BE(16),
+    height: file.readUInt32BE(20),
+    colorType: file[25],
+    hasTransparencyChunk: file.includes(Buffer.from("tRNS", "ascii")),
+  };
+}
+
+describe("DESERT_MONSTER_ASSETS", () => {
+  it("contains exactly five monsters and four bosses", () => {
+    expect(DESERT_MONSTER_ASSETS).toHaveLength(9);
+    expect(new Set(DESERT_MONSTER_ASSETS.map((asset) => asset.id)).size).toBe(9);
+    expect(DESERT_MONSTER_ASSETS.filter((asset) => asset.kind === "monster")).toHaveLength(5);
+    expect(DESERT_MONSTER_ASSETS.filter((asset) => asset.kind === "boss")).toHaveLength(4);
+  });
+
+  it.each(DESERT_MONSTER_ASSETS)("validates $id PNG contract", (asset) => {
+    const png = readPngContract(asset.src);
+
+    expect(png.width).toBeGreaterThanOrEqual(1024);
+    expect(png.height).toBeGreaterThanOrEqual(1024);
+    expect(png.width).toBe(png.height);
+    expect([3, 4, 6]).toContain(png.colorType);
+    if (png.colorType === 3) expect(png.hasTransparencyChunk).toBe(true);
+  });
+});
+```
+
+- [ ] **Step 2: 테스트가 manifest 부재로 실패하는지 확인한다**
+
+```bash
+npm test -- components/game/DesertMonsterAssets.test.ts
+```
+
+Expected: 아직 `DesertMonsterAssets` 모듈이 없으므로 실패한다.
+
+- [ ] **Step 3: 실제 9개 파일과 `/assets/monsters/dessert/` 경로를 manifest에 등록한다**
+
+`id`, 공식 이름, `kind`, `src`, 설명을 모두 등록하고 `as const satisfies readonly DesertMonsterAsset[]`로 타입을 고정한다. manifest는 UI 표시용 매핑을 제공하지만 게임 도메인 규칙을 정의하지 않는다.
+
+- [ ] **Step 4: 계약 테스트가 통과하는지 확인한다**
+
+```bash
+npm test -- components/game/DesertMonsterAssets.test.ts
+```
+
+Expected: 9개 자산의 수량·분류·PNG signature·정사각형 최소 해상도·투명도 계약이 통과한다.
+
+- [ ] **Step 5: manifest와 계약 테스트를 한글 커밋으로 기록한다**
+
+```bash
+git add -- components/game/DesertMonsterAssets.ts components/game/DesertMonsterAssets.test.ts
+git commit -m '테스트: 사막 몬스터 PNG 계약을 고정한다' -m '사막 자산 manifest와 PNG 형식·수량·투명도 검증을 추가한다.'
+```
+
+### Task 3: 사막 자산 카탈로그 작성
 
 **Files:**
 - Create: `docs/experience/DESERT_MONSTER_ASSETS.md`
 
 **Interfaces:**
-- Consumes: Task 1의 자산 경로, `DUNGEON_THEMES_AND_ECOLOGY.md`, `UI_IMPLEMENTATION_GUIDE.md`
+- Consumes: Task 1·2의 자산 경로와 manifest, `DUNGEON_THEMES_AND_ECOLOGY.md`, `UI_IMPLEMENTATION_GUIDE.md`
 - Produces: 경로·콘텐츠 이름·해상도·향후 UI 사용 조건을 담은 카탈로그
 
 - [ ] **Step 1: 9개 자산의 공식 매핑 표를 작성한다**
@@ -108,13 +197,13 @@ test -f public/assets/monsters/dessert/boss-desert-01-zakar.png
 
 Expected: 카탈로그의 핵심 링크·경로·재사용 규칙이 검색되고 실제 자산 파일이 존재한다.
 
-### Task 3: 공식 테마 문서에 카탈로그 진입점 추가
+### Task 4: 공식 테마 문서에 카탈로그 진입점 추가
 
 **Files:**
 - Modify: `docs/systems/DUNGEON_THEMES_AND_ECOLOGY.md` 관련 문서 목록
 
 **Interfaces:**
-- Consumes: Task 2의 `docs/experience/DESERT_MONSTER_ASSETS.md`
+- Consumes: Task 3의 `docs/experience/DESERT_MONSTER_ASSETS.md`
 - Produces: 사막 테마 문서에서 UI 자산 카탈로그로 가는 Markdown 링크
 
 - [ ] **Step 1: 관련 문서 목록에 카탈로그 링크를 추가한다**
@@ -143,15 +232,17 @@ git add -- docs/experience/DESERT_MONSTER_ASSETS.md docs/systems/DUNGEON_THEMES_
 git commit -m '문서: 사막 몬스터 UI 에셋 사용법을 정리한다' -m '사막 테마 문서에서 몬스터 자산 카탈로그를 참조하도록 연결한다.'
 ```
 
-### Task 4: 브랜치 전체 검증
+### Task 5: 브랜치 전체 검증
 
 **Files:**
 - Test: `public/assets/monsters/dessert/*.png`
+- Test: `components/game/DesertMonsterAssets.ts`
+- Test: `components/game/DesertMonsterAssets.test.ts`
 - Test: `docs/experience/DESERT_MONSTER_ASSETS.md`
 - Test: `docs/systems/DUNGEON_THEMES_AND_ECOLOGY.md`
 
 **Interfaces:**
-- Consumes: Task 1~3의 자산과 문서
+- Consumes: Task 1~4의 자산과 문서
 - Produces: PR에 올릴 clean working tree와 검증 결과
 
 - [ ] **Step 1: 전체 자산 목록과 문서 링크를 검증한다**
@@ -163,7 +254,7 @@ rg -n 'DESERT_MONSTER_ASSETS' docs/systems/DUNGEON_THEMES_AND_ECOLOGY.md
 git diff --check
 ```
 
-- [ ] **Step 2: 기존 검증 명령을 실행한다**
+- [ ] **Step 2: 전체 검증 명령을 실행한다**
 
 ```bash
 npm run typecheck
@@ -179,4 +270,4 @@ git status --short
 git diff main...HEAD --stat
 ```
 
-Expected: 사막 PNG 9개, 카탈로그, 테마 문서 링크, spec, plan만 포함된다.
+Expected: 사막 PNG 9개, manifest·계약 테스트, 카탈로그, 테마 문서 링크, spec, plan만 포함된다.
