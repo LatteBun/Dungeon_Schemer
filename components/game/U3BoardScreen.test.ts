@@ -15,45 +15,12 @@ const status: TopStatusView = {
 };
 
 const party = [
-  {
-    id: "character-1",
-    name: "아델",
-    classLabel: "전사",
-    personalityLabel: "신중한",
-    hp: 40,
-    maxHp: 45,
-    trust: 72,
-    gold: 24,
-    portraitSrc: "/assets/characters/adel.webp",
-  },
-  {
-    id: "character-2",
-    name: "보른",
-    classLabel: "도적",
-    personalityLabel: "의심 많은",
-    hp: 27,
-    maxHp: 32,
-    trust: 61,
-    gold: 31,
-  },
-  {
-    id: "character-3",
-    name: "세라",
-    classLabel: "성직자",
-    personalityLabel: "정의로운",
-    hp: 28,
-    maxHp: 28,
-    trust: 80,
-    gold: 20,
-  },
+  { id: "character-1", name: "아델", classLabel: "전사", personalityLabel: "신중한", hp: 40, maxHp: 45, trust: 72, gold: 24, portraitSrc: "/assets/characters/adel.webp" },
+  { id: "character-2", name: "보른", classLabel: "도적", personalityLabel: "의심 많은", hp: 27, maxHp: 32, trust: 61, gold: 31 },
+  { id: "character-3", name: "세라", classLabel: "성직자", personalityLabel: "정의로운", hp: 28, maxHp: 28, trust: 80, gold: 20 },
 ] as const;
 
-function detail(
-  offerId: string,
-  dungeonName: string,
-  environmentLabel: string,
-  locked: boolean,
-): U3OfferDetailView {
+function detail(offerId: string, dungeonName: string, environmentLabel: string, locked: boolean): U3OfferDetailView {
   return {
     offerId,
     dungeonId: `dungeon-${offerId}`,
@@ -65,9 +32,7 @@ function detail(
     reputationReward: locked ? 15 : 10,
     goldReward: locked ? 32 : 20,
     locked,
-    lockReasonLabel: locked
-      ? "현재 C급은 ★3 던전에 진입할 수 없습니다. (최대 ★2)"
-      : null,
+    lockReasonLabel: locked ? "현재 C급은 ★3 던전에 진입할 수 없습니다. (최대 ★2)" : null,
     party,
     contractOutcomes: [
       { survivors: 3, label: "전원 생존 시", reputation: 10, gold: 20, reputationLoss: 0 },
@@ -86,15 +51,13 @@ const board: U3BoardView = {
 };
 
 function render(selectedOfferId: string): string {
-  return renderToStaticMarkup(
-    createElement(U3BoardScreen, {
-      status,
-      board,
-      selectedOfferId,
-      onSelectOffer: () => undefined,
-      onContract: () => undefined,
-    }),
-  );
+  return renderToStaticMarkup(createElement(U3BoardScreen, {
+    status,
+    board,
+    selectedOfferId,
+    onSelectOffer: () => undefined,
+    onContract: () => undefined,
+  }));
 }
 
 describe("U3BoardScreen", () => {
@@ -129,14 +92,14 @@ describe("U3BoardScreen", () => {
     expect(html).toContain("/assets/u2/status-gold.svg");
   });
 
-  it("계약 CTA는 확대된 악수 엠블럼과 화살표를 같은 행에 둔다", () => {
+  it("계약 CTA는 크게 확대한 악수 엠블럼과 화살표를 같은 행에 둔다", () => {
     const html = render("offer-1");
     expect(html).toContain("/assets/u3/extracted/contract-emblem.png");
     expect(html).toContain("/assets/u3/extracted/arrow-right.png");
     expect(html).toContain('class="u3-contract-button__emblem"');
-    expect(html).toContain('width="64"');
+    expect(html).toContain('width="72"');
     expect(html).toContain('class="u3-contract-button__arrow"');
-    expect(html).toContain('width="48"');
+    expect(html).toContain('width="56"');
   });
 
   it("선택한 공고의 실제 파티 3명과 생존 인원별 계약 조건을 보여준다", () => {
