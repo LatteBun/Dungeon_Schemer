@@ -68,13 +68,6 @@ function detail(
     lockReasonLabel: locked
       ? "현재 C급은 ★3 던전에 진입할 수 없습니다. (최대 ★2)"
       : null,
-    scoutedRules: locked
-      ? ["거미는 진동에 민감하다.", "어둠 속 개체는 빛을 피한다."]
-      : [
-          "열기에 오래 노출되면 움직임이 둔해진다.",
-          "물가 근처에는 굴 흔적이 남는다.",
-          "미이라는 조용한 움직임에 반응이 늦다.",
-        ],
     party,
     contractOutcomes: [
       { survivors: 3, label: "전원 생존 시", reputation: 10, gold: 20, reputationLoss: 0 },
