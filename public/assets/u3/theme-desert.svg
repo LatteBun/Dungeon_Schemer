@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" data-motif="desert-dunes">
+  <circle cx="17.8" cy="5.3" r="2.7" fill="#c99b4b" stroke="#e1bd72" stroke-width="1"/>
+  <path d="M2.5 16.2c3.6-3 6.7-3.4 9.4-1 2.7-2.5 5.9-2.3 9.6.6" fill="#5a4122" opacity=".55"/>
+  <path d="M2.5 16.2c3.6-3 6.7-3.4 9.4-1 2.7-2.5 5.9-2.3 9.6.6" stroke="#d0aa62" stroke-width="1.55" stroke-linecap="round"/>
+  <path d="M3.4 19.2c3.1-2.3 6-2.4 8.7-.4 2.7-1.8 5.5-1.8 8.5.1" stroke="#8e6b38" stroke-width="1.35" stroke-linecap="round"/>
+  <path d="M6.3 13.2V9.1h2.6v4.1M6.3 9.1 7.6 7.4l1.3 1.7" stroke="#b88a47" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14.5 13.4v-3.1c0-1.4.8-2.3 2-2.3s2 .9 2 2.3v.7h1.2" stroke="#9c773f" stroke-width="1.1" stroke-linecap="round"/>
+</svg>

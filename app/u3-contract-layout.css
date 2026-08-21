@@ -1,0 +1,19 @@
+/* Keep reputation and gold on one line at every viewport. */
+.u3-contract-outcomes__rows > div:not(.is-death) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+}
+
+.u3-contract-outcome__reward {
+  min-width: max-content;
+}
+
+.u3-contract-outcome__reward .u3-reward {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.u3-contract-outcome__reward .u3-reward > span {
+  white-space: nowrap;
+}

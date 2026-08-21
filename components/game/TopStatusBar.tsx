@@ -85,7 +85,7 @@ export function TopStatusBar({ status }: TopStatusBarProps) {
         <StatusItem
           label="남은 던전"
           value={status.remainingDungeons}
-          iconSrc="/assets/u2/status-dungeon.svg"
+          iconSrc="/assets/u3/extracted/status-dungeon.png"
         />
         {status.currentDungeon === undefined ? null : (
           <StatusItem

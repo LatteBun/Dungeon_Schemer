@@ -15,10 +15,7 @@ const U2_START_STATUS: TopStatusView = {
 export function U2Preview() {
   return (
     <div className="u2-preview">
-      <IntroScreen
-        status={U2_START_STATUS}
-        boardHref="/u1-test?screen=board"
-      />
+      <IntroScreen status={U2_START_STATUS} boardHref="/u3-test" />
     </div>
   );
 }

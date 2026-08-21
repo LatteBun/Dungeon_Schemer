@@ -11,18 +11,19 @@ const baseStatus = {
   remainingDungeons: 15,
 };
 
-describe("TopStatusBar U2", () => {
-  it("상태 5종에 독립 SVG 아이콘을 붙인다", () => {
+describe("TopStatusBar U2/U3", () => {
+  it("상태 아이콘은 기존 U2 자산과 에셋보드 남은 던전 PNG를 함께 사용한다", () => {
     const html = renderToStaticMarkup(createElement(TopStatusBar, { status: baseStatus }));
     for (const asset of [
       "status-rank.svg",
       "status-reputation.svg",
       "status-gold.svg",
       "status-promotion.svg",
-      "status-dungeon.svg",
     ]) {
       expect(html).toContain(`/assets/u2/${asset}`);
     }
+    expect(html).toContain("/assets/u3/extracted/status-dungeon.png");
+    expect(html).not.toContain("/assets/u2/status-dungeon.svg");
     expect(html).toContain('aria-hidden="true"');
     expect(html).toContain("영구 등급");
     expect(html).toContain("현재 명성");
