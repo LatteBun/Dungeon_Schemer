@@ -58,12 +58,38 @@ describe("U3 extracted asset-board assets", () => {
     expect(css).toContain("clamp(3.5rem, 3.9vw, 6rem)");
   });
 
-  it("대화면 우측 상세 정보도 공고와 함께 읽기 좋은 크기로 확대된다", () => {
+  it("대화면에서는 상태바부터 공고와 상세까지 텍스트가 함께 확대된다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
 
+    expect(css).toContain(".u3-board-screen .game-shell__status-copy dt");
+    expect(css).toContain(".u3-board-screen .game-shell__status-copy dd");
+    expect(css).toContain(".u3-notice__heading strong");
+    expect(css).toContain(".u3-notice__heading small");
+    expect(css).toContain(".u3-party-card__identity strong");
     expect(css).toContain(".u3-party-card__stats > div");
-    expect(css).toContain("clamp(0.7rem, 0.65vw, 1rem)");
     expect(css).toContain(".u3-contract-outcomes__rows > div");
-    expect(css).toContain("clamp(0.75rem, 0.65vw, 1rem)");
+  });
+
+  it("탐험대 카드도 대화면에서 내용과 함께 커진다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
+
+    expect(css).toContain(".u3-party-card {");
+    expect(css).toContain("min-height: clamp(7.5rem, 8.5vw, 12rem)");
+    expect(css).toContain(".u3-party-card__portrait");
+    expect(css).toContain("clamp(3.4rem, 3.3vw, 5.5rem)");
+  });
+
+  it("계약 조건 보상은 명성과 골드를 항상 한 줄에 유지한다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
+
+    expect(css).toContain(".u3-contract-outcome__reward .u3-reward");
+    expect(css).toContain("flex-wrap: nowrap");
+    expect(css).toContain("white-space: nowrap");
+  });
+
+  it("활성 위험도 별은 내부가 채워진 SVG를 사용한다", () => {
+    const svg = readFileSync(join(process.cwd(), "public", "assets", "u3", "risk-star-filled.svg"), "utf8");
+    expect(svg).toContain("<polygon");
+    expect(svg).toContain("fill=\"#d4ad4e\"");
   });
 });
