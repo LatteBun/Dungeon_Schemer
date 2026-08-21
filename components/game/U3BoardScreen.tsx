@@ -313,14 +313,22 @@ function ContractDetail({
         onClick={() => onContract(detail.offerId)}
       >
         <img
-          src="/assets/u2/intro-contract.svg"
+          className="u3-contract-button__emblem"
+          src="/assets/u3/extracted/contract-emblem.png"
           alt=""
           aria-hidden="true"
           width={38}
           height={38}
         />
         <strong>{detail.locked ? "진입 불가" : "이 공고 계약하기"}</strong>
-        <span aria-hidden="true">→</span>
+        <img
+          className="u3-contract-button__arrow"
+          src="/assets/u3/extracted/arrow-right.png"
+          alt=""
+          aria-hidden="true"
+          width={32}
+          height={24}
+        />
       </button>
     </div>
   );
