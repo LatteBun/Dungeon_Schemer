@@ -6,6 +6,7 @@ export default defineConfig({
     // 무엇을 바꿔야 하는지 드러나도록 명시한다.
     environment: "node",
     include: ["**/*.test.ts"],
+    exclude: [".worktrees/**", "node_modules/**", ".next/**"],
   },
   resolve: {
     // Vitest는 tsconfig.json의 paths를 읽지 않으므로 직접 맞춘다.
