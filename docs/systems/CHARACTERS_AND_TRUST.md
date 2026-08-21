@@ -238,3 +238,4 @@
 - [캐릭터 풀과 월드턴](CHARACTER_POOL_AND_WORLDTURN.md)
 - [정보와 기만](INFORMATION_AND_DECEPTION.md)
 - [성장과 엔딩](PROGRESSION_AND_ENDINGS.md)
+- [캐릭터 UI 에셋](../experience/CHARACTER_UI_ASSETS.md): 직업·생존 상태·변형별 정적 경로와 UI 재사용 규칙
