@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import "./u2-intro.css";
 import "./u3-board.css";
+import "./u3-u2-status-sync.css";
 
 export const metadata: Metadata = {
   title: "Dungeon Schemer",
