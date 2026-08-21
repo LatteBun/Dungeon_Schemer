@@ -110,13 +110,13 @@ describe("U3BoardScreen", () => {
     }
   });
 
-  it("압정과 위험도 별은 유지하고 던전은 직사각형 장면 이미지로 표시한다", () => {
+  it("압정과 위험도 별은 유지하고 던전은 보드에서 자른 직사각형 장면으로 표시한다", () => {
     const html = render("offer-1");
     expect((html.match(/data-testid=\"u3-notice-pin\"/g) ?? [])).toHaveLength(2);
     expect(html).toContain("/assets/u3/extracted/board-pin.png");
     expect((html.match(/data-testid=\"u3-notice-theme-scene\"/g) ?? [])).toHaveLength(2);
-    expect(html).toContain("/assets/u3/extracted/scene-desert.png");
-    expect(html).toContain("/assets/u3/extracted/scene-spider.png");
+    expect(html).toContain("u3-theme-scene--desert");
+    expect(html).toContain("u3-theme-scene--spider");
     expect(html).toContain("/assets/u3/extracted/risk-star.png");
     expect(html).not.toContain("/assets/u3/extracted/theme-desert.png");
     expect(html).not.toContain("/assets/u3/extracted/theme-spider.png");
@@ -129,7 +129,7 @@ describe("U3BoardScreen", () => {
     expect(html).toContain("/assets/u2/status-gold.svg");
   });
 
-  it("계약 CTA는 확대된 보드 추출 악수 엠블럼과 화살표를 같은 행에 둔다", () => {
+  it("계약 CTA는 확대된 악수 엠블럼과 화살표를 같은 행에 둔다", () => {
     const html = render("offer-1");
     expect(html).toContain("/assets/u3/extracted/contract-emblem.png");
     expect(html).toContain("/assets/u3/extracted/arrow-right.png");
