@@ -119,11 +119,11 @@ describe("U3BoardScreen", () => {
     expect(html).not.toContain("정찰 보고");
   });
 
-  it("보드에서 추출한 던전 모티프와 위험도 별만 사용한다", () => {
+  it("보드에서 추출한 압정·던전 모티프·위험도 별을 사용한다", () => {
     const html = render("offer-1");
 
-    expect(html).not.toContain("board-pin.svg");
-    expect(html).not.toContain("u3-notice__theme-mark");
+    expect((html.match(/data-testid=\"u3-notice-pin\"/g) ?? [])).toHaveLength(2);
+    expect(html).toContain("/assets/u3/extracted/board-pin.png");
     expect((html.match(/data-testid=\"u3-notice-theme-art\"/g) ?? [])).toHaveLength(2);
     expect(html).toContain("/assets/u3/extracted/theme-desert.png");
     expect(html).toContain("/assets/u3/extracted/theme-spider.png");
