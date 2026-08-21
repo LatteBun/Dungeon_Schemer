@@ -80,13 +80,9 @@ function detail(
 
 const first = detail("offer-1", "모래 협곡", "열기 노출", false);
 const second = detail("offer-2", "검은 거미 소굴", "진동 경계", true);
-
 const board: U3BoardView = {
   notices: [first, second],
-  detailsByOfferId: {
-    [first.offerId]: first,
-    [second.offerId]: second,
-  },
+  detailsByOfferId: { [first.offerId]: first, [second.offerId]: second },
 };
 
 function render(selectedOfferId: string): string {
@@ -104,55 +100,47 @@ function render(selectedOfferId: string): string {
 describe("U3BoardScreen", () => {
   it("공고마다 환경 특성 하나만 보여주고 불필요한 옛 정보를 노출하지 않는다", () => {
     const html = render("offer-1");
-
     expect(html).toContain("길드 게시판");
     expect((html.match(/data-testid=\"u3-notice\"/g) ?? [])).toHaveLength(2);
     expect((html.match(/data-testid=\"u3-notice-environment\"/g) ?? [])).toHaveLength(2);
     expect(html).toContain("열기 노출");
     expect(html).toContain("진동 경계");
-    expect(html).not.toContain("의뢰 갱신");
-    expect(html).not.toContain("소요 시간");
-    expect(html).not.toContain("계약 기간");
-    expect(html).not.toContain("중도 포기");
-    expect(html).not.toContain("실패 패널티");
-    expect(html).not.toContain("답사 기록");
-    expect(html).not.toContain("정찰 보고");
+    for (const hidden of ["의뢰 갱신", "소요 시간", "계약 기간", "중도 포기", "실패 패널티", "답사 기록", "정찰 보고"]) {
+      expect(html).not.toContain(hidden);
+    }
   });
 
-  it("보드에서 추출한 압정·던전 모티프·위험도 별을 사용한다", () => {
+  it("압정과 위험도 별은 유지하고 던전은 직사각형 장면 이미지로 표시한다", () => {
     const html = render("offer-1");
-
     expect((html.match(/data-testid=\"u3-notice-pin\"/g) ?? [])).toHaveLength(2);
     expect(html).toContain("/assets/u3/extracted/board-pin.png");
-    expect((html.match(/data-testid=\"u3-notice-theme-art\"/g) ?? [])).toHaveLength(2);
-    expect(html).toContain("/assets/u3/extracted/theme-desert.png");
-    expect(html).toContain("/assets/u3/extracted/theme-spider.png");
+    expect((html.match(/data-testid=\"u3-notice-theme-scene\"/g) ?? [])).toHaveLength(2);
+    expect(html).toContain("/assets/u3/extracted/scene-desert.png");
+    expect(html).toContain("/assets/u3/extracted/scene-spider.png");
     expect(html).toContain("/assets/u3/extracted/risk-star.png");
-    expect(html).not.toContain("/assets/u3/theme-desert.svg");
-    expect(html).not.toContain("/assets/u3/theme-spider.svg");
-    expect(html).not.toContain("/assets/u3/environment.svg");
-    expect(html).not.toContain("/assets/u3/notice-lock.svg");
+    expect(html).not.toContain("/assets/u3/extracted/theme-desert.png");
+    expect(html).not.toContain("/assets/u3/extracted/theme-spider.png");
   });
 
   it("파티 초상 매핑 슬롯과 기존 골드 SVG를 데이터 행에 재사용한다", () => {
     const html = render("offer-1");
-
     expect(html).toContain("/assets/characters/adel.webp");
     expect((html.match(/data-testid=\"u3-party-gold-icon\"/g) ?? [])).toHaveLength(3);
     expect(html).toContain("/assets/u2/status-gold.svg");
   });
 
-  it("계약 CTA는 보드 추출 악수 엠블럼과 화살표를 사용한다", () => {
+  it("계약 CTA는 확대된 보드 추출 악수 엠블럼과 화살표를 같은 행에 둔다", () => {
     const html = render("offer-1");
-
     expect(html).toContain("/assets/u3/extracted/contract-emblem.png");
     expect(html).toContain("/assets/u3/extracted/arrow-right.png");
-    expect(html).not.toContain("/assets/u2/intro-contract.svg");
+    expect(html).toContain('class="u3-contract-button__emblem"');
+    expect(html).toContain('width="64"');
+    expect(html).toContain('class="u3-contract-button__arrow"');
+    expect(html).toContain('width="48"');
   });
 
   it("선택한 공고의 실제 파티 3명과 생존 인원별 계약 조건을 보여준다", () => {
     const html = render("offer-1");
-
     expect(html).toContain("aria-pressed=\"true\"");
     expect((html.match(/data-testid=\"u3-party-member\"/g) ?? [])).toHaveLength(3);
     expect(html).toContain("아델");
@@ -168,7 +156,6 @@ describe("U3BoardScreen", () => {
 
   it("진입 불가 공고도 상세를 볼 수 있지만 계약은 비활성화한다", () => {
     const html = render("offer-2");
-
     expect(html).toContain("진입 불가");
     expect(html).toContain("현재 C급은 ★3 던전에 진입할 수 없습니다. (최대 ★2)");
     expect(html).toMatch(/disabled=\"\"/);
