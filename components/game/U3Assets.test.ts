@@ -52,7 +52,18 @@ describe("U3 extracted asset-board assets", () => {
 
     expect(css).toContain("@media (min-width: 90rem)");
     expect(css).toContain("clamp(15rem, 18vw, 32rem)");
+    expect(css).toContain(".u3-contract-button .u3-contract-button__emblem");
     expect(css).toContain("clamp(4.5rem, 4.6vw, 7.25rem)");
+    expect(css).toContain(".u3-contract-button .u3-contract-button__arrow");
     expect(css).toContain("clamp(3.5rem, 3.9vw, 6rem)");
+  });
+
+  it("대화면 우측 상세 정보도 공고와 함께 읽기 좋은 크기로 확대된다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
+
+    expect(css).toContain(".u3-party-card__stats > div");
+    expect(css).toContain("clamp(0.61rem, 0.52vw, 0.88rem)");
+    expect(css).toContain(".u3-contract-outcomes__rows > div");
+    expect(css).toContain("clamp(0.69rem, 0.58vw, 0.95rem)");
   });
 });
