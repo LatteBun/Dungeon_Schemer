@@ -12,10 +12,21 @@ const extractedPngAssets = [
   "section-divider.png",
   "board-pin.png",
   "status-dungeon.png",
+  "theme-desert-wide.png",
+  "theme-spider-wide.png",
+  "theme-graveyard-wide.png",
 ] as const;
 
 function extractedPath(name: string): string {
   return join(process.cwd(), "public", "assets", "u3", "extracted", name);
+}
+
+function pngDimensions(path: string): { width: number; height: number } {
+  const content = readFileSync(path);
+  return {
+    width: content.readUInt32BE(16),
+    height: content.readUInt32BE(20),
+  };
 }
 
 describe("U3 extracted asset-board assets", () => {
@@ -26,24 +37,34 @@ describe("U3 extracted asset-board assets", () => {
     );
   });
 
-  it("승인된 컨셉 보드 원본을 직사각형 던전 장면 소스로 재사용한다", () => {
-    const content = readFileSync(extractedPath("theme-scenes-board.webp"));
-    expect(content.subarray(0, 4).toString("ascii")).toBe("RIFF");
-    expect(content.subarray(8, 12).toString("ascii")).toBe("WEBP");
-  });
+  it.each(["theme-desert-wide.png", "theme-spider-wide.png", "theme-graveyard-wide.png"])(
+    "%s 는 대화면에서도 선명한 960x540 16:9 던전 장면이다",
+    (asset) => {
+      expect(pngDimensions(extractedPath(asset))).toEqual({ width: 960, height: 540 });
+    },
+  );
 
-  it("공고 장면은 16:9로 정렬하고 계약 CTA 아이콘을 크게 중앙 정렬한다", () => {
+  it("공고 장면은 전체 보드 크롭이 아니라 테마별 고해상도 자산을 직접 사용한다", () => {
+    const source = readFileSync(
+      join(process.cwd(), "components", "game", "U3BoardScreen.tsx"),
+      "utf8",
+    );
     const css = readFileSync(join(process.cwd(), "app", "u3-card-theme.css"), "utf8");
 
-    expect(css).toContain("theme-scenes-board.webp");
-    expect(css).toContain(".u3-theme-scene");
+    expect(source).toContain("theme-desert-wide.png");
+    expect(source).toContain("theme-spider-wide.png");
+    expect(source).toContain("theme-graveyard-wide.png");
+    expect(source).not.toContain("theme-scenes-board.webp");
+    expect(css).not.toContain("theme-scenes-board.webp");
     expect(css).toContain("aspect-ratio: 16 / 9");
-    expect(css).toContain(".u3-theme-scene--desert");
-    expect(css).toContain(".u3-theme-scene--spider");
-    expect(css).toContain(".u3-theme-scene--graveyard");
-    expect(css).toContain(".u3-contract-button__emblem");
-    expect(css).toContain("width: 4.5rem");
-    expect(css).toContain(".u3-contract-button__arrow");
-    expect(css).toContain("width: 3.5rem");
+  });
+
+  it("1440px 이상에서는 던전 장면과 계약 CTA가 함께 확대된다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-card-theme.css"), "utf8");
+
+    expect(css).toContain("@media (min-width: 90rem)");
+    expect(css).toContain("clamp(10.4rem, 13.5vw, 26rem)");
+    expect(css).toContain("clamp(4.5rem, 4.6vw, 7.25rem)");
+    expect(css).toContain("clamp(3.5rem, 3.9vw, 6rem)");
   });
 });
