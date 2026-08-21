@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { validateThemes } from "@/lib/content/theme-validation";
-import { selectThemeBoss, THEMES } from "@/lib/content/themes";
+import {
+  DESERT_THEME,
+  GRAVEYARD_THEME,
+  selectThemeBoss,
+  THEMES,
+} from "@/lib/content/themes";
 import type { ThemeId, RiskLevel } from "@/lib/domain";
 
 function themeOf(id: ThemeId) {
@@ -79,6 +84,25 @@ describe("THEMES", () => {
       "graveyard-hunters": "소리 경계",
       "graveyard-blighted-tomb": "소리 경계",
     });
+  });
+});
+
+describe("사막·묘지 보스 특징", () => {
+  it("각 보스가 소유한 두 BossRule을 유지한다", () => {
+    expect(DESERT_THEME.bosses.map((boss) => [boss.id, boss.rules.map((rule) => rule.id)])).toEqual([
+      ["boss-desert-1", ["boss-zakar-burrow-trace", "boss-zakar-emerge-gap"]],
+      ["boss-desert-2", ["boss-kardum-sand-ridge", "boss-kardum-landing-pause"]],
+      ["boss-desert-3", ["boss-obelon-leg-collapse", "boss-obelon-rebuild-stones"]],
+      ["boss-desert-4", ["boss-nephris-question-still", "boss-nephris-wrong-answer-tell"]],
+    ]);
+    expect(GRAVEYARD_THEME.bosses.map((boss) => [boss.id, boss.rules.map((rule) => rule.id)])).toEqual([
+      ["boss-graveyard-1", ["boss-barkan-command-blade", "boss-barkan-reform-line"]],
+      ["boss-graveyard-2", ["boss-morbian-staff-link", "boss-morbian-death-tell"]],
+      ["boss-graveyard-3", ["boss-azrael-marked-prey", "boss-azrael-scythe-mist"]],
+      ["boss-graveyard-4", ["boss-valdrak-oath-boundary", "boss-valdrak-tomb-priority"]],
+    ]);
+    expect(DESERT_THEME.bosses.map((boss) => boss.rules.length)).toEqual([2, 2, 2, 2]);
+    expect(GRAVEYARD_THEME.bosses.map((boss) => boss.rules.length)).toEqual([2, 2, 2, 2]);
   });
 });
 
