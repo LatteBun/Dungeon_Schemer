@@ -84,7 +84,10 @@ function PartyCard({ member, index }: { member: U3OfferDetailView["party"][numbe
       <dl className="u3-party-card__stats">
         <div><dt>HP</dt><dd>{member.hp} / {member.maxHp}</dd></div>
         <div><dt>신뢰</dt><dd>신뢰 {member.trust}</dd></div>
-        <div><dt>소지 골드</dt><dd className="u3-party-card__gold"><img data-testid="u3-party-gold-icon" src="/assets/u2/status-gold.svg" alt="" aria-hidden="true" width={14} height={14} />소지 골드 {member.gold}</dd></div>
+        <div className="u3-party-card__gold-row" data-testid="u3-party-gold-row">
+          <dt className="u3-party-card__gold-label"><img data-testid="u3-party-gold-icon" src="/assets/u2/status-gold.svg" alt="" aria-hidden="true" width={14} height={14} /><span>소지 골드</span></dt>
+          <dd>{member.gold}</dd>
+        </div>
       </dl>
     </article>
   );
