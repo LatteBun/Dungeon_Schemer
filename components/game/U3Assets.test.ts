@@ -42,8 +42,8 @@ describe("U3 extracted asset-board assets", () => {
     expect(css).toContain(".u3-theme-scene--spider");
     expect(css).toContain(".u3-theme-scene--graveyard");
     expect(css).toContain(".u3-contract-button__emblem");
-    expect(css).toContain("width: 4rem");
+    expect(css).toContain("width: 4.5rem");
     expect(css).toContain(".u3-contract-button__arrow");
-    expect(css).toContain("width: 3rem");
+    expect(css).toContain("width: 3.5rem");
   });
 });
