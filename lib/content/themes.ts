@@ -398,7 +398,10 @@ const DESERT_BOSSES: readonly BossDef[] = [
     minRiskLevel: 1,
     baseDamage: 14,
     maxHp: 100,
-    rules: [],
+    rules: [
+      { id: "boss-zakar-burrow-trace" as BossRuleId, text: "자카르가 숨어 있는 모래 위에는 꼬리 끝이 지나간 가느다란 홈이 남는다." },
+      { id: "boss-zakar-emerge-gap" as BossRuleId, text: "자카르는 모래에서 튀어나온 직후 몸을 다시 가다듬느라 잠깐 움직임이 멈춘다." },
+    ],
   },
   {
     id: "boss-desert-2" as BossId,
@@ -408,7 +411,10 @@ const DESERT_BOSSES: readonly BossDef[] = [
     minRiskLevel: 2,
     baseDamage: 19,
     maxHp: 150,
-    rules: [],
+    rules: [
+      { id: "boss-kardum-sand-ridge" as BossRuleId, text: "카르둠이 땅속에서 이동하면 실제 몸보다 조금 앞쪽의 모래가 먼저 솟아오른다." },
+      { id: "boss-kardum-landing-pause" as BossRuleId, text: "카르둠은 모래 밖으로 크게 뛰쳐나온 뒤 다시 파고들기까지 잠깐 시간이 걸린다." },
+    ],
   },
   {
     id: "boss-desert-3" as BossId,
@@ -418,7 +424,10 @@ const DESERT_BOSSES: readonly BossDef[] = [
     minRiskLevel: 3,
     baseDamage: 25,
     maxHp: 210,
-    rules: [],
+    rules: [
+      { id: "boss-obelon-leg-collapse" as BossRuleId, text: "오벨론은 다리의 돌 배열이 흐트러지면 거대한 몸의 균형을 쉽게 잃는다." },
+      { id: "boss-obelon-rebuild-stones" as BossRuleId, text: "몸에서 떨어져 나온 돌들은 잠시 뒤 다시 오벨론 쪽으로 끌려간다." },
+    ],
   },
   {
     id: "boss-desert-4" as BossId,
@@ -428,11 +437,14 @@ const DESERT_BOSSES: readonly BossDef[] = [
     minRiskLevel: 4,
     baseDamage: 32,
     maxHp: 280,
-    rules: [],
+    rules: [
+      { id: "boss-nephris-question-still" as BossRuleId, text: "네프리스는 질문을 던진 뒤 답을 들을 때까지 먼저 움직이지 않는다." },
+      { id: "boss-nephris-wrong-answer-tell" as BossRuleId, text: "틀린 답을 들으면 공격하기 직전에 목의 장식과 눈이 먼저 빛난다." },
+    ],
   },
 ];
 
-const DESERT_THEME: ThemeContent = {
+export const DESERT_THEME: ThemeContent = {
   id: "desert",
   name: "사막",
   rules: DESERT_RULES,
@@ -592,7 +604,10 @@ const GRAVEYARD_BOSSES: readonly BossDef[] = [
     minRiskLevel: 1,
     baseDamage: 14,
     maxHp: 100,
-    rules: [],
+    rules: [
+      { id: "boss-barkan-command-blade" as BossRuleId, text: "부하 해골들은 바르칸이 검으로 가리킨 방향으로 먼저 움직인다." },
+      { id: "boss-barkan-reform-line" as BossRuleId, text: "부하 진형이 무너지면 바르칸은 공격보다 대열을 다시 세우는 일을 먼저 한다." },
+    ],
   },
   {
     id: "boss-graveyard-2" as BossId,
@@ -602,7 +617,10 @@ const GRAVEYARD_BOSSES: readonly BossDef[] = [
     minRiskLevel: 2,
     baseDamage: 19,
     maxHp: 150,
-    rules: [],
+    rules: [
+      { id: "boss-morbian-staff-link" as BossRuleId, text: "모르비안이 시체를 조종하는 동안 지팡이 끝의 푸른 불빛이 시체들의 눈과 함께 깜빡인다." },
+      { id: "boss-morbian-death-tell" as BossRuleId, text: "큰 죽음 마법을 쓰기 직전 주변의 촛불과 혼불이 한꺼번에 꺼진다." },
+    ],
   },
   {
     id: "boss-graveyard-3" as BossId,
@@ -612,7 +630,10 @@ const GRAVEYARD_BOSSES: readonly BossDef[] = [
     minRiskLevel: 3,
     baseDamage: 25,
     maxHp: 210,
-    rules: [],
+    rules: [
+      { id: "boss-azrael-marked-prey" as BossRuleId, text: "아즈라엘은 낫끝으로 한 사람을 가리킨 뒤 한동안 그 사람만 집요하게 쫓는다." },
+      { id: "boss-azrael-scythe-mist" as BossRuleId, text: "큰 횡베기 직전 주변의 검은 안개가 낫날 쪽으로 빨려 들어간다." },
+    ],
   },
   {
     id: "boss-graveyard-4" as BossId,
@@ -622,11 +643,14 @@ const GRAVEYARD_BOSSES: readonly BossDef[] = [
     minRiskLevel: 4,
     baseDamage: 32,
     maxHp: 280,
-    rules: [],
+    rules: [
+      { id: "boss-valdrak-oath-boundary" as BossRuleId, text: "발드라크는 생전의 맹세 때문에 가장 깊은 무덤의 돌문 경계를 넘어 오래 추격하지 못한다." },
+      { id: "boss-valdrak-tomb-priority" as BossRuleId, text: "누군가 안쪽 석관에 가까워지면 발드라크는 현재 상대보다 석관을 지키는 일을 우선한다." },
+    ],
   },
 ];
 
-const GRAVEYARD_THEME: ThemeContent = {
+export const GRAVEYARD_THEME: ThemeContent = {
   id: "graveyard",
   name: "묘지",
   rules: GRAVEYARD_RULES,
