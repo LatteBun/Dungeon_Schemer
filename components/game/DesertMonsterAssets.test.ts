@@ -17,6 +17,7 @@ function readPngContract(path: string) {
     width: file.readUInt32BE(16),
     height: file.readUInt32BE(20),
     colorType: file[25],
+    hasTransparencyChunk: file.includes(Buffer.from("tRNS", "ascii")),
   };
 }
 
@@ -28,12 +29,17 @@ describe("사막 몬스터 에셋 계약", () => {
     expect(DESERT_MONSTER_ASSETS.filter((asset) => asset.kind === "boss")).toHaveLength(4);
   });
 
-  it.each(DESERT_MONSTER_ASSETS)("$name 은 1024 정사각 alpha PNG다", (asset) => {
-    const { width, height, colorType } = readPngContract(assetPath(asset.src));
+  it.each(DESERT_MONSTER_ASSETS)("$name 은 1024 정사각 투명 PNG다", (asset) => {
+    const { width, height, colorType, hasTransparencyChunk } = readPngContract(
+      assetPath(asset.src),
+    );
 
     expect(width).toBeGreaterThanOrEqual(1024);
     expect(height).toBeGreaterThanOrEqual(1024);
     expect(width).toBe(height);
-    expect([4, 6]).toContain(colorType);
+    expect([3, 4, 6]).toContain(colorType);
+    if (colorType === 3) {
+      expect(hasTransparencyChunk).toBe(true);
+    }
   });
 });
