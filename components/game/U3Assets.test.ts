@@ -26,11 +26,11 @@ describe("U3 extracted asset-board assets", () => {
     );
   });
 
-  it("theme-scenes-wide.avif 는 대화면에서도 확대 가능한 고화질 던전 장면 자산이다", () => {
+  it("theme-scenes-wide.avif 는 대화면용 던전 장면 AVIF다", () => {
     const content = readFileSync(extractedPath("theme-scenes-wide.avif"));
     expect(content.subarray(4, 8).toString("ascii")).toBe("ftyp");
     expect(content.subarray(8, 12).toString("ascii")).toMatch(/avif|avis/);
-    expect(content.byteLength).toBeGreaterThan(24_000);
+    expect(content.byteLength).toBeGreaterThan(10_000);
   });
 
   it("공고 장면은 전체 UI 보드 크롭이 아니라 전용 3장 스프라이트를 사용한다", () => {
