@@ -25,7 +25,7 @@
 2. [게임 개요](design/GAME_OVERVIEW.md)
 3. [핵심 게임 루프](design/CORE_GAME_LOOP.md)
 4. 작업하려는 기능과 관련된 시스템 문서
-5. UI 작업이면 [화면 규격](experience/SCREEN_LAYOUT.md)과 [온보딩과 인터페이스](experience/ONBOARDING_AND_INTERFACE.md)
+5. UI 작업이면 [화면 규격](experience/SCREEN_LAYOUT.md), [온보딩과 인터페이스](experience/ONBOARDING_AND_INTERFACE.md), [UI 구현 가이드](experience/UI_IMPLEMENTATION_GUIDE.md)를 함께 읽고, 새 화면/에셋 지시서는 [UI 작업 지시서 템플릿](experience/UI_TASK_TEMPLATE.md)을 복사해 작성한다.
 6. 흐름을 그림으로 확인하려면 [시각 자료](diagram/README.md)
 7. 무엇을 구현할 차례인지 찾으려면 [캠페인 개편 작업 배정표](technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md)
 8. 프로젝트 설정 작업이면 [개발 환경](technical/DEVELOPMENT_ENVIRONMENT.md)
@@ -54,6 +54,8 @@
 
 - [SCREEN_LAYOUT.md](experience/SCREEN_LAYOUT.md): 3:2 게임 셸(좌 60%·우 40%), 기준 해상도, 화면별 좌·우 구조와 색 외 단서 원칙
 - [ONBOARDING_AND_INTERFACE.md](experience/ONBOARDING_AND_INTERFACE.md): 인트로부터 엔딩까지 화면 정보 구조, 30초 온보딩과 결과 피드백
+- [UI_IMPLEMENTATION_GUIDE.md](experience/UI_IMPLEMENTATION_GUIDE.md): UI·파티원·지도·배경·이미지 에셋 구현 시 재사용, 반응형, 가독성, 레퍼런스 스타일·시점 계승과 벡터/아이콘화 금지 기준
+- [UI_TASK_TEMPLATE.md](experience/UI_TASK_TEMPLATE.md): 화면별 UI와 이미지 에셋 작업에서 필수 정보, 시각 계약, 슬롯 비율, viewport 검증 조건을 전달하기 위한 작업 지시서 템플릿
 
 ### 시각 자료
 
@@ -85,6 +87,8 @@
 ## 문서 갱신 규칙
 
 - 기능을 구현하기 전에 관련 공식 문서와 [게임 원칙](GAME_PRINCIPLES.md)을 확인한다.
+- UI·이미지 에셋 작업은 [UI 구현 가이드](experience/UI_IMPLEMENTATION_GUIDE.md)를 함께 확인하고, 승인된 레퍼런스의 스타일·시점·카메라 방향을 계승한다.
+- 사용자가 명시적으로 요청하지 않은 경우 장면형 이미지나 캐릭터 에셋을 플랫 벡터·아이콘·로고 느낌으로 임의 단순화하지 않는다.
 - 기능의 규칙이 바뀌면 구현과 같은 변경 단위에서 관련 공식 문서를 함께 갱신한다.
 - 같은 규칙을 여러 문서에 복사하지 않고 가장 직접적인 시스템 문서를 기준으로 연결한다.
 - 확정되지 않은 수치와 콘텐츠를 사실처럼 기록하지 않는다.
@@ -125,4 +129,4 @@
 - [C1 캠페인 초기화·게시판 설계](superpowers/specs/2026-08-14-sanghwan-yoo-c1-campaign-initialization-board-design.md)
 - [C1 캠페인 초기화·게시판 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-c1-campaign-initialization-board.md)
 - [C1·F1·F2 통합 검증 하네스 설계](superpowers/specs/2026-08-14-sanghwan-yoo-c1-f1-f2-integration-harness-design.md)
-- [F1·F2·C1 통합 검증 하네스 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-f1-f2-c1-integration-harness.md)
+- [F1·F2·C1 통합 검증 하네스 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-c1-f1-f2-c1-integration-harness.md)
