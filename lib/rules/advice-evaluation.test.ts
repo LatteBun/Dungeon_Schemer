@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { presentAdviceOptions } from "./advice-evaluation";
+import { disclosedRuleIds, presentAdviceOptions, presentShuffledAdvice } from "./advice-evaluation";
 import type { SituationEvent } from "@/lib/domain";
 
 const event = {
@@ -26,5 +26,20 @@ describe("조언 공개", () => {
     expect(options[0]).not.toHaveProperty("relation");
     expect(options[0]).not.toHaveProperty("source");
     expect(options[0]).not.toHaveProperty("bossDamageModifier");
+  });
+
+  it("활성 규칙 공개 수는 위험도에 따라 결정적이다", () => {
+    const active = ["spider-shadow", "spider-fire", "spider-vibration"] as any;
+    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, riskLevel: 1, activeRuleIds: active })).toHaveLength(3);
+    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, riskLevel: 5, activeRuleIds: active })).toHaveLength(1);
+    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, riskLevel: 2, activeRuleIds: active })).toEqual(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, riskLevel: 2, activeRuleIds: active }));
+  });
+
+  it("조언 순서는 입력을 보존하며 같은 입력에서 재현된다", () => {
+    const first = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, attempt: 1, depth: 2, event: event as any });
+    const second = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, attempt: 1, depth: 2, event: event as any });
+    expect(first).toEqual(second);
+    expect(event.advice.map((option) => option.id)).toEqual(["a", "b", "c"]);
+    expect(first[0]).not.toHaveProperty("outcome");
   });
 });
