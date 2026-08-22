@@ -119,9 +119,9 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
       <section className="u3-detail-section u3-party" aria-labelledby="u3-party-title"><h3 id="u3-party-title">탐험대 구성</h3><div className="u3-party__grid">{detail.party.map((member, index) => <PartyCard key={member.id} member={member} index={index} />)}</div></section>
       <ContractOutcomes detail={detail} />
       <button type="button" className="u3-contract-button" disabled={detail.locked} onClick={() => onContract(detail.offerId)}>
-        <img className="u3-contract-button__emblem" src="/assets/u3/extracted/contract-emblem.png" alt="" aria-hidden="true" width={72} height={72} />
+        <img className="u3-contract-button__seal" src="/assets/u3/extracted/contract-emblem.png" alt="" aria-hidden="true" width={40} height={36} />
         <strong>{detail.locked ? "진입 불가" : "이 공고 계약하기"}</strong>
-        <img className="u3-contract-button__arrow" src="/assets/u3/extracted/arrow-right.png" alt="" aria-hidden="true" width={56} height={36} />
+        <img className="u3-contract-button__arrow" src="/assets/u3/extracted/arrow-right.png" alt="" aria-hidden="true" width={48} height={19} />
       </button>
     </div>
   );

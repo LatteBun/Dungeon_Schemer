@@ -242,26 +242,25 @@
 }
 
 .u3-contract-button {
-  grid-template-columns: clamp(4.5rem, 4.6cqw, 7.25rem) minmax(0, 1fr) clamp(3.5rem, 3.9cqw, 6rem);
-  column-gap: clamp(0.85rem, 1cqw, 1.5rem);
-  min-height: clamp(5.55rem, 6.4cqw, 9.5rem);
-  padding-inline: clamp(1rem, 1.2cqw, 2rem);
+  grid-template-columns: clamp(2.5rem, 2.7cqw, 4rem) minmax(0, 1fr) clamp(3rem, 3.2cqw, 4.8rem);
+  column-gap: clamp(1rem, 1.05cqw, 1.6rem);
+  min-height: clamp(4.8rem, 5.2cqw, 7.8rem);
+  padding-inline: clamp(1.15rem, 1.25cqw, 2rem);
 }
 
 .u3-contract-button strong {
-  font-size: clamp(1.35rem, 1.32cqw, 2.1rem);
+  font-size: clamp(1.25rem, 1.22cqw, 1.9rem);
   line-height: 1.15;
 }
 
-.u3-contract-button .u3-contract-button__emblem {
-  width: clamp(4.5rem, 4.6cqw, 7.25rem);
-  height: clamp(4.5rem, 4.6cqw, 7.25rem);
+.u3-contract-button .u3-contract-button__seal {
+  width: clamp(2.5rem, 2.7cqw, 4rem);
+  height: auto;
 }
 
 .u3-contract-button .u3-contract-button__arrow {
-  width: clamp(3.5rem, 3.9cqw, 6rem);
-  height: auto;
-  transform: scale(1.12);
+  width: auto;
+  height: clamp(1.5rem, 1.6cqw, 2.4rem);
 }
 
 /* 1920×1080 캔버스에서 항상 적용되던 대화면 고밀도 규칙. 고정 비율이 되면서 기본값이 되었다. */
