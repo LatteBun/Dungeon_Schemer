@@ -91,6 +91,8 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "위험도",
     "캐릭터 30명",
     "pending merchant effect",
+    "일반 Depth",
+    "방문한 사건",
   ],
   "systems/DUNGEON_EVENTS_AND_BOSSES.md": [
     "위험도별 지도",
@@ -99,6 +101,8 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "생태 규칙",
     "다음 전투",
     "정보 판매",
+    "일반 Depth",
+    "Depth 슬롯",
   ],
   "systems/INFORMATION_AND_DECEPTION.md": [
     "현재 위험도",
@@ -129,6 +133,7 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "월드턴",
     "골드 부족",
     "효과 중복 불가",
+    "여러 Depth",
   ],
   "systems/PROGRESSION_AND_ENDINGS.md": [
     "위험도별 보상",

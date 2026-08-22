@@ -40,6 +40,7 @@ export type {
   BossDef,
   BossRule,
   CampaignDungeon,
+  DungeonLayer,
   DungeonNode,
   DungeonStatus,
   EcologyRule,
