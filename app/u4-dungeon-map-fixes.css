@@ -1,0 +1,127 @@
+/*
+ * U4 visual correction layer.
+ * Keep this after u4-dungeon-map.css so browser-capture fixes stay isolated
+ * from the initial implementation and remain easy to review/remove.
+ */
+
+/* The generated ornate frame is intentionally larger than the visible map.
+ * Pull it outside the clipping surface so only a thin inner edge remains. */
+.u4-map-panel {
+  border-color: #5e4324;
+  box-shadow: inset 0 0 0 1px rgb(104 75 39 / 52%), 0 0.2rem 0.7rem rgb(0 0 0 / 42%);
+}
+
+.u4-map-surface__frame {
+  inset: -1.6rem;
+  width: auto;
+  height: auto;
+  opacity: 0.62;
+}
+
+/* Make the topology read as a dungeon passage rather than a hairline graph. */
+.u4-corridor {
+  height: clamp(1.05rem, 1.35cqh, 1.35rem);
+  opacity: 0.34;
+  filter: grayscale(0.38) brightness(0.72) contrast(1.04);
+}
+
+.u4-corridor.is-visited {
+  opacity: 0.58;
+  filter: grayscale(0.52) brightness(0.88);
+}
+
+.u4-corridor.is-selectable {
+  opacity: 0.96;
+  filter: sepia(0.3) saturate(1.28) brightness(1.12) drop-shadow(0 0 0.24rem rgb(218 169 70 / 62%));
+}
+
+/* Keep top/bottom landmark art clear of the decorative frame. */
+.u4-room--entry,
+.u4-room--boss {
+  z-index: 8;
+}
+
+/* The destination frame PNG contains a dark center, so it must sit behind
+ * the actual thumbnail/copy rather than on top of them. */
+.u4-destination {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.34rem;
+  overflow: visible;
+  padding-bottom: clamp(0.3rem, 0.42cqh, 0.42rem);
+}
+
+.u4-destination__panel {
+  min-height: clamp(4.65rem, 6.45cqh, 5.65rem);
+  overflow: hidden;
+  background: #090705;
+}
+
+.u4-destination__panel-frame {
+  z-index: 1;
+  opacity: 0.9;
+}
+
+.u4-destination__summary {
+  z-index: 2;
+  grid-template-columns: clamp(4rem, 4.7cqw, 4.9rem) minmax(0, 1fr);
+  min-height: clamp(4.65rem, 6.45cqh, 5.65rem);
+  padding: 0.48rem 0.9rem;
+}
+
+.u4-destination__empty {
+  z-index: 2;
+  min-height: clamp(4.65rem, 6.45cqh, 5.65rem);
+}
+
+/* cta_button_center.png is already a complete horizontal button skin.
+ * The old three-slice composition duplicated end caps and pushed artwork
+ * outside the available row. Keep the DOM for asset compatibility, but
+ * render one complete center skin and the separate chevron. */
+.u4-move-button {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: clamp(3.5rem, 5.2cqh, 4.2rem);
+  min-height: 0;
+  place-items: center;
+  overflow: visible;
+  padding: 0 3.2rem 0 1rem;
+}
+
+.u4-move-button__skin {
+  inset: 0.1rem 2.45rem 0.1rem 0.35rem;
+  display: block;
+}
+
+.u4-move-button__left,
+.u4-move-button__right {
+  display: none;
+}
+
+.u4-move-button__center {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.u4-move-button strong {
+  grid-column: 1;
+  justify-self: center;
+  padding-left: 1.5rem;
+  font-size: clamp(0.82rem, 1.02cqw, 0.98rem);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.u4-move-button__arrow {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  width: auto;
+  height: clamp(2.35rem, 3.45cqh, 2.9rem);
+  transform: translateY(-50%);
+}
+
+.u4-move-button:focus-visible:not(:disabled)::after {
+  inset: 0.22rem 2.35rem 0.22rem 0.25rem;
+}
