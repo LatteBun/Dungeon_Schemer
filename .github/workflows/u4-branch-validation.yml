@@ -1,0 +1,78 @@
+name: U4 Branch Validation
+
+on:
+  push:
+    branches:
+      - feature/u4-dungeon-map
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.21.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Install Chromium for capture
+        if: success()
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+
+      - name: Start preview server
+        if: success()
+        run: |
+          pnpm start > /tmp/u4-next.log 2>&1 &
+          echo $! > /tmp/u4-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/u4-test > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/u4-next.log
+          exit 1
+
+      - name: Capture U4 viewports
+        if: success()
+        run: |
+          mkdir -p u4-captures
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1920,1080" http://127.0.0.1:3000/u4-test u4-captures/u4-1920x1080.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="2560,1440" http://127.0.0.1:3000/u4-test u4-captures/u4-2560x1440.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1440,900" http://127.0.0.1:3000/u4-test u4-captures/u4-1440x900.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1280,1024" http://127.0.0.1:3000/u4-test u4-captures/u4-1280x1024.png
+
+      - name: Upload U4 browser captures
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: u4-browser-captures
+          path: u4-captures/*.png
+          if-no-files-found: error
