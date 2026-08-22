@@ -1,0 +1,56 @@
+import { describe, expect, it } from "vitest";
+import { createU4PreviewData } from "./u4-preview-data";
+
+const TARGET_WIDTHS = [2, 3, 5, 4, 3, 2, 2] as const;
+
+describe("U4 preview data", () => {
+  it("uses an actual risk-3 E1 map with the non-consecutive-five example template", () => {
+    const preview = createU4PreviewData({ deadPreview: false });
+    expect(preview.riskLevel).toBe(3);
+    expect(preview.map.layers.map((layer) => layer.nodeIds.length)).toEqual(TARGET_WIDTHS);
+    expect(preview.map.layers.some((layer) => layer.nodeIds.length === 5)).toBe(true);
+    for (let index = 1; index < preview.map.layers.length; index += 1) {
+      expect(
+        preview.map.layers[index - 1]!.nodeIds.length === 5 &&
+          preview.map.layers[index]!.nodeIds.length === 5,
+      ).toBe(false);
+    }
+  });
+
+  it("uses the actual board party and maps every normal node to a public kind fixture", () => {
+    const preview = createU4PreviewData({ deadPreview: false });
+    expect(preview.party).toHaveLength(3);
+    expect(new Set(preview.party.map((member) => member.classId)).size).toBe(3);
+
+    const normalNodes = preview.map.nodes.filter((node) => node.kind === "normal");
+    expect(normalNodes.every((node) => preview.publicKindByNodeId[node.id] !== undefined)).toBe(true);
+  });
+
+  it("starts after entry so the map has a visited path and selectable next rooms", () => {
+    const preview = createU4PreviewData({ deadPreview: false });
+    expect(preview.visitedNodeIds).toContain(preview.map.entryNodeId);
+    expect(preview.currentNodeId).toBe(preview.map.layers[0]!.nodeIds[0]);
+
+    const current = preview.map.nodes.find((node) => node.id === preview.currentNodeId);
+    expect(current?.nextNodeIds.length).toBeGreaterThan(0);
+  });
+
+  it("dead preview changes exactly one actual party member to dead art", () => {
+    const live = createU4PreviewData({ deadPreview: false });
+    const dead = createU4PreviewData({ deadPreview: true });
+
+    expect(live.party.every((member) => member.alive)).toBe(true);
+    expect(dead.party.filter((member) => !member.alive)).toHaveLength(1);
+    expect(dead.party.filter((member) => !member.alive)[0]?.portraitSrc).toContain(
+      "/assets/characters/dead/",
+    );
+  });
+
+  it("builds the screen model and default destination from actual generated data", () => {
+    const preview = createU4PreviewData({ deadPreview: false });
+    expect(preview.nodes.some((node) => node.state === "current")).toBe(true);
+    expect(preview.nodes.some((node) => node.state === "selectable")).toBe(true);
+    expect(preview.selectedNextNodeId).not.toBeNull();
+    expect(preview.layout.nodePositions[preview.map.entryNodeId]?.y).toBeCloseTo(0.93);
+  });
+});
