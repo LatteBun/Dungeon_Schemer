@@ -26,13 +26,15 @@ describe("U4 preview data", () => {
     expect(normalNodes.every((node) => preview.publicKindByNodeId[node.id] !== undefined)).toBe(true);
   });
 
-  it("starts after entry so the map has a visited path and selectable next rooms", () => {
+  it("starts on the centered entry and exposes only the first depth as selectable", () => {
     const preview = createU4PreviewData({ deadPreview: false });
-    expect(preview.visitedNodeIds).toContain(preview.map.entryNodeId);
-    expect(preview.currentNodeId).toBe(preview.map.layers[0]!.nodeIds[0]);
+    expect(preview.currentNodeId).toBe(preview.map.entryNodeId);
+    expect(preview.visitedNodeIds).toEqual([]);
 
-    const current = preview.map.nodes.find((node) => node.id === preview.currentNodeId);
-    expect(current?.nextNodeIds.length).toBeGreaterThan(0);
+    const selectable = preview.nodes.filter((node) => node.state === "selectable");
+    expect(selectable.map((node) => node.id).sort()).toEqual(
+      [...preview.map.nodes.find((node) => node.id === preview.map.entryNodeId)!.nextNodeIds].sort(),
+    );
   });
 
   it("dead preview changes exactly one actual party member to dead art", () => {
@@ -51,6 +53,7 @@ describe("U4 preview data", () => {
     expect(preview.nodes.some((node) => node.state === "current")).toBe(true);
     expect(preview.nodes.some((node) => node.state === "selectable")).toBe(true);
     expect(preview.selectedNextNodeId).not.toBeNull();
-    expect(preview.layout.nodePositions[preview.map.entryNodeId]?.y).toBeCloseTo(0.93);
+    expect(preview.layout.nodePositions[preview.map.entryNodeId]?.y).toBeCloseTo(0.88);
+    expect(preview.layout.nodePositions[preview.map.bossNodeId]?.y).toBeCloseTo(0.12);
   });
 });
