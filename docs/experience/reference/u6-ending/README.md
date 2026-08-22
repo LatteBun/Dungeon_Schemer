@@ -6,11 +6,13 @@
 
 | 파일 | 엔딩 |
 | --- | --- |
-| `ending-completed.png` | 원정 종료 |
-| `ending-distrust.png` | 불신의 대가 |
-| `ending-denounced.png` | 누적 고발 |
-| `ending-exhausted.png` | 인력 소진 |
-| `ending-unemployed.png` | 실직 |
+| `ending-completed.jpg` | 원정 종료 |
+| `ending-distrust.jpg` | 불신의 대가 |
+| `ending-denounced.jpg` | 누적 고발 |
+| `ending-exhausted.jpg` | 인력 소진 |
+| `ending-unemployed.jpg` | 실직 |
+
+원본은 1672×941 PNG(장당 약 3MB)였다. 시안을 읽는 데 필요한 것은 배치와 문안이지 원본 화질이 아니므로, 1400px JPEG(장당 약 380KB)로 줄여 담는다.
 
 ## 구성
 
