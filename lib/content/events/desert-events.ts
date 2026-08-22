@@ -34,7 +34,8 @@ function neutralAdvice(id: string, label: string, line: string, resultText: stri
 }
 
 function desertEvent(id: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string, extras: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
-  return { id: id as EventId, kind: "monster", theme: "desert", title, description, advice: adviceOptions, defaultResultText, ...extras };
+  const satisfiedConditionalRuleIds = [...new Set(adviceOptions.flatMap((option) => option.source?.kind === "ecology" && ["desert-lizard-heat", "desert-spirit-dry"].includes(option.source.ruleId) ? [option.source.ruleId] : []))];
+  return { id: id as EventId, kind: "monster", theme: "desert", title, description, advice: adviceOptions, defaultResultText, ...(satisfiedConditionalRuleIds.length > 0 ? { satisfiedConditionalRuleIds } : {}), ...extras };
 }
 
 function bossAdvice(id: string, outcome: AdviceOutcome, bossRuleId: string | undefined, label: string, line: string, resultText: string): AdviceOption {

@@ -30,11 +30,9 @@ import type {
   ClassId,
   DungeonId,
   DungeonLayer,
-  EnvironmentTagDefinition,
   GeneratedMap,
   NodeId,
   OfferId,
-  PublicEnvironmentTagId,
 } from "@/lib/domain";
 
 function character(overrides: Partial<Character> = {}): Character {
@@ -124,25 +122,16 @@ describe("출전 가능 판정", () => {
 });
 
 describe("공개 환경 특성 계약", () => {
-  it("환경 특성 정의와 공고 공개값이 public barrel에서 표현된다", () => {
-    const tag: EnvironmentTagDefinition = {
-      id: "spider-dark-ambush" as PublicEnvironmentTagId,
-      label: "어둠 잠복",
-      evidenceMonsterTraits: ["어둠 속에서만 활동"],
-    };
+  it("공고가 공개 환경 특성을 보관하지 않는다", () => {
     const offer = {
       id: "offer-0-dungeon-spider-01" as OfferId,
       dungeonId: "dungeon-spider-01" as DungeonId,
       riskLevel: 1,
       party: { memberIds: [] },
       lockReason: null,
-      publicEnvironmentTag: { id: tag.id, label: tag.label },
     } satisfies BoardOffer;
 
-    expect(offer.publicEnvironmentTag).toEqual({
-      id: "spider-dark-ambush",
-      label: "어둠 잠복",
-    });
+    expect("publicEnvironmentTag" in offer).toBe(false);
   });
 });
 

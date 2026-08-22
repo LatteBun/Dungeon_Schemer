@@ -1,4 +1,5 @@
 import type { CharacterId, ChoiceId, EventId } from "./ids";
+import type { TrustChange } from "./character";
 
 /**
  * 조언의 유형. 플레이어의 의도를 가리킨다.
@@ -32,6 +33,38 @@ export type EventTarget = Target | { kind: "boss" };
 
 /** 조언 하나에 대한 파티원 한 명의 반응. */
 export type InfoReaction = "accepted" | "suspected" | "exposed";
+
+export interface PresentedAdviceOption {
+  id: ChoiceId;
+  label: string;
+  line: string;
+  goldCost?: number;
+}
+
+export interface MemberReaction {
+  characterId: CharacterId;
+  reaction: InfoReaction;
+}
+
+export interface AdviceDecision {
+  adviceId: ChoiceId;
+  outcome: AdviceOutcome;
+  reactions: readonly MemberReaction[];
+  executed: boolean;
+  delayedRecords: readonly InfoRecord[];
+}
+
+export interface AdviceResolution {
+  decision: AdviceDecision;
+  trustChanges: readonly TrustChange[];
+}
+
+export interface AdviceFeedback {
+  selectedAdviceId: ChoiceId;
+  reactions: readonly MemberReaction[];
+  resultText: string;
+  trustChanges: readonly TrustChange[];
+}
 
 /**
  * 지연형 조언을 한 파티원이 수용한 기록이다.

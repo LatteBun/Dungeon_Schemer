@@ -14,7 +14,6 @@ export type {
   MonsterId,
   NodeId,
   OfferId,
-  PublicEnvironmentTagId,
   RuleId,
 } from "./ids";
 
@@ -44,12 +43,10 @@ export type {
   DungeonNode,
   DungeonStatus,
   EcologyRule,
-  EnvironmentTagDefinition,
   EcologyProfile,
   GeneratedMap,
   MonsterDef,
   NodeKind,
-  PublicEnvironmentTag,
   RiskLevel,
   ThemeContent,
   ThemeId,
@@ -113,6 +110,13 @@ export type {
   InfoReaction,
   InfoRecord,
   Target,
+} from "./info";
+export type {
+  AdviceDecision,
+  AdviceFeedback,
+  AdviceResolution,
+  MemberReaction,
+  PresentedAdviceOption,
 } from "./info";
 
 export { EVENT_EFFECT_TAGS, EVENT_KINDS } from "./content";

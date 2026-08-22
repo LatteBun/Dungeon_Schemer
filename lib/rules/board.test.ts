@@ -57,7 +57,7 @@ describe("createBoardOffers", () => {
     expect(offers.every((offer) => offer.id.startsWith("offer-0-"))).toBe(true);
   });
 
-  it("공고의 위험도와 환경 특성은 현재 던전 콘텐츠에서 복사한다", () => {
+  it("공고의 위험도는 현재 던전 콘텐츠에서 복사하고 환경 특성은 공개하지 않는다", () => {
     const state = initializeCampaign("c2-board-content");
     const offers = createBoardOffers(state);
 
@@ -65,8 +65,7 @@ describe("createBoardOffers", () => {
       const dungeon = state.dungeons.find((candidate) => candidate.id === offer.dungeonId);
       expect(dungeon).toBeDefined();
       expect(offer.riskLevel).toBe(dungeon?.riskLevel);
-      expect(offer.publicEnvironmentTag.id).toMatch(/-/);
-      expect(offer.publicEnvironmentTag.label).not.toBe("");
+      expect(offer).not.toHaveProperty("publicEnvironmentTag");
     }
   });
 

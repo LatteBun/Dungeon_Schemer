@@ -355,6 +355,65 @@ function validateUpgrades(event: SituationEvent, theme?: ThemeContent): void {
   }
 }
 
+function validateConditionalRules(event: SituationEvent, theme?: ThemeContent): void {
+  const declared = event.kind === "merchant" ? undefined : event.satisfiedConditionalRuleIds;
+  const details = { contentType: "situationEvent", eventId: event.id };
+
+  if (declared !== undefined && declared.length > 0) {
+    if (event.theme === undefined || theme === undefined) {
+      invalid(`공용 또는 merchant 사건은 조건부 규칙을 선언할 수 없다: ${event.id}`, details);
+    }
+    const seen = new Set<string>();
+    for (const ruleId of declared) {
+      if (seen.has(ruleId)) {
+        invalid(`조건부 규칙 선언이 중복된다: ${event.id} → ${ruleId}`, {
+          ...details,
+          ruleId,
+        });
+      }
+      seen.add(ruleId);
+      const rule = theme.rules.find((candidate) => candidate.id === ruleId);
+      if (rule === undefined || !rule.conditional) {
+        invalid(`조건부 규칙이 아니거나 테마 밖이다: ${event.id} → ${ruleId}`, {
+          ...details,
+          theme: theme.id,
+          ruleId,
+        });
+      }
+    }
+  }
+
+  const referenced = event.kind === "merchant"
+    ? []
+    : event.advice.flatMap((option) => {
+      const source = option.source;
+      return source?.kind === "ecology" && theme?.rules.some(
+        (rule) => rule.id === source.ruleId && rule.conditional,
+      )
+        ? [source.ruleId]
+        : [];
+    });
+  const referencedIds = new Set(referenced);
+  for (const ruleId of referencedIds) {
+    if (declared?.includes(ruleId) !== true) {
+      invalid(`조건부 생태 규칙 참조가 선언되지 않았다: ${event.id} → ${ruleId}`, {
+        ...details,
+        ruleId,
+      });
+    }
+  }
+  if (declared !== undefined) {
+    for (const ruleId of declared) {
+      if (!referencedIds.has(ruleId)) {
+        invalid(`사용하지 않은 조건부 규칙을 선언했다: ${event.id} → ${ruleId}`, {
+          ...details,
+          ruleId,
+        });
+      }
+    }
+  }
+}
+
 /**
  * 조언 콘텐츠 하나가 계약을 만족하는지 검사한다.
  *
@@ -403,6 +462,7 @@ export function validateSituationEvent(event: SituationEvent, theme?: ThemeConte
     details,
   );
   validateAdviceSet(event, theme);
+  validateConditionalRules(event, theme);
   validateUpgrades(event, theme);
 }
 

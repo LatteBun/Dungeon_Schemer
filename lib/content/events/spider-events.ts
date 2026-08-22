@@ -72,6 +72,14 @@ function spiderEvent(
   defaultResultText: string,
   extras: Partial<NonMerchantSituationEvent> = {},
 ): NonMerchantSituationEvent {
+  const satisfiedConditionalRuleIds = [...new Set(
+    adviceOptions.flatMap((option) =>
+      option.source?.kind === "ecology" &&
+      ["spider-brood-light", "spider-armor-vibration"].includes(option.source.ruleId)
+        ? [option.source.ruleId]
+        : [],
+    ),
+  )];
   return {
     id: id as EventId,
     kind: "monster",
@@ -80,6 +88,7 @@ function spiderEvent(
     description,
     advice: adviceOptions,
     defaultResultText,
+    ...(satisfiedConditionalRuleIds.length > 0 ? { satisfiedConditionalRuleIds } : {}),
     ...extras,
   };
 }

@@ -89,7 +89,6 @@
 .u3-risk-stars,
 .u3-notice__label,
 .u3-notice > .u3-reward,
-.u3-notice__environment,
 .u3-notice__state {
   position: relative;
   z-index: 1;
@@ -108,11 +107,6 @@
 
 .u3-notice__heading small,
 .u3-notice__label,
-.u3-notice__environment small {
-  color: #5e492c;
-  font-weight: 800;
-}
-
 .u3-notice__theme-visual {
   display: grid;
   min-height: 0;
@@ -150,14 +144,6 @@
 .u3-notice .u3-reward {
   color: #332718;
   font-size: clamp(0.7rem, 0.94cqw, 0.82rem);
-  font-weight: 900;
-}
-
-.u3-notice__environment { padding-left: 0.08rem; }
-.u3-notice__environment > span { width: 100%; }
-.u3-notice__environment strong {
-  color: #2f2518;
-  font-size: clamp(0.72rem, 0.94cqw, 0.82rem);
   font-weight: 900;
 }
 

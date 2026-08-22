@@ -25,7 +25,8 @@ export const TRUST_ACTION_LABELS: Record<TrustAction, string> = {
   denyReward: "본인 이익 박탈",
   takeRisk: "위험 감수",
   avoidRisk: "위험 회피",
-  deceptionAccepted: "거짓 정보 수용",
+  adviceHelped: "조언이 실제로 도움",
+  adviceHarmed: "조언이 실제로 해침",
   suspicionWasCostly: "의심으로 손해",
   suspicionWasCorrect: "의심이 적중",
 };

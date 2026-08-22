@@ -1,4 +1,3 @@
-import { THEMES } from "@/lib/content/themes";
 import { canDeploy, BOARD_OFFER_MAX, RANK_RISK_LIMIT, RISK_LEVELS } from "@/lib/domain";
 import { RuleError } from "@/lib/domain";
 import { createRng, type Rng } from "@/lib/rng";
@@ -8,55 +7,14 @@ import type {
   CampaignState,
   CharacterId,
   ClassId,
-  EcologyProfile,
   ExpeditionParty,
-  PublicEnvironmentTag,
   RiskLevel,
-  ThemeContent,
 } from "@/lib/domain";
 
 type ClassTriple = readonly [ClassId, ClassId, ClassId];
 
 function invalidGeneration(message: string, details: Record<string, unknown>): never {
   throw new RuleError("INVALID_GENERATION", message, details);
-}
-
-function themeById(themeId: CampaignDungeon["theme"]): ThemeContent {
-  const theme = THEMES.find((candidate) => candidate.id === themeId);
-  if (theme === undefined) {
-    return invalidGeneration(`테마 콘텐츠가 없다: ${themeId}`, {
-      contentType: "theme",
-      theme: themeId,
-    });
-  }
-  return theme;
-}
-
-function publicTagForDungeon(dungeon: CampaignDungeon): PublicEnvironmentTag {
-  const theme = themeById(dungeon.theme);
-  const profile: EcologyProfile | undefined = theme.ecologyProfiles.find(
-    (candidate) => candidate.id === dungeon.ecologyProfileId,
-  );
-  if (profile === undefined) {
-    return invalidGeneration(`던전의 생태 패키지가 테마에 없다: ${dungeon.id}`, {
-      contentType: "ecologyProfile",
-      dungeonId: dungeon.id,
-      ecologyProfileId: dungeon.ecologyProfileId,
-    });
-  }
-
-  const tag = theme.publicEnvironmentTags.find(
-    (candidate) => candidate.id === profile.publicEnvironmentTagId,
-  );
-  if (tag === undefined) {
-    return invalidGeneration(`생태 패키지의 공개 환경 특성이 테마에 없다: ${profile.id}`, {
-      contentType: "publicEnvironmentTag",
-      theme: theme.id,
-      profileId: profile.id,
-      publicEnvironmentTagId: profile.publicEnvironmentTagId,
-    });
-  }
-  return { id: tag.id, label: tag.label };
 }
 
 function shuffledRiskGroups(
@@ -191,7 +149,6 @@ export function createBoardOffers(state: CampaignState): readonly BoardOffer[] {
     id: `offer-${state.worldTurn}-${dungeon.id}` as BoardOffer["id"],
     dungeonId: dungeon.id,
     riskLevel: dungeon.riskLevel,
-    publicEnvironmentTag: publicTagForDungeon(dungeon),
     party: { memberIds: [...(parties[index]?.memberIds ?? [])] },
     lockReason: dungeon.riskLevel > RANK_RISK_LIMIT[state.rank] ? "rankTooLow" : null,
   }));

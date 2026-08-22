@@ -77,7 +77,7 @@ describe("성격 프로필 구성", () => {
     expect(actions).not.toContain("actHonestly");
     expect(actions).not.toContain("protectAlly");
     expect(actions).not.toContain("avoidRisk");
-    expect(actions).toHaveLength(8);
+    expect(actions).toHaveLength(9);
   });
 
   it("모든 성격에서 기본 변화량 0인 행동만 빠진다", () => {

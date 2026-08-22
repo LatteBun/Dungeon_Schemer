@@ -9,6 +9,7 @@ describe("캠페인 난수 스트림 계약", () => {
       "board",
       "map",
       "ecology",
+      "advice",
       "card",
       "event",
       "boss",
