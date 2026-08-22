@@ -111,14 +111,16 @@
  * 조언은 가로로 나란한 세로형 카드 셋이다. 시안(docs/diagram/png 의 던전 진행)
  * 이 그렇게 두고 있고, 나란히 놓여야 셋을 한눈에 견주게 된다. 위아래로 쌓으면
  * 먼저 읽은 것이 기준이 되어 순서가 판단에 끼어든다.
+ *
+ * 카드는 남는 세로 공간을 모두 쓴다. 카드 밖에 빈 자리를 남기면 콘솔 아래가
+ * 통째로 비어 화면이 미완성으로 읽힌다. 다만 안에서 위아래로 벌리지는 않는다.
+ * 벌리면 구분선이 허공에 뜨고 근거가 바닥에 붙어 늘어난 티가 난다. 번호부터
+ * 근거까지를 한 덩어리로 묶어 카드 가운데에 둔다.
  */
 .u5-advice-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  /* 카드는 내용만큼만 높고 그 위에 남는 공간을 둔다. 세로로 끝까지 늘리면
-   * 짧은 문구 아래가 크게 비어 카드가 텅 빈 상자로 읽힌다. */
-  grid-template-rows: auto;
-  align-content: start;
+  grid-template-rows: minmax(0, 1fr);
   gap: clamp(0.4rem, 0.55cqw, 0.85rem);
   margin: 0;
   padding: 0;
@@ -135,8 +137,8 @@
 /* 세 개가 같은 모양이어야 한다. 슬롯별 변형을 두지 않는다. */
 .u5-advice__button {
   display: grid;
-  grid-template-rows: auto auto auto auto;
-  align-content: start;
+  grid-template-rows: repeat(4, auto);
+  align-content: center;
   justify-items: center;
   gap: clamp(0.2rem, 0.28cqw, 0.42rem);
   width: 100%;
