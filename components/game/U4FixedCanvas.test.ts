@@ -10,10 +10,13 @@ function numericDeclaration(
   property: string,
 ): number {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const rule = css.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
-  const declaration = rule?.[1]?.match(
-    new RegExp(`${property}\\s*:\\s*(\\d+(?:\\.\\d+)?)`),
+  const propertyPattern = new RegExp(
+    `${property}\\s*:\\s*(\\d+(?:\\.\\d+)?)`,
   );
+  const rule = [
+    ...css.matchAll(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`, "g")),
+  ].find((match) => propertyPattern.test(match[1] ?? ""));
+  const declaration = rule?.[1]?.match(propertyPattern);
 
   if (declaration?.[1] === undefined) {
     throw new Error(`${selector}의 ${property} 값을 찾을 수 없습니다.`);
@@ -88,6 +91,30 @@ describe("U4 fixed 16:9 canvas contract", () => {
     expect(selectableCorridor).toBeGreaterThan(visitedCorridor);
     expect(inactiveRoom).toBeGreaterThanOrEqual(0.68);
     expect(inactiveRoom).toBeLessThan(visitedCorridor);
+  });
+
+  it("keeps the vignette below corridors and rooms", () => {
+    const base = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const fixes = readFileSync("app/u4-dungeon-map-fixes.css", "utf8");
+    const vignette = numericDeclaration(
+      fixes,
+      ".u4-map-surface__vignette",
+      "z-index",
+    );
+    const corridors = numericDeclaration(
+      base,
+      ".u4-map-surface__corridors",
+      "z-index",
+    );
+    const rooms = numericDeclaration(
+      base,
+      ".u4-map-surface__rooms",
+      "z-index",
+    );
+
+    expect(vignette).toBe(2);
+    expect(vignette).toBeLessThan(corridors);
+    expect(corridors).toBeLessThan(rooms);
   });
 
   it("moves destination upward and enlarges party information without leaving the fixed canvas", () => {
