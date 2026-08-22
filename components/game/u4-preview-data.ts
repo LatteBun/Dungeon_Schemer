@@ -127,11 +127,8 @@ export function createU4PreviewData(input: {
 
   const map = findRiskThreeMap(campaign, dungeon.id);
   const publicKindByNodeId = publicKindsForMap(map);
-  const currentNodeId = map.layers[0]?.nodeIds[0];
-  if (currentNodeId === undefined) {
-    throw new Error("U4 preview 지도의 첫 Depth가 비어 있습니다.");
-  }
-  const visitedNodeIds = [map.entryNodeId] as const;
+  const currentNodeId = map.entryNodeId;
+  const visitedNodeIds: readonly NodeId[] = [];
   const nodes = createU4MapNodeViews({
     map,
     currentNodeId,
