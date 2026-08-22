@@ -109,4 +109,25 @@ describe("U4 dungeon map layout", () => {
       expect(corridor.end.y).toBeLessThanOrEqual(1);
     }
   });
+
+  it("normalizes render geometry to four decimals for identical server and client styles", () => {
+    const layout = createU4DungeonMapLayout(MAP);
+    const geometry = [
+      ...Object.values(layout.nodePositions).flatMap((point) =>
+        point === undefined ? [] : [point.x, point.y],
+      ),
+      ...layout.corridors.flatMap((corridor) => [
+        corridor.start.x,
+        corridor.start.y,
+        corridor.end.x,
+        corridor.end.y,
+        corridor.length,
+        corridor.angleDeg,
+      ]),
+    ];
+
+    expect(geometry.every((value) => value === Number(value.toFixed(4)))).toBe(
+      true,
+    );
+  });
 });

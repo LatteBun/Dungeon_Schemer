@@ -2,6 +2,19 @@
   position: relative;
 }
 
+.u4-preview__feedback {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 5.25rem;
+  z-index: 50;
+  margin: 0;
+  border: 1px solid #7c6536;
+  background: #15100b;
+  color: #d8c49c;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.72rem;
+}
+
 /* U4 dungeon map — fixed 1920x1080 GameShell canvas, same 3:2 split as U3. */
 .u4-dungeon-map-screen {
   height: 100%;

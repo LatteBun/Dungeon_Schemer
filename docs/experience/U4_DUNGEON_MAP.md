@@ -227,37 +227,37 @@ UI에서 지도 topology, 사건 콘텐츠, 사건 분류를 임의 생성하지
 
 ## 17. 구현 및 검증
 
-- [ ] 관련 문서/현재 E1/U1/U3 코드 확인
-- [ ] 기존 에셋 검색
-- [ ] U4 ViewModel 테스트
-- [ ] U4 layout 테스트
-- [ ] component interaction/accessibility 테스트
-- [ ] live/dead portrait 테스트
-- [ ] 16:9 고정 canvas 테스트
-- [ ] 1920×1080 브라우저 캡처
-- [ ] 2560×1440 또는 QHD 캡처
-- [ ] 1440×900 검증
-- [ ] 1280×1024 검증
-- [ ] lint
-- [ ] typecheck
-- [ ] test
-- [ ] build
+- [x] 관련 문서/현재 E1/U1/U3 코드 확인
+- [x] 기존 에셋 검색
+- [x] U4 ViewModel 테스트
+- [x] U4 layout 테스트
+- [x] component interaction/accessibility 테스트
+- [x] live/dead portrait 테스트
+- [x] 16:9 고정 canvas 테스트
+- [x] 1920×1080 브라우저 캡처
+- [x] 2560×1440 또는 QHD 캡처
+- [x] 1440×900 검증
+- [x] 1280×1024 검증
+- [x] lint
+- [x] typecheck
+- [x] test
+- [x] build
 
 ## 18. 완료 조건
 
-- [ ] E1 실제 지도를 공간형 dungeon으로 렌더링
-- [ ] Entry 아래 / Boss 위
-- [ ] Depth 1~5개 방 표현
-- [ ] 예시 화면에는 연속 5→5를 사용하지 않음
-- [ ] 범례 없음
-- [ ] current/visited/selectable/inactive/boss 구분
-- [ ] keyboard next-node selection
-- [ ] 파티원 3명 실제 캐릭터 asset 사용
-- [ ] 직업과 portrait 일치
-- [ ] 사망자 dead asset + 회색 처리
-- [ ] U3와 동일한 16:9 고정 전체 화면
-- [ ] 우측 CTA로 이동 확정
-- [ ] `/u4-test` 제공
-- [ ] 사용자 확인용 브라우저 캡처 제공
-- [ ] feature branch commit
-- [ ] 사용자 요청 전 PR 생성 금지
+- [x] E1 실제 지도를 공간형 dungeon으로 렌더링
+- [x] Entry 아래 / Boss 위
+- [x] Depth 1~5개 방 표현
+- [x] 예시 화면에는 연속 5→5를 사용하지 않음
+- [x] 범례 없음
+- [x] current/visited/selectable/inactive/boss 구분
+- [x] keyboard next-node selection
+- [x] 파티원 3명 실제 캐릭터 asset 사용
+- [x] 직업과 portrait 일치
+- [x] 사망자 dead asset + 회색 처리
+- [x] U3와 동일한 16:9 고정 전체 화면
+- [x] 우측 CTA로 이동 확정
+- [x] `/u4-test` 제공
+- [x] 사용자 확인용 브라우저 캡처 제공
+- [x] feature branch commit
+- [x] 사용자 요청 전 PR 생성 금지
