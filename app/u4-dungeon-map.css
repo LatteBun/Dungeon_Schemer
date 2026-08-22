@@ -372,13 +372,6 @@ button.u4-room {
   letter-spacing: 0.02em;
 }
 
-.u4-party__list {
-  display: grid;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-  gap: clamp(0.42rem, 0.62cqh, 0.56rem);
-  min-height: 0;
-}
-
 .u4-destination {
   position: relative;
   display: grid;

@@ -223,7 +223,7 @@ export function U5ProgressScreen({
         rightPanel={
           <div className="u5-party" data-testid="u5-party">
             <h3>파티 상태</h3>
-            <ul>
+            <ul className="party-list">
               {progress.party.map((member) => (
                 <li key={member.id}>
                   <PartyMemberCard member={member} testId="u5-party-member" />

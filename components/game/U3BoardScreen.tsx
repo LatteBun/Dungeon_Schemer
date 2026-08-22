@@ -120,7 +120,7 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
         <div className="u3-dungeon-summary__facts"><span>3명 생존 보상<RewardPair reputation={detail.reputationReward} gold={detail.goldReward} compact /></span></div>
         {detail.lockReasonLabel === null ? null : <p className="u3-dungeon-summary__lock">{detail.lockReasonLabel}</p>}
       </section>
-      <section className="u3-detail-section u3-party" aria-labelledby="u3-party-title"><h3 id="u3-party-title">탐험대 구성</h3><div className="u3-party__grid">{detail.party.map((member, index) => <PartyCard key={member.id} member={member} index={index} />)}</div></section>
+      <section className="u3-detail-section u3-party" aria-labelledby="u3-party-title"><h3 id="u3-party-title">탐험대 구성</h3><div className="u3-party__grid party-list">{detail.party.map((member, index) => <PartyCard key={member.id} member={member} index={index} />)}</div></section>
       <ContractOutcomes detail={detail} />
       <button type="button" className="u3-contract-button" disabled={detail.locked} onClick={() => onContract(detail.offerId)}>
         <img className="u3-contract-button__seal" src="/assets/u3/extracted/contract-emblem.png" alt="" aria-hidden="true" width={40} height={42} />

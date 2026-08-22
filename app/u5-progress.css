@@ -359,16 +359,6 @@
   font-size: clamp(0.95rem, 1cqw, 1.42rem);
 }
 
-.u5-party ul {
-  display: grid;
-  align-content: start;
-  gap: clamp(0.3rem, 0.42cqw, 0.65rem);
-  margin: 0;
-  padding: 0;
-  min-height: 0;
-  list-style: none;
-}
-
 /* ── /u5-test 프리뷰 전환 ──
  * 화면 위에 겹친다. 아홉 상태를 오가는 도구일 뿐이라 세로 공간을 빼앗지 않는다. */
 

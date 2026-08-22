@@ -392,7 +392,7 @@ function RightPanel({
     <div className="u4-right-panel">
       <section className="u4-party" aria-labelledby="u4-party-title">
         <h2 id="u4-party-title">파티 상태</h2>
-        <div className="u4-party__list">
+        <div className="u4-party__list party-list">
           {party.map((member) => (
             <U4PartyMember key={member.id} member={member} />
           ))}

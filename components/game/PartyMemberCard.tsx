@@ -4,9 +4,13 @@
  * U3·U4·U5 가 각자 카드를 그리면서 항목 순서와 표시가 갈렸다. 같은 파티원이
  * 화면마다 다르게 보이면 플레이어가 자리를 다시 배운다. 한 곳에 둔다.
  *
- * 형태는 U4 를 따르되 두 가지를 바꿨다. HP 와 신뢰를 가로로 나란히 두지 않고
- * 세로로 쌓아 각자 막대가 폭을 온전히 쓰게 했고, 소지 골드는 라벨 문구 없이
- * 아이콘과 금액을 붙여 둔다. 골드는 이름을 붙이지 않아도 아이콘으로 읽힌다.
+ * 카드 셋을 가로로 나란히 두고, 카드 안에서는 초상을 위에 크게 깐 뒤 정보를
+ * 그 아래 둔다. 파티는 정확히 3명이라(EXPEDITION_PARTY_SIZE) 3열이 넘치거나
+ * 모자라지 않는다. 원정 중 사망해도 슬롯은 셋 그대로다.
+ *
+ * HP 와 신뢰는 가로로 나란히 두지 않고 세로로 쌓아 각자 막대가 폭을 온전히
+ * 쓰게 한다. 소지 골드는 라벨 문구 없이 아이콘과 금액을 붙여 둔다. 골드는
+ * 이름을 붙이지 않아도 아이콘으로 읽힌다.
  */
 
 export interface PartyMemberCardView {
@@ -46,13 +50,12 @@ export function PartyMemberCard({ member, index, testId }: PartyMemberCardProps)
       className={`party-card${alive ? "" : " is-dead"}`}
       data-testid={testId ?? "party-member"}
     >
-      {index === undefined ? null : (
-        <span className="party-card__number" aria-hidden="true">
-          {String(index + 1).padStart(2, "0")}
-        </span>
-      )}
-
       <div className="party-card__portrait" aria-hidden={member.portraitSrc === undefined}>
+        {index === undefined ? null : (
+          <span className="party-card__number" aria-hidden="true">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+        )}
         {member.portraitSrc === undefined ? (
           <span className="party-card__portrait-empty" />
         ) : (

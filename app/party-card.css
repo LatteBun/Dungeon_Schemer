@@ -7,13 +7,16 @@
  */
 
 .party-card {
-  /* 순번을 주는 화면(U3)은 자식이 셋, 아닌 화면은 둘이다. 격자로 열을 고정하면
-   * 셋일 때 내용이 다음 행으로 밀려 초상과 크게 벌어진다. flex 로 둔다. */
-  display: flex;
-  align-items: flex-start;
-  gap: clamp(0.4rem, 0.55cqw, 0.85rem);
+  /* 초상을 위에 크게, 정보를 아래에. 카드 폭이 좁아도 초상이 온전히 커진다.
+   *
+   * 두 행 모두 auto 다. 컨테이너 높이에 기대면 화면마다 카드가 달라진다.
+   * U3 처럼 늘려주지 않는 자리에서는 초상이 0 이 되고, U4 처럼 늘려주는
+   * 자리에서는 이름 줄이 밀려 잘렸다. 카드가 스스로 크기를 정하게 둔다. */
+  display: grid;
+  grid-template-rows: auto auto;
   min-width: 0;
-  padding: clamp(0.42rem, 0.58cqw, 0.9rem);
+  min-height: 0;
+  overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-shell-metal) 42%, var(--color-edge));
   border-radius: 0.24rem;
   background: linear-gradient(180deg, rgb(26 19 13 / 92%), rgb(14 11 8 / 95%));
@@ -25,23 +28,16 @@
   filter: grayscale(0.7);
 }
 
-.party-card__number {
-  flex: 0 0 auto;
-  color: var(--color-muted);
-  font-size: clamp(0.6rem, 0.66cqw, 0.9rem);
-  font-variant-numeric: tabular-nums;
-}
-
 .party-card__portrait {
   position: relative;
   display: grid;
-  flex: 0 0 auto;
-  width: clamp(2.4rem, 2.9cqw, 4.4rem);
-  height: clamp(2.4rem, 2.9cqw, 4.4rem);
+  /* 폭에서 정사각으로 높이를 얻는다. 컨테이너를 보지 않으므로 어느 화면에
+   * 놓여도 같은 비율이다. */
+  aspect-ratio: 1;
+  min-height: 0;
   place-items: center;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 50%, transparent);
-  border-radius: 999px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-shell-metal) 50%, transparent);
   background: radial-gradient(circle at 50% 30%, #241a11, #0b0806);
 }
 
@@ -49,14 +45,27 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: 50% 0%;
+  filter: sepia(0.08) saturate(0.9) contrast(1.04);
 }
 
 /* 초상 자산이 없어도 자리를 남긴다. 화면마다 카드 높이가 달라지지 않는다. */
 .party-card__portrait-empty {
-  width: 55%;
-  height: 55%;
+  width: 44%;
+  height: 44%;
   border-radius: 999px;
   background: radial-gradient(circle at 50% 35%, rgb(120 96 58 / 26%), transparent 70%);
+}
+
+/* 순번은 초상 위에 얹는다. 열을 따로 쓰면 그만큼 초상이 좁아진다. */
+.party-card__number {
+  position: absolute;
+  top: 0.28rem;
+  left: 0.36rem;
+  color: var(--color-shell-gold);
+  font-size: clamp(0.62rem, 0.68cqw, 0.92rem);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
 }
 
 .party-card__death {
@@ -65,24 +74,28 @@
   bottom: 0;
   background: rgb(120 40 32 / 88%);
   color: #ffe0d6;
-  font-size: clamp(0.54rem, 0.6cqw, 0.8rem);
+  font-size: clamp(0.58rem, 0.64cqw, 0.86rem);
   text-align: center;
 }
 
 .party-card__content {
   display: grid;
   align-content: start;
-  gap: clamp(0.22rem, 0.3cqw, 0.48rem);
-  flex: 1 1 auto;
+  gap: clamp(0.2rem, 0.28cqw, 0.44rem);
   min-width: 0;
+  min-height: 0;
+  padding: clamp(0.34rem, 0.46cqw, 0.72rem);
 }
 
 .party-card__identity {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.28rem 0.42rem;
+  display: grid;
+  gap: 0.04rem;
   min-width: 0;
+}
+
+.party-card__identity > span,
+.party-card__identity > small {
+  display: inline;
 }
 
 .party-card__identity strong {
@@ -173,4 +186,31 @@
   font-size: clamp(0.76rem, 0.82cqw, 1.1rem);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+
+/* ── 파티 목록 ──
+ *
+ * 카드만 같게 만들어서는 같아 보이지 않는다. 담는 자리가 화면마다 다르면
+ * 카드가 늘어나거나 눌려 결국 다르게 읽힌다. 목록 배치도 여기서 정한다.
+ *
+ * 파티는 정확히 3명이라(EXPEDITION_PARTY_SIZE) 3열이 넘치거나 모자라지 않는다.
+ */
+.party-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* 카드가 스스로 높이를 정하므로 늘리지 않는다. 늘리면 화면마다 달라진다. */
+  align-content: start;
+  align-items: start;
+  gap: clamp(0.32rem, 0.44cqw, 0.7rem);
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  list-style: none;
+}
+
+.party-list > li {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
 }
