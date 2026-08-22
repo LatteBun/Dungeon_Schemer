@@ -266,3 +266,228 @@
   color: var(--color-muted);
   font-size: clamp(0.78rem, 0.78cqw, 1.1rem);
 }
+
+/* ── 엔딩 좌측: 판정과 최종 등급 ── */
+
+.u6-ending-main {
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: center;
+  text-align: center;
+}
+
+.u6-ending-verdict {
+  display: grid;
+  place-items: center;
+  gap: clamp(0.2rem, 0.3cqw, 0.5rem);
+  min-height: 0;
+}
+
+.u6-ending-verdict__crest {
+  width: auto;
+  height: clamp(4.5rem, 5.2cqw, 8rem);
+  object-fit: contain;
+}
+
+.u6-ending-verdict__eyebrow {
+  margin: 0;
+  color: var(--color-shell-gold);
+  font-size: clamp(0.78rem, 0.78cqw, 1.1rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.u6-ending-verdict h2 {
+  margin: 0;
+  color: var(--color-parchment);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 2.4cqw, 3.6rem);
+  line-height: 1.1;
+}
+
+.u6-ending-verdict__reason {
+  margin: 0;
+  max-width: 32ch;
+  color: var(--color-muted);
+  font-size: clamp(0.9rem, 0.92cqw, 1.35rem);
+  line-height: 1.4;
+}
+
+.u6-final-rank {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  padding-top: clamp(0.5rem, 0.6cqw, 0.9rem);
+  border-top: 1px solid color-mix(in srgb, var(--color-shell-metal) 34%, transparent);
+}
+
+.u6-final-rank h3 {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: clamp(0.78rem, 0.78cqw, 1.1rem);
+  font-weight: 600;
+}
+
+/* 등급 문장 넷은 원본 종횡비가 달라(0.818~0.891) 폭으로 정하면 등급마다
+ * 세로 길이가 달라진다. 높이로 정해야 넷이 같은 시각 무게로 읽힌다. */
+.u6-final-rank img {
+  width: auto;
+  height: clamp(4rem, 4.8cqw, 7.2rem);
+  object-fit: contain;
+}
+
+.u6-final-rank strong {
+  color: var(--color-shell-gold);
+  font-size: clamp(1.4rem, 1.5cqw, 2.2rem);
+}
+
+.u6-final-rank p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: clamp(0.8rem, 0.8cqw, 1.15rem);
+}
+
+/* ── 엔딩 우측: 회고 ── */
+
+.u6-ending-side {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.u6-ending-block {
+  min-height: 0;
+  padding: clamp(0.55rem, 0.7cqw, 1rem);
+  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 46%, var(--color-edge));
+  border-radius: 0.3rem;
+  background: linear-gradient(180deg, rgb(26 19 13 / 90%), rgb(14 11 8 / 94%));
+}
+
+.u6-ending-block h3 {
+  margin: 0 0 clamp(0.3rem, 0.4cqw, 0.6rem);
+  color: var(--color-shell-gold);
+  font-size: clamp(0.95rem, 0.95cqw, 1.4rem);
+}
+
+.u6-ending-block__lead {
+  margin: 0 0 clamp(0.4rem, 0.5cqw, 0.75rem);
+  color: var(--color-parchment);
+  font-size: clamp(0.86rem, 0.86cqw, 1.25rem);
+}
+
+.u6-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.3rem, 0.4cqw, 0.6rem);
+  margin: 0;
+}
+
+.u6-stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 0.4rem;
+  padding: clamp(0.25rem, 0.32cqw, 0.45rem);
+  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 28%, transparent);
+  border-radius: 0.2rem;
+  background: rgb(10 8 6 / 50%);
+}
+
+.u6-stat img {
+  grid-row: span 2;
+  width: clamp(1.3rem, 1.4cqw, 2.1rem);
+  height: auto;
+  object-fit: contain;
+}
+
+.u6-stat dt {
+  color: var(--color-muted);
+  font-size: clamp(0.68rem, 0.68cqw, 0.95rem);
+}
+
+.u6-stat dd {
+  margin: 0;
+  color: var(--color-parchment);
+  font-size: clamp(0.85rem, 0.85cqw, 1.25rem);
+  font-weight: 700;
+}
+
+.u6-advice-stats {
+  display: grid;
+  gap: 0.25rem;
+  margin: clamp(0.35rem, 0.45cqw, 0.65rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.u6-advice-stats li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: clamp(0.78rem, 0.78cqw, 1.1rem);
+}
+
+.u6-advice-stats img {
+  width: clamp(1rem, 1.05cqw, 1.5rem);
+  height: auto;
+  object-fit: contain;
+}
+
+.u6-advice-stats strong {
+  color: var(--color-parchment);
+}
+
+.u6-advice-stats span {
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+.u6-turning-point strong {
+  color: var(--color-parchment);
+  font-size: clamp(0.92rem, 0.92cqw, 1.35rem);
+}
+
+.u6-turning-point p {
+  margin: 0.15rem 0 0;
+  color: var(--color-muted);
+  font-size: clamp(0.8rem, 0.8cqw, 1.15rem);
+}
+
+/* 연대기는 원정 15회를 넘지 않는다. 담기지 않으면 항목을 줄이지 말고 행을
+ * 낮춘다. 회고에서 원정 하나를 빼면 그 원정의 선택이 사라진다. */
+.u6-chronicle {
+  display: grid;
+  grid-template-rows: repeat(15, minmax(0, 1fr));
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  list-style: none;
+}
+
+.u6-chronicle li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.3rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-shell-metal) 16%, transparent);
+  font-size: clamp(0.7rem, 0.72cqw, 1rem);
+}
+
+.u6-chronicle__turn {
+  color: var(--color-shell-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.u6-chronicle__dungeon {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-parchment);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.u6-chronicle__outcome {
+  color: var(--color-muted);
+  white-space: nowrap;
+}
