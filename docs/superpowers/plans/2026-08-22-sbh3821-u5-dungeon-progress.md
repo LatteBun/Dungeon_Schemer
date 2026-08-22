@@ -17,7 +17,7 @@
 - 크기는 `rem`과 `cqw`·`cqh`로만 쓴다. `vw`·`vh`와 `@media`를 새로 넣지 않는다.
 - **조언 3개는 시각적으로 구별되지 않아야 한다.** 유형·정합·확률·신뢰 변화가 View 타입에 아예 없어야 한다.
 - 색만으로 의미를 전달하지 않는다. 반응 셋에 문구를 함께 둔다.
-- `u5/dungeon-progress-scenes` 자산 파일과 폴더 이름을 바꾸지 않는다.
+- 자산 파일 내용을 바꾸지 않는다. 폴더 이름은 이미 `ThemeId` 에 맞춰 정리했다.
 - `pnpm backtest`는 실행하지 않는다.
 - 새 의존성을 추가하지 않는다.
 - 커밋 메시지는 제목과 본문을 포함한 한글로 작성한다.
@@ -48,34 +48,30 @@
 
 18장이 실제 PNG이고 테마×종류 조합이 빠짐없음을 단정한다. `png-alpha.ts`의 `pngDimensions`를 재사용한다.
 
-**`ThemeId`와 자산 폴더 이름이 어긋난다는 사실을 테스트로 고정한다.**
+자산 폴더가 이제 `ThemeId`와 같으므로 **매핑 표 없이** 경로를 만든다. 그 사실을 테스트로 고정해 매핑이 다시 생기는 것을 막는다.
 
 ```ts
-it("도메인 테마 이름과 자산 폴더 이름이 어긋나므로 한 곳에서만 매핑한다", () => {
-  expect(sceneSrc("desert", "monster")).toContain("/dessert/");
-  expect(sceneSrc("graveyard", "monster")).toContain("/tomb/");
+it("장면 경로가 ThemeId 를 그대로 쓴다", () => {
+  expect(sceneSrc("desert", "monster")).toContain("/desert/");
+  expect(sceneSrc("graveyard", "monster")).toContain("/graveyard/");
   expect(sceneSrc("spider", "monster")).toContain("/spider/");
 });
 ```
 
 - [ ] **Step 2: Run to confirm failure**
 
-Run: `cd /Users/semin/Develop/Dungeon_Schemer && pnpm test components/game/U5Assets.test.ts`
+Run: `pnpm test components/game/U5Assets.test.ts`
 
-Expected: FAIL. 매핑이 아직 없다.
+Expected: FAIL. `sceneSrc` 가 아직 없다.
 
-- [ ] **Step 3: Implement the mapping**
+- [ ] **Step 3: Implement the path builder**
 
-`u5-progress-model.ts`에 매핑을 만든다. 자산 폴더를 옮기지 않는 이유를 주석으로 남긴다. 이미 머지된 커밋의 경로가 깨지기 때문이다.
+`u5-progress-model.ts`에 만든다. 폴더 이름이 `ThemeId`와 같으므로 변환 없이 문자열을 잇는다.
 
 ```ts
-/** 도메인 테마 이름과 자산 폴더 이름이 어긋난다. 자산을 옮기면 이미 머지된
- *  커밋의 경로가 깨지므로 여기 한 곳에서만 잇는다. */
-const SCENE_FOLDER: Readonly<Record<ThemeId, string>> = {
-  spider: "spider",
-  desert: "dessert",
-  graveyard: "tomb",
-};
+export function sceneSrc(theme: ThemeId, kind: U5SceneKind): string {
+  return `/assets/u5/dungeon-progress-scenes/${theme}/${kind}.png`;
+}
 ```
 
 - [ ] **Step 4: Run and commit**
@@ -83,7 +79,7 @@ const SCENE_FOLDER: Readonly<Record<ThemeId, string>> = {
 ```bash
 pnpm test components/game/U5Assets.test.ts
 git add components/game/U5Assets.test.ts components/game/u5-progress-model.ts
-git commit -m "테스트: U5 장면 자산 계약과 테마 이름 매핑을 고정한다" -m "도메인 ThemeId 와 자산 폴더 이름이 어긋난다. 자산을 옮기면 이미 머지된 커밋의 경로가 깨지므로 한 곳에서만 잇고 그 어긋남을 테스트로 남긴다."
+git commit -m "테스트: U5 장면 자산 계약을 고정한다" -m "폴더 이름이 ThemeId 와 같아져 매핑 없이 경로를 잇는다. 매핑이 다시 생기지 않도록 테스트로 고정한다."
 ```
 
 ## Task 2: Define the ViewModel and prove advice stays opaque

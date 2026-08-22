@@ -79,9 +79,9 @@ disclosedRuleIds()               // 위험도별 공개 생태 규칙 = 「생�
 
 ### 3.1 장면 슬롯
 
-`public/assets/u5/dungeon-progress-scenes/{theme}/{kind}.png` 를 배경으로 쓴다. 테마 셋(`spider`·`dessert`·`tomb`)과 종류 여섯(`entry`·`monster`·`rest`·`merchant`·`special`·`boss`)이 이미 있다.
+`public/assets/u5/dungeon-progress-scenes/{theme}/{kind}.png` 를 배경으로 쓴다. 테마 셋(`spider`·`desert`·`graveyard`)과 종류 여섯(`entry`·`monster`·`rest`·`merchant`·`special`·`boss`)이 이미 있다.
 
-`ThemeId`는 `spider`·`desert`·`graveyard`인데 자산 폴더는 `spider`·`dessert`·`tomb`다. **이름이 어긋난다.** 자산을 옮기지 않고 화면 모델에서 한 곳으로 매핑하고, 그 매핑에 어긋남을 적어 둔다. 자산 폴더를 바꾸면 이미 머지된 커밋의 경로가 깨진다.
+자산 폴더 이름이 `ThemeId`와 어긋나 있었다(`dessert`·`tomb`). 화면이 테마로 자산을 찾기 시작하면 코드에서 매번 이어야 하므로, **폴더를 `desert`·`graveyard`로 바로잡았다.** 같은 어긋남을 가지고 있던 `monsters/` 도 함께 고쳤다. 매핑 없이 `ThemeId`를 그대로 경로에 쓴다.
 
 `EventKind`는 `monster`·`rest`·`merchant`·`special` 넷이다. `entry`와 `boss`는 사건 종류가 아니라 지점 성격이므로, 장면 선택은 `EventKind`가 아니라 **화면이 받는 `U5SceneKind`** 로 정한다.
 
@@ -206,7 +206,7 @@ export interface U5ProgressView {
 
 | 갈래 | 경로 | 비고 |
 | --- | --- | --- |
-| 장면 배경 | `u5/dungeon-progress-scenes/{spider,dessert,tomb}/{entry,monster,rest,merchant,special,boss}.png` | 18장, 2048×768 RGB |
+| 장면 배경 | `u5/dungeon-progress-scenes/{spider,desert,graveyard}/{entry,monster,rest,merchant,special,boss}.png` | 18장, 2048×768 RGB |
 
 알파가 없는 전면 배경이라 투명 여백 규칙의 대상이 아니다. 장당 약 2.6MB로 합계 47MB인데, 이미 머지된 자산이므로 이번 작업에서 건드리지 않는다. 용량이 문제가 되면 별도로 다룬다.
 
@@ -233,7 +233,7 @@ export interface U5ProgressView {
 
 ## 10. 테스트 계약
 
-- `u5-progress-model.test.ts` — 테마·종류가 장면 경로로 옳게 매핑된다. `ThemeId`와 자산 폴더 이름 어긋남을 고정한다.
+- `u5-progress-model.test.ts` — 테마·종류가 장면 경로로 옳게 이어진다. `ThemeId`를 그대로 쓰므로 매핑 표가 없어야 한다.
 - `u5-advice-presentation.test.ts` — **조언 3개가 유형·정합·확률·신뢰 변화를 담지 않는다.** View 타입에 그 필드가 없음을 타입과 렌더 양쪽에서 확인한다.
 - `u5-log-filter.test.ts` — 한 항목이 여러 필터에 걸린다. `생태`가 공개된 규칙만 담고 관찰 단서를 규칙으로 승격하지 않는다.
 - `U5ProgressScreen.test.ts` — 선택 전후 구조, 인과 순서, 색 외 단서.
@@ -258,5 +258,5 @@ export interface U5ProgressView {
 - 캠페인 규칙, 보상 수치, 상태 머신, 도메인 타입
 - `U1`~`U4`, `U6` 화면 구조
 - 공용 상태 바와 고정 캔버스 계약
-- `u5/dungeon-progress-scenes` 자산 파일과 폴더 이름
+- `u5/dungeon-progress-scenes` 자산 파일 내용
 - 배정표의 `E3` 상태
