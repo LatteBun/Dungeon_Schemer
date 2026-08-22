@@ -13,9 +13,10 @@
 
 .u4-map-surface__frame {
   inset: -1.6rem;
-  width: auto;
-  height: auto;
-  opacity: 0.62;
+  width: calc(100% + 3.2rem);
+  height: calc(100% + 3.2rem);
+  object-fit: fill;
+  opacity: 0.46;
 }
 
 /* Make the topology read as a dungeon passage rather than a hairline graph. */
