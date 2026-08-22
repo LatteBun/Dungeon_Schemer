@@ -77,6 +77,20 @@ UI에서 지도 topology, 사건 콘텐츠, 사건 분류를 임의 생성하지
 
 `/u4-test`만 화면 검증용 deterministic `publicKindByNodeId` fixture를 사용한다.
 
+### Depth 좌우 배치
+
+U4는 E1의 NodeId와 `nextNodeIds`를 바꾸지 않고, 각 Depth의 좌우 순서만
+결정적으로 재배치한다. Depth별 가능한 순서를 비교해 직선 통로의 전체 교차
+수가 가장 작은 조합을 선택하며, 같은 최소값에서는 원래 `nodeIds` 순서와의
+위치 차이가 작은 조합을 우선한다. 위치 차이도 같으면 원래 `nodeIds`를
+기준으로 만든 후보 순서가 앞선 조합을 선택해 동일한 입력에 항상 같은
+좌표를 반환한다.
+
+### 지도 레이어
+
+비네팅은 배경과 atmosphere 위, corridor와 room 아래에서만 합성한다.
+따라서 가장자리 암부는 유지하되 길과 방의 상태 표현을 덮지 않는다.
+
 ## 9. 기존 재사용 에셋
 
 - `/assets/u2/status-gold.svg`
