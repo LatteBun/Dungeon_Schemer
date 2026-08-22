@@ -178,7 +178,7 @@ export function U5ProgressScreen({
         main={
           <div className="u5-main">
             <div
-              className="u5-scene"
+              className={battleReplay === undefined ? "u5-scene" : "u5-scene u5-battle-host"}
               data-testid="u5-scene"
               data-scene-kind={progress.sceneKind}
               style={{ backgroundImage: `url("${sceneSrc(progress.theme, progress.sceneKind)}")` }}

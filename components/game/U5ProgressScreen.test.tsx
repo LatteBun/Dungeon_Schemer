@@ -80,14 +80,16 @@ describe("U5ProgressScreen", () => {
     expect(html).toContain("/assets/u5/dungeon-progress-scenes/spider/monster.png");
     expect(html).toContain('aria-hidden="true"');
     expect(html).not.toContain('data-testid="u5-battle-scene"');
+    expect(html).not.toContain("u5-battle-host");
   });
 
-  it("전투 replay가 있으면 같은 장면 슬롯 안에 접근 가능한 전투 장면을 둔다", () => {
+  it("전투 replay가 있으면 같은 장면 슬롯을 전투 overlay의 host로 만든다", () => {
     const html = render({}, { battleReplay });
-    const scene = (html.match(/<div class="u5-scene"[\s\S]*?<div class="u5-console"/) ?? [""])[0];
+    const scene = (html.match(/<div class="[^"]*\bu5-scene\b[^"]*"[\s\S]*?<div class="u5-console"/) ?? [""])[0];
     const sceneOpeningTag = (scene.match(/^<div[^>]+>/) ?? [""])[0];
 
     expect(scene).toContain('data-testid="u5-battle-scene"');
+    expect(sceneOpeningTag).toContain('class="u5-scene u5-battle-host"');
     expect(sceneOpeningTag).not.toContain('aria-hidden="true"');
   });
 

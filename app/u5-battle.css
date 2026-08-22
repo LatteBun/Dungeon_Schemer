@@ -13,7 +13,7 @@
   height: 100%;
 }
 
-.u5-battle-preview .u5-scene {
+.u5-battle-host {
   position: relative;
   overflow: hidden;
   container-type: size;

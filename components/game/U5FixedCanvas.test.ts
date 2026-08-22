@@ -33,6 +33,15 @@ describe("U5 고정 캔버스 계약", () => {
     expect(layout).toContain('import "./u5-battle.css"');
   });
 
+  it("전투가 있는 장면 자체를 full-slot size-query host로 만든다", () => {
+    const hostRule = battleCss.match(/\.u5-battle-host\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(hostRule).toContain("position: relative");
+    expect(hostRule).toContain("overflow: hidden");
+    expect(hostRule).toContain("container-type: size");
+    expect(battleCss).not.toContain(".u5-battle-preview .u5-scene");
+  });
+
   /* 조언 세 개가 슬롯별로 다른 모양이 되면 계약이 깨진다. */
   it("조언에 슬롯별 변형 규칙을 두지 않는다", () => {
     expect(progressCss).not.toMatch(/u5-advice[^{]*:nth-child/);
