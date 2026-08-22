@@ -4,7 +4,7 @@
 
 **Goal:** 기존·신규 UI의 최상위 화면 루트가 특별한 예외가 없는 한 1920×1080 고정 캔버스 전체를 자동으로 점유하게 한다.
 
-**Architecture:** `.game-canvas`의 일반 직계 자식에 폭·높이 100%를 부여해 모든 라우트에 기본 계약을 적용하고, `data-canvas-layout="intrinsic"`만 승인된 예외로 둔다. 기존 U1의 브라우저 높이 의존성과 U2의 중복 루트 크기 선언을 제거하며, 정적 회귀 테스트와 실제 Chromium 치수 측정으로 계약을 검증한다.
+**Architecture:** `.game-canvas`의 일반 직계 자식에 폭·높이 100%를 부여해 모든 라우트에 기본 계약을 적용하고, `data-canvas-layout="intrinsic"`만 승인된 예외로 둔다. 기존 U1의 브라우저 높이 의존성과 U2·U4의 중복 루트 크기 선언을 제거하며, 정적 회귀 테스트와 실제 Chromium 치수 측정으로 계약을 검증한다.
 
 **Tech Stack:** Next.js 16.3, React 19, TypeScript, Tailwind CSS 4, Vitest 4, CSS container units, Chromium DevTools Protocol
 
@@ -26,8 +26,10 @@
 ## 파일 구조
 
 - `app/globals.css`: 모든 캔버스 직계 화면 루트에 적용하는 유일한 전체 점유 규칙과 U1 내부 높이 배분을 소유한다.
-- `components/game/U1Preview.tsx`: 브라우저 `100vh`를 만드는 `min-h-screen` 유틸리티를 제거한다.
+- `components/game/U1Preview.tsx`: 브라우저 `100vh`와 폭 미디어 쿼리를 만드는 `min-h-screen`·`sm:` 유틸리티를 제거한다.
+- `components/game/U4Preview.tsx`: 공통 계약과 중복되는 인라인 높이 선언을 제거한다.
 - `app/u2-intro.css`: 공통 계약과 중복되는 `.u2-preview` 크기 선언을 제거하고 인트로 내부 규칙만 유지한다.
+- `app/u4-dungeon-map.css`: U4 피드백의 위치 기준에 필요한 루트 `position`만 소유한다.
 - `components/game/FixedCanvas.test.ts`: 공통 직계 자식 규칙, 승인되지 않은 예외, 캔버스 내부 `min-h-screen` 금지를 검사한다.
 - `docs/DOCUMENT_TERMINOLOGY.test.ts`: 공식 화면 규격에 전체 점유 계약이 남아 있는지 확인한다.
 - `docs/experience/SCREEN_LAYOUT.md`: 전체 점유의 공식 구조 규칙과 예외 조건을 정의한다.
@@ -153,7 +155,9 @@ git commit -m "문서: 화면 루트의 전체 캔버스 점유를 규정한다"
 - Modify: `components/game/FixedCanvas.test.ts`
 - Modify: `app/globals.css`
 - Modify: `components/game/U1Preview.tsx`
+- Modify: `components/game/U4Preview.tsx`
 - Modify: `app/u2-intro.css`
+- Modify: `app/u4-dungeon-map.css`
 
 **Interfaces:**
 - Consumes: Task 1의 공식 `data-canvas-layout="intrinsic"` 예외 계약
@@ -241,10 +245,11 @@ Expected: FAIL. 공통 직계 자식 선택자가 없고 `U1Preview.tsx`가 `min
 
 - [ ] **Step 4: U1의 브라우저 높이 의존성과 내부 높이 넘침 제거**
 
-`components/game/U1Preview.tsx`의 최상위 class에서 `min-h-screen`을 제거한다.
+`components/game/U1Preview.tsx`의 최상위 class에서 `min-h-screen`과 `sm:` 미디어
+쿼리를 제거하고 1920 기준에서 활성화되던 padding을 고정한다.
 
 ```tsx
-<div className="u1-preview u1-preview__reference-frame p-4 sm:p-6">
+<div className="u1-preview u1-preview__reference-frame p-6">
 ```
 
 `app/globals.css`의 U1 프리뷰 규칙 앞에 남은 높이를 `GameShell`에 배분하는 규칙을 추가한다.
@@ -265,7 +270,7 @@ Expected: FAIL. 공통 직계 자식 선택자가 없고 `U1Preview.tsx`가 `min
 
 기존 탐색 행, eyebrow, `GameShell`의 순서와 내부 3:2 구조는 변경하지 않는다.
 
-- [ ] **Step 5: U2의 중복 루트 크기 선언 제거**
+- [ ] **Step 5: U2·U4의 중복 루트 크기 선언 제거**
 
 `app/u2-intro.css`에서 `.u2-preview` 전체 블록을 제거한다.
 
@@ -280,17 +285,32 @@ Expected: FAIL. 공통 직계 자식 선택자가 없고 `U1Preview.tsx`가 `min
 
 `.u2-intro-shell`부터 시작하는 인트로 내부 높이와 구도는 그대로 둔다.
 
+`components/game/U4Preview.tsx`의 최상위 인라인 style에서 `height`와 `minHeight`를
+제거하고 style prop 자체를 없앤다.
+
+```tsx
+<div className="u4-preview">
+```
+
+`app/u4-dungeon-map.css` 맨 앞에 피드백의 absolute 위치 기준만 추가한다.
+
+```css
+.u4-preview {
+  position: relative;
+}
+```
+
 - [ ] **Step 6: 집중 회귀 테스트 통과 확인**
 
-Run: `pnpm test components/game/FixedCanvas.test.ts components/game/U1Preview.test.ts components/game/U2Preview.test.ts components/game/U3BoardScreen.test.ts`
+Run: `pnpm test components/game/FixedCanvas.test.ts components/game/U1Preview.test.ts components/game/U2Preview.test.ts components/game/U3BoardScreen.test.ts components/game/U4Preview.test.ts`
 
 Expected: PASS.
 
 - [ ] **Step 7: 레이아웃 변경 커밋**
 
 ```bash
-git add components/game/FixedCanvas.test.ts app/globals.css components/game/U1Preview.tsx app/u2-intro.css
-git commit -m "기능: 모든 화면 루트가 고정 캔버스를 채우게 한다" -m "캔버스 직계 화면에 전체 폭과 높이를 기본 적용하고 U1의 브라우저 높이 의존성 및 U2의 중복 크기 선언을 제거한다. 승인된 intrinsic 예외와 회귀 검사도 함께 고정한다."
+git add components/game/FixedCanvas.test.ts app/globals.css components/game/U1Preview.tsx components/game/U4Preview.tsx app/u2-intro.css app/u4-dungeon-map.css
+git commit -m "기능: 모든 화면 루트가 고정 캔버스를 채우게 한다" -m "캔버스 직계 화면에 전체 폭과 높이를 기본 적용하고 U1의 브라우저 높이 의존성 및 U2·U4의 중복 크기 선언을 제거한다. 승인된 intrinsic 예외와 회귀 검사도 함께 고정한다."
 ```
 
 ---
@@ -308,7 +328,7 @@ git commit -m "기능: 모든 화면 루트가 고정 캔버스를 채우게 한
 
 **Interfaces:**
 - Consumes: Task 1의 공식 문서 계약과 Task 2의 공통 CSS 계약
-- Produces: 네 기존 라우트의 전체 캔버스 점유 증거, production build, 사용자 확인용 로컬 링크
+- Produces: 다섯 기존 라우트의 전체 캔버스 점유 증거, production build, 사용자 확인용 로컬 링크
 
 - [ ] **Step 1: 전체 정적 검증 실행**
 
@@ -322,9 +342,9 @@ Run: `pnpm start -- --hostname 127.0.0.1 --port 3100`
 
 Expected: `http://127.0.0.1:3100`에서 Next.js production 서버가 실행된다. 이미 3100 포트를 사용 중이면 실행 중인 이 작업의 서버인지 확인하고, 다른 프로세스라면 3101부터 비어 있는 포트를 사용한다.
 
-- [ ] **Step 3: 네 viewport에서 네 라우트의 실제 치수 측정**
+- [ ] **Step 3: 네 viewport에서 다섯 라우트의 실제 치수 측정**
 
-Chromium DevTools Protocol로 `/`, `/u1-test`, `/u2-test`, `/u3-test`를 각각 1920×1080, 2560×1440, 1440×900, 1280×1024로 연다. 각 조합에서 다음 표현식을 실행한다.
+Chromium DevTools Protocol로 `/`, `/u1-test`, `/u2-test`, `/u3-test`, `/u4-test`를 각각 1920×1080, 2560×1440, 1440×900, 1280×1024로 연다. 각 조합에서 다음 표현식을 실행한다.
 
 ```js
 (() => {
@@ -358,17 +378,18 @@ Chromium DevTools Protocol로 `/`, `/u1-test`, `/u2-test`, `/u3-test`를 각각 
 })()
 ```
 
-Expected: 16개 조합 모두 `sameWidth: true`, `sameHeight: true`, 두 overflow 값 `false`. 1920×1080의 캔버스와 루트는 각각 약 1920×1080이며 U3의 이전 949.41px 높이가 1080px로 늘어난다.
+Expected: 20개 조합 모두 `sameWidth: true`, `sameHeight: true`, 두 overflow 값 `false`. 1920×1080의 캔버스와 루트는 각각 약 1920×1080이며 U3의 이전 949.41px 높이가 1080px로 늘어난다.
 
 - [ ] **Step 4: 주요 화면의 시각 회귀 확인**
 
-1920×1080에서 `/u1-test`, `/u2-test`, `/u3-test` 스크린샷을 확인한다.
+1920×1080에서 `/u1-test`, `/u2-test`, `/u3-test`, `/u4-test` 스크린샷을 확인한다.
 
 Expected:
 
 - U1의 탐색 버튼, eyebrow, `GameShell`이 캔버스 안에 있고 하단이 잘리지 않는다.
 - U2의 상태 바, 인트로 카피, 카드, CTA 위치와 배경 구도가 변경 전과 같다.
 - U3의 상태 바 아래 게시판·상세 패널이 화면 하단까지 채워지고 3:2 열 비율이 유지된다.
+- U4의 지도·파티·목적지 패널이 변경 전 구도와 3:2 열 비율을 유지한다.
 - 콘솔 오류와 Next.js 오류 overlay가 없다.
 
 - [ ] **Step 5: 작업 상태와 커밋 범위 확인**
@@ -386,6 +407,7 @@ Expected: 계획 체크 표시 외 코드·문서 변경은 모두 의도한 두
 U1: http://localhost:3100/u1-test
 U2: http://localhost:3100/u2-test
 U3: http://localhost:3100/u3-test
+U4: http://localhost:3100/u4-test
 ```
 
 포트가 달라졌다면 네 링크 모두 실제 포트로 바꾼다. 서버 프로세스는 사용자가 확인할 수 있도록 실행 상태로 유지한다.
