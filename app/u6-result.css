@@ -491,3 +491,44 @@
   color: var(--color-muted);
   white-space: nowrap;
 }
+
+/* ── /u6-test 프리뷰 전환 ──
+ * 프리뷰 껍데기는 캔버스 안에서 화면 위에 겹친다. 여덟 상태를 오가며 보는
+ * 도구일 뿐이라 화면의 세로 공간을 빼앗으면 안 된다. */
+
+.u6-preview {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+
+.u6-preview__nav {
+  position: absolute;
+  z-index: 40;
+  top: 0.35rem;
+  left: 50%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  translate: -50% 0;
+}
+
+.u6-preview__nav button {
+  border: 1px solid var(--color-edge);
+  border-radius: 0.2rem;
+  background: rgb(12 9 6 / 88%);
+  color: var(--color-muted);
+  padding: 0.2rem 0.45rem;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.u6-preview__nav button.is-active {
+  border-color: var(--color-shell-gold);
+  color: #fff3cc;
+}
+
+.u6-preview__nav button:focus-visible {
+  outline: 2px solid var(--color-parchment);
+  outline-offset: 2px;
+}
