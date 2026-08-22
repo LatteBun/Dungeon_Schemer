@@ -7,6 +7,7 @@ import "./u3-card-theme.css";
 import "./u3-large-screen.css";
 import "./u3-contract-layout.css";
 import "./u3-responsive-layout.css";
+import "./u6-result.css";
 import "./u4-dungeon-map.css";
 import "./u4-dungeon-map-fixes.css";
 

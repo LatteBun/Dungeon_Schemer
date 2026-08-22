@@ -9,6 +9,9 @@ import type {
   SituationEvent,
   ThemeContent,
   ThemeId,
+  EncounterDefinition,
+  EncounterModifier,
+  EcologyProfile,
 } from "@/lib/domain";
 
 /** 사건 하나가 담는 조언 수. 도움·방해·중립을 한 개씩이다. */
@@ -16,6 +19,53 @@ const ADVICE_PER_EVENT = 3;
 
 function invalid(message: string, details: Record<string, unknown>): never {
   throw new RuleError("INVALID_GENERATION", message, details);
+}
+
+export function validateEncounterDefinition(definition: EncounterDefinition): void {
+  const seen = new Set<string>();
+  for (const group of definition.enemies) {
+    if (seen.has(group.monsterId)) invalid(`encounter base MonsterId가 중복된다: ${group.monsterId}`, { monsterId: group.monsterId });
+    if (!Number.isInteger(group.count) || group.count <= 0) invalid(`encounter count가 유효하지 않다: ${group.monsterId}`, { count: group.count });
+    seen.add(group.monsterId);
+  }
+}
+
+export function validateEncounterModifier(
+  definition: EncounterDefinition,
+  modifier: EncounterModifier,
+): void {
+  validateEncounterDefinition(definition);
+  const remove = new Map<string, number>();
+  for (const group of modifier.removeEnemies ?? []) {
+    if (remove.has(group.monsterId)) invalid(`remove MonsterId가 중복된다: ${group.monsterId}`, { monsterId: group.monsterId });
+    remove.set(group.monsterId, group.count);
+    const base = definition.enemies.find((candidate) => candidate.monsterId === group.monsterId);
+    if (base === undefined || group.count > base.count) invalid(`remove 대상이 없거나 수량을 초과한다: ${group.monsterId}`, { monsterId: group.monsterId, count: group.count });
+  }
+  const add = new Set<string>();
+  for (const group of modifier.addEnemies ?? []) {
+    if (add.has(group.monsterId)) invalid(`add MonsterId가 중복된다: ${group.monsterId}`, { monsterId: group.monsterId });
+    if (remove.has(group.monsterId)) invalid(`같은 MonsterId를 remove와 add에 함께 쓸 수 없다: ${group.monsterId}`, { monsterId: group.monsterId });
+    if (!Number.isInteger(group.count) || group.count <= 0) invalid(`add count가 유효하지 않다: ${group.monsterId}`, { count: group.count });
+    add.add(group.monsterId);
+  }
+  if (modifier.avoidCombat === true && (remove.size > 0 || add.size > 0)) invalid("avoidCombat은 add/remove와 함께 사용할 수 없다", {});
+  const multipliers = [
+    ["partyDamageMultiplier", modifier.partyDamageMultiplier],
+    ["incomingDamageMultiplier", modifier.incomingDamageMultiplier],
+  ] as const;
+  for (const [field, value] of multipliers) {
+    if (value !== undefined && (!Number.isFinite(value) || value <= 0)) invalid(`${field}가 양수여야 한다`, { field, value });
+  }
+}
+
+export function validateProfileStrongCapacity(
+  profile: EcologyProfile,
+  events: readonly SituationEvent[],
+): void {
+  const required = profile.initialRiskLevel >= 5 ? 2 : profile.initialRiskLevel >= 3 ? 1 : 0;
+  const eligible = events.filter((event) => event.kind !== "merchant" && event.requiresClue !== undefined && event.theme === profile.theme);
+  if (eligible.length < required) invalid(`생태 프로필의 strong capacity가 부족하다: ${profile.id}`, { profileId: profile.id, required, actual: eligible.length });
 }
 
 function requireText(
