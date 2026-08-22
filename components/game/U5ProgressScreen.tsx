@@ -48,7 +48,10 @@ function AdviceOption({ slot, text, rationale, goldCost, onSelect }: {
   return (
     <li className="u5-advice">
       <button type="button" className="u5-advice__button" onClick={() => onSelect?.(slot)}>
+        {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
+        <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
         <strong className="u5-advice__text">{text}</strong>
+        <span className="u5-advice__divider" aria-hidden="true" />
         <span className="u5-advice__rationale">{rationale}</span>
         {goldCost === undefined ? null : (
           <span className="u5-advice__cost">골드 {goldCost}</span>
