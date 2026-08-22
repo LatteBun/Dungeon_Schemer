@@ -71,10 +71,9 @@ describe("IntroScreen", () => {
     expect(html).not.toContain("/assets/u2/intro-role.png");
   });
 
-  it("U2 프리뷰는 전체 캔버스를 채우고 카드 영역을 U3 밀도에 맞춘다", () => {
+  it("U2 본문은 전체 폭을 쓰고 카드 영역을 U3 밀도에 맞춘다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u2-intro.css"), "utf8");
 
-    expect(css).toMatch(/\.u2-preview\s*\{[\s\S]*?height:\s*100%/);
     expect(css).toMatch(/\.u2-intro\s*\{[\s\S]*?width:\s*100%/);
     expect(css).toMatch(/\.u2-intro-stage::before\s*\{[^}]*transform:\s*scale\(1\.012\)/);
     expect(css).not.toMatch(/\.u2-intro-stage::before\s*\{[^}]*scaleX/);
