@@ -1,5 +1,5 @@
 import { RuleError } from "@/lib/domain";
-import type { CampaignDungeon, Character, PresentedAdviceOption, RiskLevel, SituationEvent, ThemeContent, DungeonId, RuleId, ChoiceId, AdviceDecision, AdviceResolution, MemberReaction, InfoReaction } from "@/lib/domain";
+import type { CampaignDungeon, Character, PresentedAdviceOption, RiskLevel, SituationEvent, ThemeContent, DungeonId, RuleId, ChoiceId, AdviceDecision, AdviceResolution, MemberReaction, InfoReaction, GeneratedMap, InfoRecord } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
 import { evaluateTrust } from "@/lib/rules/trust";
 
@@ -89,4 +89,35 @@ export function finalizeImmediateAdviceTrust(input: { decision: AdviceDecision; 
     }
   }
   return { decision: input.decision, trustChanges };
+}
+
+export interface BossInfoDepthPlan { reservedDepths: readonly number[] }
+
+export function planBossInfoDepths(input: { campaignSeed: string; dungeonId: DungeonId; attempt: number; riskLevel: RiskLevel; map: GeneratedMap }): BossInfoDepthPlan {
+  const layerCount = input.map.layers.length;
+  if (layerCount < 6 || layerCount > 8) throw new RuleError("INVALID_GENERATION", "보스 정보 계획의 지도 Depth 수가 잘못됐다", { layerCount });
+  const rng = createRng(`${input.campaignSeed}:${input.dungeonId}:attempt:${input.attempt}:risk:${input.riskLevel}`).derive("event");
+  const middle = Math.floor(layerCount / 2);
+  const first = Array.from({ length: Math.max(0, middle - 1) }, (_, index) => index + 2);
+  const second = Array.from({ length: Math.max(0, layerCount - middle - 1) }, (_, index) => middle + 1 + index);
+  const reserved = input.riskLevel <= 2 ? [rng.pick(second)] : [rng.pick(first), rng.pick(second)];
+  return { reservedDepths: [...new Set(reserved)].sort((a, b) => a - b) };
+}
+
+export function resolveBossInfoAdvice(input: Parameters<typeof decideImmediateAdvice>[0]): AdviceResolution {
+  const decision = decideImmediateAdvice(input);
+  const option = input.event.advice.find((candidate) => candidate.id === input.adviceId);
+  if (option === undefined || input.event.targetBossId === undefined) throw new RuleError("INVALID_GENERATION", "보스 정보 사건이 아니다", { eventId: input.event.id });
+  const delayedRecords: InfoRecord[] = decision.reactions.map((reaction) => ({
+    eventId: input.event.id,
+    adviceId: option.id,
+    outcome: option.outcome,
+    characterId: reaction.characterId,
+    reaction: reaction.reaction,
+    modifier: reaction.reaction === "accepted" ? option.bossDamageModifier ?? 0 : 0,
+    pendingVerification: option.outcome !== "neutral" && reaction.reaction !== "exposed",
+  }));
+  const bossDecision = { ...decision, delayedRecords };
+  const trust = finalizeImmediateAdviceTrust({ decision: bossDecision, members: input.members, applied: { executed: decision.executed, resultText: option.resultText } });
+  return { decision: bossDecision, trustChanges: trust.trustChanges };
 }
