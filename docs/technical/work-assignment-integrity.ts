@@ -21,6 +21,7 @@ import { describe, expect, it } from "vitest";
  * 이어서 진행하는 하위 단계를 나누는 분할을 모두 담는다.
  */
 const ID_PATTERN = /^[A-Z]\d+(?:-\d+)?$/;
+const MERMAID_ID_PATTERN = /^[A-Z]\d+(?:[-_]\d+)?$/;
 const STATUSES = ["⬜", "🟡", "✅"] as const;
 type Status = (typeof STATUSES)[number];
 const DONE: Status = "✅";
@@ -83,6 +84,11 @@ interface Graph {
   edges: Map<string, string[]>;
 }
 
+/** Mermaid 식별자의 밑줄 분할 표기를 배정표 ID 표기로 맞춘다. */
+function normalizeMermaidTaskId(id: string): string {
+  return id.replaceAll("_", "-");
+}
+
 /**
  * mermaid 블록에서 노드 선언과 간선을 읽는다.
  * 노드는 `F1["F1 도메인 타입"]`, 간선은 `F1 --> F2 & C1` 형태다.
@@ -100,16 +106,19 @@ function parseGraph(markdown: string): Graph {
     side
       .split("&")
       .map((part) => part.trim())
-      .filter((part) => ID_PATTERN.test(part));
+      .filter((part) => MERMAID_ID_PATTERN.test(part))
+      .map(normalizeMermaidTaskId);
 
   for (const line of block[1].split("\n")) {
     const trimmed = line.trim();
 
     // subgraph L0["L0 기반"] 의 L0 은 노드가 아니다.
     if (!trimmed.startsWith("subgraph")) {
-      const declaration = new RegExp(`^(${ID_PATTERN.source.slice(1, -1)})\\["`).exec(trimmed);
+      const declaration = new RegExp(
+        `^(${MERMAID_ID_PATTERN.source.slice(1, -1)})\\["`,
+      ).exec(trimmed);
       if (declaration !== null) {
-        nodes.push(declaration[1]);
+        nodes.push(normalizeMermaidTaskId(declaration[1]));
         continue;
       }
     }
