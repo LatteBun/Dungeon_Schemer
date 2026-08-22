@@ -42,16 +42,16 @@ const nodes: readonly U4MapNodeView[] = [
 
 const layout: U4MapLayout = {
   nodePositions: {
-    [ENTRY]: { x: 0.5, y: 0.93 },
+    [ENTRY]: { x: 0.5, y: 0.88 },
     [MONSTER]: { x: 0.3, y: 0.72 },
     [REST]: { x: 0.7, y: 0.72 },
     [MERCHANT]: { x: 0.32, y: 0.42 },
     [SPECIAL]: { x: 0.68, y: 0.42 },
-    [BOSS]: { x: 0.5, y: 0.06 },
+    [BOSS]: { x: 0.5, y: 0.12 },
   },
   corridors: [
-    { from: ENTRY, to: MONSTER, start: { x: 0.5, y: 0.93 }, end: { x: 0.3, y: 0.72 }, length: 0.29, angleDeg: -133 },
-    { from: ENTRY, to: REST, start: { x: 0.5, y: 0.93 }, end: { x: 0.7, y: 0.72 }, length: 0.29, angleDeg: -47 },
+    { from: ENTRY, to: MONSTER, start: { x: 0.5, y: 0.88 }, end: { x: 0.3, y: 0.72 }, length: 0.26, angleDeg: -141 },
+    { from: ENTRY, to: REST, start: { x: 0.5, y: 0.88 }, end: { x: 0.7, y: 0.72 }, length: 0.26, angleDeg: -39 },
   ],
 };
 
@@ -114,7 +114,7 @@ function render(selectedNextNodeId: NodeId | null = MONSTER): string {
 }
 
 describe("U4DungeonMapScreen", () => {
-  it("reuses GameShell and renders the spatial map assets without a legend", () => {
+  it("reuses GameShell and renders the spatial map without decorative map-frame or legend chrome", () => {
     const html = render();
     expect(html).toContain('data-testid="game-shell"');
     expect(html).toContain("던전 지도");
@@ -122,11 +122,12 @@ describe("U4DungeonMapScreen", () => {
     expect(html).toContain("/assets/u4/map/map_background_base.png");
     expect(html).toContain("/assets/u4/map/map_background_vignette.png");
     expect(html).toContain("/assets/u4/corridors/corridor_horizontal.png");
+    expect(html).not.toContain("map_main_panel_frame.png");
     expect(html).not.toContain("legend_panel_frame.png");
     expect(html).not.toContain("범례");
   });
 
-  it("renders all room kinds with their dedicated bases and icons", () => {
+  it("renders all room kinds with their dedicated bases and icons but no visible room labels on the map", () => {
     const html = render();
     for (const asset of [
       "room_entry_base.png",
@@ -144,6 +145,7 @@ describe("U4DungeonMapScreen", () => {
     ]) {
       expect(html).toContain(asset);
     }
+    expect(html).not.toContain('class="u4-room__label"');
   });
 
   it("makes only selectable next rooms buttons and exposes selected state", () => {
@@ -168,6 +170,7 @@ describe("U4DungeonMapScreen", () => {
   it("shows the selected destination separately and keeps CTA text in HTML", () => {
     const html = render(MONSTER);
     expect(html).toContain("선택한 다음 지점");
+    expect(html).toContain("공개 사건 분류");
     expect(html).toContain("전투");
     expect(html).toContain("이 지점으로 이동");
     expect(html).toContain("/assets/u4/navigation/cta_button_arrow.png");
