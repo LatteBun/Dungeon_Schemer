@@ -21,10 +21,10 @@ export interface U4MapLayout {
 
 const HORIZONTAL_MIN = 0.1;
 const HORIZONTAL_MAX = 0.9;
-const DEPTH_TOP = 0.14;
-const DEPTH_BOTTOM = 0.82;
-const BOSS_POSITION: U4Point = { x: 0.5, y: 0.06 };
-const ENTRY_POSITION: U4Point = { x: 0.5, y: 0.93 };
+const MAP_TOP = 0.12;
+const MAP_BOTTOM = 0.88;
+const BOSS_POSITION: U4Point = { x: 0.5, y: MAP_TOP };
+const ENTRY_POSITION: U4Point = { x: 0.5, y: MAP_BOTTOM };
 
 function xPositions(count: number): readonly number[] {
   if (count <= 0) return [];
@@ -36,10 +36,12 @@ function xPositions(count: number): readonly number[] {
   );
 }
 
-function depthY(index: number, count: number): number {
-  if (count <= 1) return (DEPTH_TOP + DEPTH_BOTTOM) / 2;
-  const ratio = index / (count - 1);
-  return DEPTH_BOTTOM - (DEPTH_BOTTOM - DEPTH_TOP) * ratio;
+function depthY(index: number, depthCount: number): number {
+  // Entry + all normal depths + Boss are one explicit bottom-to-top row sequence.
+  // A normal depth therefore occupies rows 1..depthCount between the two endpoints.
+  const rowCount = depthCount + 1;
+  const ratio = (index + 1) / rowCount;
+  return MAP_BOTTOM - (MAP_BOTTOM - MAP_TOP) * ratio;
 }
 
 function requirePosition(
