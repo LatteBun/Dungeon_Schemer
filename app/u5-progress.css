@@ -369,49 +369,6 @@
   list-style: none;
 }
 
-.u5-party-card {
-  display: grid;
-  gap: 0.1rem;
-  padding: clamp(0.4rem, 0.55cqw, 0.85rem);
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 40%, var(--color-edge));
-  border-radius: 0.22rem;
-  background: linear-gradient(180deg, rgb(26 19 13 / 90%), rgb(14 11 8 / 94%));
-}
-
-.u5-party-card strong {
-  color: var(--color-parchment);
-  font-size: clamp(0.88rem, 0.94cqw, 1.3rem);
-}
-
-.u5-party-card__job {
-  color: var(--color-muted);
-  font-size: clamp(0.74rem, 0.78cqw, 1.05rem);
-}
-
-.u5-party-card dl {
-  display: flex;
-  gap: clamp(0.6rem, 0.85cqw, 1.3rem);
-  margin: 0.15rem 0 0;
-}
-
-.u5-party-card dl > div {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-}
-
-.u5-party-card dt {
-  color: var(--color-muted);
-  font-size: clamp(0.74rem, 0.78cqw, 1.05rem);
-}
-
-.u5-party-card dd {
-  margin: 0;
-  color: var(--color-parchment);
-  font-size: clamp(0.8rem, 0.86cqw, 1.18rem);
-  font-weight: 700;
-}
-
 /* ── /u5-test 프리뷰 전환 ──
  * 화면 위에 겹친다. 아홉 상태를 오가는 도구일 뿐이라 세로 공간을 빼앗지 않는다. */
 

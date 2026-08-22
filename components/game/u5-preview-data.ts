@@ -92,11 +92,13 @@ function partyViews() {
   return members.map((member) => ({
     id: String(member.id),
     name: member.name,
-    job: classLabel(member.classId),
-    personality: PERSONALITY_LABEL[member.personality],
+    classLabel: classLabel(member.classId),
+    personalityLabel: PERSONALITY_LABEL[member.personality],
     hp: member.hp,
     maxHp: member.maxHp,
     trust: member.trust,
+    gold: member.gold,
+    alive: member.alive,
   }));
 }
 

@@ -137,51 +137,6 @@
   gap: clamp(0.5rem, 0.55cqw, 0.9rem);
 }
 
-.u3-party-card {
-  min-height: clamp(7.5rem, 8.5cqw, 12rem);
-  padding: clamp(0.65rem, 0.62cqw, 1rem);
-}
-
-.u3-party-card__number {
-  font-size: clamp(0.68rem, 0.58cqw, 0.9rem);
-}
-
-.u3-party-card__portrait {
-  width: clamp(3.4rem, 3.3cqw, 5.5rem);
-  height: clamp(3.4rem, 3.3cqw, 5.5rem);
-  margin-bottom: clamp(0.38rem, 0.4cqw, 0.7rem);
-}
-
-.u3-party-card__identity strong {
-  overflow: visible;
-  font-size: clamp(0.92rem, 0.85cqw, 1.35rem);
-  line-height: 1.15;
-  text-overflow: clip;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
-.u3-party-card__identity span,
-.u3-party-card__identity small {
-  font-size: clamp(0.74rem, 0.68cqw, 1.05rem);
-}
-
-.u3-party-card__stats {
-  gap: clamp(0.18rem, 0.18cqw, 0.3rem);
-  margin-top: clamp(0.45rem, 0.42cqw, 0.7rem);
-  padding-top: clamp(0.35rem, 0.34cqw, 0.58rem);
-}
-
-.u3-party-card__stats > div {
-  gap: clamp(0.35rem, 0.35cqw, 0.6rem);
-  font-size: clamp(0.74rem, 0.7cqw, 1.08rem);
-}
-
-.u3-party-card__stats dd {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
 .u3-contract-outcomes__rows {
   gap: clamp(0.25rem, 0.25cqw, 0.42rem);
 }
@@ -254,8 +209,4 @@
 
 .u3-notice {
   padding-inline: clamp(1rem, 1cqw, 1.6rem);
-}
-
-.u3-party-card {
-  min-height: clamp(9rem, 8cqw, 12rem);
 }

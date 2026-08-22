@@ -1,0 +1,176 @@
+/* 파티원 카드 — 파티 상태를 보여주는 모든 화면이 함께 쓴다.
+ *
+ * 화면마다 카드를 따로 그리면 같은 파티원이 다르게 보이고 플레이어가 자리를
+ * 다시 배운다. 정의를 한 곳에 두고 화면은 배치만 정한다.
+ *
+ * 크기는 rem 과 cqw 로만 쓴다. vw·vh 와 미디어 쿼리를 넣지 않는다.
+ */
+
+.party-card {
+  /* 순번을 주는 화면(U3)은 자식이 셋, 아닌 화면은 둘이다. 격자로 열을 고정하면
+   * 셋일 때 내용이 다음 행으로 밀려 초상과 크게 벌어진다. flex 로 둔다. */
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(0.4rem, 0.55cqw, 0.85rem);
+  min-width: 0;
+  padding: clamp(0.42rem, 0.58cqw, 0.9rem);
+  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 42%, var(--color-edge));
+  border-radius: 0.24rem;
+  background: linear-gradient(180deg, rgb(26 19 13 / 92%), rgb(14 11 8 / 95%));
+  box-shadow: inset 0 1px 0 rgb(244 214 145 / 6%);
+}
+
+.party-card.is-dead {
+  border-color: color-mix(in srgb, var(--color-shell-danger) 46%, var(--color-edge));
+  filter: grayscale(0.7);
+}
+
+.party-card__number {
+  flex: 0 0 auto;
+  color: var(--color-muted);
+  font-size: clamp(0.6rem, 0.66cqw, 0.9rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.party-card__portrait {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  width: clamp(2.4rem, 2.9cqw, 4.4rem);
+  height: clamp(2.4rem, 2.9cqw, 4.4rem);
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 50%, transparent);
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 30%, #241a11, #0b0806);
+}
+
+.party-card__portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 초상 자산이 없어도 자리를 남긴다. 화면마다 카드 높이가 달라지지 않는다. */
+.party-card__portrait-empty {
+  width: 55%;
+  height: 55%;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 35%, rgb(120 96 58 / 26%), transparent 70%);
+}
+
+.party-card__death {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  background: rgb(120 40 32 / 88%);
+  color: #ffe0d6;
+  font-size: clamp(0.54rem, 0.6cqw, 0.8rem);
+  text-align: center;
+}
+
+.party-card__content {
+  display: grid;
+  align-content: start;
+  gap: clamp(0.22rem, 0.3cqw, 0.48rem);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.party-card__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.28rem 0.42rem;
+  min-width: 0;
+}
+
+.party-card__identity strong {
+  color: var(--color-parchment);
+  font-size: clamp(0.84rem, 0.9cqw, 1.25rem);
+  overflow-wrap: anywhere;
+}
+
+.party-card__identity span,
+.party-card__identity small {
+  color: var(--color-muted);
+  font-size: clamp(0.7rem, 0.75cqw, 1rem);
+}
+
+/* HP 와 신뢰를 세로로 쌓는다. 나란히 두면 막대가 절반 폭이라 눈금이 안 읽힌다. */
+.party-card__stats {
+  display: grid;
+  gap: clamp(0.18rem, 0.24cqw, 0.4rem);
+  margin: 0;
+  min-width: 0;
+}
+
+.party-card__stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.1rem 0.45rem;
+  min-width: 0;
+}
+
+.party-card__stat dt {
+  color: var(--color-muted);
+  font-size: clamp(0.68rem, 0.72cqw, 0.96rem);
+  font-weight: 700;
+}
+
+.party-card__stat dd {
+  justify-self: end;
+  margin: 0;
+  color: #e0cda6;
+  font-size: clamp(0.72rem, 0.78cqw, 1.05rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.party-meter {
+  grid-column: 1 / -1;
+  display: block;
+  height: clamp(0.2rem, 0.24cqw, 0.34rem);
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+}
+
+.party-meter > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #7a3f34, #c0664f);
+}
+
+.party-meter--trust > i {
+  background: linear-gradient(90deg, #4d6b3f, #8db56b);
+}
+
+/* 라벨 문구 없이 아이콘과 금액을 붙인다. */
+.party-card__gold {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  margin-top: clamp(0.1rem, 0.14cqw, 0.24rem);
+  padding-top: clamp(0.18rem, 0.24cqw, 0.4rem);
+  border-top: 1px solid color-mix(in srgb, var(--color-shell-metal) 26%, transparent);
+}
+
+.party-card__gold dt {
+  display: inline-flex;
+  align-items: center;
+}
+
+.party-card__gold img {
+  width: clamp(0.8rem, 0.86cqw, 1.15rem);
+  height: clamp(0.8rem, 0.86cqw, 1.15rem);
+}
+
+.party-card__gold dd {
+  margin: 0;
+  color: var(--color-shell-gold);
+  font-size: clamp(0.76rem, 0.82cqw, 1.1rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GameShell } from "./GameShell";
+import { PartyMemberCard } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
 import {
   U5_LOG_FILTERS,
@@ -224,13 +225,8 @@ export function U5ProgressScreen({
             <h3>파티 상태</h3>
             <ul>
               {progress.party.map((member) => (
-                <li key={member.id} className="u5-party-card">
-                  <strong>{member.name}</strong>
-                  <span className="u5-party-card__job">{member.job} · {member.personality}</span>
-                  <dl>
-                    <div><dt>HP</dt><dd>{member.hp} / {member.maxHp}</dd></div>
-                    <div><dt>신뢰</dt><dd>{member.trust}</dd></div>
-                  </dl>
+                <li key={member.id}>
+                  <PartyMemberCard member={member} testId="u5-party-member" />
                 </li>
               ))}
             </ul>

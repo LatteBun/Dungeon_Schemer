@@ -117,19 +117,11 @@ describe("U4 fixed 16:9 canvas contract", () => {
     expect(corridors).toBeLessThan(rooms);
   });
 
-  it("moves destination upward and enlarges party information without leaving the fixed canvas", () => {
+  /* 파티 카드 글자 크기는 party-card.css 로 옮겼다. 여기서는 우측 패널 배분만 본다. */
+  it("moves destination upward without leaving the fixed canvas", () => {
     const fixes = readFileSync("app/u4-dungeon-map-fixes.css", "utf8");
     expect(fixes).toMatch(
       /\.u4-right-panel\s*\{[\s\S]*grid-template-rows:\s*minmax\(0, 2fr\) minmax\(0, 1fr\)/,
-    );
-    expect(fixes).toMatch(
-      /\.u4-party-card__content > header strong\s*\{[\s\S]*font-size:\s*clamp\(0\.9rem/,
-    );
-    expect(fixes).toMatch(
-      /\.u4-party-card__content > header small\s*\{[\s\S]*font-size:\s*clamp\(0\.68rem/,
-    );
-    expect(fixes).toMatch(
-      /\.u4-party-card__stats dt,[\s\S]*font-size:\s*clamp\(0\.68rem/,
     );
   });
 

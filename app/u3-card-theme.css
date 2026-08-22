@@ -200,13 +200,6 @@
   opacity: 0.78;
 }
 
-.u3-party-card__portrait-image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .u3-contract-button {
   display: grid;
   grid-template-columns: 2.5rem minmax(0, 1fr) 3rem;

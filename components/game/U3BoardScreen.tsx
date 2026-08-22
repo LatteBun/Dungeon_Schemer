@@ -1,4 +1,5 @@
 import { GameShell } from "./GameShell";
+import { PartyMemberCard } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
 import type {
   U3BoardNoticeView,
@@ -75,20 +76,23 @@ function NoticeBoard({ board, selectedOfferId, onSelectOffer }: { board: U3Board
 }
 
 function PartyCard({ member, index }: { member: U3OfferDetailView["party"][number]; index: number }) {
+  /* 표시는 공용 카드가 맡는다. 게시판은 순번을 함께 보여준다. */
   return (
-    <article className="u3-party-card" data-testid="u3-party-member">
-      <span className="u3-party-card__number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-      <div className="u3-party-card__portrait" aria-hidden="true">{member.portraitSrc === undefined ? <span /> : <img className="u3-party-card__portrait-image" src={member.portraitSrc} alt="" width={64} height={64} />}</div>
-      <div className="u3-party-card__identity"><strong>{member.name}</strong><span>{member.classLabel}</span><small>{member.personalityLabel}</small></div>
-      <dl className="u3-party-card__stats">
-        <div><dt>HP</dt><dd>{member.hp} / {member.maxHp}</dd></div>
-        <div><dt>신뢰</dt><dd>신뢰 {member.trust}</dd></div>
-        <div className="u3-party-card__gold-row" data-testid="u3-party-gold-row">
-          <dt className="u3-party-card__gold-label"><img data-testid="u3-party-gold-icon" src="/assets/u2/status-gold.svg" alt="" aria-hidden="true" width={14} height={14} /><span>소지 골드</span></dt>
-          <dd>{member.gold}</dd>
-        </div>
-      </dl>
-    </article>
+    <PartyMemberCard
+      member={{
+        id: String(member.id),
+        name: member.name,
+        classLabel: member.classLabel,
+        personalityLabel: member.personalityLabel,
+        hp: member.hp,
+        maxHp: member.maxHp,
+        trust: member.trust,
+        gold: member.gold,
+        portraitSrc: member.portraitSrc,
+      }}
+      index={index}
+      testId="u3-party-member"
+    />
   );
 }
 
