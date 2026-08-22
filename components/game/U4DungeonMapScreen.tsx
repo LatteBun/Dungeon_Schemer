@@ -84,7 +84,8 @@ export function nextSelectableNodeId(
   if (currentIndex < 0) return selectable[0]!.id;
 
   const delta = direction === "right" ? 1 : -1;
-  const nextIndex = (currentIndex + delta + selectable.length) % selectable.length;
+  const nextIndex =
+    (currentIndex + delta + selectable.length) % selectable.length;
   return selectable[nextIndex]!.id;
 }
 
@@ -148,7 +149,6 @@ function RoomVisual({ node }: { node: U4MapNodeView }) {
           aria-hidden="true"
         />
       ) : null}
-      <span className="u4-room__label">{ROOM_LABEL[node.kind]}</span>
     </>
   );
 }
@@ -231,12 +231,6 @@ function DungeonMap({
           alt=""
           aria-hidden="true"
         />
-        <img
-          className="u4-map-surface__frame"
-          src="/assets/u4/map/map_main_panel_frame.png"
-          alt=""
-          aria-hidden="true"
-        />
 
         <div className="u4-map-surface__corridors" aria-hidden="true">
           {layout.corridors.map((corridor) => (
@@ -313,7 +307,10 @@ function DungeonMap({
 }
 
 function PartyMemberCard({ member }: { member: U4PartyMemberView }) {
-  const hpPercent = member.maxHp <= 0 ? 0 : Math.max(0, Math.min(100, (member.hp / member.maxHp) * 100));
+  const hpPercent =
+    member.maxHp <= 0
+      ? 0
+      : Math.max(0, Math.min(100, (member.hp / member.maxHp) * 100));
   const trustPercent = Math.max(0, Math.min(100, member.trust));
 
   return (
@@ -323,7 +320,9 @@ function PartyMemberCard({ member }: { member: U4PartyMemberView }) {
     >
       <div className="u4-party-card__portrait">
         <img src={member.portraitSrc} alt={`${member.name} 초상`} />
-        {member.alive ? null : <strong className="u4-party-card__death">사망</strong>}
+        {member.alive ? null : (
+          <strong className="u4-party-card__death">사망</strong>
+        )}
       </div>
       <div className="u4-party-card__content">
         <header>
@@ -334,16 +333,31 @@ function PartyMemberCard({ member }: { member: U4PartyMemberView }) {
         <dl className="u4-party-card__stats">
           <div>
             <dt>HP</dt>
-            <dd>{member.hp} / {member.maxHp}</dd>
-            <span className="u4-meter" aria-hidden="true"><i style={{ width: `${hpPercent}%` }} /></span>
+            <dd>
+              {member.hp} / {member.maxHp}
+            </dd>
+            <span className="u4-meter" aria-hidden="true">
+              <i style={{ width: `${hpPercent}%` }} />
+            </span>
           </div>
           <div>
             <dt>신뢰</dt>
             <dd>{member.trust}</dd>
-            <span className="u4-meter u4-meter--trust" aria-hidden="true"><i style={{ width: `${trustPercent}%` }} /></span>
+            <span className="u4-meter u4-meter--trust" aria-hidden="true">
+              <i style={{ width: `${trustPercent}%` }} />
+            </span>
           </div>
           <div className="u4-party-card__gold">
-            <dt><img src="/assets/u2/status-gold.svg" alt="" aria-hidden="true" width={16} height={16} />소지 골드</dt>
+            <dt>
+              <img
+                src="/assets/u2/status-gold.svg"
+                alt=""
+                aria-hidden="true"
+                width={16}
+                height={16}
+              />
+              소지 골드
+            </dt>
             <dd>{member.gold}</dd>
           </div>
         </dl>
@@ -368,12 +382,29 @@ function MoveButton({
       onClick={onClick}
     >
       <span className="u4-move-button__skin" aria-hidden="true">
-        <img className="u4-move-button__left" src="/assets/u4/navigation/cta_button_left.png" alt="" />
-        <img className="u4-move-button__center" src="/assets/u4/navigation/cta_button_center.png" alt="" />
-        <img className="u4-move-button__right" src="/assets/u4/navigation/cta_button_right.png" alt="" />
+        <img
+          className="u4-move-button__left"
+          src="/assets/u4/navigation/cta_button_left.png"
+          alt=""
+        />
+        <img
+          className="u4-move-button__center"
+          src="/assets/u4/navigation/cta_button_center.png"
+          alt=""
+        />
+        <img
+          className="u4-move-button__right"
+          src="/assets/u4/navigation/cta_button_right.png"
+          alt=""
+        />
       </span>
       <strong>이 지점으로 이동</strong>
-      <img className="u4-move-button__arrow" src="/assets/u4/navigation/cta_button_arrow.png" alt="" aria-hidden="true" />
+      <img
+        className="u4-move-button__arrow"
+        src="/assets/u4/navigation/cta_button_arrow.png"
+        alt=""
+        aria-hidden="true"
+      />
     </button>
   );
 }
@@ -400,11 +431,16 @@ function RightPanel({
       <section className="u4-party" aria-labelledby="u4-party-title">
         <h2 id="u4-party-title">파티 상태</h2>
         <div className="u4-party__list">
-          {party.map((member) => <PartyMemberCard key={member.id} member={member} />)}
+          {party.map((member) => (
+            <PartyMemberCard key={member.id} member={member} />
+          ))}
         </div>
       </section>
 
-      <section className="u4-destination" aria-labelledby="u4-destination-title">
+      <section
+        className="u4-destination"
+        aria-labelledby="u4-destination-title"
+      >
         <h2 id="u4-destination-title">선택한 다음 지점</h2>
         <div className="u4-destination__panel">
           {destination === undefined ? (
@@ -412,9 +448,21 @@ function RightPanel({
           ) : (
             <div className="u4-destination__summary">
               <div className="u4-destination__thumbnail" aria-hidden="true">
-                <img className="u4-destination__room" src={ROOM_BASE[destination.kind]} alt="" />
-                <img className="u4-destination__icon" src={ROOM_ICON[destination.kind]} alt="" />
-                <img className="u4-destination__frame" src="/assets/u4/navigation/destination_thumbnail_frame.png" alt="" />
+                <img
+                  className="u4-destination__room"
+                  src={ROOM_BASE[destination.kind]}
+                  alt=""
+                />
+                <img
+                  className="u4-destination__icon"
+                  src={ROOM_ICON[destination.kind]}
+                  alt=""
+                />
+                <img
+                  className="u4-destination__frame"
+                  src="/assets/u4/navigation/destination_thumbnail_frame.png"
+                  alt=""
+                />
               </div>
               <div>
                 <span>공개 사건 분류</span>
@@ -423,7 +471,12 @@ function RightPanel({
               </div>
             </div>
           )}
-          <img className="u4-destination__panel-frame" src="/assets/u4/navigation/destination_panel_frame.png" alt="" aria-hidden="true" />
+          <img
+            className="u4-destination__panel-frame"
+            src="/assets/u4/navigation/destination_panel_frame.png"
+            alt=""
+            aria-hidden="true"
+          />
         </div>
         <MoveButton
           disabled={destination === undefined}
