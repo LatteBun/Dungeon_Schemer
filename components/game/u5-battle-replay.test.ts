@@ -46,6 +46,7 @@ describe("createU5BattleReplay", () => {
     const frames = createU5BattleReplay(input()).frames;
     expect([frames[1].hpByParticipantId["enemy-1"], frames[2].hpByParticipantId["enemy-1"], frames[3].hpByParticipantId["enemy-1"]]).toEqual([9, 9, 4]);
     expect([frames[4].hpByParticipantId["party-1"], frames[5].hpByParticipantId["party-1"], frames[6].hpByParticipantId["party-1"]]).toEqual([10, 10, 7]);
+    expect([frames[7].hpByParticipantId["enemy-1"], frames[8].hpByParticipantId["enemy-1"], frames[9].hpByParticipantId["enemy-1"]]).toEqual([4, 4, 0]);
   });
 
   it("impact damage는 action damage를 보존한다", () => {
