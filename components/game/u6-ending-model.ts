@@ -36,7 +36,7 @@ export const ENDING_REPORT_TITLE: Readonly<Record<EndingKind, string>> = {
   distrust: "최후 보고서",
   denounced: "길드 판결문",
   exhausted: "길드 현황",
-  unemployed: "길드 통보",
+  unemployed: "게시판 상태",
 };
 
 export const ENDING_CONSEQUENCE_TITLE: Readonly<Record<EndingKind, string>> = {
@@ -44,7 +44,7 @@ export const ENDING_CONSEQUENCE_TITLE: Readonly<Record<EndingKind, string>> = {
   distrust: "무너진 관계",
   denounced: "누적 기록",
   exhausted: "남겨진 자리",
-  unemployed: "닫힌 문",
+  unemployed: "닫힌 게시판",
 };
 
 export function endingCrestSrc(kind: EndingKind): string {

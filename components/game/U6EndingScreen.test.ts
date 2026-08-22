@@ -81,8 +81,17 @@ describe("U6EndingScreen", () => {
     expect(html).toContain(view("completed").chronicleSummary);
   });
 
+  /*
+   * 시안의 다섯 엔딩은 모두 전환점이 있다. 그래도 아주 짧게 끝난 캠페인은
+   * 전환점이 없을 수 있으므로 화면이 그 경우를 견뎌야 한다. fixture 가 아니라
+   * 여기서 직접 만들어 확인한다.
+   */
   it("전환점이 없으면 그 자리를 비우지 않고 없다고 적는다", () => {
-    const html = render("unemployed");
+    const html = renderToStaticMarkup(
+      createElement(U6EndingScreen, {
+        ending: { ...view("unemployed"), turningPoint: null },
+      }),
+    );
 
     expect(html).toContain('data-testid="u6-turning-point"');
     expect(html).toContain("전환점이라 부를 만한");

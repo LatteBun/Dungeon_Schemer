@@ -10,8 +10,7 @@
 | `ending-distrust.png` | 불신의 대가 |
 | `ending-denounced.png` | 누적 고발 |
 | `ending-exhausted.png` | 인력 소진 |
-
-`ending-unemployed.png`(실직) 시안은 아직 없다. 다른 넷의 구성을 그대로 따른다.
+| `ending-unemployed.png` | 실직 |
 
 ## 구성
 
@@ -49,6 +48,7 @@
 | 불신의 대가 | 최후 보고서 | 무너진 관계 |
 | 누적 고발 | 길드 판결문 | 누적 기록 |
 | 인력 소진 | 길드 현황 | 남겨진 자리 |
+| 실직 | 게시판 상태 | 닫힌 게시판 |
 
 ## 앞선 구현과 다른 점
 
