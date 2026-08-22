@@ -110,7 +110,7 @@ describe("U3BoardScreen", () => {
     expect(html).toContain('class="u3-contract-button__seal"');
     expect(html).toContain('width="40"');
     expect(html).toContain('class="u3-contract-button__arrow"');
-    expect(html).toContain('width="48"');
+    expect(html).toContain('width="70"');
   });
 
   it("계약 조건의 명성과 골드는 한 줄 보상 묶음으로 렌더링한다", () => {

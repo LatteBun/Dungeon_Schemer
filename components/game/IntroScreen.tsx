@@ -56,7 +56,7 @@ function IntroMainContent({ boardHref }: { boardHref: string }) {
         <a className="u2-intro__cta" href={boardHref}>
           <img className="u2-intro__cta-emblem" src="/assets/u3/extracted/contract-emblem.png" alt="" aria-hidden="true" width={48} height={43} />
           <strong>길드 게시판으로</strong>
-          <img className="u2-intro__cta-arrow" src="/assets/u3/extracted/arrow-right.png" alt="" aria-hidden="true" width={48} height={19} />
+          <img className="u2-intro__cta-arrow" src="/assets/u3/extracted/arrow-right.png" alt="" aria-hidden="true" width={70} height={27} />
         </a>
       </div>
     </main>
