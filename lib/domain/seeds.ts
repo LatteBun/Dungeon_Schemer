@@ -16,7 +16,8 @@ export type SeedStream =
   | "event"
   | "boss"
   | "trust"
-  | "worldturn";
+  | "worldturn"
+  | "battle";
 
 export const SEED_STREAMS = [
   "pool",
@@ -29,4 +30,5 @@ export const SEED_STREAMS = [
   "boss",
   "trust",
   "worldturn",
+  "battle",
 ] as const satisfies readonly SeedStream[];

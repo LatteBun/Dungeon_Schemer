@@ -2,7 +2,7 @@ import type { BossId, BossRuleId, ChoiceId, ClueId, EventId, RuleId } from "./id
 import type { AdviceOutcome, EcologyRelation } from "./info";
 import type { ThemeId } from "./dungeon";
 
-/** 사건 분류 넷. 모든 경로에 각각 한 번 이상 나온다. */
+/** 사건 분류 넷. 지도 category와 registry kind가 공유한다. */
 export type EventKind = "monster" | "rest" | "merchant" | "special";
 
 export const EVENT_KINDS = [
@@ -20,6 +20,29 @@ export type EventEffectTag =
   | "item"
   | "information"
   | "observe";
+
+export type ImmediateEventEffect =
+  | { kind: "hp"; hpDeltaPerMember: number }
+  | { kind: "gold"; delta: number }
+  | { kind: "clue"; clueId: ClueId };
+
+export interface EncounterEnemyGroup {
+  readonly monsterId: import("./ids").MonsterId;
+  readonly count: number;
+}
+
+export interface EncounterDefinition {
+  readonly enemies: readonly EncounterEnemyGroup[];
+  readonly avoidCombat?: boolean;
+}
+
+export interface EncounterModifier {
+  readonly removeEnemies?: readonly EncounterEnemyGroup[];
+  readonly addEnemies?: readonly EncounterEnemyGroup[];
+  readonly avoidCombat?: boolean;
+  readonly partyDamageMultiplier?: number;
+  readonly incomingDamageMultiplier?: number;
+}
 
 export const EVENT_EFFECT_TAGS = [
   "support",
@@ -46,6 +69,8 @@ export interface BaseAdviceOption {
   bossDamageModifier?: number;
   /** 수용됐을 때 보여줄 결과 문구. */
   resultText: string;
+  immediateEffect?: ImmediateEventEffect;
+  encounterModifier?: EncounterModifier;
 }
 
 export type NextBattleMerchantEffect =
@@ -106,6 +131,7 @@ interface BaseSituationEvent<TAdviceOption extends BaseAdviceOption> {
   revealsClue?: ClueId;
   /** 강한 연계. 이 단서가 없으면 배치되지 않는다. */
   requiresClue?: ClueId;
+  defaultEffect?: ImmediateEventEffect;
 }
 
 export interface MerchantSituationEvent extends BaseSituationEvent<MerchantAdviceOption> {
@@ -125,6 +151,9 @@ export interface NonMerchantSituationEvent extends BaseSituationEvent<NonMerchan
   targetBossId?: BossId;
   /** 약한 연계. */
   upgrades?: readonly AdviceUpgrade[];
+  encounter?: EncounterDefinition;
+  encounterModifier?: EncounterModifier;
+  defaultEncounterModifier?: EncounterModifier;
 }
 
 /**
