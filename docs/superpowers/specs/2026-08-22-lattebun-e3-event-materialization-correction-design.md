@@ -62,7 +62,7 @@ clue-graveyard-archer-shadow
 ### 기존
 
 ```ts
-ecologicalProfile(
+ecologyProfile(
   "graveyard",
   "graveyard-blighted-tomb",
   5,
@@ -79,8 +79,6 @@ ecologicalProfile(
 ```
 
 ### 변경 후
-
-실제 코드의 helper 이름은 기존 `ecologyProfile`을 유지한다.
 
 ```ts
 ecologyProfile(
