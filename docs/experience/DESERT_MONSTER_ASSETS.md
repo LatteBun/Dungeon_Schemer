@@ -6,25 +6,27 @@
 
 ## 정적 경로
 
-저장소 디렉터리 이름은 기존 경로와의 호환성을 위해 `dessert`를 유지한다. 브라우저에서 사용하는 정적 경로는 다음 형식이다.
+저장소 디렉터리 이름은 도메인의 `ThemeId`와 같은 `desert`를 쓴다. 처음에는 기존 경로와의 호환성을 위해 오타인 `dessert`를 유지했지만, 화면이 테마로 자산을 찾기 시작하면서 도메인 이름과 폴더 이름이 어긋나는 값이 늘었다. 그 어긋남을 코드에서 매번 잇는 대신 한 번 바로잡았다. 같은 이유로 `tomb`도 `graveyard`로 바꿨다.
+
+브라우저에서 사용하는 정적 경로는 다음 형식이다.
 
 ```text
-/assets/monsters/dessert/<파일명>.png
+/assets/monsters/desert/<파일명>.png
 ```
 
 ## 공식 매핑
 
 | 구분 | 공식 콘텐츠 | 정적 경로 | 원본 해상도 |
 | --- | --- | --- | --- |
-| 잡몹 | 사막전갈 | `/assets/monsters/dessert/monster-desert-scorpion.png` | 1024×1024 |
-| 잡몹 | 모래도마뱀 | `/assets/monsters/dessert/monster-desert-lizard.png` | 1024×1024 |
-| 잡몹 | 사막코브라 | `/assets/monsters/dessert/monster-desert-cobra.png` | 1254×1254 |
-| 잡몹 | 모래정령 | `/assets/monsters/dessert/monster-desert-spirit.png` | 1254×1254 |
-| 잡몹 | 미이라 | `/assets/monsters/dessert/monster-desert-mummy.png` | 1254×1254 |
-| 보스 ★1 | 거대 전갈 자카르 | `/assets/monsters/dessert/boss-desert-01-zakar.png` | 1254×1254 |
-| 보스 ★2 | 샌드웜 카르둠 | `/assets/monsters/dessert/boss-desert-02-kardum.png` | 1024×1024 |
-| 보스 ★3 | 모래거신 오벨론 | `/assets/monsters/dessert/boss-desert-03-obelon.png` | 1024×1024 |
-| 보스 ★4~5 | 스핑크스 네프리스 | `/assets/monsters/dessert/boss-desert-04-nephris.png` | 1254×1254 |
+| 잡몹 | 사막전갈 | `/assets/monsters/desert/monster-desert-scorpion.png` | 1024×1024 |
+| 잡몹 | 모래도마뱀 | `/assets/monsters/desert/monster-desert-lizard.png` | 1024×1024 |
+| 잡몹 | 사막코브라 | `/assets/monsters/desert/monster-desert-cobra.png` | 1254×1254 |
+| 잡몹 | 모래정령 | `/assets/monsters/desert/monster-desert-spirit.png` | 1254×1254 |
+| 잡몹 | 미이라 | `/assets/monsters/desert/monster-desert-mummy.png` | 1254×1254 |
+| 보스 ★1 | 거대 전갈 자카르 | `/assets/monsters/desert/boss-desert-01-zakar.png` | 1254×1254 |
+| 보스 ★2 | 샌드웜 카르둠 | `/assets/monsters/desert/boss-desert-02-kardum.png` | 1024×1024 |
+| 보스 ★3 | 모래거신 오벨론 | `/assets/monsters/desert/boss-desert-03-obelon.png` | 1024×1024 |
+| 보스 ★4~5 | 스핑크스 네프리스 | `/assets/monsters/desert/boss-desert-04-nephris.png` | 1254×1254 |
 
 보스의 위험도 구간은 초기 위험도에 따른 공식 테마 계약을 따른다. 이미지 파일명이나 표시 순서만으로 위험도·피해·체력·출현 패키지를 새로 계산하지 않는다.
 
@@ -32,7 +34,7 @@
 
 자동 검수와 향후 UI 자산 매핑이 필요할 때는 [`DESERT_MONSTER_ASSETS`](../../components/game/DesertMonsterAssets.ts)의 9종 manifest를 먼저 사용한다. 이 manifest는 `id`, 공식 이름, `kind`, 정적 경로, 설명을 제공하지만 게임 도메인의 출현 규칙이나 위험도를 정의하지 않는다.
 
-manifest와 이 문서의 경로가 달라지면 실제 `public/assets/monsters/dessert/` 파일을 기준으로 수정하고, PNG 계약 테스트와 카탈로그를 함께 확인한다.
+manifest와 이 문서의 경로가 달라지면 실제 `public/assets/monsters/desert/` 파일을 기준으로 수정하고, PNG 계약 테스트와 카탈로그를 함께 확인한다.
 
 ## 향후 UI 사용 규칙
 
