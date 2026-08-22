@@ -32,8 +32,10 @@
   position: relative;
   display: grid;
   /* 폭에서 정사각으로 높이를 얻는다. 컨테이너를 보지 않으므로 어느 화면에
-   * 놓여도 같은 비율이다. */
+   * 놓여도 같은 비율이다. 다만 상한을 둔다. 우측 패널이 좁은 화면(U3)에서
+   * 정사각을 그대로 쓰면 카드가 부풀어 아래 요소를 밖으로 밀어낸다. */
   aspect-ratio: 1;
+  max-height: clamp(5rem, 8.5cqw, 11rem);
   min-height: 0;
   place-items: center;
   overflow: hidden;

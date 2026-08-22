@@ -136,7 +136,8 @@ describe("U3 extracted asset-board assets", () => {
     const layout = readFileSync(join(process.cwd(), "app", "layout.tsx"), "utf8");
 
     expect(layout).toContain('import "./u3-responsive-layout.css"');
-    expect(css).toContain("grid-template-rows: auto minmax(0, 1fr) auto auto");
+    // 파티 · 계약 카드 · 버튼 세 행이다. 던전 정보를 계약 카드에 합치며 한 행이 줄었다.
+    expect(css).toContain("grid-template-rows: auto minmax(0, 1fr) auto");
     expect(css).toContain("min-height: 0");
   });
 

@@ -258,9 +258,9 @@
 
 .u3-contract-detail {
   display: grid;
-  grid-template-rows: auto auto auto auto;
-  gap: clamp(0.42rem, 0.7cqh, 0.58rem);
-  height: 100%;
+  /* 파티는 내용만큼, 계약 카드가 남는 높이를 쓴다. 버튼은 늘 아래에 붙는다. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(0.4rem, 0.55cqw, 0.85rem);
   min-height: 0;
 }
 
@@ -465,4 +465,89 @@
 
 .u3-preview__feedback:empty {
   display: none;
+}
+
+/* ── 계약 카드 ──
+ *
+ * 던전 정보와 계약 조건을 한 덩어리로 묶는다. 어느 던전에 어떤 조건으로
+ * 들어가는지가 하나의 판단이라 따로 두면 눈이 두 번 움직인다.
+ *
+ * 바탕에 그 던전의 장면을 깔되 글씨가 묻히면 안 된다. 장면은 어둡게 덮고
+ * 글자에는 그림자를 준다. 색만으로 읽히게 하지 않는다.
+ */
+.u3-contract-card {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  /* 배경 장면은 u3-card-theme.css 에서 정한다. 그 파일이 뒤에 실려 공통
+   * 질감이 여기 규칙을 덮기 때문이다. */
+}
+
+/*
+ * 장면을 덮는 막.
+ *
+ * 위쪽은 옅게 두어 던전 그림이 보이게 하고, 계약 조건이 앉는 아래쪽만 짙게
+ * 덮는다. 전체를 고르게 덮으면 그림이 사라져 배경을 깐 뜻이 없어지고,
+ * 얇게 덮으면 숫자가 그림에 묻힌다.
+ */
+.u3-contract-card__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    /* 표제가 앉는 왼쪽 위를 한 번 더 덮는다. 사막 장면이 밝아 글자가 묻힌다. */
+    linear-gradient(105deg, rgb(8 6 4 / 78%) 0%, rgb(8 6 4 / 30%) 46%, transparent 68%),
+    linear-gradient(180deg,
+      rgb(10 7 5 / 52%) 0%,
+      rgb(9 7 5 / 62%) 30%,
+      rgb(7 6 4 / 88%) 52%,
+      rgb(6 5 4 / 95%) 100%);
+}
+
+.u3-contract-card__body {
+  position: relative;
+  display: grid;
+  /* 계약 조건이 남는 높이를 쓰고, 모자라면 그 안에서 줄어든다. 카드가 커져서
+   * 계약 버튼을 패널 밖으로 밀어내면 안 된다. */
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  gap: clamp(0.35rem, 0.48cqw, 0.75rem);
+  min-height: 0;
+  padding: clamp(0.55rem, 0.75cqw, 1.15rem);
+}
+
+/* 색만으로 읽히게 하지 않는다. 어느 장면 위에서도 글자가 서게 그림자를 준다. */
+.u3-contract-card__body > *,
+.u3-contract-card__head * {
+  text-shadow: 0 1px 2px rgb(0 0 0 / 95%), 0 0 8px rgb(0 0 0 / 70%);
+}
+
+.u3-contract-card__head {
+  display: grid;
+  justify-items: start;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.u3-contract-card__theme {
+  color: var(--color-muted);
+  font-size: clamp(0.72rem, 0.78cqw, 1.05rem);
+}
+
+.u3-contract-card__head h2 {
+  margin: 0;
+  color: #f2e2ba;
+  font-size: clamp(1.15rem, 1.25cqw, 1.85rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.u3-contract-card__reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  color: var(--color-muted);
+  font-size: clamp(0.76rem, 0.82cqw, 1.12rem);
 }

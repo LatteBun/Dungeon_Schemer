@@ -182,6 +182,22 @@
   background-repeat: repeat;
 }
 
+/*
+ * 계약 카드는 공통 질감 대신 그 던전의 장면을 바탕에 쓴다. u3-board.css 보다
+ * 이 파일이 뒤에 실려서, 여기서 비워 주지 않으면 질감이 장면을 덮는다.
+ */
+.u3-detail-section.u3-contract-card {
+  background-color: #0b0806;
+  background-image: url("/assets/u3/extracted/theme-scenes-wide.avif");
+  background-repeat: no-repeat;
+  background-size: 300% auto;
+  background-position-y: 34%;
+}
+
+.u3-contract-card--desert { background-position-x: 0%; }
+.u3-contract-card--spider { background-position-x: 50%; }
+.u3-contract-card--graveyard { background-position-x: 100%; }
+
 .u3-detail-section h3::after {
   content: "";
   display: block;

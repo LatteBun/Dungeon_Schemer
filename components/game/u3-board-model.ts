@@ -1,6 +1,6 @@
 import { CLASSES } from "@/lib/content/classes";
 import { RANK_RISK_LIMIT } from "@/lib/domain";
-import { PERSONALITY_LABEL } from "./character-labels";
+import { PERSONALITY_LABEL, portraitSrcForCharacter } from "./character-labels";
 import type {
   BoardOffer,
   CampaignState,
@@ -164,7 +164,13 @@ export function createU3BoardView(
         throw new Error(`U3 파티원을 찾을 수 없습니다: ${memberId}`);
       }
 
-      const portraitSrc = portraitByCharacterId[character.id];
+      /* 주입된 초상이 없으면 공용 매핑으로 채운다. 화면마다 빈 자리가 나오면 안 된다. */
+      const portraitSrc = portraitByCharacterId[character.id]
+        ?? portraitSrcForCharacter({
+          id: character.id,
+          classId: character.classId,
+          alive: character.alive,
+        });
       return {
         id: character.id,
         name: character.name,

@@ -114,14 +114,45 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
   if (detail === undefined) return <div className="u3-detail-empty" role="status">공고를 선택하면 계약 상세가 표시됩니다.</div>;
   return (
     <div className="u3-contract-detail">
-      <section className="u3-detail-section u3-dungeon-summary" aria-labelledby="u3-dungeon-title">
-        <div className="u3-dungeon-summary__motif"><ThemeScene theme={detail.theme} /></div>
-        <div className="u3-dungeon-summary__copy"><span>{detail.themeLabel}</span><h2 id="u3-dungeon-title">{detail.dungeonName}</h2><RiskStars riskLevel={detail.riskLevel} /></div>
-        <div className="u3-dungeon-summary__facts"><span>3명 생존 보상<RewardPair reputation={detail.reputationReward} gold={detail.goldReward} compact /></span></div>
-        {detail.lockReasonLabel === null ? null : <p className="u3-dungeon-summary__lock">{detail.lockReasonLabel}</p>}
+      {/* 파티를 맨 위에 둔다. U4·U5 도 우측 첫 자리가 파티다. */}
+      <section className="u3-detail-section u3-party" aria-labelledby="u3-party-title">
+        <h3 id="u3-party-title">파티 구성</h3>
+        <ul className="party-list">
+          {detail.party.map((member, index) => (
+            <li key={member.id}>
+              <PartyCard member={member} index={index} />
+            </li>
+          ))}
+        </ul>
       </section>
-      <section className="u3-detail-section u3-party" aria-labelledby="u3-party-title"><h3 id="u3-party-title">탐험대 구성</h3><div className="u3-party__grid party-list">{detail.party.map((member, index) => <PartyCard key={member.id} member={member} index={index} />)}</div></section>
-      <ContractOutcomes detail={detail} />
+
+      {/*
+        던전 정보와 계약 조건을 한 카드로 묶는다. 어느 던전에 어떤 조건으로
+        들어가는지가 한 덩어리의 판단이기 때문이다. 바탕에는 그 던전의 장면을
+        깔되 글씨가 묻히지 않게 어둡게 덮는다.
+      */}
+      <section
+        className={`u3-detail-section u3-contract-card u3-contract-card--${detail.theme}`}
+        aria-labelledby="u3-dungeon-title"
+      >
+        <div className="u3-contract-card__scrim" aria-hidden="true" />
+        <div className="u3-contract-card__body">
+          <header className="u3-contract-card__head">
+            <span className="u3-contract-card__theme">{detail.themeLabel}</span>
+            <h2 id="u3-dungeon-title">{detail.dungeonName}</h2>
+            <RiskStars riskLevel={detail.riskLevel} />
+            <span className="u3-contract-card__reward">
+              3명 생존 보상
+              <RewardPair reputation={detail.reputationReward} gold={detail.goldReward} compact />
+            </span>
+            {detail.lockReasonLabel === null ? null : (
+              <p className="u3-dungeon-summary__lock">{detail.lockReasonLabel}</p>
+            )}
+          </header>
+          <ContractOutcomes detail={detail} />
+        </div>
+      </section>
+
       <button type="button" className="u3-contract-button" disabled={detail.locked} onClick={() => onContract(detail.offerId)}>
         <img className="u3-contract-button__seal" src="/assets/u3/extracted/contract-emblem.png" alt="" aria-hidden="true" width={40} height={42} />
         <strong>{detail.locked ? "진입 불가" : "이 공고 계약하기"}</strong>

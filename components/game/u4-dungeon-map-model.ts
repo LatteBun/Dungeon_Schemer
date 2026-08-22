@@ -99,30 +99,10 @@ export function createU4MapNodeViews(input: {
   });
 }
 
-/**
- * CharacterId 문자열만으로 A/B를 결정해 render 시점이나 생사 상태와 무관하게
- * 같은 캐릭터는 항상 같은 변형을 사용한다.
- */
-export function portraitVariantForCharacterId(
-  characterId: CharacterId,
-): "a" | "b" {
-  let hash = 2166136261;
-  for (let index = 0; index < characterId.length; index += 1) {
-    hash ^= characterId.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0) % 2 === 0 ? "a" : "b";
-}
+/* 초상 매핑은 character-labels.ts 로 옮겼다. 기존 import 를 위해 다시 내보낸다. */
+import { portraitSrcForCharacter, portraitVariantForCharacterId } from "./character-labels";
 
-export function portraitSrcForCharacter(input: {
-  id: CharacterId;
-  classId: ClassId;
-  alive: boolean;
-}): string {
-  const variant = portraitVariantForCharacterId(input.id);
-  const lifeFolder = input.alive ? "live" : "dead";
-  return `/assets/characters/${lifeFolder}/${input.classId}/${input.classId}_${variant}.png`;
-}
+export { portraitSrcForCharacter, portraitVariantForCharacterId };
 
 export function createU4PartyMemberViews(
   characters: readonly Character[],
