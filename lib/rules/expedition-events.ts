@@ -5,7 +5,7 @@ import { consumePendingMerchantEffect } from "@/lib/rules/merchant";
 import { resolveBattle, type BattleResolution } from "@/lib/rules/battle-engine";
 import { expandEncounter, resolveEncounter } from "@/lib/rules/encounter";
 import type { AdviceDecision, Character, ClassDef, EncounterModifier, EventKind, ImmediateEventEffect, MaterializedNodeEvent, MonsterDef, PendingMerchantEffect, PreparedExpeditionEvents, PreparedNodePlan, SituationEvent, StrongLinkPlan, ThemeContent } from "@/lib/domain";
-import type { ClueId, DungeonId, EventId, NodeId } from "@/lib/domain";
+import type { ClueId, DungeonId, EventId, MonsterId, NodeId, RuleId } from "@/lib/domain";
 import type { GeneratedMap, RiskLevel } from "@/lib/domain";
 
 function invalid(message: string, details: Record<string, unknown> = {}): never {
@@ -27,6 +27,27 @@ function cutDepths(riskLevel: RiskLevel, layerCount: number): readonly number[] 
   return Array.from({ length: count }, (_, index) => Math.min(layerCount - 2, first + index));
 }
 
+function reachableNodes(map: GeneratedMap, start: NodeId): ReadonlySet<NodeId> {
+  const nodes = new Map(map.nodes.map((node) => [node.id, node]));
+  const visited = new Set<NodeId>();
+  const queue: NodeId[] = [start];
+  while (queue.length > 0) {
+    const nodeId = queue.shift()!;
+    if (visited.has(nodeId)) continue;
+    visited.add(nodeId);
+    for (const nextNodeId of nodes.get(nodeId)?.nextNodeIds ?? []) queue.push(nextNodeId);
+  }
+  return visited;
+}
+
+function eventMatchesProfile(event: SituationEvent, activeRuleIds: ReadonlySet<RuleId>, activeMonsterIds: ReadonlySet<MonsterId>): boolean {
+  const referencedRules = event.advice.flatMap((option) => option.source?.kind === "ecology" ? [option.source.ruleId] : []);
+  if (event.kind !== "merchant" && event.satisfiedConditionalRuleIds?.some((ruleId) => !activeRuleIds.has(ruleId))) return false;
+  if (referencedRules.some((ruleId) => !activeRuleIds.has(ruleId))) return false;
+  if (event.kind !== "merchant" && event.encounter?.enemies.some((enemy) => !activeMonsterIds.has(enemy.monsterId))) return false;
+  return true;
+}
+
 export function prepareExpeditionEvents(input: {
   readonly campaignSeed: string;
   readonly dungeonId: DungeonId | string;
@@ -35,6 +56,8 @@ export function prepareExpeditionEvents(input: {
   readonly attempt: number;
   readonly map: GeneratedMap;
   readonly theme: ThemeContent;
+  readonly activeRuleIds: readonly RuleId[];
+  readonly activeMonsterIds: readonly MonsterId[];
 }): PreparedExpeditionEvents {
   if (input.attempt < 0 || !Number.isInteger(input.attempt)) invalid("attempt가 유효하지 않다", { attempt: input.attempt });
   const rng = createRng(`${input.campaignSeed}/${input.dungeonId}/${input.attempt}`).derive("event");
@@ -52,14 +75,34 @@ export function prepareExpeditionEvents(input: {
   }
   const bossInfoCuts = cuts.map((depth) => ({ nodeIds: input.map.layers[depth]?.nodeIds ?? [] }));
   const allEvents = eventsForTheme(input.theme.id);
-  const strongClues = [...new Set(allEvents.flatMap((event) => event.requiresClue ? [event.requiresClue] : []))];
+  const activeRuleIds = new Set(input.activeRuleIds);
+  const activeMonsterIds = new Set(input.activeMonsterIds);
+  const eligibleEvents = allEvents.filter((event) => eventMatchesProfile(event, activeRuleIds, activeMonsterIds));
+  const strongClues = [...new Set(eligibleEvents.flatMap((event) => event.requiresClue ? [event.requiresClue] : []))];
   const strongLinks: StrongLinkPlan[] = [];
-  for (const clueId of strongClues.slice(0, input.initialRiskLevel >= 5 ? 2 : input.initialRiskLevel >= 3 ? 1 : 0)) {
-    const predecessor = allEvents.find((event) => event.revealsClue === clueId);
-    const predecessorNode = [...plans.values()].find((plan) => plan.hiddenRole === "normal" && predecessor?.kind === plan.category);
-    if (predecessor === undefined || predecessorNode === undefined) continue;
-    plans.set(predecessorNode.nodeId, { ...predecessorNode, hiddenRole: "strongPredecessor", plannedClueId: clueId });
-    strongLinks.push({ clueId, predecessorNodeId: predecessorNode.nodeId });
+  const desiredStrongLinkCount = input.initialRiskLevel >= 5 ? 2 : input.initialRiskLevel >= 3 ? 1 : 0;
+  const layerByNode = new Map(input.map.layers.flatMap((layer, index) => layer.nodeIds.map((nodeId) => [nodeId, index] as const)));
+  const reservedNodes = new Set([...plans.values()].filter((plan) => plan.hiddenRole !== "normal").map((plan) => plan.nodeId));
+  for (const clueId of strongClues.slice(0, desiredStrongLinkCount)) {
+    const predecessorEvents = eligibleEvents.filter((event) => event.revealsClue === clueId);
+    const followerEvents = eligibleEvents.filter((event) => event.requiresClue === clueId);
+    const pairs = [...plans.values()].flatMap((predecessorNode) => predecessorNode.hiddenRole !== "normal" || reservedNodes.has(predecessorNode.nodeId)
+      ? []
+      : predecessorEvents.filter((event) => event.kind === predecessorNode.category).flatMap(() => {
+        const reachable = reachableNodes(input.map, predecessorNode.nodeId);
+        return [...plans.values()]
+          .filter((followerNode) => followerNode.hiddenRole === "normal" && !reservedNodes.has(followerNode.nodeId)
+            && (layerByNode.get(followerNode.nodeId) ?? -1) > (layerByNode.get(predecessorNode.nodeId) ?? -1)
+            && reachable.has(followerNode.nodeId)
+            && followerEvents.some((event) => event.kind === followerNode.category))
+          .map((followerNode) => ({ predecessorNode, followerNode }));
+      }));
+    if (pairs.length === 0) invalid("strong link를 준비할 수 있는 predecessor/follower 후보가 없다", { clueId, desiredStrongLinkCount });
+    const selected = rng.pick(pairs);
+    plans.set(selected.predecessorNode.nodeId, { ...selected.predecessorNode, hiddenRole: "strongPredecessor", plannedClueId: clueId });
+    reservedNodes.add(selected.predecessorNode.nodeId);
+    reservedNodes.add(selected.followerNode.nodeId);
+    strongLinks.push({ clueId, predecessorNodeId: selected.predecessorNode.nodeId, followerNodeId: selected.followerNode.nodeId });
   }
   return {
     nodePlans: plans,
@@ -71,11 +114,11 @@ export function prepareExpeditionEvents(input: {
   };
 }
 
-function normalCandidates(events: readonly SituationEvent[], role: PreparedNodePlan["hiddenRole"], clueId: ClueId | undefined, targetBossId: string | undefined): readonly SituationEvent[] {
+function normalCandidates(events: readonly SituationEvent[], role: PreparedNodePlan["hiddenRole"], clueId: ClueId | undefined, targetBossId: string | undefined, strongClues: ReadonlySet<ClueId>): readonly SituationEvent[] {
   if (role === "bossInfo") return events.filter((event) => event.kind === "special" && event.targetBossId === targetBossId);
   if (role === "strongPredecessor") return events.filter((event) => event.revealsClue === clueId);
   if (role === "strongFollower") return events.filter((event) => event.requiresClue === clueId);
-  return events.filter((event) => event.requiresClue === undefined && event.targetBossId === undefined);
+  return events.filter((event) => event.requiresClue === undefined && (event.revealsClue === undefined || !strongClues.has(event.revealsClue)) && event.targetBossId === undefined);
 }
 
 export function materializeNodeEvent(input: {
@@ -86,13 +129,17 @@ export function materializeNodeEvent(input: {
   readonly attempt: number;
   readonly theme: ThemeContent;
   readonly targetBossId?: string;
+  readonly activeRuleIds: readonly RuleId[];
+  readonly activeMonsterIds: readonly MonsterId[];
 }): MaterializedNodeEvent {
   const plan = input.prepared.nodePlans.get(input.nodeId as NodeId);
   if (plan === undefined) invalid("방문할 node plan이 없다", { nodeId: input.nodeId });
   if (plan.hiddenRole === "strongFollower" && plan.plannedClueId !== undefined && !input.prepared.heldClueIds.has(plan.plannedClueId)) {
     invalid("strong follower의 선행 단서가 아직 없다", { nodeId: input.nodeId, clueId: plan.plannedClueId });
   }
-  const candidates = normalCandidates(eventsForTheme(input.theme.id).filter((event) => event.kind === plan.category), plan.hiddenRole, plan.plannedClueId, input.targetBossId);
+  const eligibleEvents = eventsForTheme(input.theme.id).filter((event) => eventMatchesProfile(event, new Set(input.activeRuleIds), new Set(input.activeMonsterIds)));
+  const strongClues = new Set(eligibleEvents.flatMap((event) => event.requiresClue ? [event.requiresClue] : []));
+  const candidates = normalCandidates(eligibleEvents.filter((event) => event.kind === plan.category), plan.hiddenRole, plan.plannedClueId, input.targetBossId, strongClues);
   const available = candidates.filter((event) => !input.prepared.usedEventIds.has(event.id));
   if (available.length === 0) invalid("방문 노드의 사용 가능한 사건이 없다", { nodeId: input.nodeId, category: plan.category, role: plan.hiddenRole });
   const event = createRng(`${input.campaignSeed}/${input.dungeonId}/${input.attempt}/${input.nodeId}/${plan.hiddenRole}`).derive("event").pick([...available]);
@@ -105,11 +152,10 @@ export function materializeNodeEvent(input: {
   return { event, state: cloneState(input.prepared, { usedEventIds, heldClueIds, materializedEvents }), revealedClueId: event.revealsClue };
 }
 
-export function activateStrongFollower(input: { prepared: PreparedExpeditionEvents; clueId: ClueId; nodeId: NodeId; followerNodeId?: NodeId }): PreparedExpeditionEvents {
+export function activateStrongFollower(input: { prepared: PreparedExpeditionEvents; clueId: ClueId; nodeId: NodeId }): PreparedExpeditionEvents {
   const link = input.prepared.strongLinks.find((candidate) => candidate.clueId === input.clueId && candidate.predecessorNodeId === input.nodeId);
   if (link === undefined) return input.prepared;
-  const followerNodeId = input.followerNodeId ?? link.followerNodeId;
-  if (followerNodeId === undefined) return input.prepared;
+  const followerNodeId = link.followerNodeId;
   const plan = input.prepared.nodePlans.get(followerNodeId);
   if (plan === undefined || plan.hiddenRole !== "normal") return input.prepared;
   const nodePlans = new Map(input.prepared.nodePlans);
@@ -123,7 +169,7 @@ export function applyImmediateEffect<M extends Character>(input: {
   readonly effect: ImmediateEventEffect;
 }): readonly M[] {
   const effect = input.effect;
-  if (effect.kind !== "hp") return input.members;
+  if (effect.kind !== "hp") invalid("지원하지 않는 즉시 효과를 적용할 수 없다", { effect });
   return input.members.map((member) => {
     if (!member.alive) return member;
     const hp = Math.min(member.maxHp, Math.max(0, member.hp + effect.hpDeltaPerMember));
@@ -184,6 +230,7 @@ export function resolveMonsterEventBattle(input: {
         hp: monster.maxHp ?? enemy.maxHp,
         maxHp: monster.maxHp ?? enemy.maxHp,
         baseDamage: monster.baseDamage ?? enemy.baseDamage,
+        targetWeightMultipliers: monster.targetWeightMultipliers,
       };
     }),
     partyDamageMultiplier: (input.modifier.partyDamageMultiplier ?? 1) * (partyDamageMultiplier ?? 1),

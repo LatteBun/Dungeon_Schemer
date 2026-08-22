@@ -26,7 +26,18 @@ describe("공통 BattleEngine", () => {
     const first = resolveBattle(input);
     expect(first.status).toBe("wipe");
     expect(first.rounds).toBe(50);
+    expect(first.termination).toBe("roundLimit");
     expect(first).toEqual(resolveBattle(input));
+  });
+
+  it("파티가 전멸하면 roundLimit과 구분되는 partyWipe를 기록한다", () => {
+    const result = resolveBattle({
+      seed: "battle-party-wipe",
+      party: [{ ...party[0], hp: 1, attack: 0 }],
+      enemies: [{ id: "ogre#1", monsterId: "ogre", hp: 10, maxHp: 10, baseDamage: 5 }],
+    });
+    expect(result.status).toBe("wipe");
+    expect(result.termination).toBe("partyWipe");
   });
 
   it("적 target weight는 직업 hitWeight와 modifier의 곱이다", () => {
@@ -37,5 +48,14 @@ describe("공통 BattleEngine", () => {
       targetWeightMultipliers: { warrior: 2, mage: 0.5 },
     });
     expect(result.actions.find((action) => action.actorSide === "enemy")?.targetId).toBeDefined();
+  });
+
+  it("적별 target weight를 적용한다", () => {
+    const result = resolveBattle({
+      seed: "battle-enemy-target-weight",
+      party,
+      enemies: [{ id: "hunter#1", monsterId: "hunter", hp: 50, maxHp: 50, baseDamage: 1, targetWeightMultipliers: { warrior: 0, mage: 10 } }],
+    });
+    expect(result.actions.find((action) => action.actorSide === "enemy")?.targetId).toBe("mage");
   });
 });

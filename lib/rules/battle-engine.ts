@@ -16,6 +16,7 @@ export interface BattleEnemyInput {
   readonly hp: number;
   readonly maxHp: number;
   readonly baseDamage: number;
+  readonly targetWeightMultipliers?: Readonly<Record<string, number>>;
 }
 
 export interface BattleActionRecord {
@@ -31,6 +32,7 @@ export interface BattleActionRecord {
 
 export interface BattleResolution {
   readonly status: "victory" | "wipe";
+  readonly termination: "defeatedEnemies" | "partyWipe" | "roundLimit";
   readonly rounds: number;
   readonly actions: readonly BattleActionRecord[];
   readonly party: readonly BattlePartyMember[];
@@ -82,19 +84,19 @@ export function resolveBattle(input: BattleInput): BattleResolution {
       target.hp = Math.max(0, target.hp - dealt);
       actions.push({ round: rounds, actorSide: "party", actorId: member.id, targetId: target.id, damage: dealt, targetHpBefore: before, targetHpAfter: target.hp, defeated: target.hp === 0 });
     }
-    if (aliveEnemies().length === 0) return { status: "victory", rounds, actions, party, enemies };
+    if (aliveEnemies().length === 0) return { status: "victory", termination: "defeatedEnemies", rounds, actions, party, enemies };
     for (const enemy of enemies) {
       if (enemy.hp <= 0) continue;
       const targets = aliveParty();
-      if (targets.length === 0) return { status: "wipe", rounds, actions, party, enemies };
-      const weighted = targets.flatMap((member) => Array.from({ length: Math.max(1, Math.round(member.hitWeight * (input.targetWeightMultipliers?.[member.classId] ?? 1) * 10)) }, () => member));
+      if (targets.length === 0) return { status: "wipe", termination: "partyWipe", rounds, actions, party, enemies };
+      const weighted = targets.flatMap((member) => Array.from({ length: Math.max(1, Math.round(member.hitWeight * (input.targetWeightMultipliers?.[member.classId] ?? 1) * (enemy.targetWeightMultipliers?.[member.classId] ?? 1) * 10)) }, () => member));
       const target = rng.pick(weighted);
       const before = target.hp;
       const dealt = damage(enemy.baseDamage * (input.incomingDamageMultiplier ?? 1) * (input.incomingDamageMultiplierByMemberId?.[target.id] ?? 1));
       target.hp = Math.max(0, target.hp - dealt);
       actions.push({ round: rounds, actorSide: "enemy", actorId: enemy.id, targetId: target.id, damage: dealt, targetHpBefore: before, targetHpAfter: target.hp, defeated: target.hp === 0 });
     }
-    if (aliveParty().length === 0) return { status: "wipe", rounds, actions, party, enemies };
+    if (aliveParty().length === 0) return { status: "wipe", termination: "partyWipe", rounds, actions, party, enemies };
   }
-  return { status: "wipe", rounds: 50, actions, party, enemies };
+  return { status: "wipe", termination: "roundLimit", rounds: 50, actions, party, enemies };
 }

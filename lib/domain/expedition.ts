@@ -76,7 +76,7 @@ export interface BossInfoCut {
 export interface StrongLinkPlan {
   readonly clueId: ClueId;
   readonly predecessorNodeId: NodeId;
-  readonly followerNodeId?: NodeId;
+  readonly followerNodeId: NodeId;
 }
 
 export interface PreparedExpeditionEvents {
