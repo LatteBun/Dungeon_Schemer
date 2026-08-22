@@ -332,13 +332,13 @@ git commit -m "기능: 모든 화면 루트가 고정 캔버스를 채우게 한
 
 - [ ] **Step 1: 전체 정적 검증 실행**
 
-Run: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
+Run: `pnpm lint && pnpm typecheck && pnpm test && pnpm build --webpack`
 
 Expected: lint 오류 0개, TypeScript 오류 0개, 모든 Vitest 테스트 통과, Next.js production build 성공.
 
 - [ ] **Step 2: production 서버 실행**
 
-Run: `pnpm start -- --hostname 127.0.0.1 --port 3100`
+Run: `pnpm start --hostname 127.0.0.1 --port 3100`
 
 Expected: `http://127.0.0.1:3100`에서 Next.js production 서버가 실행된다. 이미 3100 포트를 사용 중이면 실행 중인 이 작업의 서버인지 확인하고, 다른 프로세스라면 3101부터 비어 있는 포트를 사용한다.
 
