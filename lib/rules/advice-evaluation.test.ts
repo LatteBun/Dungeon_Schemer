@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { disclosedRuleIds, presentAdviceOptions, presentShuffledAdvice } from "./advice-evaluation";
+import { decideImmediateAdvice, disclosedRuleIds, finalizeImmediateAdviceTrust, presentAdviceOptions, presentShuffledAdvice } from "./advice-evaluation";
 import type { SituationEvent } from "@/lib/domain";
 
 const event = {
@@ -41,5 +41,13 @@ describe("조언 공개", () => {
     expect(first).toEqual(second);
     expect(event.advice.map((option) => option.id)).toEqual(["a", "b", "c"]);
     expect(first[0]).not.toHaveProperty("outcome");
+  });
+
+  it("살아 있는 파티원 반응으로 실행 여부를 결정하고 적용 뒤 신뢰를 계산한다", () => {
+    const member = { id: "character-a", name: "A", classId: "test", personality: "righteous", maxHp: 10, hp: 10, trust: 100, gold: 10, alive: true, gravelyWounded: false } as any;
+    const decision = decideImmediateAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, attempt: 1, depth: 1, event: event as any, adviceId: "a" as any, members: [member] });
+    expect(decision.reactions).toHaveLength(1);
+    expect(typeof decision.executed).toBe("boolean");
+    expect(() => finalizeImmediateAdviceTrust({ decision, members: [member], applied: { executed: decision.executed, resultText: "결과" } })).not.toThrow();
   });
 });
