@@ -51,7 +51,7 @@ function RewardPair({ reputation, gold, compact = false }: { reputation: number;
 function NoticeCard({ notice, index, selected, onSelect }: { notice: U3BoardNoticeView; index: number; selected: boolean; onSelect: () => void }) {
   return (
     <button type="button" className={`u3-notice u3-notice--${index}${selected ? " is-selected" : ""}${notice.locked ? " is-locked" : ""}`} data-testid="u3-notice" aria-pressed={selected} onClick={onSelect}>
-      <img className="u3-notice__pin" data-testid="u3-notice-pin" src="/assets/u3/extracted/board-pin.png" alt="" aria-hidden="true" width={30} height={36} />
+      <img className="u3-notice__pin" data-testid="u3-notice-pin" src="/assets/u3/extracted/board-pin.png" alt="" aria-hidden="true" width={50} height={61} />
       <span className="u3-notice__heading"><strong>{notice.dungeonName}</strong><small>{notice.themeLabel}</small></span>
       <RiskStars riskLevel={notice.riskLevel} />
       <span className="u3-notice__theme-visual"><ThemeScene theme={notice.theme} testId="u3-notice-theme-scene" /></span>
@@ -119,9 +119,9 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
       <section className="u3-detail-section u3-party" aria-labelledby="u3-party-title"><h3 id="u3-party-title">탐험대 구성</h3><div className="u3-party__grid">{detail.party.map((member, index) => <PartyCard key={member.id} member={member} index={index} />)}</div></section>
       <ContractOutcomes detail={detail} />
       <button type="button" className="u3-contract-button" disabled={detail.locked} onClick={() => onContract(detail.offerId)}>
-        <img className="u3-contract-button__emblem" src="/assets/u3/extracted/contract-emblem.png" alt="" aria-hidden="true" width={72} height={72} />
+        <img className="u3-contract-button__seal" src="/assets/u3/extracted/contract-emblem.png" alt="" aria-hidden="true" width={40} height={42} />
         <strong>{detail.locked ? "진입 불가" : "이 공고 계약하기"}</strong>
-        <img className="u3-contract-button__arrow" src="/assets/u3/extracted/arrow-right.png" alt="" aria-hidden="true" width={56} height={36} />
+        <img className="u3-contract-button__arrow" src="/assets/u3/extracted/arrow-right.png" alt="" aria-hidden="true" width={70} height={27} />
       </button>
     </div>
   );

@@ -4,7 +4,7 @@ type U1TestSearchParams = Promise<{
   screen?: string | string[];
 }>;
 
-export async function U1TestPage({
+async function U1TestPage({
   searchParams,
 }: {
   searchParams: U1TestSearchParams;
