@@ -13,6 +13,7 @@ import type {
   SituationEvent,
   ThemeId,
 } from "@/lib/domain";
+import { PERSONALITY_LABEL, classLabel } from "./character-labels";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import {
@@ -91,8 +92,8 @@ function partyViews() {
   return members.map((member) => ({
     id: String(member.id),
     name: member.name,
-    job: String(member.classId),
-    personality: member.personality,
+    job: classLabel(member.classId),
+    personality: PERSONALITY_LABEL[member.personality],
     hp: member.hp,
     maxHp: member.maxHp,
     trust: member.trust,

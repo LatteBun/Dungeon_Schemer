@@ -1,5 +1,6 @@
 import { CLASSES } from "@/lib/content/classes";
 import { RANK_RISK_LIMIT } from "@/lib/domain";
+import { PERSONALITY_LABEL } from "./character-labels";
 import type {
   BoardOffer,
   CampaignState,
@@ -19,13 +20,7 @@ const FULL_SURVIVOR_REWARD = {
   Record<RiskLevel, { reputation: number; gold: number }>
 >;
 
-const PERSONALITY_LABELS: Readonly<Record<Personality, string>> = {
-  suspicious: "의심 많은",
-  righteous: "정의로운",
-  greedy: "탐욕적인",
-  prudent: "신중한",
-  impulsive: "충동적인",
-};
+
 
 const THEME_LABELS: Readonly<Record<ThemeId, string>> = {
   spider: "거미굴",
@@ -174,7 +169,7 @@ export function createU3BoardView(
         id: character.id,
         name: character.name,
         classLabel: classLabel(character.classId),
-        personalityLabel: PERSONALITY_LABELS[character.personality],
+        personalityLabel: PERSONALITY_LABEL[character.personality],
         hp: character.hp,
         maxHp: character.maxHp,
         trust: character.trust,
