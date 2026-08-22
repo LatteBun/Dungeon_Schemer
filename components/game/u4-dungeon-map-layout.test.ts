@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { GeneratedMap, NodeId } from "@/lib/domain";
 import { createU4DungeonMapLayout } from "./u4-dungeon-map-layout";
+import {
+  countU4LayerCrossings,
+  createU4OptimizedLayerOrder,
+} from "./u4-dungeon-map-order";
 
 const id = (value: string) => value as NodeId;
 
@@ -18,6 +22,34 @@ const D3E = id("d3-e");
 const D4A = id("d4-a");
 const D4B = id("d4-b");
 const BOSS = id("boss");
+
+const CROSS_ENTRY = id("cross-entry");
+const CROSS_A = id("cross-a");
+const CROSS_B = id("cross-b");
+const CROSS_C = id("cross-c");
+const CROSS_D = id("cross-d");
+const CROSS_BOSS = id("cross-boss");
+
+const CROSSING_MAP: GeneratedMap = {
+  entryNodeId: CROSS_ENTRY,
+  bossNodeId: CROSS_BOSS,
+  layers: [
+    { depth: 1, nodeIds: [CROSS_A, CROSS_B] },
+    { depth: 2, nodeIds: [CROSS_C, CROSS_D] },
+  ],
+  nodes: [
+    {
+      id: CROSS_ENTRY,
+      kind: "entry",
+      nextNodeIds: [CROSS_A, CROSS_B],
+    },
+    { id: CROSS_A, kind: "normal", nextNodeIds: [CROSS_D] },
+    { id: CROSS_B, kind: "normal", nextNodeIds: [CROSS_C] },
+    { id: CROSS_C, kind: "normal", nextNodeIds: [CROSS_BOSS] },
+    { id: CROSS_D, kind: "normal", nextNodeIds: [CROSS_BOSS] },
+    { id: CROSS_BOSS, kind: "boss", nextNodeIds: [] },
+  ],
+};
 
 const MAP: GeneratedMap = {
   entryNodeId: ENTRY,
@@ -47,6 +79,32 @@ const MAP: GeneratedMap = {
 };
 
 describe("U4 dungeon map layout", () => {
+  it("uses the global minimum-crossing row order for room coordinates", () => {
+    const originalRows = [
+      [CROSS_ENTRY],
+      [CROSS_A, CROSS_B],
+      [CROSS_C, CROSS_D],
+      [CROSS_BOSS],
+    ] as const;
+    const optimized = createU4OptimizedLayerOrder(CROSSING_MAP);
+    const layout = createU4DungeonMapLayout(CROSSING_MAP);
+    const rowIds = [
+      [CROSS_ENTRY],
+      ...CROSSING_MAP.layers.map((layer) =>
+        [...layer.nodeIds].sort(
+          (left, right) =>
+            layout.nodePositions[left]!.x -
+            layout.nodePositions[right]!.x,
+        ),
+      ),
+      [CROSS_BOSS],
+    ];
+
+    expect(countU4LayerCrossings(CROSSING_MAP, originalRows)).toBe(1);
+    expect(optimized.crossingCount).toBe(0);
+    expect(countU4LayerCrossings(CROSSING_MAP, rowIds)).toBe(0);
+  });
+
   it("places entry at bottom center and boss at top center with safe margins", () => {
     const layout = createU4DungeonMapLayout(MAP);
     const entry = layout.nodePositions[ENTRY];

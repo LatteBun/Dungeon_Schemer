@@ -1,4 +1,5 @@
 import type { GeneratedMap, NodeId } from "@/lib/domain";
+import { createU4OptimizedLayerOrder } from "./u4-dungeon-map-order";
 
 export interface U4Point {
   x: number;
@@ -68,11 +69,13 @@ export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
     [map.entryNodeId]: ENTRY_POSITION,
     [map.bossNodeId]: BOSS_POSITION,
   };
+  const optimized = createU4OptimizedLayerOrder(map);
 
   map.layers.forEach((layer, layerIndex) => {
+    const orderedNodeIds = optimized.rows[layerIndex + 1]!;
     const xs = xPositions(layer.nodeIds.length);
     const y = depthY(layerIndex, map.layers.length);
-    layer.nodeIds.forEach((nodeId, nodeIndex) => {
+    orderedNodeIds.forEach((nodeId, nodeIndex) => {
       positions[nodeId] = renderPoint(xs[nodeIndex]!, y);
     });
   });
