@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { validateThemes } from "@/lib/content/theme-validation";
+import { THEMES } from "@/lib/content/themes";
+import { eventsForTheme } from "@/lib/content/event-registry";
+import { validateProfileStrongCapacity } from "@/lib/content/situation-validation";
 import { RuleError } from "@/lib/domain";
 import type {
   BossDef,
@@ -265,4 +268,43 @@ describe("validateThemes", () => {
     expectInvalidGeneration(() => validateThemes([theme]));
   });
 
+});
+
+describe("E3 정정 ecology profile", () => {
+  it("정정된 사막·묘지 profile 배열을 유지한다", () => {
+    const profile = (themeId: "desert" | "graveyard", id: string) =>
+      THEMES.find((theme) => theme.id === themeId)?.ecologyProfiles.find((candidate) => candidate.id === id);
+    expect(profile("desert", "desert-burning-waste")?.activeRuleIds).toEqual([
+      "desert-spirit-dry", "desert-mummy-silent", "desert-wind-track",
+    ]);
+    expect(profile("desert", "desert-burning-waste")?.activeMonsterIds).toEqual([
+      "desert-spirit", "desert-mummy",
+    ]);
+    expect(profile("graveyard", "graveyard-grave-robber")?.activeRuleIds).toEqual([
+      "graveyard-light", "graveyard-guard", "graveyard-desecration",
+    ]);
+    expect(profile("graveyard", "graveyard-grave-robber")?.activeMonsterIds).toEqual([
+      "graveyard-mage", "graveyard-soldier",
+    ]);
+    expect(profile("graveyard", "graveyard-hunters")?.activeRuleIds).toEqual([
+      "graveyard-archer-light", "graveyard-guard", "graveyard-desecration",
+    ]);
+    expect(profile("graveyard", "graveyard-hunters")?.activeMonsterIds).toEqual([
+      "graveyard-archer", "graveyard-soldier",
+    ]);
+    expect(profile("graveyard", "graveyard-blighted-tomb")?.activeRuleIds).toEqual([
+      "graveyard-light", "graveyard-archer-light", "graveyard-desecration",
+    ]);
+    expect(profile("graveyard", "graveyard-blighted-tomb")?.activeMonsterIds).toEqual([
+      "graveyard-mage", "graveyard-archer",
+    ]);
+  });
+
+  it("모든 shipped profile은 현재 위험도의 strong capacity를 가진다", () => {
+    for (const theme of THEMES) {
+      for (const profile of theme.ecologyProfiles) {
+        expect(() => validateProfileStrongCapacity(profile, eventsForTheme(theme.id))).not.toThrow();
+      }
+    }
+  });
 });

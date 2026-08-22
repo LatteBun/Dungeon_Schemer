@@ -100,6 +100,12 @@ export type {
   ExpeditionState,
   ExpeditionStatus,
   PendingMerchantEffect,
+  PreparedExpeditionEvents,
+  PreparedNodePlan,
+  BossInfoCut,
+  StrongLinkPlan,
+  MaterializedNodeEvent,
+  HiddenNodeRole,
 } from "./expedition";
 
 export { ADVICE_OUTCOMES, ECOLOGY_RELATIONS } from "./info";
@@ -134,6 +140,10 @@ export type {
   NonMerchantAdviceOption,
   NonMerchantSituationEvent,
   SituationEvent,
+  EncounterDefinition,
+  EncounterEnemyGroup,
+  EncounterModifier,
+  ImmediateEventEffect,
 } from "./content";
 
 export { SEED_STREAMS } from "./seeds";

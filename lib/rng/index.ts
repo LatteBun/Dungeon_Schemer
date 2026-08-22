@@ -14,6 +14,7 @@
  * boss      보스전 판정의 확률
  * trust     개인 신뢰 판정의 확률
  * worldturn 월드턴 활동과 상태 변화
+ * battle 공통 자동전투 계산
  */
 export const RNG_STREAMS = [
   "pool",
@@ -27,6 +28,7 @@ export const RNG_STREAMS = [
   "boss",
   "trust",
   "worldturn",
+  "battle",
 ] as const;
 
 export type RngStream = (typeof RNG_STREAMS)[number];

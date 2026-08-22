@@ -1,7 +1,8 @@
 import type { GeneratedMap, RiskLevel } from "./dungeon";
 import type { ExpeditionParty } from "./pool";
 import type { InfoRecord } from "./info";
-import type { ChoiceId, CharacterId, DungeonId, NodeId, RuleId } from "./ids";
+import type { ChoiceId, CharacterId, ClueId, DungeonId, EventId, NodeId, RuleId } from "./ids";
+import type { EventKind, SituationEvent } from "./content";
 
 export type ExpeditionStatus = "cleared" | "wiped";
 
@@ -57,4 +58,39 @@ export interface ExpeditionState {
   pendingMerchantEffect: PendingMerchantEffect | null;
   bossResult: BossResult | null;
   result: ExpeditionResult | null;
+}
+
+export type HiddenNodeRole = "normal" | "bossInfo" | "strongPredecessor" | "strongFollower";
+
+export interface PreparedNodePlan {
+  readonly nodeId: NodeId;
+  readonly category: EventKind;
+  readonly hiddenRole: HiddenNodeRole;
+  readonly plannedClueId?: ClueId;
+}
+
+export interface BossInfoCut {
+  readonly nodeIds: readonly NodeId[];
+}
+
+export interface StrongLinkPlan {
+  readonly clueId: ClueId;
+  readonly predecessorNodeId: NodeId;
+  readonly followerNodeId?: NodeId;
+}
+
+export interface PreparedExpeditionEvents {
+  readonly nodePlans: ReadonlyMap<NodeId, PreparedNodePlan>;
+  readonly bossInfoCuts: readonly BossInfoCut[];
+  readonly strongLinks: readonly StrongLinkPlan[];
+  readonly usedEventIds: ReadonlySet<EventId>;
+  readonly heldClueIds: ReadonlySet<ClueId>;
+  readonly materializedEvents: ReadonlyMap<NodeId, SituationEvent>;
+  readonly pendingNextBattleEffect?: PendingMerchantEffect;
+}
+
+export interface MaterializedNodeEvent {
+  readonly event: SituationEvent;
+  readonly state: PreparedExpeditionEvents;
+  readonly revealedClueId?: ClueId;
 }
