@@ -6,7 +6,7 @@
   border-top: 1px solid rgb(112 79 34 / 65%);
   border-bottom: 1px solid #6b502a;
   background: linear-gradient(180deg, rgb(5 5 4 / 99%), rgb(9 7 5 / 99%));
-  box-shadow: 0 2px 12px rgb(0 0 0 / 72%);
+  box-shadow: 0 0.125rem 0.75rem rgb(0 0 0 / 72%);
 }
 
 .u3-board-screen .game-shell__status-list {

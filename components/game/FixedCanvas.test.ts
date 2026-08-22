@@ -63,4 +63,22 @@ describe("16:9 고정 캔버스", () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it("게시판 나뭇결은 판과 함께 커진다", () => {
+    const sheet = css("u3-board.css");
+
+    expect(sheet).toContain("#321d10 0.5rem 0.8125rem");
+    expect(sheet).not.toContain("#321d10 8px 13px");
+  });
+
+  it("번짐이 큰 그림자는 축척을 따른다", () => {
+    const offenders = styleSheets().flatMap((name) =>
+      (css(name).match(/box-shadow:[^;]+;/g) ?? [])
+        .flatMap((rule) => rule.match(/\d+px/g) ?? [])
+        .filter((value) => Number.parseInt(value, 10) >= 12)
+        .map((value) => `${name}: ${value}`),
+    );
+
+    expect(offenders).toEqual([]);
+  });
 });
