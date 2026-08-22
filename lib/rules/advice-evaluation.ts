@@ -1,4 +1,5 @@
 import { RuleError } from "@/lib/domain";
+import { conditionalRuleIdsForEvent } from "@/lib/content/conditional-event-rules";
 import type {
   AdviceDecision,
   AdviceOutcome,
@@ -63,11 +64,22 @@ export function isEventEligible(input: {
   if (!sources.every((ruleId) => input.dungeon.theme === input.theme.id && input.dungeon.activeRuleIds.includes(ruleId))) {
     return false;
   }
-  const satisfied = "satisfiedConditionalRuleIds" in input.event
-    ? input.event.satisfiedConditionalRuleIds
-    : undefined;
+
+  const declared = conditionalRuleIdsForEvent(input.event.id);
+  const inline = "satisfiedConditionalRuleIds" in input.event
+    ? input.event.satisfiedConditionalRuleIds ?? []
+    : [];
+  const declaredSet = new Set(declared);
+  const inlineSet = new Set(inline);
+  if (
+    declaredSet.size !== inlineSet.size
+    || [...declaredSet].some((ruleId) => !inlineSet.has(ruleId))
+  ) {
+    return false;
+  }
+
   return sources.every((ruleId) =>
-    !input.theme.rules.find((rule) => rule.id === ruleId)?.conditional || satisfied?.includes(ruleId) === true,
+    !input.theme.rules.find((rule) => rule.id === ruleId)?.conditional || declaredSet.has(ruleId),
   );
 }
 
