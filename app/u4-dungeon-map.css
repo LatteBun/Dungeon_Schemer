@@ -40,12 +40,6 @@
   background: #0b0806;
 }
 
-.u4-dungeon-map-screen .game-shell__main,
-.u4-dungeon-map-screen .game-shell__right-panel {
-  min-height: 0;
-  overflow: hidden;
-  padding: clamp(0.55rem, 1cqw, 0.8rem);
-}
 
 .u4-dungeon-map-screen .game-shell__main {
   display: flex;
@@ -60,14 +54,6 @@
     #0d0a07;
 }
 
-.u4-dungeon-map-screen .game-shell__main > h1 {
-  flex: 0 0 auto;
-  margin: 0 0 0.42rem;
-  color: #e5c77f;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1rem, 1.3cqw, 1.25rem);
-  letter-spacing: 0.03em;
-}
 
 .u4-map-panel {
   display: grid;

@@ -12,15 +12,6 @@
 .u3-theme-scene--spider { background-position: 50% center; }
 .u3-theme-scene--graveyard { background-position: 100% center; }
 
-.u3-board-screen .game-shell__main,
-.u3-board-screen .game-shell__right-panel {
-  padding: clamp(0.8rem, 0.9cqw, 1.6rem);
-}
-
-.u3-board-screen .game-shell__main > h1 {
-  margin-bottom: clamp(0.5rem, 0.55cqw, 0.85rem);
-  font-size: clamp(1.3rem, 1.2cqw, 1.9rem);
-}
 
 .u3-guild-board {
   padding: clamp(1rem, 1.15cqw, 1.75rem);

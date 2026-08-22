@@ -25,7 +25,6 @@
 .u5-progress-screen .game-shell__right-panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  min-height: 0;
 }
 
 .u5-progress-screen .game-shell__right-panel {

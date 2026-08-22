@@ -1,3 +1,8 @@
+.party-card,
+.party-list {
+  --party-portrait-height: clamp(5.5rem, 8.6cqw, 11.5rem);
+}
+
 /* 파티원 카드 — 파티 상태를 보여주는 모든 화면이 함께 쓴다.
  *
  * 화면마다 카드를 따로 그리면 같은 파티원이 다르게 보이고 플레이어가 자리를
@@ -31,11 +36,15 @@
 .party-card__portrait {
   position: relative;
   display: grid;
-  /* 폭에서 정사각으로 높이를 얻는다. 컨테이너를 보지 않으므로 어느 화면에
-   * 놓여도 같은 비율이다. 다만 상한을 둔다. 우측 패널이 좁은 화면(U3)에서
-   * 정사각을 그대로 쓰면 카드가 부풀어 아래 요소를 밖으로 밀어낸다. */
-  aspect-ratio: 1;
-  max-height: clamp(5rem, 8.5cqw, 11rem);
+  /*
+   * 높이만 정하고 폭은 카드를 그대로 채운다.
+   *
+   * 전에는 aspect-ratio 1 로 정사각을 만들고 max-height 로 눌렀는데, 상한에
+   * 걸리는 순간 폭도 같이 줄어서 초상이 카드 왼쪽에 붙고 오른쪽에 빈 칸이
+   * 남았다. 높이를 컨테이너에서 직접 얻으면 그 일이 없고, 카드 높이가 화면과
+   * 무관하게 같아진다는 성질도 그대로다.
+   */
+  height: var(--party-portrait-height);
   min-height: 0;
   place-items: center;
   overflow: hidden;
@@ -47,7 +56,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 0%;
+  /* 가로로 넓은 창이라 위를 딱 맞추면 턱에서 잘린다. 조금 내려 얼굴을 담는다. */
+  object-position: 50% 8%;
   filter: sepia(0.08) saturate(0.9) contrast(1.04);
 }
 

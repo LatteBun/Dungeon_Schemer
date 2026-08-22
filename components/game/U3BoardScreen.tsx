@@ -97,8 +97,10 @@ function PartyCard({ member, index }: { member: U3OfferDetailView["party"][numbe
 }
 
 function ContractOutcomes({ detail }: { detail: U3OfferDetailView }) {
+  // u3-detail-section 을 붙이지 않는다. 그 클래스가 불투명한 질감 배경을 달고
+  // 오는데, 계약 카드 안에서는 그것이 던전 장면을 덮어 버린다.
   return (
-    <section className="u3-detail-section u3-contract-outcomes" aria-labelledby="u3-contract-title">
+    <section className="u3-contract-outcomes" aria-labelledby="u3-contract-title">
       <h3 id="u3-contract-title">계약 조건</h3>
       <div className="u3-contract-outcomes__rows">
         {detail.contractOutcomes.map((outcome) => <div key={outcome.survivors} className={outcome.survivors === 0 ? "is-death" : ""}>

@@ -104,6 +104,11 @@ body {
   --status-icon-size: clamp(1.45rem, 1.35cqw, 2.15rem);
   --status-label-size: clamp(0.72rem, 0.72cqw, 1.1rem);
   --status-value-size: clamp(0.86rem, 0.82cqw, 1.25rem);
+
+  /* 셸 틀 — 두 칸의 여백과 화면 제목. 화면별 파일에서 다시 정하지 않는다. */
+  --shell-padding: clamp(0.85rem, 0.95cqw, 1.45rem);
+  --shell-title-size: clamp(1.05rem, 1.15cqw, 1.6rem);
+  --shell-title-gap: clamp(0.42rem, 0.5cqw, 0.8rem);
 }
 
 .game-shell__status-bar {
@@ -207,11 +212,20 @@ body {
   min-height: calc(100% - 4.75rem);
 }
 
+/*
+ * 셸의 두 칸. 여백은 화면마다 다시 정하지 않는다.
+ *
+ * 여기 값이 화면별 파일에서 세 번 더 덮이는 바람에 u4 는 12.8px, u5·u6 는
+ * 16px, u3 는 17.3px 로 갈라져 있었다. 화면을 옮길 때마다 제목과 본문이
+ * 몇 px 씩 미끄러지는 원인이 이것이다. 상태 바와 같은 방식으로 여기서 고정한다.
+ */
 .game-shell__main,
 .game-shell__right-panel {
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   overflow-wrap: anywhere;
-  padding: 1rem;
+  padding: var(--shell-padding);
 }
 
 .game-shell__surface {
@@ -225,12 +239,16 @@ body {
   border-right: 1px solid color-mix(in srgb, var(--color-shell-metal) 68%, var(--color-edge));
 }
 
+/* 화면 제목도 마찬가지다. u3·u4 만 세리프 금색이고 u5·u6 는 기본 서체라
+ * 전환할 때 글자 모양까지 바뀌었다. 완성도가 높은 쪽으로 통일한다. */
 .game-shell__main > h1 {
-  margin: 0 0 1rem;
-  color: var(--color-shell-gold);
-  font-size: 1.25rem;
+  flex: 0 0 auto;
+  margin: 0 0 var(--shell-title-gap);
+  color: #e5c77f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: var(--shell-title-size);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }
 
 .game-shell__right-panel {
