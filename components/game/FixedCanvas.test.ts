@@ -25,7 +25,7 @@ function uiSources(): Array<{ name: string; source: string }> {
   return ["app", join("components", "game")].flatMap((root) => {
     const absoluteRoot = join(process.cwd(), root);
 
-    return readdirSync(absoluteRoot, { recursive: true })
+    return readdirSync(absoluteRoot, { recursive: true, encoding: "utf8" })
       .filter((name) => name.endsWith(".tsx"))
       .map((name) => {
         const relativeName = join(root, name);
@@ -73,7 +73,7 @@ describe("16:9 고정 캔버스", () => {
       '.game-canvas > :not([data-canvas-layout="intrinsic"])',
     );
     expect(sheet).toMatch(
-      /\.game-canvas > :not\(\[data-canvas-layout="intrinsic"\]\)\s*\{[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*min-width:\s*0;[^}]*min-height:\s*0;/s,
+      /\.game-canvas > :not\(\[data-canvas-layout="intrinsic"\]\)\s*\{[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*min-width:\s*0;[^}]*min-height:\s*0;/,
     );
   });
 
