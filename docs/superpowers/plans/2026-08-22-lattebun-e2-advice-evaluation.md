@@ -42,7 +42,7 @@
 - Modify: `lib/domain/ids.ts`, `lib/domain/dungeon.ts`, `lib/domain/campaign.ts`, `lib/domain/index.ts`
 - Modify: `lib/content/themes.ts`, `lib/content/theme-validation.ts`, `lib/content/theme-validation.test.ts`, `lib/domain/contract.test.ts`
 - Modify: `lib/rules/board.ts`, `lib/rules/board.test.ts`
-- Modify: `components/game/u3-board-model.ts`, `components/game/u3-board-model.test.ts`, `components/game/U3BoardScreen.tsx`, `components/game/U3BoardScreen.test.ts`, `app/u3-board.css`
+- Modify: `components/game/u3-board-model.ts`, `components/game/u3-board-model.test.ts`, `components/game/U3BoardScreen.tsx`, `components/game/U3BoardScreen.test.ts`, `app/u3-board.css`, `app/u3-responsive-layout.css`, `app/u3-large-screen.css`, `app/u3-card-theme.css`
 
 **Produces:** `ThemeContent`와 `EcologyProfile`은 활성 규칙·출현 몬스터만, `BoardOffer`는 던전·위험도·파티·잠금 사유만 보관한다.
 
@@ -60,7 +60,7 @@ Expected: FAIL. 현재 타입과 U3가 공개 환경 특성을 요구하거나 �
 
 - [ ] **Step 3: 게시판과 U3 표현 모델을 정리한다.**
 
-`board.ts`의 `publicTagForDungeon()`와 관련 imports를 삭제하고 `createBoardOffers()`가 `riskLevel` 뒤에 바로 `party`를 넣는다. U3 view 타입에서 `environmentLabel`을 제거하고, 모델 생성과 `U3BoardScreen`의 공고 카드·계약 상세 환경 특성 markup을 삭제한다. `app/u3-board.css`에서 이제 markup이 없는 `.u3-notice__environment`와 그 하위 selector를 삭제하고, 남은 공고 카드의 grid/spacing을 명시적으로 조정해 빈 영역이 생기지 않게 한다.
+`board.ts`의 `publicTagForDungeon()`와 관련 imports를 삭제하고 `createBoardOffers()`가 `riskLevel` 뒤에 바로 `party`를 넣는다. U3 view 타입에서 `environmentLabel`을 제거하고, 모델 생성과 `U3BoardScreen`의 공고 카드·계약 상세 환경 특성 markup을 삭제한다. U3 관련 네 개 CSS에서 이제 markup이 없는 `.u3-notice__environment`와 그 하위 selector를 삭제하고, 남은 공고 카드의 grid/spacing을 명시적으로 조정해 빈 영역이 생기지 않게 한다.
 
 - [ ] **Step 4: 회귀 검사를 통과시킨다.**
 
@@ -71,7 +71,7 @@ Expected: PASS. 환경 특성의 타입·콘텐츠·공고·표시가 모두 사
 - [ ] **Step 5: 독립 변경을 커밋한다.**
 
 ```bash
-git add lib/domain lib/content/themes.ts lib/content/theme-validation.ts lib/content/theme-validation.test.ts lib/rules/board.ts lib/rules/board.test.ts components/game/u3-board-model.ts components/game/u3-board-model.test.ts components/game/U3BoardScreen.tsx components/game/U3BoardScreen.test.ts app/u3-board.css
+git add lib/domain lib/content/themes.ts lib/content/theme-validation.ts lib/content/theme-validation.test.ts lib/rules/board.ts lib/rules/board.test.ts components/game/u3-board-model.ts components/game/u3-board-model.test.ts components/game/U3BoardScreen.tsx components/game/U3BoardScreen.test.ts components/game/U3Assets.test.ts app/u3-board.css app/u3-responsive-layout.css app/u3-large-screen.css app/u3-card-theme.css
 git commit -m "도메인: 게시판 환경 특성을 제거한다" -m "생태 추론 정보를 계약 뒤 원정 단계에서만 공개하도록 C2와 U3 계약을 정리한다."
 ```
 

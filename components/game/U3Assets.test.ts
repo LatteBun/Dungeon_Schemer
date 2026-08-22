@@ -73,7 +73,7 @@ describe("U3 extracted asset-board assets", () => {
   it("공고의 남는 공간은 장면 행에만 배분한다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
 
-    expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto");
+    expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr) auto auto auto");
     expect(css).toContain(".u3-notice__theme-visual");
     expect(css).toContain("max-height: 100%");
     expect(css).toContain("font-size: clamp(0.78rem, 0.68vw, 1rem);");
@@ -120,7 +120,7 @@ describe("U3 extracted asset-board assets", () => {
     expect(css).toContain("calc(0.68rem + 0.18vw + 0.12vh)");
     expect(css).toContain(".u3-board-screen .u3-reward__label");
     expect(css).toContain("clamp(0.72rem");
-    expect(css).toContain(".u3-notice__environment strong");
+    expect(css).not.toContain(".u3-notice__environment strong");
     expect(css).toContain(".u3-contract-outcomes__rows > div");
   });
 

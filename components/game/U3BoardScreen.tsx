@@ -57,7 +57,6 @@ function NoticeCard({ notice, index, selected, onSelect }: { notice: U3BoardNoti
       <span className="u3-notice__theme-visual"><ThemeScene theme={notice.theme} testId="u3-notice-theme-scene" /></span>
       <span className="u3-notice__label">3명 생존 보상</span>
       <RewardPair reputation={notice.reputationReward} gold={notice.goldReward} compact />
-      <span className="u3-notice__environment" data-testid="u3-notice-environment"><span><small>환경 특성</small><strong>{notice.environmentLabel}</strong></span></span>
       <span className="u3-notice__state">{notice.locked ? "진입 불가" : selected ? "선택 중" : "진입 가능"}</span>
     </button>
   );
@@ -114,7 +113,7 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
       <section className="u3-detail-section u3-dungeon-summary" aria-labelledby="u3-dungeon-title">
         <div className="u3-dungeon-summary__motif"><ThemeScene theme={detail.theme} /></div>
         <div className="u3-dungeon-summary__copy"><span>{detail.themeLabel}</span><h2 id="u3-dungeon-title">{detail.dungeonName}</h2><RiskStars riskLevel={detail.riskLevel} /></div>
-        <div className="u3-dungeon-summary__facts"><span>환경 특성 <strong>{detail.environmentLabel}</strong></span><span>3명 생존 보상<RewardPair reputation={detail.reputationReward} gold={detail.goldReward} compact /></span></div>
+        <div className="u3-dungeon-summary__facts"><span>3명 생존 보상<RewardPair reputation={detail.reputationReward} gold={detail.goldReward} compact /></span></div>
         {detail.lockReasonLabel === null ? null : <p className="u3-dungeon-summary__lock">{detail.lockReasonLabel}</p>}
       </section>
       <section className="u3-detail-section u3-party" aria-labelledby="u3-party-title"><h3 id="u3-party-title">탐험대 구성</h3><div className="u3-party__grid">{detail.party.map((member, index) => <PartyCard key={member.id} member={member} index={index} />)}</div></section>

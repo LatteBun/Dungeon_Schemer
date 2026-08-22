@@ -41,7 +41,7 @@ describe("U3 board model", () => {
     ]);
   });
 
-  it("C2 공고의 공개 환경 특성을 공고마다 정확히 하나씩 투영한다", () => {
+  it("C2 공고 모델은 공개 환경 특성을 투영하지 않는다", () => {
     const campaign = initializeCampaign("u3-board-model-environment");
     const offers = createBoardOffers(campaign);
     const board = createU3BoardView(campaign, offers);
@@ -50,11 +50,7 @@ describe("U3 board model", () => {
     expect(board.notices.length).toBeLessThanOrEqual(5);
     expect(board.notices).toHaveLength(offers.length);
 
-    for (const [index, offer] of offers.entries()) {
-      expect(board.notices[index]?.environmentLabel).toBe(
-        offer.publicEnvironmentTag.label,
-      );
-    }
+    expect(board.notices.every((notice) => !("environmentLabel" in notice))).toBe(true);
   });
 
   it("공고의 임시 파티 3명을 캠페인의 실제 캐릭터 상태로 해석한다", () => {

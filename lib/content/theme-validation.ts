@@ -2,7 +2,6 @@ import { RuleError } from "@/lib/domain";
 import {
   ACTIVE_ECOLOGY_RULES,
   type BossDef,
-  type EnvironmentTagDefinition,
   type EcologyRule,
   type EcologyProfile,
   type MonsterDef,
@@ -17,7 +16,6 @@ const RULES_PER_THEME = 6;
 const MONSTERS_PER_THEME = 5;
 const BOSSES_PER_THEME = 4;
 const ECOLOGY_PROFILES_PER_THEME = 5;
-const PUBLIC_ENVIRONMENT_TAGS_PER_THEME = 3;
 
 function invalid(message: string, details: Record<string, unknown>): never {
   throw new RuleError("INVALID_GENERATION", message, details);
@@ -139,56 +137,10 @@ function validateBosses(bosses: readonly BossDef[], theme: string): void {
   }
 }
 
-function validatePublicEnvironmentTags(
-  tags: readonly EnvironmentTagDefinition[],
-  theme: string,
-): void {
-  if (tags.length !== PUBLIC_ENVIRONMENT_TAGS_PER_THEME) {
-    invalid(`공개 환경 특성이 ${PUBLIC_ENVIRONMENT_TAGS_PER_THEME}개가 아니다: ${theme}`, {
-      contentType: "publicEnvironmentTag",
-      theme,
-      expected: PUBLIC_ENVIRONMENT_TAGS_PER_THEME,
-      actual: tags.length,
-    });
-  }
-
-  requireUniqueIds(tags.map((tag) => tag.id), "publicEnvironmentTag", theme);
-
-  for (const tag of tags) {
-    requireText(tag.label, `공개 환경 특성 문구가 비어 있다: ${tag.id}`, {
-      contentType: "publicEnvironmentTag",
-      theme,
-      tagId: tag.id,
-    });
-    if (tag.evidenceMonsterTraits.length === 0) {
-      invalid(`공개 환경 특성의 몬스터 근거가 비어 있다: ${tag.id}`, {
-        contentType: "publicEnvironmentTag",
-        theme,
-        tagId: tag.id,
-      });
-    }
-    if (tag.evidenceMonsterTraits.some((trait) => trait.trim() === "")) {
-      invalid(`공개 환경 특성의 몬스터 근거 문구가 비어 있다: ${tag.id}`, {
-        contentType: "publicEnvironmentTag",
-        theme,
-        tagId: tag.id,
-      });
-    }
-    if (new Set(tag.evidenceMonsterTraits).size !== tag.evidenceMonsterTraits.length) {
-      invalid(`공개 환경 특성의 몬스터 근거가 중복된다: ${tag.id}`, {
-        contentType: "publicEnvironmentTag",
-        theme,
-        tagId: tag.id,
-      });
-    }
-  }
-}
-
 function validateEcologyProfiles(
   profiles: readonly EcologyProfile[],
   rules: readonly EcologyRule[],
   monsters: readonly MonsterDef[],
-  tags: readonly EnvironmentTagDefinition[],
   theme: string,
 ): void {
   if (profiles.length !== ECOLOGY_PROFILES_PER_THEME) {
@@ -204,8 +156,6 @@ function validateEcologyProfiles(
 
   const ruleById = new Map(rules.map((rule) => [rule.id, rule]));
   const monsterIds = new Set(monsters.map((monster) => monster.id));
-  const monsterById = new Map(monsters.map((monster) => [monster.id, monster]));
-  const tagById = new Map(tags.map((tag) => [tag.id, tag]));
 
   for (const profile of profiles) {
     if (profile.theme !== theme) {
@@ -214,16 +164,6 @@ function validateEcologyProfiles(
         theme,
         profileId: profile.id,
         actualTheme: profile.theme,
-      });
-    }
-
-    const tag = tagById.get(profile.publicEnvironmentTagId);
-    if (tag === undefined) {
-      invalid(`생태 패키지가 테마 밖 환경 특성을 참조한다: ${profile.id} → ${profile.publicEnvironmentTagId}`, {
-        contentType: "ecologyProfile",
-        theme,
-        profileId: profile.id,
-        publicEnvironmentTagId: profile.publicEnvironmentTagId,
       });
     }
 
@@ -271,19 +211,6 @@ function validateEcologyProfiles(
       }
     }
 
-    const evidenceFound = profile.activeMonsterIds.some((monsterId) => {
-      const monster = monsterById.get(monsterId);
-      return monster?.traits.some((trait) => tag.evidenceMonsterTraits.includes(trait)) ?? false;
-    });
-    if (!evidenceFound) {
-      invalid("생태 패키지의 공개 환경 특성에 몬스터 근거가 없다", {
-        contentType: "ecologyProfile",
-        theme,
-        profileId: profile.id,
-        publicEnvironmentTagId: profile.publicEnvironmentTagId,
-      });
-    }
-
     const hasConditionalRule = activeRules.some((rule) => rule.conditional);
     if (profile.initialRiskLevel <= 3 && hasConditionalRule) {
       invalid(`저위험도 생태 패키지에 조건부 규칙이 있다: ${profile.id}`, {
@@ -315,12 +242,10 @@ export function validateThemes(themes: readonly ThemeContent[]): void {
   for (const theme of themes) {
     validateRules(theme.rules, theme.id);
     validateMonsters(theme.monsters, theme.id);
-    validatePublicEnvironmentTags(theme.publicEnvironmentTags, theme.id);
     validateEcologyProfiles(
       theme.ecologyProfiles,
       theme.rules,
       theme.monsters,
-      theme.publicEnvironmentTags,
       theme.id,
     );
     validateBosses(theme.bosses, theme.id);

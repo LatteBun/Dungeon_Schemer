@@ -22,7 +22,6 @@ export type RuleId = Brand<string, "RuleId">;
 export type BossRuleId = Brand<string, "BossRuleId">;
 export type MonsterId = Brand<string, "MonsterId">;
 export type EcologyProfileId = Brand<string, "EcologyProfileId">;
-export type PublicEnvironmentTagId = Brand<string, "PublicEnvironmentTagId">;
 
 /** 상황 묘사가 남기는 관찰 결과. 약한 연계와 강한 연계의 유일한 화폐다. */
 export type ClueId = Brand<string, "ClueId">;

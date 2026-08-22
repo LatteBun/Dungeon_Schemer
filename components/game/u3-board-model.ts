@@ -61,7 +61,6 @@ export interface U3BoardNoticeView {
   theme: ThemeId;
   themeLabel: string;
   riskLevel: RiskLevel;
-  environmentLabel: string;
   reputationReward: number;
   goldReward: number;
   locked: boolean;
@@ -158,7 +157,6 @@ export function createU3BoardView(
       theme: dungeon.theme,
       themeLabel: THEME_LABELS[dungeon.theme],
       riskLevel: offer.riskLevel,
-      environmentLabel: offer.publicEnvironmentTag.label,
       reputationReward: fullReward.reputation,
       goldReward: fullReward.gold,
       locked: offer.lockReason !== null,

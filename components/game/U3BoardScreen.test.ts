@@ -21,7 +21,7 @@ const party = [
   { id: "character-3" as CharacterId, name: "세라", classLabel: "성직자", personalityLabel: "정의로운", hp: 28, maxHp: 28, trust: 80, gold: 20 },
 ] as const;
 
-function detail(offerId: string, dungeonName: string, environmentLabel: string, locked: boolean): U3OfferDetailView {
+function detail(offerId: string, dungeonName: string, locked: boolean): U3OfferDetailView {
   return {
     offerId,
     dungeonId: `dungeon-${offerId}`,
@@ -29,7 +29,6 @@ function detail(offerId: string, dungeonName: string, environmentLabel: string, 
     theme: offerId === "offer-2" ? "spider" : "desert",
     themeLabel: offerId === "offer-2" ? "거미굴" : "사막",
     riskLevel: locked ? 3 : 2,
-    environmentLabel,
     reputationReward: locked ? 15 : 10,
     goldReward: locked ? 32 : 20,
     locked,
@@ -44,8 +43,8 @@ function detail(offerId: string, dungeonName: string, environmentLabel: string, 
   };
 }
 
-const first = detail("offer-1", "모래 협곡", "열기 노출", false);
-const second = detail("offer-2", "검은 거미 소굴", "진동 경계", true);
+const first = detail("offer-1", "모래 협곡", false);
+const second = detail("offer-2", "검은 거미 소굴", true);
 const board: U3BoardView = {
   notices: [first, second],
   detailsByOfferId: { [first.offerId]: first, [second.offerId]: second },
@@ -62,14 +61,12 @@ function render(selectedOfferId: string): string {
 }
 
 describe("U3BoardScreen", () => {
-  it("공고마다 환경 특성 하나만 보여주고 불필요한 옛 정보를 노출하지 않는다", () => {
+  it("공고에서 환경 특성과 불필요한 옛 정보를 노출하지 않는다", () => {
     const html = render("offer-1");
     expect(html).toContain("길드 게시판");
     expect((html.match(/data-testid=\"u3-notice\"/g) ?? [])).toHaveLength(2);
-    expect((html.match(/data-testid=\"u3-notice-environment\"/g) ?? [])).toHaveLength(2);
-    expect(html).toContain("열기 노출");
-    expect(html).toContain("진동 경계");
-    for (const hidden of ["의뢰 갱신", "소요 시간", "계약 기간", "중도 포기", "실패 패널티", "답사 기록", "정찰 보고"]) {
+    expect((html.match(/data-testid=\"u3-notice-environment\"/g) ?? [])).toHaveLength(0);
+    for (const hidden of ["열기 노출", "진동 경계", "환경 특성", "의뢰 갱신", "소요 시간", "계약 기간", "중도 포기", "실패 패널티", "답사 기록", "정찰 보고"]) {
       expect(html).not.toContain(hidden);
     }
   });

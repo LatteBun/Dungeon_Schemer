@@ -62,7 +62,7 @@
   }
 
   .u3-notice {
-    grid-template-rows: auto auto minmax(8rem, 1fr) auto auto auto auto;
+    grid-template-rows: auto auto minmax(8rem, 1fr) auto auto auto;
     padding: clamp(0.85rem, 0.8vw, 1.35rem) clamp(0.75rem, 0.8vw, 1.3rem) clamp(0.75rem, 0.7vw, 1.1rem);
     background-size: 100% 100%, clamp(9rem, 10vw, 18rem) auto;
   }
@@ -87,8 +87,7 @@
   }
 
   .u3-notice__heading small,
-  .u3-notice__label,
-  .u3-notice__environment small {
+  .u3-notice__label {
     font-size: clamp(0.72rem, 0.68vw, 1.05rem);
   }
 
@@ -111,26 +110,13 @@
   }
 
   .u3-notice .u3-reward,
-  .u3-notice__environment strong,
   .u3-notice__state {
     font-size: clamp(0.88rem, 0.78vw, 1.2rem);
-  }
-
-  .u3-notice__environment strong {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
-    overflow-wrap: anywhere;
   }
 
   .u3-reward img {
     width: clamp(1.05rem, 0.95vw, 1.5rem);
     height: clamp(1.05rem, 0.95vw, 1.5rem);
-  }
-
-  .u3-notice__environment {
-    margin-top: clamp(0.4rem, 0.38vw, 0.65rem);
-    padding-top: clamp(0.35rem, 0.34vw, 0.58rem);
   }
 
   .u3-contract-detail {
