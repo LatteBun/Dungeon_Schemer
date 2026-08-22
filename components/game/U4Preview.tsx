@@ -47,18 +47,6 @@ export function U4Preview({ deadPreview = false }: U4PreviewProps) {
           className="u4-preview__feedback"
           role="status"
           aria-live="polite"
-          style={{
-            position: "absolute",
-            right: "0.75rem",
-            bottom: "0.75rem",
-            zIndex: 50,
-            margin: 0,
-            border: "1px solid #7c6536",
-            background: "#15100b",
-            color: "#d8c49c",
-            padding: "0.4rem 0.65rem",
-            fontSize: "0.72rem",
-          }}
         >
           {feedback}
         </p>

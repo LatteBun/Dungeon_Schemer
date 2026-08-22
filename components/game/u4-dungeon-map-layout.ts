@@ -1,4 +1,5 @@
 import type { GeneratedMap, NodeId } from "@/lib/domain";
+import { createU4OptimizedLayerOrder } from "./u4-dungeon-map-order";
 
 export interface U4Point {
   x: number;
@@ -25,6 +26,14 @@ const MAP_TOP = 0.12;
 const MAP_BOTTOM = 0.88;
 const BOSS_POSITION: U4Point = { x: 0.5, y: MAP_TOP };
 const ENTRY_POSITION: U4Point = { x: 0.5, y: MAP_BOTTOM };
+
+function renderGeometry(value: number): number {
+  return Number(value.toFixed(4));
+}
+
+function renderPoint(x: number, y: number): U4Point {
+  return { x: renderGeometry(x), y: renderGeometry(y) };
+}
 
 function xPositions(count: number): readonly number[] {
   if (count <= 0) return [];
@@ -60,12 +69,14 @@ export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
     [map.entryNodeId]: ENTRY_POSITION,
     [map.bossNodeId]: BOSS_POSITION,
   };
+  const optimized = createU4OptimizedLayerOrder(map);
 
   map.layers.forEach((layer, layerIndex) => {
+    const orderedNodeIds = optimized.rows[layerIndex + 1]!;
     const xs = xPositions(layer.nodeIds.length);
     const y = depthY(layerIndex, map.layers.length);
-    layer.nodeIds.forEach((nodeId, nodeIndex) => {
-      positions[nodeId] = { x: xs[nodeIndex]!, y };
+    orderedNodeIds.forEach((nodeId, nodeIndex) => {
+      positions[nodeId] = renderPoint(xs[nodeIndex]!, y);
     });
   });
 
@@ -81,8 +92,8 @@ export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
         to: nextNodeId,
         start,
         end,
-        length: Math.hypot(dx, dy),
-        angleDeg: (Math.atan2(dy, dx) * 180) / Math.PI,
+        length: renderGeometry(Math.hypot(dx, dy)),
+        angleDeg: renderGeometry((Math.atan2(dy, dx) * 180) / Math.PI),
       });
     }
   }

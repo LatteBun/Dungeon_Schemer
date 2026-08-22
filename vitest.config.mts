@@ -5,7 +5,7 @@ export default defineConfig({
     // Vitest 4의 기본값이지만, 화면 트랙이 jsdom을 도입할 때
     // 무엇을 바꿔야 하는지 드러나도록 명시한다.
     environment: "node",
-    include: ["**/*.test.ts"],
+    include: ["**/*.test.{ts,tsx}"],
     exclude: [".worktrees/**", "node_modules/**", ".next/**"],
   },
   resolve: {
