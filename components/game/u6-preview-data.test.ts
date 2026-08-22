@@ -47,10 +47,13 @@ describe("U6 프리뷰 데이터", () => {
     expect(promotion).toMatchObject({ byReputation: true, byGold: true });
   });
 
-  it("연대기 항목 수가 원정 횟수와 어긋나지 않는다", () => {
+  it("엔딩마다 이유 세 줄과 보고서·결말 항목 넷을 갖춘다", () => {
     for (const entry of U6_PREVIEW_ENTRIES) {
       if (!entry.ending) continue;
-      expect(entry.ending.chronicle).toHaveLength(entry.ending.expeditionCount);
+      expect(entry.ending.reasons).toHaveLength(3);
+      expect(entry.ending.report).toHaveLength(4);
+      expect(entry.ending.consequences).toHaveLength(4);
+      expect(entry.ending.chronicleSummary.length).toBeGreaterThan(20);
     }
   });
 

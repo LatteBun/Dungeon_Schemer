@@ -26,6 +26,27 @@ const ENDING_CREST: Readonly<Record<EndingKind, string>> = {
   unemployed: "achievement_guild",
 };
 
+/*
+ * 엔딩마다 오른쪽 문서와 세 번째 패널의 이름이 함께 바뀐다. 결말의 성격을
+ * 이름으로 먼저 말하기 때문이다. 시안은
+ * docs/experience/reference/u6-ending/README.md 에 있다.
+ */
+export const ENDING_REPORT_TITLE: Readonly<Record<EndingKind, string>> = {
+  completed: "원정 보고서",
+  distrust: "최후 보고서",
+  denounced: "길드 판결문",
+  exhausted: "길드 현황",
+  unemployed: "길드 통보",
+};
+
+export const ENDING_CONSEQUENCE_TITLE: Readonly<Record<EndingKind, string>> = {
+  completed: "주요 업적",
+  distrust: "무너진 관계",
+  denounced: "누적 기록",
+  exhausted: "남겨진 자리",
+  unemployed: "닫힌 문",
+};
+
 export function endingCrestSrc(kind: EndingKind): string {
   return `${ACHIEVEMENT_ROOT}/${ENDING_CREST[kind]}.png`;
 }
@@ -41,24 +62,32 @@ export interface U6AdviceStat {
   caught: number;
 }
 
-export interface U6ChronicleEntry {
-  worldTurn: number;
-  dungeonName: string;
-  outcome: string;
+/** 오른쪽 문서와 세 번째 패널의 항목. */
+export interface U6EndingNote {
+  label: string;
+  detail?: string;
 }
 
 export interface U6EndingView {
   kind: EndingKind;
-  /** "생존자 전원의 신뢰가 0" 처럼 사람이 읽는 판정 근거. */
-  reason: string;
+  /** 표제 아래와 화면 아래에 같은 문장이 온다. */
+  subtitle: string;
+  /** 결말의 이유. 한 문장이 아니라 세 줄이다. */
+  reasons: readonly string[];
+  /** 오른쪽 문서의 확인 항목. */
+  report: readonly string[];
+  /** 세 번째 패널. 결말의 성격에 따라 업적이거나 손실이다. */
+  consequences: readonly U6EndingNote[];
   finalRank: GuideRank;
   survivedCount: number;
   diedCount: number;
   zeroTrustCount: number;
+  zeroTrustPartySize: number;
   finalReputation: number;
   cumulativeGold: number;
-  expeditionCount: number;
-  adviceStats: readonly U6AdviceStat[];
+  adviceTotal: number;
+  wipedExpeditions: number;
   turningPoint: { label: string; detail: string } | null;
-  chronicle: readonly U6ChronicleEntry[];
+  /** 15줄 나열이 아니라 두세 문장의 산문이다. */
+  chronicleSummary: string;
 }

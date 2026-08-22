@@ -113,45 +113,153 @@ const settlementPromotion: U6SettlementView = {
   promotion: createU6PromotionView("C", 88, 214),
 };
 
-const CHRONICLE_OUTCOMES = ["3명 생존", "2명 생존", "전멸", "3명 생존", "1명 생존"] as const;
-const CHRONICLE_DUNGEONS = ["거미굴", "묘지", "사막"] as const;
-
-function chronicle(count: number) {
-  return Array.from({ length: count }, (_, index) => ({
-    worldTurn: index + 1,
-    dungeonName: `${CHRONICLE_DUNGEONS[index % 3]} ${(index % 5) + 1}`,
-    outcome: CHRONICLE_OUTCOMES[index % 5],
-  }));
-}
-
 function ending(
   kind: EndingKind,
-  reason: string,
-  finalRank: GuideRank,
-  over: Partial<U6EndingView> = {},
+  over: Partial<U6EndingView> & Pick<U6EndingView, "subtitle" | "reasons" | "report" | "consequences" | "chronicleSummary" | "finalRank">,
 ): U6EndingView {
   return {
     kind,
-    reason,
-    finalRank,
     survivedCount: 9,
     diedCount: 6,
-    zeroTrustCount: 2,
-    finalReputation: 205,
-    cumulativeGold: 449,
-    expeditionCount: 15,
-    adviceStats: [
-      { label: "그대로 알린 조언", given: 21, caught: 0 },
-      { label: "감춘 조언", given: 14, caught: 3 },
-    ],
-    turningPoint: {
-      label: "묘지 1 전멸",
-      detail: "위험도가 ★3 으로 오르며 이후 보상이 함께 올랐다",
-    },
-    chronicle: chronicle(15),
+    zeroTrustCount: 0,
+    zeroTrustPartySize: 1,
+    finalReputation: 148,
+    cumulativeGold: 382,
+    adviceTotal: 106,
+    wipedExpeditions: 3,
+    turningPoint: { label: "잊힌 묘지 회랑", detail: "아델 전사 합류" },
     ...over,
   };
 }
+
+const ENDINGS: Readonly<Record<EndingKind, U6EndingView>> = {
+  completed: ending("completed", {
+    subtitle: "당신은 길을 안내했지만, 결국 선택한 것은 당신 자신의 길이었다.",
+    finalRank: "S",
+    reasons: [
+      "총 15곳의 던전을 정복하며, 캠페인의 모든 임무를 완수했습니다.",
+      "전우들과 함께 위기를 극복하고, 길드의 목표를 달성했습니다.",
+      "마지막 선택에서 당신의 신념을 지키며, 올바른 길을 선택했습니다.",
+    ],
+    report: ["던전 15곳 정복", "캠페인 임무 완료", "마지막 선택을 마주함", "길드의 명예를 드높임"],
+    consequences: [
+      { label: "완벽한 정복", detail: "모든 던전 정복" },
+      { label: "명예로운 귀환", detail: "캠페인 임무 완료" },
+      { label: "전우와 함께", detail: "파티원 생존 1명 유지" },
+      { label: "길드의 영광", detail: "최종 등급 S 달성" },
+    ],
+    chronicleSummary:
+      "위기의 순간마다 당신의 조언은 길잡이가 되었고, 전우들은 그 신뢰에 응답했습니다. 당신의 전략과 선택은 길드의 승리를 이끌었습니다.",
+  }),
+  distrust: ending("distrust", {
+    subtitle: "모든 선택에는 길이 있었고, 모든 길에는 대가가 있었다.",
+    finalRank: "B",
+    survivedCount: 3,
+    diedCount: 8,
+    zeroTrustCount: 3,
+    zeroTrustPartySize: 3,
+    finalReputation: 72,
+    cumulativeGold: 144,
+    adviceTotal: 91,
+    wipedExpeditions: 2,
+    turningPoint: { label: "붉은 종루", detail: "신뢰 붕괴 사건" },
+    reasons: [
+      "생존한 파티원 전원이 신뢰 0에 도달했습니다.",
+      "의심이 협력을 삼켜, 모든 유대가 무너졌습니다.",
+      "불신은 원정을 붕괴시키고, 모두를 파멸로 이끌었습니다.",
+    ],
+    report: ["생존 파티원 전원 신뢰 0", "원정 내 갈등 극대화", "마지막 선택 이후 관계 파탄", "길드의 평판 하락"],
+    consequences: [
+      { label: "끝없는 의심", detail: "모든 파티원의 신뢰가 0이 되었다." },
+      { label: "깨진 동맹", detail: "동료 간의 유대가 완전히 붕괴되었다." },
+      { label: "거짓된 조언", detail: "잘못된 선택이 비극적 결과를 낳았다." },
+      { label: "되돌릴 수 없는 결과", detail: "불신의 대가는 모든 것을 앗아갔다." },
+    ],
+    chronicleSummary:
+      "신뢰는 아끼지 않고 소모되었고, 의심은 끝없이 쌓여갔다. 결국 동료들은 서로에게 등을 돌렸고, 원정은 끝내 무너졌다.",
+  }),
+  denounced: ending("denounced", {
+    subtitle: "모든 선택에는 길이 있었고, 모든 길에는 대가가 있었다.",
+    finalRank: "B",
+    survivedCount: 5,
+    diedCount: 7,
+    zeroTrustCount: 5,
+    zeroTrustPartySize: 5,
+    finalReputation: 58,
+    cumulativeGold: 121,
+    adviceTotal: 98,
+    wipedExpeditions: 1,
+    turningPoint: { label: "잿빛 기록보관소", detail: "고발 기록 확정" },
+    reasons: [
+      "캠페인 중 5명의 캐릭터 신뢰가 0에 도달했습니다.",
+      "반복된 선택과 조언이 고발로 누적되었습니다.",
+      "길드는 당신이 더 이상 적합하지 않다고 판단했습니다.",
+    ],
+    report: ["신뢰 0 캐릭터 5명 도달", "누적 고발 기록 확정", "길드 조사 종료", "자격 정지"],
+    consequences: [
+      { label: "조사 완료", detail: "길드 조사단이 모든 행적을 검토했습니다." },
+      { label: "고발 확정", detail: "누적된 고발 기록이 공식적으로 확정되었습니다." },
+      { label: "신뢰 붕괴", detail: "5명의 동료와의 신뢰가 완전히 붕괴했습니다." },
+      { label: "길드 판결", detail: "길드는 당신의 자격을 정지하고 추방을 결정했습니다." },
+    ],
+    chronicleSummary:
+      "당신의 조언은 때로 길을 열었다. 그러나 반복된 편의의 선택은 결국 당신을 향한 증거가 되었다.",
+  }),
+  exhausted: ending("exhausted", {
+    subtitle: "모든 길의 끝에는, 당신의 선택이 남았다.",
+    finalRank: "C",
+    survivedCount: 2,
+    diedCount: 11,
+    zeroTrustCount: 0,
+    zeroTrustPartySize: 1,
+    finalReputation: 64,
+    cumulativeGold: 150,
+    adviceTotal: 87,
+    wipedExpeditions: 4,
+    turningPoint: { label: "유리 광산", detail: "전력 붕괴" },
+    reasons: [
+      "세 가지 서로 다른 직업을 더 이상 구성할 수 없었습니다.",
+      "반복된 손실로 길드의 기반은 텅 비어버렸습니다.",
+      "더는 원정을 이어갈 인력이 없어, 캠페인은 여기서 끝납니다.",
+    ],
+    report: ["서로 다른 직업 3인 편성 불가", "생존 인력 급감", "원정 지속 불가", "캠페인 종료"],
+    consequences: [
+      { label: "공석 확대", detail: "전원 전투 불가" },
+      { label: "전력 붕괴", detail: "전투력 심각한 악화" },
+      { label: "길드 고갈", detail: "운영 기반 붕괴" },
+      { label: "마지막 원정 종단", detail: "원정 활동 종단" },
+    ],
+    chronicleSummary:
+      "모든 손실은 길을 좁혀 갔고, 서로를 잃을 때마다 동료는 줄어들었습니다. 결국 길은 닫혔고, 더는 원정을 떠날 자가 남지 않았습니다.",
+  }),
+  unemployed: ending("unemployed", {
+    subtitle: "문이 닫힌 자리에서, 당신의 이름만 남았다.",
+    finalRank: "C",
+    survivedCount: 6,
+    diedCount: 3,
+    zeroTrustCount: 0,
+    zeroTrustPartySize: 0,
+    finalReputation: 38,
+    cumulativeGold: 92,
+    adviceTotal: 34,
+    wipedExpeditions: 1,
+    turningPoint: null,
+    reasons: [
+      "게시판의 모든 공고가 진입 불가가 되었습니다.",
+      "길잡이 등급이 남은 던전의 위험도에 닿지 못했습니다.",
+      "받을 수 있는 일이 하나도 남지 않아, 캠페인은 여기서 끝납니다.",
+    ],
+    report: ["모든 공고 진입 불가", "등급 상승 실패", "받을 수 있는 일 없음", "길드 계약 종료"],
+    consequences: [
+      { label: "닫힌 게시판", detail: "진입 가능한 공고가 남지 않았다." },
+      { label: "멈춘 승급", detail: "등급이 위험도를 따라가지 못했다." },
+      { label: "식은 평판", detail: "명성이 새 일을 부르지 못했다." },
+      { label: "끝난 계약", detail: "길드가 더 맡길 일을 내놓지 않았다." },
+    ],
+    chronicleSummary:
+      "안전한 길만 고르는 동안 남은 던전은 점점 험해졌다. 등급이 그 속도를 따라가지 못했고, 어느 날 게시판에는 들어갈 수 있는 공고가 하나도 없었다.",
+  }),
+};
 
 export interface U6PreviewEntry {
   id: U6PreviewId;
@@ -184,64 +292,31 @@ export const U6_PREVIEW_ENTRIES: readonly U6PreviewEntry[] = [
     id: "ending-completed",
     label: `엔딩 · ${ENDING_TITLE.completed}`,
     status: status({ rank: "A", reputation: 205, gold: 331, canPromote: false, remainingDungeons: 0 }),
-    ending: ending("completed", "던전 15개를 모두 클리어했다", "A"),
+    ending: ENDINGS.completed,
   },
   {
     id: "ending-distrust",
     label: `엔딩 · ${ENDING_TITLE.distrust}`,
     status: status({ rank: "B", reputation: 96, gold: 402, canPromote: false, remainingDungeons: 7 }),
-    ending: ending("distrust", "생존 파티원 전원의 신뢰가 0 이다", "B", {
-      survivedCount: 5,
-      diedCount: 10,
-      zeroTrustCount: 5,
-      finalReputation: 96,
-      cumulativeGold: 402,
-      expeditionCount: 8,
-      chronicle: chronicle(8),
-    }),
+    ending: ENDINGS.distrust,
   },
   {
     id: "ending-denounced",
     label: `엔딩 · ${ENDING_TITLE.denounced}`,
     status: status({ rank: "B", reputation: 54, gold: 516, canPromote: false, remainingDungeons: 6 }),
-    ending: ending("denounced", "신뢰 0 인 캐릭터가 5명이 되었다", "B", {
-      survivedCount: 6,
-      diedCount: 12,
-      zeroTrustCount: 5,
-      finalReputation: 54,
-      cumulativeGold: 516,
-      expeditionCount: 9,
-      chronicle: chronicle(9),
-    }),
+    ending: ENDINGS.denounced,
   },
   {
     id: "ending-exhausted",
     label: `엔딩 · ${ENDING_TITLE.exhausted}`,
     status: status({ rank: "C", reputation: 41, gold: 188, canPromote: false, remainingDungeons: 9 }),
-    ending: ending("exhausted", "서로 다른 직업 3명을 편성할 수 없다", "C", {
-      survivedCount: 2,
-      diedCount: 16,
-      zeroTrustCount: 1,
-      finalReputation: 41,
-      cumulativeGold: 188,
-      expeditionCount: 6,
-      turningPoint: null,
-      chronicle: chronicle(6),
-    }),
+    ending: ENDINGS.exhausted,
   },
   {
     id: "ending-unemployed",
     label: `엔딩 · ${ENDING_TITLE.unemployed}`,
     status: status({ rank: "C", reputation: 38, gold: 92, canPromote: false, remainingDungeons: 12 }),
-    ending: ending("unemployed", "게시판의 모든 공고가 진입 불가다", "C", {
-      survivedCount: 6,
-      diedCount: 3,
-      zeroTrustCount: 0,
-      finalReputation: 38,
-      cumulativeGold: 92,
-      expeditionCount: 3,
-      chronicle: chronicle(3),
-    }),
+    ending: ENDINGS.unemployed,
   },
 ];
 

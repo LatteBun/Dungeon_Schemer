@@ -37,7 +37,7 @@ export function U6Preview({ initialId = "settlement-partial" }: U6PreviewProps) 
           onPromote={() => {}}
         />
       ) : null}
-      {entry.ending ? <U6EndingScreen status={entry.status} ending={entry.ending} /> : null}
+      {entry.ending ? <U6EndingScreen ending={entry.ending} /> : null}
     </div>
   );
 }

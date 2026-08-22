@@ -280,235 +280,6 @@
   font-size: clamp(0.78rem, 0.78cqw, 1.1rem);
 }
 
-/* ── 엔딩 좌측: 판정과 최종 등급 ── */
-
-/* 판정과 최종 등급을 한 덩어리로 가운데에 모은다. 1fr 로 밀어내면 표제와
- * 등급이 화면 위아래로 흩어져 한눈에 읽히지 않는다. */
-.u6-ending-main {
-  grid-template-rows: auto auto;
-  align-content: center;
-  justify-items: center;
-  gap: clamp(0.8rem, 1cqw, 1.6rem);
-  text-align: center;
-}
-
-.u6-ending-verdict {
-  display: grid;
-  place-items: center;
-  gap: clamp(0.2rem, 0.3cqw, 0.5rem);
-  min-height: 0;
-}
-
-.u6-ending-verdict__crest {
-  width: auto;
-  height: clamp(4.5rem, 5.2cqw, 8rem);
-  object-fit: contain;
-}
-
-.u6-ending-verdict__eyebrow {
-  margin: 0;
-  color: var(--color-shell-gold);
-  font-size: clamp(0.78rem, 0.78cqw, 1.1rem);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-}
-
-.u6-ending-verdict h2 {
-  margin: 0;
-  color: var(--color-parchment);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2rem, 2.4cqw, 3.6rem);
-  line-height: 1.1;
-}
-
-.u6-ending-verdict__reason {
-  margin: 0;
-  max-width: 32ch;
-  color: var(--color-muted);
-  font-size: clamp(0.9rem, 0.92cqw, 1.35rem);
-  line-height: 1.4;
-}
-
-.u6-final-rank {
-  display: grid;
-  justify-items: center;
-  gap: 0.1rem;
-  padding-top: clamp(0.5rem, 0.6cqw, 0.9rem);
-  border-top: 1px solid color-mix(in srgb, var(--color-shell-metal) 34%, transparent);
-}
-
-.u6-final-rank h3 {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: clamp(0.78rem, 0.78cqw, 1.1rem);
-  font-weight: 600;
-}
-
-/* 등급 문장 넷은 원본 종횡비가 달라(0.818~0.891) 폭으로 정하면 등급마다
- * 세로 길이가 달라진다. 높이로 정해야 넷이 같은 시각 무게로 읽힌다. */
-.u6-final-rank img {
-  width: auto;
-  height: clamp(4rem, 4.8cqw, 7.2rem);
-  object-fit: contain;
-}
-
-.u6-final-rank strong {
-  color: var(--color-shell-gold);
-  font-size: clamp(1.4rem, 1.5cqw, 2.2rem);
-}
-
-.u6-final-rank p {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: clamp(0.8rem, 0.8cqw, 1.15rem);
-}
-
-/* ── 엔딩 우측: 회고 ── */
-
-.u6-ending-side {
-  grid-template-rows: auto auto minmax(0, 1fr);
-}
-
-.u6-ending-block {
-  min-height: 0;
-  padding: clamp(0.55rem, 0.7cqw, 1rem);
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 46%, var(--color-edge));
-  border-radius: 0.3rem;
-  background: linear-gradient(180deg, rgb(26 19 13 / 90%), rgb(14 11 8 / 94%));
-}
-
-.u6-ending-block h3 {
-  margin: 0 0 clamp(0.3rem, 0.4cqw, 0.6rem);
-  color: var(--color-shell-gold);
-  font-size: clamp(0.95rem, 0.95cqw, 1.4rem);
-}
-
-.u6-ending-block__lead {
-  margin: 0 0 clamp(0.4rem, 0.5cqw, 0.75rem);
-  color: var(--color-parchment);
-  font-size: clamp(0.86rem, 0.86cqw, 1.25rem);
-}
-
-.u6-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(0.3rem, 0.4cqw, 0.6rem);
-  margin: 0;
-}
-
-.u6-stat {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  align-items: center;
-  gap: 0 0.4rem;
-  padding: clamp(0.25rem, 0.32cqw, 0.45rem);
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 28%, transparent);
-  border-radius: 0.2rem;
-  background: rgb(10 8 6 / 50%);
-}
-
-.u6-stat img {
-  grid-row: span 2;
-  width: clamp(1.3rem, 1.4cqw, 2.1rem);
-  height: auto;
-  object-fit: contain;
-}
-
-.u6-stat dt {
-  color: var(--color-muted);
-  font-size: clamp(0.68rem, 0.68cqw, 0.95rem);
-}
-
-.u6-stat dd {
-  margin: 0;
-  color: var(--color-parchment);
-  font-size: clamp(0.85rem, 0.85cqw, 1.25rem);
-  font-weight: 700;
-}
-
-.u6-advice-stats {
-  display: grid;
-  gap: 0.25rem;
-  margin: clamp(0.35rem, 0.45cqw, 0.65rem) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.u6-advice-stats li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: clamp(0.78rem, 0.78cqw, 1.1rem);
-}
-
-.u6-advice-stats img {
-  width: clamp(1rem, 1.05cqw, 1.5rem);
-  height: auto;
-  object-fit: contain;
-}
-
-.u6-advice-stats strong {
-  color: var(--color-parchment);
-}
-
-.u6-advice-stats span {
-  color: var(--color-muted);
-  white-space: nowrap;
-}
-
-.u6-turning-point strong {
-  color: var(--color-parchment);
-  font-size: clamp(0.92rem, 0.92cqw, 1.35rem);
-}
-
-.u6-turning-point p {
-  margin: 0.15rem 0 0;
-  color: var(--color-muted);
-  font-size: clamp(0.8rem, 0.8cqw, 1.15rem);
-}
-
-/* 연대기는 원정 15회를 넘지 않는다. 담기지 않으면 항목을 줄이지 말고 행을
- * 낮춘다. 회고에서 원정 하나를 빼면 그 원정의 선택이 사라진다. */
-.u6-chronicle {
-  display: grid;
-  grid-template-rows: repeat(15, minmax(0, 1fr));
-  gap: 0.1rem;
-  margin: 0;
-  padding: 0;
-  min-height: 0;
-  list-style: none;
-}
-
-.u6-chronicle li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0 0.3rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-shell-metal) 16%, transparent);
-  font-size: clamp(0.7rem, 0.72cqw, 1rem);
-}
-
-.u6-chronicle__turn {
-  color: var(--color-shell-gold);
-  font-variant-numeric: tabular-nums;
-}
-
-.u6-chronicle__dungeon {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-parchment);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.u6-chronicle__outcome {
-  color: var(--color-muted);
-  white-space: nowrap;
-}
-
 /* ── /u6-test 프리뷰 전환 ──
  * 프리뷰 껍데기는 캔버스 안에서 화면 위에 겹친다. 여덟 상태를 오가며 보는
  * 도구일 뿐이라 화면의 세로 공간을 빼앗으면 안 된다. */
@@ -546,6 +317,383 @@
 }
 
 .u6-preview__nav button:focus-visible {
+  outline: 2px solid var(--color-parchment);
+  outline-offset: 2px;
+}
+
+/* ── 엔딩 화면 ──
+ *
+ * 셸의 3:2 를 쓰지 않는다. 캠페인이 끝난 화면이라 전체를 하나의 그림으로 쓴다.
+ * 인트로가 같은 이유로 전체 폭을 쓰는 것과 같다.
+ * 시안: docs/experience/reference/u6-ending/README.md
+ */
+
+.u6-ending-shell {
+  --u6-ending-backdrop: radial-gradient(circle at 50% 22%, #3a2a17 0%, #1a120c 46%, #080604 100%);
+  --u6-ending-accent: #d8aa43;
+
+  position: relative;
+  display: grid;
+  /* 1fr 로 밀면 띠와 패널 사이가 크게 벌어진다. 전체를 한 덩어리로 모아
+   * 가운데에 두고 간격만 준다. */
+  grid-template-rows: repeat(5, auto);
+  align-content: center;
+  gap: clamp(0.75rem, 1.1cqw, 1.9rem);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(0.9rem, 1.2cqw, 2rem) clamp(1.4rem, 2.4cqw, 4rem) clamp(1rem, 1.3cqw, 2.2rem);
+  background: #060504;
+  color: var(--color-parchment);
+  text-align: center;
+}
+
+/* 배경 그림이 들어오면 이 변수만 바꾼다. */
+.u6-ending-shell--distrust { --u6-ending-backdrop: radial-gradient(circle at 50% 20%, #2b3038 0%, #14161b 48%, #06070a 100%); --u6-ending-accent: #c2b083; }
+.u6-ending-shell--denounced { --u6-ending-backdrop: radial-gradient(circle at 50% 22%, #45261c 0%, #1d100b 48%, #080403 100%); --u6-ending-accent: #cf8b5c; }
+.u6-ending-shell--exhausted { --u6-ending-backdrop: radial-gradient(circle at 50% 24%, #241d15 0%, #12100b 50%, #060505 100%); --u6-ending-accent: #b3a077; }
+.u6-ending-shell--unemployed { --u6-ending-backdrop: radial-gradient(circle at 50% 24%, #1e1c18 0%, #100f0d 50%, #060606 100%); --u6-ending-accent: #a99678; }
+
+.u6-ending-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--u6-ending-backdrop);
+}
+
+.u6-ending-shell > *:not(.u6-ending-backdrop) {
+  position: relative;
+  z-index: 1;
+  min-height: 0;
+}
+
+/* ── 표제 ── */
+
+.u6-ending-head__eyebrow {
+  margin: 0;
+  color: var(--u6-ending-accent);
+  font-size: clamp(0.7rem, 0.7cqw, 1rem);
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  /* letter-spacing 은 마지막 글자 뒤에도 붙어 가운데가 왼쪽으로 밀린다. */
+  text-indent: 0.34em;
+}
+
+.u6-ending-head h1 {
+  margin: 0.1rem 0 0;
+  color: #f2e2ba;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.4rem, 3.2cqw, 4.8rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.05;
+  text-shadow: 0 0.15rem 0.6rem rgb(0 0 0 / 80%);
+}
+
+.u6-ending-head__subtitle {
+  margin: 0.2rem 0 0;
+  color: var(--color-muted);
+  font-size: clamp(0.82rem, 0.86cqw, 1.25rem);
+}
+
+/* ── 가운데 띠: 이유 · 문양 · 보고서 ── */
+
+.u6-ending-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.8rem, 1.4cqw, 2.4rem);
+}
+
+.u6-ending-card {
+  min-width: 0;
+  padding: clamp(0.5rem, 0.7cqw, 1.1rem) clamp(0.6rem, 0.85cqw, 1.35rem);
+  border: 1px solid color-mix(in srgb, var(--u6-ending-accent) 42%, var(--color-edge));
+  border-radius: 0.22rem;
+  background: linear-gradient(180deg, rgb(18 13 9 / 88%), rgb(9 7 5 / 92%));
+  box-shadow: inset 0 1px 0 rgb(244 214 145 / 7%), 0 0.25rem 1.1rem rgb(0 0 0 / 62%);
+  text-align: left;
+}
+
+.u6-ending-card h2 {
+  margin: 0 0 clamp(0.3rem, 0.42cqw, 0.65rem);
+  padding-bottom: clamp(0.22rem, 0.3cqw, 0.45rem);
+  border-bottom: 1px solid color-mix(in srgb, var(--u6-ending-accent) 30%, transparent);
+  color: #ecd9ac;
+  font-size: clamp(0.9rem, 0.95cqw, 1.4rem);
+  text-align: center;
+}
+
+.u6-reasons ul,
+.u6-report ul {
+  display: grid;
+  gap: clamp(0.28rem, 0.38cqw, 0.6rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.u6-reasons li,
+.u6-report li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.45rem;
+  color: var(--color-muted);
+  font-size: clamp(0.74rem, 0.78cqw, 1.1rem);
+  line-height: 1.4;
+}
+
+.u6-reasons img,
+.u6-report img {
+  width: clamp(0.7rem, 0.75cqw, 1.05rem);
+  height: auto;
+  margin-top: 0.18rem;
+  object-fit: contain;
+}
+
+.u6-report {
+  position: relative;
+  padding-bottom: clamp(1.6rem, 2cqw, 3rem);
+}
+
+.u6-report li span {
+  color: #e3d3ad;
+}
+
+.u6-report__seal {
+  position: absolute;
+  right: clamp(0.5rem, 0.7cqw, 1.2rem);
+  bottom: clamp(0.4rem, 0.6cqw, 1rem);
+  width: clamp(2.6rem, 3.1cqw, 4.8rem);
+  opacity: 0.92;
+  height: auto;
+  object-fit: contain;
+}
+
+.u6-ending-emblem {
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  min-height: 0;
+}
+
+.u6-ending-emblem__label {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: clamp(0.68rem, 0.7cqw, 1rem);
+  letter-spacing: 0.22em;
+}
+
+/* 등급 문장은 원본 종횡비가 등급마다 달라 높이로 크기를 정한다. */
+.u6-ending-emblem__crest {
+  width: auto;
+  height: clamp(5rem, 7cqw, 11rem);
+  object-fit: contain;
+  filter: drop-shadow(0 0.3rem 0.9rem rgb(0 0 0 / 70%));
+}
+
+.u6-ending-emblem__rank {
+  display: grid;
+  justify-items: center;
+  margin: 0;
+}
+
+.u6-ending-emblem__rank span {
+  color: var(--u6-ending-accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.1rem, 1.3cqw, 2rem);
+  font-weight: 800;
+}
+
+.u6-ending-emblem__rank small {
+  color: var(--color-muted);
+  font-size: clamp(0.68rem, 0.7cqw, 1rem);
+}
+
+/* ── 아래 세 패널 ── */
+
+.u6-ending-panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.7rem, 1.1cqw, 1.9rem);
+}
+
+.u6-result-list {
+  display: grid;
+  gap: clamp(0.18rem, 0.26cqw, 0.4rem);
+  margin: 0;
+}
+
+.u6-result-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: clamp(0.12rem, 0.18cqw, 0.28rem) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--u6-ending-accent) 14%, transparent);
+}
+
+.u6-result-row img {
+  width: clamp(0.85rem, 0.95cqw, 1.35rem);
+  height: auto;
+  object-fit: contain;
+}
+
+.u6-result-row dt {
+  color: var(--color-muted);
+  font-size: clamp(0.76rem, 0.8cqw, 1.12rem);
+}
+
+.u6-result-row dd {
+  margin: 0;
+  color: #ecd9ac;
+  font-size: clamp(0.86rem, 0.92cqw, 1.3rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.u6-result-row.is-gain dd { color: #9ec27f; }
+.u6-result-row.is-loss dd { color: #d5806c; }
+
+.u6-turning {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.1rem 0.5rem;
+  margin-top: clamp(0.3rem, 0.42cqw, 0.65rem);
+  padding-top: clamp(0.3rem, 0.42cqw, 0.65rem);
+  border-top: 1px solid color-mix(in srgb, var(--u6-ending-accent) 20%, transparent);
+}
+
+.u6-turning img {
+  grid-row: span 2;
+  width: clamp(0.95rem, 1.05cqw, 1.5rem);
+  height: auto;
+  object-fit: contain;
+}
+
+.u6-turning > span {
+  color: var(--color-muted);
+  font-size: clamp(0.72rem, 0.76cqw, 1.05rem);
+}
+
+.u6-turning strong {
+  display: grid;
+  color: #ecd9ac;
+  font-size: clamp(0.82rem, 0.88cqw, 1.25rem);
+}
+
+.u6-turning small {
+  color: var(--color-muted);
+  font-size: clamp(0.68rem, 0.72cqw, 1rem);
+  font-weight: 400;
+}
+
+.u6-chronicle-summary {
+  margin: clamp(0.3rem, 0.42cqw, 0.65rem) 0 0;
+  padding-top: clamp(0.3rem, 0.42cqw, 0.65rem);
+  border-top: 1px solid color-mix(in srgb, var(--u6-ending-accent) 20%, transparent);
+  color: var(--color-muted);
+  font-size: clamp(0.72rem, 0.78cqw, 1.08rem);
+  line-height: 1.5;
+}
+
+.u6-chronicle-summary span {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: #ecd9ac;
+  font-size: clamp(0.74rem, 0.78cqw, 1.08rem);
+}
+
+.u6-consequences {
+  display: grid;
+  gap: clamp(0.22rem, 0.32cqw, 0.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.u6-consequences li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.u6-consequences img {
+  width: clamp(1.1rem, 1.25cqw, 1.8rem);
+  height: auto;
+  object-fit: contain;
+}
+
+.u6-consequences strong {
+  display: block;
+  color: #ecd9ac;
+  font-size: clamp(0.78rem, 0.84cqw, 1.2rem);
+}
+
+.u6-consequences small {
+  color: var(--color-muted);
+  font-size: clamp(0.68rem, 0.72cqw, 1rem);
+}
+
+/* ── 인용과 CTA ── */
+
+.u6-ending-quote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 0.8cqw, 1.3rem);
+  margin: 0;
+  color: #e6d5ab;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(0.86rem, 0.95cqw, 1.4rem);
+}
+
+.u6-ending-quote img {
+  width: clamp(0.9rem, 1cqw, 1.5rem);
+  height: auto;
+  object-fit: contain;
+  opacity: 0.75;
+}
+
+.u6-ending-cta {
+  --cta-text-size: clamp(0.95rem, 1.05cqw, 1.5rem);
+
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(0.6rem, 0.9cqw, 1.5rem);
+  justify-self: center;
+  width: min(38cqw, 26rem);
+  min-height: clamp(2.4rem, 2.9cqw, 4.2rem);
+  padding: 0.3rem clamp(0.8rem, 1.2cqw, 2rem);
+  border: 1px solid #7d9a62;
+  border-radius: 0.24rem;
+  background: linear-gradient(180deg, rgb(58 80 44 / 92%), rgb(30 44 24 / 94%));
+  box-shadow: inset 0 0 0 2px rgb(0 0 0 / 45%), 0 0.3rem 0.9rem rgb(0 0 0 / 60%);
+  color: #e7f0d8;
+  cursor: pointer;
+}
+
+.u6-ending-cta strong {
+  font-size: var(--cta-text-size);
+  font-weight: 700;
+}
+
+.u6-ending-cta img {
+  width: clamp(1.3rem, 1.5cqw, 2.2rem);
+  height: auto;
+  object-fit: contain;
+  translate: 0 calc(var(--cta-text-size) * var(--cta-icon-optical-lift) * -1);
+}
+
+.u6-ending-cta__arrow {
+  width: clamp(1.1rem, 1.25cqw, 1.8rem) !important;
+}
+
+.u6-ending-cta:focus-visible {
   outline: 2px solid var(--color-parchment);
   outline-offset: 2px;
 }
