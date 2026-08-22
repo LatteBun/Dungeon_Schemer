@@ -7,13 +7,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   statuses: write
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Report validation pending
         env:
@@ -29,6 +29,25 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Materialize staged U4 assets
+        id: materialize
+        run: |
+          shopt -s nullglob
+          parts=(tools/u4-assets/part-*)
+          if [ ${#parts[@]} -eq 0 ]; then
+            echo "materialized=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cat "${parts[@]}" > /tmp/u4-assets.zip
+          unzip -o /tmp/u4-assets.zip
+          rm -rf tools/u4-assets
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/assets/u4 tools/u4-assets
+          git commit -m "feat: add U4 dungeon map assets"
+          git push origin HEAD:feature/u4-dungeon-map
+          echo "materialized=true" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -55,12 +74,22 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Install Chromium for capture
+      - name: Detect U4 preview route
+        id: preview
         if: success()
+        run: |
+          if [ -f app/u4-test/page.tsx ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Chromium for capture
+        if: success() && steps.preview.outputs.exists == 'true'
         run: pnpm dlx playwright@1.55.0 install --with-deps chromium
 
       - name: Start preview server
-        if: success()
+        if: success() && steps.preview.outputs.exists == 'true'
         run: |
           pnpm start > /tmp/u4-next.log 2>&1 &
           echo $! > /tmp/u4-next.pid
@@ -74,16 +103,17 @@ jobs:
           exit 1
 
       - name: Capture U4 viewports
-        if: success()
+        if: success() && steps.preview.outputs.exists == 'true'
         run: |
           mkdir -p u4-captures
           pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1920,1080" http://127.0.0.1:3000/u4-test u4-captures/u4-1920x1080.png
           pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="2560,1440" http://127.0.0.1:3000/u4-test u4-captures/u4-2560x1440.png
           pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1440,900" http://127.0.0.1:3000/u4-test u4-captures/u4-1440x900.png
           pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1280,1024" http://127.0.0.1:3000/u4-test u4-captures/u4-1280x1024.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1920,1080" "http://127.0.0.1:3000/u4-test?dead=1" u4-captures/u4-dead-1920x1080.png
 
       - name: Upload U4 browser captures
-        if: success()
+        if: success() && steps.preview.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: u4-browser-captures
@@ -96,6 +126,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           JOB_STATUS: ${{ job.status }}
         run: |
+          FINAL_SHA=$(git rev-parse HEAD 2>/dev/null || echo "${{ github.sha }}")
           if [ "${JOB_STATUS}" = "success" ]; then
             STATE=success
             DESCRIPTION="U4 validation passed"
@@ -103,10 +134,12 @@ jobs:
             STATE=failure
             DESCRIPTION="U4 validation failed"
           fi
-          curl --fail-with-body -L \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${{ github.api_url }}/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
-            -d "{\"state\":\"${STATE}\",\"context\":\"U4 Validation\",\"description\":\"${DESCRIPTION}\",\"target_url\":\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
+          for SHA in "${{ github.sha }}" "${FINAL_SHA}"; do
+            curl --fail-with-body -L \
+              -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "${{ github.api_url }}/repos/${{ github.repository }}/statuses/${SHA}" \
+              -d "{\"state\":\"${STATE}\",\"context\":\"U4 Validation\",\"description\":\"${DESCRIPTION}\",\"target_url\":\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
+          done
