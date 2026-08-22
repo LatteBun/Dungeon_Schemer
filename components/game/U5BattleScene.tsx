@@ -57,7 +57,7 @@ function motionForParticipant(
   if (defeated) return { animate: { x: 0, y: 0, opacity: 0.38 }, transition: { duration: 0.24 } };
   if (frame.phase === "attack" && frame.actorId === participant.id) {
     return {
-      animate: { x: reducedMotion ? 0 : participant.side === "party" ? "16%" : "-16%", y: 0, opacity: 1 },
+      animate: { x: reducedMotion ? 0 : "var(--u5-battle-lunge-x)", y: 0, opacity: 1 },
       transition: { duration: 0.18, repeat: 1, repeatType: "reverse" as const },
     };
   }
@@ -83,25 +83,30 @@ function Participant({ participant, frame, reducedMotion }: {
   const defeated = frame.defeatedParticipantIds.includes(participant.id);
   const showDamage = frame.phase === "impact" && frame.targetId === participant.id;
   const motionState = motionForParticipant(participant, frame, reducedMotion);
+  const participantStyle = {
+    "--u5-battle-lunge-x": participant.side === "party" ? "16%" : "-16%",
+  } as CSSProperties;
 
   return (
-    <article className="u5-battle-participant" data-participant-id={participant.id}>
-      <div className={`u5-battle-orientation is-${participant.side}`}>
-        <motion.div
-          className="u5-battle-motion"
-          animate={motionState.animate}
-          transition={motionState.transition}
-        >
-          <Image
-            className="u5-battle-sprite"
-            src={participant.imageSrc}
-            alt={participant.name}
-            width={participant.side === "party" ? 1024 : 1254}
-            height={participant.side === "party" ? 1536 : 1254}
-            priority
-          />
-        </motion.div>
-      </div>
+    <article className="u5-battle-participant" data-participant-id={participant.id} style={participantStyle}>
+      <motion.div
+        className="u5-battle-motion"
+        animate={motionState.animate}
+        transition={motionState.transition}
+      >
+        <div className={`u5-battle-orientation is-${participant.side}`}>
+          <div className="u5-battle-sprite-frame">
+            <Image
+              className="u5-battle-sprite"
+              src={participant.imageSrc}
+              alt={participant.name}
+              fill
+              sizes="10rem"
+              priority
+            />
+          </div>
+        </div>
+      </motion.div>
       <strong className="u5-battle-name">{participant.name}</strong>
       <div
         className="u5-battle-hp"
@@ -117,14 +122,16 @@ function Participant({ participant, frame, reducedMotion }: {
       <span className="u5-battle-hp__numbers">{hp} / {participant.maxHp}</span>
       <AnimatePresence>
         {showDamage ? (
-          <motion.span
-            className="u5-battle-damage"
-            initial={{ opacity: 0, y: reducedMotion ? 0 : "12%" }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: reducedMotion ? 0 : "-18%" }}
-          >
-            -{frame.damage}
-          </motion.span>
+          <span className="u5-battle-damage-anchor">
+            <motion.span
+              className="u5-battle-damage"
+              initial={{ opacity: 0, y: reducedMotion ? 0 : "12%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: reducedMotion ? 0 : "-18%" }}
+            >
+              -{frame.damage}
+            </motion.span>
+          </span>
         ) : null}
       </AnimatePresence>
       {defeated ? <span className="u5-battle-defeated">쓰러짐</span> : null}

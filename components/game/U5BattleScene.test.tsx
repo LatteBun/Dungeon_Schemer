@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -24,8 +26,16 @@ const replay = createU5BattleReplay({
   ],
 });
 
+const battleCss = readFileSync(join(process.cwd(), "app", "u5-battle.css"), "utf8");
+
 function render(value: U5BattleReplay = replay): string {
   return renderToStaticMarkup(createElement(U5BattleScene, { replay: value }));
+}
+
+function participantMarkup(html: string, participantId: string): string {
+  const markup = html.match(new RegExp(`<article[^>]*data-participant-id="${participantId}"[\\s\\S]*?</article>`))?.[0];
+  expect(markup).toBeDefined();
+  return markup!;
 }
 
 describe("U5BattleScene", () => {
@@ -43,8 +53,49 @@ describe("U5BattleScene", () => {
       expect(html).toContain(`>${hp}<`);
       expect(html).toContain(`aria-label="${name} HP ${hp}"`);
     }
-    expect(html).toMatch(/<img alt="코르빈" width="1024" height="1536"/);
-    expect(html).toMatch(/<img alt="새끼거미" width="1254" height="1254"/);
+  });
+
+  it("서로 다른 공식 PNG 비율을 고정 width/height 속성 없이 contain으로 보존한다", () => {
+    const nonUniformAssetReplay: U5BattleReplay = {
+      ...replay,
+      participants: replay.participants.map((participant) => participant.side === "party"
+        ? { ...participant, imageSrc: "/assets/characters/live/warrior/warrior_a.png" }
+        : { ...participant, name: "세리나", imageSrc: "/assets/monsters/spider/boss-spider-03-serina.png" }),
+    };
+    const html = render(nonUniformAssetReplay);
+
+    for (const name of ["코르빈", "세리나"]) {
+      const image = html.match(new RegExp(`<img alt="${name}"[^>]*>`))?.[0];
+      expect(image).toBeDefined();
+      expect(image).toContain('data-nimg="fill"');
+      expect(image).not.toMatch(/\s(?:width|height)="\d+"/);
+    }
+    expect(battleCss).toMatch(/\.u5-battle-sprite-frame\s*\{[^}]*position:\s*relative/);
+    expect(battleCss).toMatch(/\.u5-battle-sprite\s*\{[^}]*object-fit:\s*contain/);
+  });
+
+  it("screen-space lunge를 orientation 바깥에 두고 파티는 오른쪽, 적은 왼쪽으로 이동시킨다", () => {
+    const attackReplay: U5BattleReplay = { ...replay, frames: [replay.frames[1]!] };
+    const html = render(attackReplay);
+    const party = participantMarkup(html, "party-1");
+    const enemy = participantMarkup(html, "enemy-1");
+
+    for (const participant of [party, enemy]) {
+      expect(participant.indexOf('class="u5-battle-motion"')).toBeLessThan(
+        participant.indexOf('class="u5-battle-orientation'),
+      );
+    }
+    expect(party).toContain("--u5-battle-lunge-x:16%");
+    expect(enemy).toContain("--u5-battle-lunge-x:-16%");
+  });
+
+  it("피해 숫자의 가로 중앙 정렬과 세로 motion을 서로 다른 요소에 둔다", () => {
+    const impactReplay: U5BattleReplay = { ...replay, frames: [replay.frames[2]!] };
+    const enemy = participantMarkup(render(impactReplay), "enemy-1");
+
+    expect(enemy).toMatch(/<span class="u5-battle-damage-anchor"><span class="u5-battle-damage"/);
+    expect(battleCss).toMatch(/\.u5-battle-damage-anchor\s*\{[^}]*transform:\s*translateX\(-50%\)/);
+    expect(battleCss).not.toMatch(/\.u5-battle-damage\s*\{[^}]*transform:/);
   });
 
   it("현재 행동 한 문장만 polite live region으로 알리고 skip을 실제 button으로 제공한다", () => {
