@@ -103,14 +103,14 @@ describe("U3BoardScreen", () => {
     expect((html.match(/>소지 골드<\/span>/g) ?? [])).toHaveLength(3);
   });
 
-  it("계약 CTA는 크게 확대한 악수 엠블럼과 화살표를 같은 행에 둔다", () => {
+  it("계약 CTA는 작은 계약 인장과 화살표를 같은 중심선에 둔다", () => {
     const html = render("offer-1");
     expect(html).toContain("/assets/u3/extracted/contract-emblem.png");
     expect(html).toContain("/assets/u3/extracted/arrow-right.png");
-    expect(html).toContain('class="u3-contract-button__emblem"');
-    expect(html).toContain('width="72"');
+    expect(html).toContain('class="u3-contract-button__seal"');
+    expect(html).toContain('width="40"');
     expect(html).toContain('class="u3-contract-button__arrow"');
-    expect(html).toContain('width="56"');
+    expect(html).toContain('width="48"');
   });
 
   it("계약 조건의 명성과 골드는 한 줄 보상 묶음으로 렌더링한다", () => {

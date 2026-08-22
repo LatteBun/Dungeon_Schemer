@@ -1,5 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { IntroScreen } from "./IntroScreen";
 
@@ -21,14 +23,27 @@ describe("IntroScreen", () => {
     expect(html).toContain('class="u2-intro-stage"');
     expect(html).toContain("길잡이의 첫 기록");
     expect(html).toContain("던전은 검보다 먼저 말을 건넨다");
-    expect(html).toContain("내 역할");
-    expect(html).toContain("내 수단");
-    expect(html).toContain("나의 목표");
+    expect(html).toContain(">역할<");
+    expect(html).toContain(">수단<");
+    expect(html).toContain(">목표<");
+    expect(html).not.toContain("내 역할");
+    expect(html).not.toContain("내 수단");
+    expect(html).not.toContain("나의 목표");
     expect(html).toContain("열다섯 던전");
     expect(html).toContain("S급 길잡이");
     expect(html).toContain("길드 게시판으로");
     expect(html).toContain("<a class=\"u2-intro__cta\" href=\"/u1-test?screen=board\">");
     expect(html).not.toContain("<button");
+  });
+
+  it("제목은 강제 줄바꿈 없이 렌더링하고 소개문은 의미 단위 두 줄로 묶는다", () => {
+    const html = renderToStaticMarkup(
+      createElement(IntroScreen, { status, boardHref: "/u1-test?screen=board" }),
+    );
+
+    expect(html).toContain('<h1 id="u2-intro-title">던전은 검보다 먼저 말을 건넨다</h1>');
+    expect(html).toContain('<span>용사들은 앞으로 나아갑니다. 당신은 그보다 먼저 길을 읽고, 흔적을 기록합니다.</span>');
+    expect(html).toContain('<span>무엇을 믿게 할지 결정하는 이 기록이, 던전과 용사 사이의 첫 약속이 됩니다.</span>');
   });
 
   it("캠페인 시작 라벨과 우측 40% 패널을 렌더링하지 않는다", () => {
@@ -38,6 +53,40 @@ describe("IntroScreen", () => {
 
     expect(html).not.toContain("캠페인 시작");
     expect(html).not.toContain('data-testid="game-shell-right-panel"');
-    expect(html).toContain("/assets/u2/intro-contract.svg");
+    expect(html).toContain("/assets/u3/extracted/contract-emblem.png");
+    expect(html).not.toContain("/assets/u2/intro-guild-scroll.svg");
+    expect(html).not.toContain("/assets/u2/intro-board.svg");
+    expect(html).toContain("/assets/u3/extracted/arrow-right.png");
+    expect(html).toContain('class="u2-intro__cta-arrow"');
+  });
+
+  it("안내 카드는 의미가 분명한 단순 아이콘을 사용한다", () => {
+    const html = renderToStaticMarkup(
+      createElement(IntroScreen, { status, boardHref: "/u1-test?screen=board" }),
+    );
+
+    expect(html).toContain("/assets/u2/intro-role-observer.svg");
+    expect(html).toContain("/assets/u2/intro-means-map-quill.svg");
+    expect(html).toContain("/assets/u2/intro-goal-rank-crest.svg");
+    expect(html).not.toContain("/assets/u2/intro-role.png");
+  });
+
+  it("U2 프리뷰는 전체 캔버스를 채우고 카드 영역을 U3 밀도에 맞춘다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u2-intro.css"), "utf8");
+
+    expect(css).toMatch(/\.u2-preview\s*\{[\s\S]*?height:\s*100%/);
+    expect(css).toMatch(/\.u2-intro\s*\{[\s\S]*?width:\s*100%/);
+    expect(css).toMatch(/\.u2-intro-stage::before\s*\{[^}]*transform:\s*scale\(1\.012\)/);
+    expect(css).not.toMatch(/\.u2-intro-stage::before\s*\{[^}]*scaleX/);
+    expect(css).toMatch(/\.u2-intro-stage::after\s*\{[^}]*linear-gradient\(270deg/);
+    expect(css).not.toMatch(/\.u2-intro-stage::after\s*\{[^}]*linear-gradient\(90deg/);
+    expect(css).toMatch(/\.u2-intro__copy\s*\{[\s\S]*?transform:\s*translateY\(clamp\(0\.75rem, 1\.5cqh, 1rem\)\)/);
+    expect(css).toMatch(/\.u2-intro__cards\s*\{[\s\S]*?align-self:\s*center/);
+    expect(css).toMatch(/\.u2-intro__cards\s*\{[\s\S]*?justify-self:\s*end/);
+    expect(css).toMatch(/\.u2-intro__cards\s*\{[\s\S]*?width:\s*min\(60cqw, 54rem\)/);
+    expect(css).toMatch(/\.u2-intro__cards\s*\{[^}]*margin:\s*0 clamp\(0\.5rem, 4cqw, 3\.2rem\) 0 0/);
+    expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?justify-self:\s*center/);
+    expect(css).not.toMatch(/\.u2-intro__cta\s*\{[\s\S]*?margin-left:/);
+    expect(css).not.toContain("inset 0 1px 0 rgb(255 241 176 / 24%)");
   });
 });

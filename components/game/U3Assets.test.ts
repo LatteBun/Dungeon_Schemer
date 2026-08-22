@@ -51,10 +51,10 @@ describe("U3 extracted asset-board assets", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
 
     expect(css).toContain("clamp(13rem, 15cqw, 24rem)");
-    expect(css).toContain(".u3-contract-button .u3-contract-button__emblem");
-    expect(css).toContain("clamp(4.5rem, 4.6cqw, 7.25rem)");
+    expect(css).toContain(".u3-contract-button .u3-contract-button__seal");
+    expect(css).toContain("clamp(2.5rem, 2.7cqw, 4rem)");
     expect(css).toContain(".u3-contract-button .u3-contract-button__arrow");
-    expect(css).toContain("clamp(3.5rem, 3.9cqw, 6rem)");
+    expect(css).toContain("clamp(1.5rem, 1.6cqw, 2.4rem)");
   });
 
   it("대화면에서는 상태바부터 공고와 상세까지 텍스트가 함께 확대된다", () => {
