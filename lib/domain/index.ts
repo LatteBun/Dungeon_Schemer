@@ -111,6 +111,13 @@ export type {
   InfoRecord,
   Target,
 } from "./info";
+export type {
+  AdviceDecision,
+  AdviceFeedback,
+  AdviceResolution,
+  MemberReaction,
+  PresentedAdviceOption,
+} from "./info";
 
 export { EVENT_EFFECT_TAGS, EVENT_KINDS } from "./content";
 export type {

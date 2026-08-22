@@ -31,8 +31,18 @@ function trustRng(seed: string) {
 }
 
 describe("개인 신뢰 판정표", () => {
+  it("조언 결과 행동의 성격별 기본값을 고정한다", () => {
+    const expectedHelp = [2, 3, 2, 3, 4];
+    const expectedHarm = [-4, -3, -3, -4, -2];
+    const personalities = ["suspicious", "righteous", "greedy", "prudent", "impulsive"] as const;
+    personalities.forEach((personality, index) => {
+      expect(TRUST_RULES[personality].adviceHelped.baseDelta).toBe(expectedHelp[index]);
+      expect(TRUST_RULES[personality].adviceHarmed.baseDelta).toBe(expectedHarm[index]);
+    });
+    expect(TRUST_ACTIONS).not.toContain("deceptionAccepted");
+  });
   it("행동 여덟과 모든 성격의 규칙이 빠짐없이 존재한다", () => {
-    expect(TRUST_ACTIONS).toHaveLength(11);
+    expect(TRUST_ACTIONS).toHaveLength(12);
     expect(Object.keys(TRUST_RULES).sort()).toEqual(
       [...PERSONALITIES].sort(),
     );
@@ -43,12 +53,12 @@ describe("개인 신뢰 판정표", () => {
     }
   });
 
-  it("정보 카드 판정이 더한 신뢰 행동 세 개가 성격별 확정 수치로 존재한다", () => {
+  it("조언 결과 판정과 기존 신뢰 행동이 성격별 확정 수치로 존재한다", () => {
     expect(
       PERSONALITIES.map(
-        (personality) => TRUST_RULES[personality].deceptionAccepted.baseDelta,
+        (personality) => TRUST_RULES[personality].adviceHelped.baseDelta,
       ),
-    ).toEqual([4, 6, 2, 3, 5]);
+    ).toEqual([2, 3, 2, 3, 4]);
     expect(
       PERSONALITIES.map(
         (personality) => TRUST_RULES[personality].suspicionWasCostly.baseDelta,
