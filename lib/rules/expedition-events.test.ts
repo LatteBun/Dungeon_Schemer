@@ -26,9 +26,18 @@ describe("E3 원정 사건 준비와 물질화", () => {
     const input = { campaignSeed: "e3-seed-0", dungeonId: "dungeon-spider-01" as DungeonId, initialRiskLevel: 3 as const, riskLevel: 3 as const, attempt: 0, activeRuleIds: THEMES[0].rules.map((rule) => rule.id), activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id) };
     const map = generateDungeonMap(input);
     const prepared = prepareExpeditionEvents({ ...input, map, theme: THEMES[0] });
-    const monsterNode = [...prepared.nodePlans.values()].find((plan) => plan.category === "monster" && plan.hiddenRole === "normal");
+    const monsterNode = [...prepared.nodePlans.values()].find((plan) => plan.category === "monster" && plan.hiddenRole === "normal" && !prepared.strongLinks.some((link) => link.followerNodeId === plan.nodeId));
     if (monsterNode === undefined) throw new Error("monster normal node 없음");
     expect(() => materializeNodeEvent({ prepared, nodeId: monsterNode.nodeId, campaignSeed: input.campaignSeed, dungeonId: input.dungeonId, attempt: 0, theme: THEMES[0], activeRuleIds: [], activeMonsterIds: [] })).toThrow(/사용 가능한 사건이 없다/);
+  });
+
+  it("예약된 follower는 predecessor보다 먼저 일반 사건으로 소모되지 않는다", () => {
+    const input = { campaignSeed: "e3-seed-0", dungeonId: "dungeon-spider-01" as DungeonId, initialRiskLevel: 3 as const, riskLevel: 3 as const, attempt: 0, activeRuleIds: THEMES[0].rules.map((rule) => rule.id), activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id) };
+    const map = generateDungeonMap(input);
+    const prepared = prepareExpeditionEvents({ ...input, map, theme: THEMES[0] });
+    const followerNodeId = prepared.strongLinks[0]?.followerNodeId;
+    if (followerNodeId === undefined) throw new Error("follower 예약 없음");
+    expect(() => materializeNodeEvent({ prepared, nodeId: followerNodeId, campaignSeed: input.campaignSeed, dungeonId: input.dungeonId, attempt: 0, theme: THEMES[0], activeRuleIds: input.activeRuleIds, activeMonsterIds: input.activeMonsterIds })).toThrow(/선행 단서가 아직 없다/);
   });
 
   it("재도전 배율은 0단계에서 1이고 단조 증가한다", () => {

@@ -42,9 +42,20 @@ function reachableNodes(map: GeneratedMap, start: NodeId): ReadonlySet<NodeId> {
 
 function eventMatchesProfile(event: SituationEvent, activeRuleIds: ReadonlySet<RuleId>, activeMonsterIds: ReadonlySet<MonsterId>): boolean {
   const referencedRules = event.advice.flatMap((option) => option.source?.kind === "ecology" ? [option.source.ruleId] : []);
+  const encounterGroups = event.kind === "merchant" ? [] : [
+    ...(event.encounter?.enemies ?? []),
+    ...(event.encounterModifier?.addEnemies ?? []),
+    ...(event.encounterModifier?.removeEnemies ?? []),
+    ...(event.defaultEncounterModifier?.addEnemies ?? []),
+    ...(event.defaultEncounterModifier?.removeEnemies ?? []),
+    ...event.advice.flatMap((option) => [
+      ...(option.encounterModifier?.addEnemies ?? []),
+      ...(option.encounterModifier?.removeEnemies ?? []),
+    ]),
+  ];
   if (event.kind !== "merchant" && event.satisfiedConditionalRuleIds?.some((ruleId) => !activeRuleIds.has(ruleId))) return false;
   if (referencedRules.some((ruleId) => !activeRuleIds.has(ruleId))) return false;
-  if (event.kind !== "merchant" && event.encounter?.enemies.some((enemy) => !activeMonsterIds.has(enemy.monsterId))) return false;
+  if (encounterGroups.some((enemy) => !activeMonsterIds.has(enemy.monsterId))) return false;
   return true;
 }
 
@@ -83,7 +94,8 @@ export function prepareExpeditionEvents(input: {
   const desiredStrongLinkCount = input.initialRiskLevel >= 5 ? 2 : input.initialRiskLevel >= 3 ? 1 : 0;
   const layerByNode = new Map(input.map.layers.flatMap((layer, index) => layer.nodeIds.map((nodeId) => [nodeId, index] as const)));
   const reservedNodes = new Set([...plans.values()].filter((plan) => plan.hiddenRole !== "normal").map((plan) => plan.nodeId));
-  for (const clueId of strongClues.slice(0, desiredStrongLinkCount)) {
+  const optionsByClue = new Map<ClueId, readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[]>();
+  for (const clueId of strongClues) {
     const predecessorEvents = eligibleEvents.filter((event) => event.revealsClue === clueId);
     const followerEvents = eligibleEvents.filter((event) => event.requiresClue === clueId);
     const pairs = [...plans.values()].flatMap((predecessorNode) => predecessorNode.hiddenRole !== "normal" || reservedNodes.has(predecessorNode.nodeId)
@@ -97,12 +109,31 @@ export function prepareExpeditionEvents(input: {
             && followerEvents.some((event) => event.kind === followerNode.category))
           .map((followerNode) => ({ predecessorNode, followerNode }));
       }));
-    if (pairs.length === 0) invalid("strong link를 준비할 수 있는 predecessor/follower 후보가 없다", { clueId, desiredStrongLinkCount });
-    const selected = rng.pick(pairs);
-    plans.set(selected.predecessorNode.nodeId, { ...selected.predecessorNode, hiddenRole: "strongPredecessor", plannedClueId: clueId });
-    reservedNodes.add(selected.predecessorNode.nodeId);
-    reservedNodes.add(selected.followerNode.nodeId);
-    strongLinks.push({ clueId, predecessorNodeId: selected.predecessorNode.nodeId, followerNodeId: selected.followerNode.nodeId });
+    optionsByClue.set(clueId, pairs.map((pair) => ({ clueId, predecessorNodeId: pair.predecessorNode.nodeId, followerNodeId: pair.followerNode.nodeId })));
+  }
+  const findSelection = (clueIndex: number, selected: readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[], usedNodes: ReadonlySet<NodeId>): readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[] | undefined => {
+    if (selected.length === desiredStrongLinkCount) return selected;
+    if (strongClues.length - clueIndex < desiredStrongLinkCount - selected.length) return undefined;
+    for (let index = clueIndex; index < strongClues.length; index += 1) {
+      const clueId = strongClues[index];
+      for (const option of optionsByClue.get(clueId) ?? []) {
+        if (usedNodes.has(option.predecessorNodeId) || usedNodes.has(option.followerNodeId)) continue;
+        const nextUsedNodes = new Set(usedNodes);
+        nextUsedNodes.add(option.predecessorNodeId);
+        nextUsedNodes.add(option.followerNodeId);
+        const result = findSelection(index + 1, [...selected, option], nextUsedNodes);
+        if (result !== undefined) return result;
+      }
+    }
+    return undefined;
+  };
+  const selectedLinks = findSelection(0, [], reservedNodes);
+  if (selectedLinks === undefined) invalid("요구된 strong link 수를 만족하는 전역 후보 조합이 없다", { desiredStrongLinkCount });
+  for (const link of selectedLinks) {
+    const predecessorPlan = plans.get(link.predecessorNodeId);
+    if (predecessorPlan === undefined) invalid("strong predecessor node plan이 없다", { nodeId: link.predecessorNodeId });
+    plans.set(link.predecessorNodeId, { ...predecessorPlan, hiddenRole: "strongPredecessor", plannedClueId: link.clueId });
+    strongLinks.push(link);
   }
   return {
     nodePlans: plans,
@@ -134,6 +165,10 @@ export function materializeNodeEvent(input: {
 }): MaterializedNodeEvent {
   const plan = input.prepared.nodePlans.get(input.nodeId as NodeId);
   if (plan === undefined) invalid("방문할 node plan이 없다", { nodeId: input.nodeId });
+  const reservedFollower = input.prepared.strongLinks.find((link) => link.followerNodeId === input.nodeId);
+  if (plan.hiddenRole === "normal" && reservedFollower !== undefined && !input.prepared.heldClueIds.has(reservedFollower.clueId)) {
+    invalid("strong follower의 선행 단서가 아직 없다", { nodeId: input.nodeId, clueId: reservedFollower.clueId });
+  }
   if (plan.hiddenRole === "strongFollower" && plan.plannedClueId !== undefined && !input.prepared.heldClueIds.has(plan.plannedClueId)) {
     invalid("strong follower의 선행 단서가 아직 없다", { nodeId: input.nodeId, clueId: plan.plannedClueId });
   }
