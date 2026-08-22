@@ -119,6 +119,8 @@ export interface NonMerchantSituationEvent extends BaseSituationEvent<NonMerchan
   kind: Exclude<EventKind, "merchant">;
   /** 생태 규칙을 참조하면 테마 전용이고, 공용이면 없다. */
   theme?: ThemeId;
+  /** 이 사건의 관찰 조건이 충족할 때만 적용되는 조건부 생태 규칙. */
+  satisfiedConditionalRuleIds?: readonly RuleId[];
   /** 보스 정보 사건이면 대상 보스, 일반 사건이면 없다. */
   targetBossId?: BossId;
   /** 약한 연계. */

@@ -49,7 +49,8 @@ function neutralAdvice(id: string, label: string, line: string, resultText: stri
 }
 
 function graveyardEvent(id: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string, extras: Partial<NonMerchantSituationEvent> = {}): NonMerchantSituationEvent {
-  return { id: id as EventId, kind: "monster", theme: "graveyard", title, description, advice: adviceOptions, defaultResultText, ...extras };
+  const satisfiedConditionalRuleIds = [...new Set(adviceOptions.flatMap((option) => option.source?.kind === "ecology" && ["graveyard-ghoul-sound", "graveyard-archer-light"].includes(option.source.ruleId) ? [option.source.ruleId] : []))];
+  return { id: id as EventId, kind: "monster", theme: "graveyard", title, description, advice: adviceOptions, defaultResultText, ...(satisfiedConditionalRuleIds.length > 0 ? { satisfiedConditionalRuleIds } : {}), ...extras };
 }
 
 function bossEvent(id: string, targetBossId: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string): NonMerchantSituationEvent {

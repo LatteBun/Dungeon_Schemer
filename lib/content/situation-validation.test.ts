@@ -114,6 +114,34 @@ describe("validateSituationEvent 구조", () => {
       expect((error as RuleError).code).toBe("INVALID_GENERATION");
     }
   });
+
+  it("조건부 생태 규칙을 참조하는 테마 사건은 만족 규칙을 선언해야 한다", () => {
+    const event = themedEvent({
+      advice: [
+        themedAdvice("a", "help", {
+          source: { kind: "ecology", ruleId: "spider-brood-light" as RuleId },
+        }),
+        themedAdvice("b", "harm", {
+          source: { kind: "ecology", ruleId: "spider-fire" as RuleId },
+        }),
+        themedAdvice("c", "neutral"),
+      ],
+    });
+    expect(() => validateSituationEvent(event, SPIDER_THEME)).toThrow(/조건부/);
+  });
+
+  it("조건부 선언은 테마의 조건부 규칙 ID만 포함해야 한다", () => {
+    const event = themedEvent({
+      satisfiedConditionalRuleIds: ["spider-fire" as RuleId],
+    });
+    expect(() => validateSituationEvent(event, SPIDER_THEME)).toThrow(/조건부/);
+  });
+
+  it("공용 사건은 조건부 규칙 선언을 가질 수 없다", () => {
+    expect(() => validateSituationEvent(sharedEvent({
+      satisfiedConditionalRuleIds: ["spider-brood-light" as RuleId],
+    }))).toThrow(/조건부/);
+  });
 });
 
 /** 계약을 만족하는 테마 전용 조언. */
@@ -582,6 +610,12 @@ function themedSupply(ruleId: string): NonMerchantSituationEvent[] {
   return [0, 1].map((n) =>
     themedEvent({
       id: `${ruleId}-event-${n}` as EventId,
+      satisfiedConditionalRuleIds: [
+        "spider-brood-light",
+        "spider-armor-vibration",
+      ].includes(ruleId)
+        ? [ruleId as RuleId]
+        : undefined,
       advice: [
         themedAdvice(`${ruleId}-h${n}`, "help", {
           source: { kind: "ecology", ruleId: ruleId as RuleId },
