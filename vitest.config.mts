@@ -7,7 +7,7 @@ export default defineConfig({
     environment: "node",
     // .tsx 를 빠뜨리면 JSX 로 쓴 컴포넌트 테스트가 조용히 실행되지 않는다.
     // 실제로 U4DungeonMapScreen.test.tsx 의 7개가 그렇게 묻혀 있었다.
-    include: ["**/*.test.ts", "**/*.test.tsx"],
+    include: ["**/*.test.{ts,tsx}"],
     exclude: [".worktrees/**", "node_modules/**", ".next/**"],
   },
   resolve: {

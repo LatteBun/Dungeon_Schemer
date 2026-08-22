@@ -15,16 +15,21 @@
   display: none;
 }
 
+/* Keep atmospheric edge darkening on the map background, below topology. */
+.u4-map-surface__vignette {
+  z-index: 2;
+}
+
 /* Make the topology read as a dungeon passage rather than a hairline graph. */
 .u4-corridor {
   height: clamp(1.05rem, 1.35cqh, 1.35rem);
-  opacity: 0.34;
-  filter: grayscale(0.38) brightness(0.72) contrast(1.04);
+  opacity: 0.66;
+  filter: grayscale(0.26) brightness(0.88) contrast(1.08) drop-shadow(0 0 0.12rem rgb(139 103 61 / 32%));
 }
 
 .u4-corridor.is-visited {
-  opacity: 0.58;
-  filter: grayscale(0.52) brightness(0.88);
+  opacity: 0.78;
+  filter: grayscale(0.42) brightness(0.98) contrast(1.06) drop-shadow(0 0 0.14rem rgb(156 128 85 / 38%));
 }
 
 .u4-corridor.is-selectable {
@@ -55,6 +60,16 @@
 .u4-room--boss .u4-room__icon {
   width: 46%;
   height: 46%;
+}
+
+.u4-room.is-inactive {
+  opacity: 0.72;
+  filter: grayscale(0.42) brightness(0.82) contrast(1.04);
+}
+
+.u4-room.is-visited {
+  opacity: 0.82;
+  filter: grayscale(0.58) brightness(0.9) contrast(1.04);
 }
 
 /* Give the selected destination roughly the lower third of the right panel,
