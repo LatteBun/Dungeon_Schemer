@@ -47,30 +47,29 @@ const MAP: GeneratedMap = {
 };
 
 describe("U4 dungeon map layout", () => {
-  it("places entry at bottom center and boss at top center", () => {
+  it("places entry at bottom center and boss at top center with safe margins", () => {
     const layout = createU4DungeonMapLayout(MAP);
     const entry = layout.nodePositions[ENTRY];
     const boss = layout.nodePositions[BOSS];
-    const firstDepth = layout.nodePositions[D1A];
-    const lastDepth = layout.nodePositions[D4A];
 
     expect(entry?.x).toBeCloseTo(0.5);
-    expect(entry?.y).toBeCloseTo(0.93);
+    expect(entry?.y).toBeCloseTo(0.88);
     expect(boss?.x).toBeCloseTo(0.5);
-    expect(boss?.y).toBeCloseTo(0.06);
-    expect(entry!.y).toBeGreaterThan(firstDepth!.y);
-    expect(boss!.y).toBeLessThan(lastDepth!.y);
+    expect(boss?.y).toBeCloseTo(0.12);
   });
 
-  it("keeps deeper layers progressively higher on screen", () => {
+  it("forms one strict bottom-to-top sequence from entry through every depth to boss", () => {
     const layout = createU4DungeonMapLayout(MAP);
-    const ys = MAP.layers.map(
-      (layer) => layout.nodePositions[layer.nodeIds[0]!]!.y,
-    );
+    const rowYs = [
+      layout.nodePositions[ENTRY]!.y,
+      ...MAP.layers.map((layer) => layout.nodePositions[layer.nodeIds[0]!]!.y),
+      layout.nodePositions[BOSS]!.y,
+    ];
 
-    expect(ys[0]).toBeGreaterThan(ys[1]!);
-    expect(ys[1]).toBeGreaterThan(ys[2]!);
-    expect(ys[2]).toBeGreaterThan(ys[3]!);
+    for (let index = 1; index < rowYs.length; index += 1) {
+      expect(rowYs[index - 1]).toBeGreaterThan(rowYs[index]!);
+    }
+    expect(rowYs.slice(1, -1).every((y) => y < 0.88 && y > 0.12)).toBe(true);
   });
 
   it("fits five rooms inside the horizontal safe area in layer order", () => {
