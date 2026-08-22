@@ -258,19 +258,3 @@
   transform-origin: center;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 65%));
 }
-
-@media (max-width: 64rem) {
-  .u3-notice { grid-template-rows: auto auto minmax(3.7rem, 1fr) auto auto auto auto; }
-  .u3-theme-scene { width: min(100%, 8.7rem); }
-  .u3-notice__pin { width: 1.55rem; height: 1.85rem; top: -0.46rem; }
-  .u3-dungeon-summary__motif { width: clamp(5.5rem, 9vw, 6.8rem); }
-  .u3-detail-section h3::after { height: 0.42rem; }
-  .u3-contract-button {
-    grid-template-columns: 4rem minmax(0, 1fr) 3rem;
-    column-gap: 0.55rem;
-    min-height: 5rem;
-    padding-inline: 0.7rem;
-  }
-  .u3-contract-button__emblem { width: 4rem; height: 4rem; }
-  .u3-contract-button__arrow { width: 3rem; height: 2rem; }
-}

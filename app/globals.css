@@ -159,17 +159,6 @@ body {
   outline-offset: 2px;
 }
 
-@media (max-width: 40rem) {
-  .game-shell__status-bar {
-    padding-inline: 0.75rem;
-  }
-
-  .game-shell__main,
-  .game-shell__right-panel {
-    padding: 0.75rem;
-  }
-}
-
 .u1-preview__reference-frame {
   background: linear-gradient(180deg, #0f0b08 0%, #171009 16rem, var(--color-shell-ink) 100%);
 }
@@ -366,14 +355,4 @@ body {
 .u1-reference-action {
   width: 100%;
   margin-top: 0.75rem;
-}
-
-@media (max-width: 40rem) {
-  .u1-reference-notice {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .u1-reference-choice-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }

@@ -48,4 +48,10 @@ describe("16:9 고정 캔버스", () => {
 
     expect(layout).toContain('className="game-canvas"');
   });
+
+  it("고정 비율 화면에는 창 반응형 미디어 쿼리가 없다", () => {
+    const offenders = styleSheets().filter((name) => css(name).includes("@media"));
+
+    expect(offenders).toEqual([]);
+  });
 });

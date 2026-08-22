@@ -12,283 +12,281 @@
 .u3-theme-scene--spider { background-position: 50% center; }
 .u3-theme-scene--graveyard { background-position: 100% center; }
 
-@media (min-width: 90rem) {
-  .u3-board-screen .game-shell__status-bar {
-    padding-block: clamp(0.65rem, 0.6vw, 1rem);
-  }
-
-  .u3-board-screen .game-shell__status-chip {
-    min-height: clamp(3rem, 3vw, 4.35rem);
-    gap: clamp(0.5rem, 0.5vw, 0.8rem);
-    padding-inline: clamp(0.65rem, 0.75vw, 1.2rem);
-  }
-
-  .u3-board-screen .game-shell__status-icon {
-    width: clamp(1.45rem, 1.35vw, 2.15rem);
-    height: clamp(1.45rem, 1.35vw, 2.15rem);
-  }
-
-  .u3-board-screen .game-shell__status-copy dt {
-    font-size: clamp(0.72rem, 0.72vw, 1.1rem);
-  }
-
-  .u3-board-screen .game-shell__status-copy dd {
-    font-size: clamp(0.86rem, 0.82vw, 1.25rem);
-  }
-
-  .u3-board-screen .game-shell__main,
-  .u3-board-screen .game-shell__right-panel {
-    padding: clamp(0.8rem, 0.9vw, 1.6rem);
-  }
-
-  .u3-board-screen .game-shell__main > h1 {
-    margin-bottom: clamp(0.5rem, 0.55vw, 0.85rem);
-    font-size: clamp(1.3rem, 1.2vw, 1.9rem);
-  }
-
-  .u3-guild-board {
-    padding: clamp(1rem, 1.15vw, 1.75rem);
-    background-size: auto, auto, clamp(31.875rem, 30vw, 45rem) auto;
-    background-repeat: no-repeat, no-repeat, repeat;
-  }
-
-  .u3-guild-board__wood {
-    inset: clamp(0.45rem, 0.45vw, 0.8rem);
-  }
-
-  .u3-guild-board__notices {
-    gap: clamp(0.9rem, 1vw, 1.7rem);
-    padding: clamp(0.2rem, 0.25vw, 0.45rem);
-  }
-
-  .u3-notice {
-    grid-template-rows: auto auto minmax(8rem, 1fr) auto auto auto auto;
-    padding: clamp(0.85rem, 0.8vw, 1.35rem) clamp(0.75rem, 0.8vw, 1.3rem) clamp(0.75rem, 0.7vw, 1.1rem);
-    background-size: 100% 100%, clamp(9rem, 10vw, 18rem) auto;
-  }
-
-  .u3-notice__pin {
-    top: -0.62rem;
-    width: clamp(1.8rem, 1.4vw, 2.8rem);
-    height: auto;
-  }
-
-  .u3-notice__heading {
-    padding-top: clamp(0.45rem, 0.45vw, 0.75rem);
-  }
-
-  .u3-notice__heading strong {
-    overflow: visible;
-    font-size: clamp(1.08rem, 1.12vw, 1.7rem);
-    line-height: 1.14;
-    text-overflow: clip;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .u3-notice__heading small,
-  .u3-notice__label,
-  .u3-notice__environment small {
-    font-size: clamp(0.72rem, 0.68vw, 1.05rem);
-  }
-
-  .u3-risk-stars {
-    gap: clamp(0.15rem, 0.18vw, 0.28rem);
-    margin-block: clamp(0.3rem, 0.34vw, 0.55rem);
-  }
-
-  .u3-risk-stars img {
-    width: clamp(1rem, 0.95vw, 1.55rem);
-    height: clamp(1rem, 0.95vw, 1.55rem);
-  }
-
-  .u3-notice__theme-visual {
-    margin: clamp(0.22rem, 0.25vw, 0.42rem) 0 clamp(0.35rem, 0.35vw, 0.6rem);
-  }
-
-  .u3-theme-scene {
-    width: min(100%, clamp(13rem, 15vw, 24rem));
-  }
-
-  .u3-notice .u3-reward,
-  .u3-notice__environment strong,
-  .u3-notice__state {
-    font-size: clamp(0.88rem, 0.78vw, 1.2rem);
-  }
-
-  .u3-notice__environment strong {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .u3-reward img {
-    width: clamp(1.05rem, 0.95vw, 1.5rem);
-    height: clamp(1.05rem, 0.95vw, 1.5rem);
-  }
-
-  .u3-notice__environment {
-    margin-top: clamp(0.4rem, 0.38vw, 0.65rem);
-    padding-top: clamp(0.35rem, 0.34vw, 0.58rem);
-  }
-
-  .u3-contract-detail {
-    gap: clamp(0.58rem, 0.6vw, 1rem);
-  }
-
-  .u3-dungeon-summary__motif {
-    width: clamp(9rem, 10vw, 16rem);
-  }
-
-  .u3-detail-section {
-    padding: clamp(0.8rem, 0.9vw, 1.4rem);
-  }
-
-  .u3-detail-section h3 {
-    margin-bottom: clamp(0.5rem, 0.5vw, 0.8rem);
-    font-size: clamp(1.12rem, 1vw, 1.55rem);
-  }
-
-  .u3-detail-section h3::after {
-    width: min(100%, clamp(18rem, 22vw, 32rem));
-    height: clamp(0.55rem, 0.5vw, 0.8rem);
-  }
-
-  .u3-dungeon-summary__copy > span {
-    font-size: clamp(0.78rem, 0.68vw, 1.05rem);
-  }
-
-  .u3-dungeon-summary__copy h2 {
-    overflow: visible;
-    font-size: clamp(1.2rem, 1.15vw, 1.8rem);
-    text-overflow: clip;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .u3-dungeon-summary__facts > span {
-    font-size: clamp(0.82rem, 0.72vw, 1.1rem);
-  }
-
-  .u3-party__grid {
-    gap: clamp(0.5rem, 0.55vw, 0.9rem);
-  }
-
-  .u3-party-card {
-    min-height: clamp(7.5rem, 8.5vw, 12rem);
-    padding: clamp(0.65rem, 0.62vw, 1rem);
-  }
-
-  .u3-party-card__number {
-    font-size: clamp(0.68rem, 0.58vw, 0.9rem);
-  }
-
-  .u3-party-card__portrait {
-    width: clamp(3.4rem, 3.3vw, 5.5rem);
-    height: clamp(3.4rem, 3.3vw, 5.5rem);
-    margin-bottom: clamp(0.38rem, 0.4vw, 0.7rem);
-  }
-
-  .u3-party-card__identity strong {
-    overflow: visible;
-    font-size: clamp(0.92rem, 0.85vw, 1.35rem);
-    line-height: 1.15;
-    text-overflow: clip;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .u3-party-card__identity span,
-  .u3-party-card__identity small {
-    font-size: clamp(0.74rem, 0.68vw, 1.05rem);
-  }
-
-  .u3-party-card__stats {
-    gap: clamp(0.18rem, 0.18vw, 0.3rem);
-    margin-top: clamp(0.45rem, 0.42vw, 0.7rem);
-    padding-top: clamp(0.35rem, 0.34vw, 0.58rem);
-  }
-
-  .u3-party-card__stats > div {
-    gap: clamp(0.35rem, 0.35vw, 0.6rem);
-    font-size: clamp(0.74rem, 0.7vw, 1.08rem);
-  }
-
-  .u3-party-card__stats dd {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .u3-contract-outcomes__rows {
-    gap: clamp(0.25rem, 0.25vw, 0.42rem);
-  }
-
-  .u3-contract-outcomes__rows > div {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
-    align-items: center;
-    padding: clamp(0.24rem, 0.24vw, 0.4rem) clamp(0.12rem, 0.14vw, 0.24rem);
-    font-size: clamp(0.8rem, 0.72vw, 1.1rem);
-  }
-
-  .u3-contract-outcomes__rows > div > strong {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .u3-contract-outcomes__rows small {
-    font-size: clamp(0.62rem, 0.54vw, 0.84rem);
-  }
-
-  .u3-contract-outcome__reward {
-    min-width: max-content;
-  }
-
-  .u3-contract-outcome__reward .u3-reward {
-    flex-wrap: nowrap;
-    gap: clamp(0.5rem, 0.5vw, 0.8rem);
-    white-space: nowrap;
-  }
-
-  .u3-contract-outcome__reward .u3-reward > span {
-    white-space: nowrap;
-  }
-
-  .u3-contract-button {
-    grid-template-columns: clamp(4.5rem, 4.6vw, 7.25rem) minmax(0, 1fr) clamp(3.5rem, 3.9vw, 6rem);
-    column-gap: clamp(0.85rem, 1vw, 1.5rem);
-    min-height: clamp(5.55rem, 6.4vw, 9.5rem);
-    padding-inline: clamp(1rem, 1.2vw, 2rem);
-  }
-
-  .u3-contract-button strong {
-    font-size: clamp(1.35rem, 1.32vw, 2.1rem);
-    line-height: 1.15;
-  }
-
-  .u3-contract-button .u3-contract-button__emblem {
-    width: clamp(4.5rem, 4.6vw, 7.25rem);
-    height: clamp(4.5rem, 4.6vw, 7.25rem);
-  }
-
-  .u3-contract-button .u3-contract-button__arrow {
-    width: clamp(3.5rem, 3.9vw, 6rem);
-    height: auto;
-    transform: scale(1.12);
-  }
+/* 1920×1080 캔버스에서 항상 적용되던 대화면 고밀도 규칙. 고정 비율이 되면서 기본값이 되었다. */
+.u3-board-screen .game-shell__status-bar {
+  padding-block: clamp(0.65rem, 0.6vw, 1rem);
 }
 
-@media (min-width: 120rem) {
-  .u3-guild-board__notices {
-    gap: clamp(1.1rem, 1.2vw, 2rem);
-  }
+.u3-board-screen .game-shell__status-chip {
+  min-height: clamp(3rem, 3vw, 4.35rem);
+  gap: clamp(0.5rem, 0.5vw, 0.8rem);
+  padding-inline: clamp(0.65rem, 0.75vw, 1.2rem);
+}
 
-  .u3-notice {
-    padding-inline: clamp(1rem, 1vw, 1.6rem);
-  }
+.u3-board-screen .game-shell__status-icon {
+  width: clamp(1.45rem, 1.35vw, 2.15rem);
+  height: clamp(1.45rem, 1.35vw, 2.15rem);
+}
 
-  .u3-party-card {
-    min-height: clamp(9rem, 8vw, 12rem);
-  }
+.u3-board-screen .game-shell__status-copy dt {
+  font-size: clamp(0.72rem, 0.72vw, 1.1rem);
+}
+
+.u3-board-screen .game-shell__status-copy dd {
+  font-size: clamp(0.86rem, 0.82vw, 1.25rem);
+}
+
+.u3-board-screen .game-shell__main,
+.u3-board-screen .game-shell__right-panel {
+  padding: clamp(0.8rem, 0.9vw, 1.6rem);
+}
+
+.u3-board-screen .game-shell__main > h1 {
+  margin-bottom: clamp(0.5rem, 0.55vw, 0.85rem);
+  font-size: clamp(1.3rem, 1.2vw, 1.9rem);
+}
+
+.u3-guild-board {
+  padding: clamp(1rem, 1.15vw, 1.75rem);
+  background-size: auto, auto, clamp(31.875rem, 30vw, 45rem) auto;
+  background-repeat: no-repeat, no-repeat, repeat;
+}
+
+.u3-guild-board__wood {
+  inset: clamp(0.45rem, 0.45vw, 0.8rem);
+}
+
+.u3-guild-board__notices {
+  gap: clamp(0.9rem, 1vw, 1.7rem);
+  padding: clamp(0.2rem, 0.25vw, 0.45rem);
+}
+
+.u3-notice {
+  grid-template-rows: auto auto minmax(8rem, 1fr) auto auto auto auto;
+  padding: clamp(0.85rem, 0.8vw, 1.35rem) clamp(0.75rem, 0.8vw, 1.3rem) clamp(0.75rem, 0.7vw, 1.1rem);
+  background-size: 100% 100%, clamp(9rem, 10vw, 18rem) auto;
+}
+
+.u3-notice__pin {
+  top: -0.62rem;
+  width: clamp(1.8rem, 1.4vw, 2.8rem);
+  height: auto;
+}
+
+.u3-notice__heading {
+  padding-top: clamp(0.45rem, 0.45vw, 0.75rem);
+}
+
+.u3-notice__heading strong {
+  overflow: visible;
+  font-size: clamp(1.08rem, 1.12vw, 1.7rem);
+  line-height: 1.14;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.u3-notice__heading small,
+.u3-notice__label,
+.u3-notice__environment small {
+  font-size: clamp(0.72rem, 0.68vw, 1.05rem);
+}
+
+.u3-risk-stars {
+  gap: clamp(0.15rem, 0.18vw, 0.28rem);
+  margin-block: clamp(0.3rem, 0.34vw, 0.55rem);
+}
+
+.u3-risk-stars img {
+  width: clamp(1rem, 0.95vw, 1.55rem);
+  height: clamp(1rem, 0.95vw, 1.55rem);
+}
+
+.u3-notice__theme-visual {
+  margin: clamp(0.22rem, 0.25vw, 0.42rem) 0 clamp(0.35rem, 0.35vw, 0.6rem);
+}
+
+.u3-theme-scene {
+  width: min(100%, clamp(13rem, 15vw, 24rem));
+}
+
+.u3-notice .u3-reward,
+.u3-notice__environment strong,
+.u3-notice__state {
+  font-size: clamp(0.88rem, 0.78vw, 1.2rem);
+}
+
+.u3-notice__environment strong {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.u3-reward img {
+  width: clamp(1.05rem, 0.95vw, 1.5rem);
+  height: clamp(1.05rem, 0.95vw, 1.5rem);
+}
+
+.u3-notice__environment {
+  margin-top: clamp(0.4rem, 0.38vw, 0.65rem);
+  padding-top: clamp(0.35rem, 0.34vw, 0.58rem);
+}
+
+.u3-contract-detail {
+  gap: clamp(0.58rem, 0.6vw, 1rem);
+}
+
+.u3-dungeon-summary__motif {
+  width: clamp(9rem, 10vw, 16rem);
+}
+
+.u3-detail-section {
+  padding: clamp(0.8rem, 0.9vw, 1.4rem);
+}
+
+.u3-detail-section h3 {
+  margin-bottom: clamp(0.5rem, 0.5vw, 0.8rem);
+  font-size: clamp(1.12rem, 1vw, 1.55rem);
+}
+
+.u3-detail-section h3::after {
+  width: min(100%, clamp(18rem, 22vw, 32rem));
+  height: clamp(0.55rem, 0.5vw, 0.8rem);
+}
+
+.u3-dungeon-summary__copy > span {
+  font-size: clamp(0.78rem, 0.68vw, 1.05rem);
+}
+
+.u3-dungeon-summary__copy h2 {
+  overflow: visible;
+  font-size: clamp(1.2rem, 1.15vw, 1.8rem);
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.u3-dungeon-summary__facts > span {
+  font-size: clamp(0.82rem, 0.72vw, 1.1rem);
+}
+
+.u3-party__grid {
+  gap: clamp(0.5rem, 0.55vw, 0.9rem);
+}
+
+.u3-party-card {
+  min-height: clamp(7.5rem, 8.5vw, 12rem);
+  padding: clamp(0.65rem, 0.62vw, 1rem);
+}
+
+.u3-party-card__number {
+  font-size: clamp(0.68rem, 0.58vw, 0.9rem);
+}
+
+.u3-party-card__portrait {
+  width: clamp(3.4rem, 3.3vw, 5.5rem);
+  height: clamp(3.4rem, 3.3vw, 5.5rem);
+  margin-bottom: clamp(0.38rem, 0.4vw, 0.7rem);
+}
+
+.u3-party-card__identity strong {
+  overflow: visible;
+  font-size: clamp(0.92rem, 0.85vw, 1.35rem);
+  line-height: 1.15;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.u3-party-card__identity span,
+.u3-party-card__identity small {
+  font-size: clamp(0.74rem, 0.68vw, 1.05rem);
+}
+
+.u3-party-card__stats {
+  gap: clamp(0.18rem, 0.18vw, 0.3rem);
+  margin-top: clamp(0.45rem, 0.42vw, 0.7rem);
+  padding-top: clamp(0.35rem, 0.34vw, 0.58rem);
+}
+
+.u3-party-card__stats > div {
+  gap: clamp(0.35rem, 0.35vw, 0.6rem);
+  font-size: clamp(0.74rem, 0.7vw, 1.08rem);
+}
+
+.u3-party-card__stats dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.u3-contract-outcomes__rows {
+  gap: clamp(0.25rem, 0.25vw, 0.42rem);
+}
+
+.u3-contract-outcomes__rows > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  padding: clamp(0.24rem, 0.24vw, 0.4rem) clamp(0.12rem, 0.14vw, 0.24rem);
+  font-size: clamp(0.8rem, 0.72vw, 1.1rem);
+}
+
+.u3-contract-outcomes__rows > div > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.u3-contract-outcomes__rows small {
+  font-size: clamp(0.62rem, 0.54vw, 0.84rem);
+}
+
+.u3-contract-outcome__reward {
+  min-width: max-content;
+}
+
+.u3-contract-outcome__reward .u3-reward {
+  flex-wrap: nowrap;
+  gap: clamp(0.5rem, 0.5vw, 0.8rem);
+  white-space: nowrap;
+}
+
+.u3-contract-outcome__reward .u3-reward > span {
+  white-space: nowrap;
+}
+
+.u3-contract-button {
+  grid-template-columns: clamp(4.5rem, 4.6vw, 7.25rem) minmax(0, 1fr) clamp(3.5rem, 3.9vw, 6rem);
+  column-gap: clamp(0.85rem, 1vw, 1.5rem);
+  min-height: clamp(5.55rem, 6.4vw, 9.5rem);
+  padding-inline: clamp(1rem, 1.2vw, 2rem);
+}
+
+.u3-contract-button strong {
+  font-size: clamp(1.35rem, 1.32vw, 2.1rem);
+  line-height: 1.15;
+}
+
+.u3-contract-button .u3-contract-button__emblem {
+  width: clamp(4.5rem, 4.6vw, 7.25rem);
+  height: clamp(4.5rem, 4.6vw, 7.25rem);
+}
+
+.u3-contract-button .u3-contract-button__arrow {
+  width: clamp(3.5rem, 3.9vw, 6rem);
+  height: auto;
+  transform: scale(1.12);
+}
+
+/* 1920×1080 캔버스에서 항상 적용되던 대화면 고밀도 규칙. 고정 비율이 되면서 기본값이 되었다. */
+.u3-guild-board__notices {
+  gap: clamp(1.1rem, 1.2vw, 2rem);
+}
+
+.u3-notice {
+  padding-inline: clamp(1rem, 1vw, 1.6rem);
+}
+
+.u3-party-card {
+  min-height: clamp(9rem, 8vw, 12rem);
 }

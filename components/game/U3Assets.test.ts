@@ -47,10 +47,9 @@ describe("U3 extracted asset-board assets", () => {
     expect(css).toContain(".u3-theme-scene--graveyard");
   });
 
-  it("1440px 이상에서는 던전 장면과 계약 CTA가 함께 확대된다", () => {
+  it("던전 장면과 계약 CTA 크기를 캔버스 기준으로 고정한다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
 
-    expect(css).toContain("@media (min-width: 90rem)");
     expect(css).toContain("clamp(13rem, 15vw, 24rem)");
     expect(css).toContain(".u3-contract-button .u3-contract-button__emblem");
     expect(css).toContain("clamp(4.5rem, 4.6vw, 7.25rem)");
@@ -102,15 +101,12 @@ describe("U3 extracted asset-board assets", () => {
     expect(svg).toContain("fill=\"#d4ad4e\"");
   });
 
-  it("노트북처럼 세로가 짧은 화면에서는 높이 기준으로 공고와 계약 패널을 압축한다", () => {
+  it("공고와 계약 패널의 행 분배를 캔버스 기준으로 고정한다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
     const layout = readFileSync(join(process.cwd(), "app", "layout.tsx"), "utf8");
 
     expect(layout).toContain('import "./u3-responsive-layout.css"');
-    expect(css).toContain("@media (max-height: 54rem)");
-    expect(css).toContain("@media (max-height: 46rem)");
     expect(css).toContain("grid-template-rows: auto minmax(0, 1fr) auto auto");
-    expect(css).toContain("width: min(100%, clamp(7.5rem, 17vh, 10.5rem))");
     expect(css).toContain("min-height: 0");
   });
 
