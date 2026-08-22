@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { decideImmediateAdvice, disclosedRuleIds, finalizeImmediateAdviceTrust, presentAdviceOptions, presentShuffledAdvice } from "./advice-evaluation";
-import type { SituationEvent } from "@/lib/domain";
+import type { AdviceDecision, CampaignDungeon, Character, SituationEvent } from "@/lib/domain";
+import { createRng } from "@/lib/rng";
+import {
+  decideImmediateAdvice,
+  disclosedRuleIds,
+  finalizeImmediateAdviceTrust,
+  presentAdviceOptions,
+  presentShuffledAdvice,
+  resolveBossInfoAdvice,
+} from "./advice-evaluation";
+
+const DUNGEON_ID = "dungeon-spider-01" as never;
+const ATTEMPT = 1;
+const DEPTH = 1;
 
 const event = {
   id: "shared-merchant-wound",
@@ -15,6 +27,75 @@ const event = {
   defaultResultText: "그냥 지나간다.",
 } as unknown as SituationEvent;
 
+const bossEvent = {
+  id: "boss-info-a",
+  kind: "special",
+  theme: "spider",
+  targetBossId: "boss-a",
+  title: "보스의 습성",
+  description: "보스가 공격 직전 몸을 낮춘다.",
+  advice: [
+    { id: "boss-help", label: "피하세요", line: "몸을 낮추면 옆으로 피하세요.", outcome: "help", relation: "consistent", source: { kind: "boss", bossRuleId: "boss-rule-a" }, effectTags: ["information"], resultText: "회피법을 기억한다.", bossDamageModifier: -0.2 },
+    { id: "boss-harm", label: "버티세요", line: "몸을 낮추면 정면으로 버티세요.", outcome: "harm", relation: "contradictory", source: { kind: "boss", bossRuleId: "boss-rule-a" }, effectTags: ["sabotage"], resultText: "잘못된 대응을 기억한다.", bossDamageModifier: 0.25 },
+    { id: "boss-neutral", label: "관찰하세요", line: "일단 거리를 두고 보세요.", outcome: "neutral", relation: "unrelated", effectTags: ["information"], resultText: "조심스럽게 관찰한다.", bossDamageModifier: -0.1 },
+  ],
+  defaultResultText: "특별한 정보를 얻지 못한다.",
+} as unknown as SituationEvent;
+
+function member(personality: Character["personality"], trust: number, id = `${personality}-${trust}`): Character {
+  return {
+    id: id as never,
+    name: id,
+    classId: "test" as never,
+    personality,
+    maxHp: 10,
+    hp: 10,
+    trust,
+    gold: 10,
+    alive: true,
+    gravelyWounded: false,
+  };
+}
+
+function seedForRoll(targetRoll: number, eventId: string, adviceId: string, characterId: string): string {
+  for (let index = 0; index < 20_000; index += 1) {
+    const campaignSeed = `roll-${targetRoll}-${index}`;
+    const roll = createRng(
+      `${campaignSeed}:${DUNGEON_ID}:attempt:${ATTEMPT}:depth:${DEPTH}:event:${eventId}:advice:${adviceId}:character:${characterId}`,
+    ).derive("card").int(1, 100);
+    if (roll === targetRoll) return campaignSeed;
+  }
+  throw new Error(`테스트용 ${targetRoll} 카드 난수를 찾지 못했다`);
+}
+
+function decideAtRoll(adviceId: string, partyMember: Character, targetRoll: number, targetEvent: SituationEvent = event) {
+  return decideImmediateAdvice({
+    campaignSeed: seedForRoll(targetRoll, targetEvent.id, adviceId, partyMember.id),
+    dungeonId: DUNGEON_ID,
+    attempt: ATTEMPT,
+    depth: DEPTH,
+    event: targetEvent,
+    adviceId: adviceId as never,
+    members: [partyMember],
+  });
+}
+
+function dungeon(bossId = "boss-a"): CampaignDungeon {
+  return {
+    id: DUNGEON_ID,
+    name: "거미굴 1",
+    theme: "spider",
+    initialRiskLevel: 1,
+    riskLevel: 1,
+    activeRuleIds: ["spider-fire", "spider-vibration", "spider-carrion"] as never,
+    activeMonsterIds: ["spider-cave"] as never,
+    ecologyProfileId: "spider-shallow-a" as never,
+    bossId: bossId as never,
+    status: "unexplored",
+    attempts: 0,
+  };
+}
+
 describe("조언 공개", () => {
   it("플레이어에게 내부 판정 필드를 노출하지 않는다", () => {
     const options = presentAdviceOptions(event);
@@ -28,26 +109,141 @@ describe("조언 공개", () => {
     expect(options[0]).not.toHaveProperty("bossDamageModifier");
   });
 
-  it("활성 규칙 공개 수는 위험도에 따라 결정적이다", () => {
+  it("활성 규칙 공개 수는 위험도에 따라 결정적이고 부분집합을 유지한다", () => {
     const active = ["spider-shadow", "spider-fire", "spider-vibration"] as never;
-    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, riskLevel: 1, activeRuleIds: active })).toHaveLength(3);
-    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, riskLevel: 5, activeRuleIds: active })).toHaveLength(1);
-    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, riskLevel: 2, activeRuleIds: active })).toEqual(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, riskLevel: 2, activeRuleIds: active }));
+    const risk1 = disclosedRuleIds({ campaignSeed: "seed", dungeonId: DUNGEON_ID, riskLevel: 1, activeRuleIds: active });
+    const risk3 = disclosedRuleIds({ campaignSeed: "seed", dungeonId: DUNGEON_ID, riskLevel: 3, activeRuleIds: active });
+    const risk5 = disclosedRuleIds({ campaignSeed: "seed", dungeonId: DUNGEON_ID, riskLevel: 5, activeRuleIds: active });
+    expect(risk1).toHaveLength(3);
+    expect(risk3).toHaveLength(2);
+    expect(risk5).toHaveLength(1);
+    expect(risk1.slice(0, 2)).toEqual(risk3);
+    expect(risk3.slice(0, 1)).toEqual(risk5);
   });
 
   it("조언 순서는 입력을 보존하며 같은 입력에서 재현된다", () => {
-    const first = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, attempt: 1, depth: 2, event: event as never });
-    const second = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, attempt: 1, depth: 2, event: event as never });
+    const first = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: DUNGEON_ID, attempt: 1, depth: 2, event });
+    const second = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: DUNGEON_ID, attempt: 1, depth: 2, event });
     expect(first).toEqual(second);
     expect(event.advice.map((option) => option.id)).toEqual(["a", "b", "c"]);
     expect(first[0]).not.toHaveProperty("outcome");
   });
+});
 
-  it("살아 있는 파티원 반응으로 실행 여부를 결정하고 적용 뒤 신뢰를 계산한다", () => {
-    const member = { id: "character-a", name: "A", classId: "test", personality: "righteous", maxHp: 10, hp: 10, trust: 100, gold: 10, alive: true, gravelyWounded: false } as never;
-    const decision = decideImmediateAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, attempt: 1, depth: 1, event: event as never, adviceId: "a" as never, members: [member] });
-    expect(decision.reactions).toHaveLength(1);
-    expect(typeof decision.executed).toBe("boolean");
-    expect(() => finalizeImmediateAdviceTrust({ decision, members: [member], applied: { executed: decision.executed, resultText: "결과" } })).not.toThrow();
+describe("파티원별 반응 확률", () => {
+  it("중립은 신뢰 34~66의 정의로운 인물에게 기본 수용 55%를 사용한다", () => {
+    const target = member("righteous", 50, "neutral-righteous");
+    expect(decideAtRoll("c", target, 55).reactions[0]?.reaction).toBe("accepted");
+    expect(decideAtRoll("c", target, 56).reactions[0]?.reaction).toBe("suspected");
+  });
+
+  it("도움은 기본 70%에 신뢰 구간과 성격 보정을 더한다", () => {
+    const righteous = member("righteous", 50, "help-righteous");
+    expect(decideAtRoll("a", righteous, 85).reactions[0]?.reaction).toBe("accepted");
+    expect(decideAtRoll("a", righteous, 86).reactions[0]?.reaction).toBe("suspected");
+
+    const suspiciousLowTrust = member("suspicious", 20, "help-suspicious-low");
+    expect(decideAtRoll("a", suspiciousLowTrust, 30).reactions[0]?.reaction).toBe("accepted");
+    expect(decideAtRoll("a", suspiciousLowTrust, 31).reactions[0]?.reaction).toBe("suspected");
+  });
+
+  it("방해는 적발을 먼저 판정하고 남은 구간에서 수용·의심을 나눈다", () => {
+    const righteous = member("righteous", 50, "harm-righteous");
+    expect(decideAtRoll("b", righteous, 30).reactions[0]?.reaction).toBe("exposed");
+    expect(decideAtRoll("b", righteous, 31).reactions[0]?.reaction).toBe("accepted");
+    expect(decideAtRoll("b", righteous, 66).reactions[0]?.reaction).toBe("suspected");
+  });
+
+  it("죽은 파티원은 반응 판정에서 제외한다", () => {
+    const alive = member("righteous", 50, "alive-member");
+    const dead = { ...member("suspicious", 50, "dead-member"), alive: false };
+    const decision = decideImmediateAdvice({
+      campaignSeed: "dead-member-filter",
+      dungeonId: DUNGEON_ID,
+      attempt: ATTEMPT,
+      depth: DEPTH,
+      event,
+      adviceId: "a" as never,
+      members: [dead, alive],
+    });
+    expect(decision.reactions.map((reaction) => reaction.characterId)).toEqual([alive.id]);
+  });
+});
+
+describe("즉시형 결과 기반 신뢰", () => {
+  it("아무도 수용하지 않은 도움은 suspicionWasCostly, 방해는 suspicionWasCorrect로 검증한다", () => {
+    const target = member("righteous", 50, "trust-verify");
+    const base = {
+      adviceId: "a" as never,
+      reactions: [{ characterId: target.id, reaction: "suspected" as const }],
+      executed: false,
+      delayedRecords: [],
+    };
+    const helpDecision: AdviceDecision = { ...base, outcome: "help" };
+    const harmDecision: AdviceDecision = { ...base, adviceId: "b" as never, outcome: "harm" };
+
+    const help = finalizeImmediateAdviceTrust({ decision: helpDecision, members: [target], applied: { executed: false, resultText: "기본 결과" } });
+    const harm = finalizeImmediateAdviceTrust({ decision: harmDecision, members: [target], applied: { executed: false, resultText: "기본 결과" } });
+
+    expect(help.trustChanges).toHaveLength(1);
+    expect(help.trustChanges[0]?.delta).toBeGreaterThan(0);
+    expect(harm.trustChanges).toHaveLength(1);
+    expect(harm.trustChanges[0]?.delta).toBeLessThan(0);
+  });
+});
+
+describe("보스 정보 지연 검증", () => {
+  it("수용한 보스 정보는 선택 시 신뢰를 바꾸지 않고 지연 기록만 남긴다", () => {
+    const target = member("righteous", 50, "boss-accepted");
+    const result = resolveBossInfoAdvice({
+      campaignSeed: seedForRoll(1, bossEvent.id, "boss-help", target.id),
+      dungeonId: DUNGEON_ID,
+      attempt: ATTEMPT,
+      depth: DEPTH,
+      event: bossEvent,
+      adviceId: "boss-help" as never,
+      members: [target],
+      dungeon: dungeon(),
+    } as never);
+
+    expect(result.decision.reactions[0]?.reaction).toBe("accepted");
+    expect(result.decision.delayedRecords).toHaveLength(1);
+    expect(result.decision.delayedRecords[0]?.pendingVerification).toBe(true);
+    expect(result.decision.delayedRecords[0]?.modifier).toBe(-0.2);
+    expect(result.trustChanges).toEqual([]);
+  });
+
+  it("적발된 방해 보스 정보만 선택 시 즉시 신뢰 페널티를 적용한다", () => {
+    const target = member("righteous", 50, "boss-exposed");
+    const result = resolveBossInfoAdvice({
+      campaignSeed: seedForRoll(1, bossEvent.id, "boss-harm", target.id),
+      dungeonId: DUNGEON_ID,
+      attempt: ATTEMPT,
+      depth: DEPTH,
+      event: bossEvent,
+      adviceId: "boss-harm" as never,
+      members: [target],
+      dungeon: dungeon(),
+    } as never);
+
+    expect(result.decision.reactions[0]?.reaction).toBe("exposed");
+    expect(result.decision.delayedRecords[0]?.pendingVerification).toBe(false);
+    expect(result.decision.delayedRecords[0]?.modifier).toBe(0);
+    expect(result.trustChanges).toHaveLength(2);
+    expect(result.trustChanges.every((change) => change.delta < 0)).toBe(true);
+  });
+
+  it("현재 던전 보스와 다른 보스 정보 사건을 거부한다", () => {
+    const target = member("righteous", 50, "boss-mismatch");
+    expect(() => resolveBossInfoAdvice({
+      campaignSeed: "boss-mismatch",
+      dungeonId: DUNGEON_ID,
+      attempt: ATTEMPT,
+      depth: DEPTH,
+      event: bossEvent,
+      adviceId: "boss-help" as never,
+      members: [target],
+      dungeon: dungeon("boss-b"),
+    } as never)).toThrow(/현재 던전 보스|보스 정보/);
   });
 });
