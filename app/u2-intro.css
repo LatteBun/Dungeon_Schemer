@@ -1,6 +1,6 @@
 /* U2 intro screen — intro alone is intentionally full width. */
 .u2-intro-shell {
-  height: 100vh;
+  height: 100%;
   min-height: 0;
   width: 100%;
   display: flex;
@@ -14,7 +14,7 @@
   position: relative;
   z-index: 10;
   flex: 0 0 auto;
-  padding: 0.62rem clamp(0.8rem, 2vw, 1.5rem);
+  padding: 0.62rem clamp(0.8rem, 2cqw, 1.5rem);
   border-top: 1px solid rgb(112 79 34 / 65%);
   border-bottom: 1px solid #6b502a;
   background: linear-gradient(180deg, rgb(5 5 4 / 99%), rgb(9 7 5 / 99%));
@@ -26,7 +26,7 @@
   justify-content: center;
   align-items: stretch;
   flex-wrap: nowrap;
-  gap: clamp(0.45rem, 1.1vw, 0.8rem);
+  gap: clamp(0.45rem, 1.1cqw, 0.8rem);
   margin: 0;
 }
 
@@ -34,9 +34,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  min-width: clamp(8.7rem, 14vw, 11.3rem);
+  min-width: clamp(8.7rem, 14cqw, 11.3rem);
   min-height: 2.85rem;
-  padding: 0.4rem clamp(0.58rem, 1vw, 0.8rem);
+  padding: 0.4rem clamp(0.58rem, 1cqw, 0.8rem);
   border: 1px solid rgb(122 91 49 / 42%);
   border-radius: 0.36rem;
   background: linear-gradient(180deg, rgb(22 17 12 / 93%), rgb(13 10 7 / 95%));
@@ -60,7 +60,7 @@
 .u2-intro-shell .game-shell__status-copy dt {
   white-space: nowrap;
   color: #a99678;
-  font-size: clamp(0.64rem, 0.86vw, 0.77rem);
+  font-size: clamp(0.64rem, 0.86cqw, 0.77rem);
   font-weight: 600;
 }
 
@@ -68,7 +68,7 @@
   margin: 0;
   white-space: nowrap;
   color: #ead5aa;
-  font-size: clamp(0.77rem, 1vw, 0.92rem);
+  font-size: clamp(0.77rem, 1cqw, 0.92rem);
   font-weight: 700;
 }
 
@@ -110,18 +110,18 @@
 .u2-intro {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: clamp(0.75rem, 1.6vh, 1.1rem);
+  gap: clamp(0.75rem, 1.6cqh, 1.1rem);
   width: min(100%, 80rem);
   height: 100%;
   min-height: 0;
   margin: 0 auto;
-  padding: clamp(1.25rem, 3vh, 2.1rem) clamp(1.2rem, 3vw, 2.5rem) clamp(1rem, 2.2vh, 1.5rem);
+  padding: clamp(1.25rem, 3cqh, 2.1rem) clamp(1.2rem, 3cqw, 2.5rem) clamp(1rem, 2.2cqh, 1.5rem);
 }
 
 .u2-intro__copy {
   width: min(53%, 39rem);
-  margin-left: clamp(0.5rem, 4vw, 3.2rem);
-  padding: clamp(0.5rem, 1vw, 0.75rem) 0;
+  margin-left: clamp(0.5rem, 4cqw, 3.2rem);
+  padding: clamp(0.5rem, 1cqw, 0.75rem) 0;
   text-shadow: 0 2px 4px #000, 0 0 16px rgb(0 0 0 / 85%);
 }
 
@@ -131,14 +131,14 @@
   gap: 0.75rem;
   margin: 0 0 0.45rem;
   color: #d5aa58;
-  font-size: clamp(0.75rem, 1vw, 0.92rem);
+  font-size: clamp(0.75rem, 1cqw, 0.92rem);
   font-weight: 800;
   letter-spacing: 0.08em;
 }
 
 .u2-intro__eyebrow::after {
   content: "";
-  width: min(12rem, 24vw);
+  width: min(12rem, 24cqw);
   height: 1px;
   background: linear-gradient(90deg, #9d7736, transparent);
 }
@@ -147,7 +147,7 @@
   margin: 0;
   color: #f0dfbb;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2rem, 3.3vw, 3.25rem);
+  font-size: clamp(2rem, 3.3cqw, 3.25rem);
   font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 1.04;
@@ -157,7 +157,7 @@
   max-width: 38rem;
   margin: 0.9rem 0 0;
   color: #d5c4a6;
-  font-size: clamp(0.78rem, 1.12vw, 0.96rem);
+  font-size: clamp(0.78rem, 1.12cqw, 0.96rem);
   line-height: 1.68;
 }
 
@@ -165,8 +165,8 @@
   align-self: end;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(0.7rem, 1.25vw, 1rem);
-  width: min(65vw, 45rem);
+  gap: clamp(0.7rem, 1.25cqw, 1rem);
+  width: min(65cqw, 45rem);
   margin: 0 auto;
   transform: translateY(0.15rem);
 }
@@ -175,11 +175,11 @@
   position: relative;
   display: flex;
   min-width: 0;
-  min-height: clamp(13.5rem, 28vh, 16.5rem);
+  min-height: clamp(13.5rem, 28cqh, 16.5rem);
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: clamp(0.9rem, 1.6vw, 1.25rem) clamp(0.78rem, 1.25vw, 1rem) 1rem;
+  padding: clamp(0.9rem, 1.6cqw, 1.25rem) clamp(0.78rem, 1.25cqw, 1rem) 1rem;
   border: 1px solid #856c43;
   border-radius: 0.18rem;
   background:
@@ -216,8 +216,8 @@
 
 .u2-intro__card-icon {
   display: grid;
-  width: clamp(4rem, 6vw, 5.25rem);
-  height: clamp(4rem, 6vw, 5.25rem);
+  width: clamp(4rem, 6cqw, 5.25rem);
+  height: clamp(4rem, 6cqw, 5.25rem);
   place-items: center;
   margin-bottom: 0.5rem;
   border: 1px solid #9d7b36;
@@ -235,7 +235,7 @@
   margin: 0;
   color: #21190f;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.05rem, 1.45vw, 1.35rem);
+  font-size: clamp(1.05rem, 1.45cqw, 1.35rem);
   font-weight: 800;
 }
 
@@ -249,7 +249,7 @@
 .u2-intro__card p {
   margin: 0;
   color: #55452f;
-  font-size: clamp(0.7rem, 0.95vw, 0.84rem);
+  font-size: clamp(0.7rem, 0.95cqw, 0.84rem);
   line-height: 1.6;
   word-break: keep-all;
 }
@@ -261,9 +261,9 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 0.9rem;
   align-items: center;
-  width: min(47vw, 32rem);
-  min-height: clamp(3.8rem, 8vh, 4.7rem);
-  padding: 0.55rem clamp(1rem, 2vw, 1.5rem);
+  width: min(47cqw, 32rem);
+  min-height: clamp(3.8rem, 8cqh, 4.7rem);
+  padding: 0.55rem clamp(1rem, 2cqw, 1.5rem);
   border: 1px solid #b99b50;
   border-radius: 0.28rem;
   background:
@@ -281,21 +281,21 @@
 }
 
 .u2-intro__cta img {
-  width: clamp(2rem, 3vw, 2.6rem);
-  height: clamp(2rem, 3vw, 2.6rem);
+  width: clamp(2rem, 3cqw, 2.6rem);
+  height: clamp(2rem, 3cqw, 2.6rem);
   filter: drop-shadow(0 2px 1px rgb(0 0 0 / 55%));
 }
 
 .u2-intro__cta strong {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.18rem, 2vw, 1.65rem);
+  font-size: clamp(1.18rem, 2cqw, 1.65rem);
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
 .u2-intro__cta-arrow {
   color: #d5b85f;
-  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-size: clamp(1.2rem, 2cqw, 1.6rem);
 }
 
 .u2-intro__cta:hover {

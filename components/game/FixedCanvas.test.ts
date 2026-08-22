@@ -54,4 +54,13 @@ describe("16:9 고정 캔버스", () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it("크기 계산은 창이 아니라 캔버스를 기준으로 한다", () => {
+    const scale = "min(100vw / 120, 100vh / 67.5)";
+    const offenders = styleSheets().filter((name) =>
+      /\d(vw|vh)\b/.test(css(name).replaceAll(scale, "")),
+    );
+
+    expect(offenders).toEqual([]);
+  });
 });

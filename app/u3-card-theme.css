@@ -101,7 +101,7 @@
 
 .u3-notice__heading strong {
   color: #2b2115;
-  font-size: clamp(0.94rem, 1.34vw, 1.1rem);
+  font-size: clamp(0.94rem, 1.34cqw, 1.1rem);
   font-weight: 900;
   text-shadow: 0 1px 0 rgb(255 244 213 / 58%);
 }
@@ -149,7 +149,7 @@
 
 .u3-notice .u3-reward {
   color: #332718;
-  font-size: clamp(0.7rem, 0.94vw, 0.82rem);
+  font-size: clamp(0.7rem, 0.94cqw, 0.82rem);
   font-weight: 900;
 }
 
@@ -157,20 +157,20 @@
 .u3-notice__environment > span { width: 100%; }
 .u3-notice__environment strong {
   color: #2f2518;
-  font-size: clamp(0.72rem, 0.94vw, 0.82rem);
+  font-size: clamp(0.72rem, 0.94cqw, 0.82rem);
   font-weight: 900;
 }
 
 .u3-notice__state {
   color: #38582b;
-  font-size: clamp(0.7rem, 0.9vw, 0.8rem);
+  font-size: clamp(0.7rem, 0.9cqw, 0.8rem);
   font-weight: 900;
 }
 .u3-notice.is-locked .u3-notice__state { color: #883f34; }
 
 .u3-dungeon-summary__motif {
   display: grid;
-  width: clamp(6.4rem, 9.2vw, 7.8rem);
+  width: clamp(6.4rem, 9.2cqw, 7.8rem);
   aspect-ratio: 16 / 9;
   place-items: center;
   overflow: hidden;
@@ -236,7 +236,7 @@
   align-items: center;
   justify-content: center;
   line-height: 1.05;
-  font-size: clamp(1rem, 1.45vw, 1.28rem);
+  font-size: clamp(1rem, 1.45cqw, 1.28rem);
 }
 
 .u3-contract-button__emblem {
