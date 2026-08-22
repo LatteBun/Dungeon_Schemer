@@ -126,7 +126,7 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "중상",
     "임시 파티",
   ],
-  "experience/SCREEN_LAYOUT.md": ["3:2", "1280×720", "색만으로"],
+  "experience/SCREEN_LAYOUT.md": ["3:2", "1920×1080", "레터박스", "색만으로"],
   "experience/ONBOARDING_AND_INTERFACE.md": [
     "인트로",
     "위험도",
