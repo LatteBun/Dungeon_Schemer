@@ -9,6 +9,7 @@ import "./u3-large-screen.css";
 import "./u3-contract-layout.css";
 import "./u3-responsive-layout.css";
 import "./u4-dungeon-map.css";
+import "./u4-dungeon-map-fixes.css";
 
 export const metadata: Metadata = {
   title: "Dungeon Schemer",
