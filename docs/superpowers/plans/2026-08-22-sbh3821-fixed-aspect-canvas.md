@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 16.3, React 19.2, TypeScript 5, Tailwind CSS 4, Vitest 4.1, 전역 CSS, agent-browser
 
-**Spec:** `docs/superpowers/specs/2026-08-22-lattebun-fixed-aspect-canvas-design.md`
+**Spec:** `docs/superpowers/specs/2026-08-22-sbh3821-fixed-aspect-canvas-design.md`
 
 ## Global Constraints
 
@@ -65,7 +65,7 @@ Expected: `DOCUMENT_LINKS.test.ts`와 `DOCUMENT_TERMINOLOGY.test.ts`가 통과�
 - [ ] **Step 3: Commit the document change**
 
 ```bash
-git add docs/experience/SCREEN_LAYOUT.md docs/superpowers/specs/2026-08-22-lattebun-fixed-aspect-canvas-design.md docs/superpowers/plans/2026-08-22-lattebun-fixed-aspect-canvas.md
+git add docs/experience/SCREEN_LAYOUT.md docs/superpowers/specs/2026-08-22-sbh3821-fixed-aspect-canvas-design.md docs/superpowers/plans/2026-08-22-sbh3821-fixed-aspect-canvas.md
 git commit -m "문서: 화면 규격을 16:9 고정 캔버스로 정의한다" -m "기준 해상도와 최소 지원 대신 1920×1080 고정 캔버스와 레터박스 규격을 기록하고, 설계와 구현 계획 문서를 추가한다."
 ```
 
