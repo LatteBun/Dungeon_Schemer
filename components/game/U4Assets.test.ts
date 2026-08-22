@@ -1,0 +1,61 @@
+import { existsSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const U4_ASSETS = [
+  "public/assets/u4/map/map_background_base.png",
+  "public/assets/u4/map/map_background_vignette.png",
+  "public/assets/u4/map/map_atmosphere_ruins_props.png",
+  "public/assets/u4/map/map_main_panel_frame.png",
+  "public/assets/u4/map/map_title_bar_frame.png",
+  "public/assets/u4/rooms/room_entry_base.png",
+  "public/assets/u4/rooms/room_battle_base.png",
+  "public/assets/u4/rooms/room_rest_base.png",
+  "public/assets/u4/rooms/room_merchant_base.png",
+  "public/assets/u4/rooms/room_special_base.png",
+  "public/assets/u4/rooms/room_boss_base.png",
+  "public/assets/u4/icons/icon_entry.png",
+  "public/assets/u4/icons/icon_battle.png",
+  "public/assets/u4/icons/icon_rest.png",
+  "public/assets/u4/icons/icon_merchant.png",
+  "public/assets/u4/icons/icon_special.png",
+  "public/assets/u4/icons/icon_boss.png",
+  "public/assets/u4/corridors/corridor_horizontal.png",
+  "public/assets/u4/corridors/corridor_vertical.png",
+  "public/assets/u4/corridors/corridor_corner.png",
+  "public/assets/u4/corridors/corridor_t_junction.png",
+  "public/assets/u4/corridors/corridor_cross.png",
+  "public/assets/u4/corridors/corridor_stairs.png",
+  "public/assets/u4/states/overlay_current_glow.png",
+  "public/assets/u4/states/overlay_current_marker.png",
+  "public/assets/u4/states/overlay_selectable_glow.png",
+  "public/assets/u4/states/overlay_completed_glow.png",
+  "public/assets/u4/states/overlay_unvisited_glow.png",
+  "public/assets/u4/states/state_chip_current.png",
+  "public/assets/u4/states/state_chip_selectable.png",
+  "public/assets/u4/states/state_chip_completed.png",
+  "public/assets/u4/states/state_chip_unvisited.png",
+  "public/assets/u4/navigation/legend_panel_frame.png",
+  "public/assets/u4/navigation/legend_row_dark.png",
+  "public/assets/u4/navigation/legend_row_light.png",
+  "public/assets/u4/navigation/destination_panel_frame.png",
+  "public/assets/u4/navigation/destination_thumbnail_frame.png",
+  "public/assets/u4/navigation/cta_button_left.png",
+  "public/assets/u4/navigation/cta_button_center.png",
+  "public/assets/u4/navigation/cta_button_right.png",
+  "public/assets/u4/navigation/cta_button_arrow.png",
+  "public/assets/u4/navigation/cta_button_active_center.png",
+  "public/assets/u4/navigation/cta_button_disabled_center.png",
+] as const;
+
+describe("U4 assets", () => {
+  it.each(U4_ASSETS)("exists: %s", (path) => {
+    expect(existsSync(path)).toBe(true);
+  });
+
+  it("reuses existing U2/U3 and character assets", () => {
+    expect(existsSync("public/assets/u2/status-gold.svg")).toBe(true);
+    expect(existsSync("public/assets/u3/extracted/risk-star.png")).toBe(true);
+    expect(existsSync("public/assets/characters/live/warrior/warrior_a.png")).toBe(true);
+    expect(existsSync("public/assets/characters/dead/warrior/warrior_a.png")).toBe(true);
+  });
+});

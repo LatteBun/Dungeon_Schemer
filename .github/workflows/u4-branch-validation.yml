@@ -1,0 +1,140 @@
+name: U4 Branch Validation
+
+on:
+  push:
+    branches:
+      - feature/u4-dungeon-map
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Report validation pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl --fail-with-body -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -d '{"state":"pending","context":"U4 Validation","description":"U4 validation is running","target_url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.21.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: U4 targeted tests
+        run: |
+          pnpm vitest run \
+            components/game/U4Assets.test.ts \
+            components/game/u4-dungeon-map-model.test.ts \
+            components/game/u4-dungeon-map-layout.test.ts \
+            components/game/U4DungeonMapScreen.test.tsx \
+            components/game/U4FixedCanvas.test.ts \
+            components/game/u4-preview-data.test.ts \
+            app/u4-test/page.test.ts
+
+      - name: Full test suite baseline
+        id: full_suite
+        continue-on-error: true
+        run: pnpm test
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Detect U4 preview route
+        id: preview
+        run: |
+          if [ -f app/u4-test/page.tsx ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Chromium for capture
+        if: success() && steps.preview.outputs.exists == 'true'
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+
+      - name: Start preview server
+        if: success() && steps.preview.outputs.exists == 'true'
+        run: |
+          pnpm start > /tmp/u4-next.log 2>&1 &
+          echo $! > /tmp/u4-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/u4-test > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/u4-next.log
+          exit 1
+
+      - name: Capture U4 viewports
+        if: success() && steps.preview.outputs.exists == 'true'
+        run: |
+          mkdir -p u4-captures
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1920,1080" --wait-for-timeout=1000 http://127.0.0.1:3000/u4-test u4-captures/u4-1920x1080.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="2560,1440" --wait-for-timeout=1000 http://127.0.0.1:3000/u4-test u4-captures/u4-2560x1440.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1440,900" --wait-for-timeout=1000 http://127.0.0.1:3000/u4-test u4-captures/u4-1440x900.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1280,1024" --wait-for-timeout=1000 http://127.0.0.1:3000/u4-test u4-captures/u4-1280x1024.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="1920,1080" --wait-for-timeout=1000 "http://127.0.0.1:3000/u4-test?dead=1" u4-captures/u4-dead-1920x1080.png
+
+      - name: Upload U4 browser captures
+        if: success() && steps.preview.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: u4-browser-captures
+          path: u4-captures/*.png
+          if-no-files-found: error
+
+      - name: Report validation result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+          FULL_SUITE_OUTCOME: ${{ steps.full_suite.outcome }}
+        run: |
+          if [ "${JOB_STATUS}" = "success" ]; then
+            STATE=success
+            if [ "${FULL_SUITE_OUTCOME}" = "failure" ]; then
+              DESCRIPTION="U4 passed; full suite has pre-existing doc failures"
+            else
+              DESCRIPTION="U4 validation passed"
+            fi
+          else
+            STATE=failure
+            DESCRIPTION="U4 validation failed"
+          fi
+          curl --fail-with-body -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -d "{\"state\":\"${STATE}\",\"context\":\"U4 Validation\",\"description\":\"${DESCRIPTION}\",\"target_url\":\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"

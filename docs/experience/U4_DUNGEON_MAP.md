@@ -1,0 +1,263 @@
+# UI Task - U4 던전 지도
+
+## 1. 작업 목적
+
+- 던전의 전체 공개 경로와 보스 위치를 본다.
+- 현재 위치와 지나온 길을 확인한다.
+- 현재 위치에서 갈 수 있는 다음 지점을 고른다.
+- 출전 파티원의 현재 상태를 확인한다.
+- 선택한 지점으로 이동을 별도 CTA로 확정한다.
+
+## 2. 이전 / 다음 화면
+
+- 이전 화면: U3 게시판 우측 계약 완료
+- 다음 화면: U5 던전 진행
+
+## 3. 반드시 유지할 기존 UI
+
+- `GameShell`
+- `TopStatusBar`
+- 좌 60% / 우 40%
+- U3와 동일한 1920×1080 16:9 고정 캔버스 및 레터박스 동작
+- 기존 U2/U3 다크 판타지 톤
+- 초록/금색/붉은색의 기존 의미
+- U3의 파티 정보 위계
+- `/assets/u2/status-gold.svg`
+- `public/assets/characters`의 공식 캐릭터 초상
+
+## 4. 화면 구성
+
+### 좌측 60%
+
+- 상단: 던전명/지도 제목과 위험도
+- 중앙 대부분: Entry 아래 → Boss 위로 진행하는 공간형 던전 지도
+- 방과 복도를 이용해 분기/합류를 표현
+- 범례는 두지 않음
+
+### 우측 40%
+
+- 상단: 파티 상태 카드 3개
+- 하단: 선택한 다음 지점 정보 + 이동 CTA
+
+## 5. 필수 표시 정보
+
+- 현재 위치
+- 방문 완료
+- 선택 가능한 다음 지점
+- 지금 선택할 수 없는 다른 갈래
+- 보스방
+- 각 지점의 공개 사건 분류
+- 파티원 이름/직업/성격/HP/신뢰/소지 골드
+- 선택한 다음 지점
+
+## 6. 표시하면 안 되는 정보
+
+- 정확한 피해
+- 정확한 보상
+- 난수 결과
+- 조언의 help/harm/neutral 유형
+- 아직 물질화되지 않은 사건 콘텐츠 ID
+
+## 7. 사용자 행동
+
+1. 지도에서 선택 가능한 다음 방을 마우스 또는 키보드로 선택한다.
+2. 우측 하단에서 선택한 방의 공개 정보를 확인한다.
+3. `이 지점으로 이동` CTA로 이동을 확정한다.
+
+## 8. 공식 데이터 source
+
+- E1 `GeneratedMap`
+- `ExpeditionState.currentNodeId`
+- `ExpeditionState.visitedNodeIds`
+- 실제 party member data
+- 외부에서 주입되는 `publicKindByNodeId`
+- Character `alive`, `classId`, HP, trust, gold
+
+UI에서 지도 topology, 사건 콘텐츠, 사건 분류를 임의 생성하지 않는다.
+
+`/u4-test`만 화면 검증용 deterministic `publicKindByNodeId` fixture를 사용한다.
+
+## 9. 기존 재사용 에셋
+
+- `/assets/u2/status-gold.svg`
+- `/assets/u2/status-rank.svg`
+- `/assets/u2/status-reputation.svg`
+- `/assets/u2/status-promotion.svg`
+- 기존 TopStatusBar의 던전/위험도 표시 자산
+- `/assets/characters/live/{class}/{class}_{a|b}.png`
+- `/assets/characters/dead/{class}/{class}_{a|b}.png`
+
+## 10. 새 U4 에셋
+
+`public/assets/u4/` 아래에 저장한다.
+
+- 지도 배경/비네트/유적 분위기 조각
+- 방 베이스 6종
+  - entry
+  - monster
+  - rest
+  - merchant
+  - special
+  - boss
+- 방 의미 아이콘
+- corridor 조각
+- current/selectable/visited/inactive 상태 오버레이
+- 선택 지점 panel/thumbnail frame
+- CTA left/center/right/arrow
+
+텍스트는 PNG에 굽지 않고 HTML로 표시한다.
+
+## 11. 이미지 생성 시각 계약
+
+### 참고할 GitHub 문서
+
+- `docs/GAME_PRINCIPLES.md`
+- `docs/systems/DUNGEON_EVENTS_AND_BOSSES.md`
+- `docs/experience/SCREEN_LAYOUT.md`
+- `docs/experience/ONBOARDING_AND_INTERFACE.md`
+- `docs/experience/UI_IMPLEMENTATION_GUIDE.md`
+- `docs/experience/CHARACTER_UI_ASSETS.md`
+
+### 화풍 / 표현 방식
+
+- 묘사 밀도: 기존 U2/U3와 연결되는 다크 판타지 고밀도 질감
+- 재질감: 석재, 검은 금속, 짙은 목재, 금색 테두리
+- 색 온도: 낮은 채도 + 따뜻한 횃불/금빛 광원
+- 명암 대비: 지도 배경은 어둡게, selectable/current만 강한 대비
+
+### 시점 / 카메라
+
+- 지도: 탑다운/사선 탑다운 공간형 방
+- 원근감: 방 자체에는 약한 입체감, 전체 UI는 읽기 쉬운 고정 시점
+
+### 반드시 계승할 요소
+
+- U3의 금색 frame과 암색 panel
+- 초록=current, 금색=selectable, 붉은색=boss/danger 의미
+- 실제 공간처럼 보이는 방/복도
+
+### 금지 스타일
+
+- 얇은 선 위의 원형 노드 그래프
+- 별도 범례
+- SaaS dashboard
+- 기존 캐릭터 초상을 새 일러스트로 대체
+- 전체 레퍼런스 한 장을 배경으로 박아 넣기
+
+## 12. 에셋보드 사용 규칙
+
+- 승인된 U4 투명 PNG 에셋을 우선 사용한다.
+- 각 자산은 개별 UI 요소로 조합한다.
+- 방 종류와 상태 effect를 분리한다.
+- 캐릭터 원본 PNG는 수정/재저장하지 않는다.
+
+## 13. 고정 캔버스 요구사항
+
+화면은 U3와 동일하게 1920×1080 16:9 고정 캔버스 안에서 그린다.
+
+필수 viewport:
+
+- 1920×1080
+- 2560×1440
+- 1440×900
+- 1280×1024
+
+절대 발생하면 안 되는 것:
+
+- 가로·세로 스크롤
+- 60:40 비율 변화
+- 창 크기에 따른 재배치
+- 지도/CTA clipping
+- 캐릭터 portrait 왜곡
+- 새 `vw`, `vh`, 미디어 쿼리
+
+## 14. UI 중요도
+
+가장 중요한 정보:
+
+1. 현재/다음 경로 상태
+2. 파티 HP/신뢰/골드
+3. 선택한 다음 지점과 이동 CTA
+
+공간이 부족할 때 먼저 줄일 것:
+
+1. 장식 여백
+2. map atmosphere props
+3. panel padding
+4. 장식 아이콘
+5. gap
+
+마지막까지 유지할 것:
+
+- 현재 위치
+- selectable 방
+- Boss 위치
+- 파티 상태 수치
+- CTA
+
+## 15. 접근성
+
+- selectable room은 실제 `button`
+- `aria-pressed`
+- `focus-visible`
+- Enter/Space 선택
+- 좌/우 방향키로 selectable 방 간 이동
+- 색 외 marker/형태/텍스트 단서 제공
+
+## 16. 캐릭터 초상 규칙
+
+### 생존
+
+- `/assets/characters/live/...`
+- 직업과 일치하는 directory
+- 같은 캐릭터는 stable A/B variant
+- 네모 1:1 slot
+- `object-fit: cover`
+- `object-position: 50% 0%`
+
+### 사망
+
+`alive === false`일 때만:
+
+- 같은 직업, 같은 A/B variant의 `/dead/...` 이미지로 교체
+- portrait 및 card를 grayscale/저채도 처리
+- `사망` 텍스트 또는 형태 단서 표시
+
+신뢰 0, 중상, 미출전 상태는 dead 이미지를 사용하지 않는다.
+
+## 17. 구현 및 검증
+
+- [ ] 관련 문서/현재 E1/U1/U3 코드 확인
+- [ ] 기존 에셋 검색
+- [ ] U4 ViewModel 테스트
+- [ ] U4 layout 테스트
+- [ ] component interaction/accessibility 테스트
+- [ ] live/dead portrait 테스트
+- [ ] 16:9 고정 canvas 테스트
+- [ ] 1920×1080 브라우저 캡처
+- [ ] 2560×1440 또는 QHD 캡처
+- [ ] 1440×900 검증
+- [ ] 1280×1024 검증
+- [ ] lint
+- [ ] typecheck
+- [ ] test
+- [ ] build
+
+## 18. 완료 조건
+
+- [ ] E1 실제 지도를 공간형 dungeon으로 렌더링
+- [ ] Entry 아래 / Boss 위
+- [ ] Depth 1~5개 방 표현
+- [ ] 예시 화면에는 연속 5→5를 사용하지 않음
+- [ ] 범례 없음
+- [ ] current/visited/selectable/inactive/boss 구분
+- [ ] keyboard next-node selection
+- [ ] 파티원 3명 실제 캐릭터 asset 사용
+- [ ] 직업과 portrait 일치
+- [ ] 사망자 dead asset + 회색 처리
+- [ ] U3와 동일한 16:9 고정 전체 화면
+- [ ] 우측 CTA로 이동 확정
+- [ ] `/u4-test` 제공
+- [ ] 사용자 확인용 브라우저 캡처 제공
+- [ ] feature branch commit
+- [ ] 사용자 요청 전 PR 생성 금지
