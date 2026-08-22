@@ -29,7 +29,10 @@ import type {
   CharacterId,
   ClassId,
   DungeonId,
+  DungeonLayer,
   EnvironmentTagDefinition,
+  GeneratedMap,
+  NodeId,
   OfferId,
   PublicEnvironmentTagId,
 } from "@/lib/domain";
@@ -140,5 +143,22 @@ describe("공개 환경 특성 계약", () => {
       id: "spider-dark-ambush",
       label: "어둠 잠복",
     });
+  });
+});
+
+describe("던전 지도 레이어 계약", () => {
+  it("GeneratedMap이 일반 Depth 레이어를 순서대로 표현한다", () => {
+    const layers: readonly DungeonLayer[] = [
+      { depth: 1, nodeIds: ["dungeon-001-attempt-0-depth-1-node-0" as NodeId] },
+    ];
+    const map: GeneratedMap = {
+      entryNodeId: "dungeon-001-attempt-0-entry" as NodeId,
+      bossNodeId: "dungeon-001-attempt-0-boss" as NodeId,
+      layers,
+      nodes: [],
+    };
+
+    expect(map.layers).toBe(layers);
+    expect(map.layers[0]?.depth).toBe(1);
   });
 });

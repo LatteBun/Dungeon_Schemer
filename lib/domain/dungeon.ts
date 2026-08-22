@@ -150,8 +150,16 @@ export interface DungeonNode {
   nextNodeIds: readonly NodeId[];
 }
 
+export interface DungeonLayer {
+  /** 입구 다음의 일반 Depth 번호다. 1부터 시작한다. */
+  depth: number;
+  nodeIds: readonly NodeId[];
+}
+
 export interface GeneratedMap {
   entryNodeId: NodeId;
   bossNodeId: NodeId;
+  /** Entry와 Boss 사이의 일반 Depth를 정규 순서로 보관한다. */
+  layers: readonly DungeonLayer[];
   nodes: readonly DungeonNode[];
 }

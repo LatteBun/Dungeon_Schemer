@@ -210,6 +210,7 @@ describe("ExpeditionState", () => {
       map: {
         entryNodeId: "node-entry" as never,
         bossNodeId: "node-boss" as never,
+        layers: [],
         nodes: [
           { id: "node-entry" as never, kind: "entry", nextNodeIds: ["node-boss" as never] },
           { id: "node-boss" as never, kind: "boss", nextNodeIds: [] },
