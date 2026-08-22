@@ -23,6 +23,36 @@
   --color-shell-danger: #a84f43;
 }
 
+/*
+ * 16:9 고정 캔버스.
+ *
+ * 루트 글꼴 크기가 축척이다. 120 × 16px = 1920, 67.5 × 16px = 1080 이므로
+ * 창이 1920×1080 일 때 16px 이 되고, 그보다 작거나 크면 rem 으로 쓴 모든
+ * 값이 같은 비율로 함께 움직인다. 비트맵을 늘리는 것이 아니라 레이아웃을
+ * 다시 계산하므로 어떤 배율에서도 글자가 선명하다.
+ *
+ * 캔버스 안에서는 vw·vh 를 쓰지 않는다. 창을 가리키므로 캔버스와 어긋난다.
+ * 캔버스 비율에 기대야 하는 값은 cqw·cqh 를 쓴다.
+ */
+html {
+  font-size: min(100vw / 120, 100vh / 67.5);
+}
+
+body {
+  display: grid;
+  place-content: center;
+  overflow: hidden;
+  background: #000;
+}
+
+.game-canvas {
+  width: 120rem;
+  height: 67.5rem;
+  overflow: hidden;
+  container-type: size;
+  container-name: game;
+}
+
 .game-shell,
 .game-shell__body,
 .game-shell__main,
@@ -31,7 +61,7 @@
 }
 
 .game-shell {
-  min-height: 100vh;
+  min-height: 100%;
   width: 100%;
   background:
     radial-gradient(circle at top right, rgb(100 72 32 / 18%), transparent 36rem),
@@ -84,7 +114,7 @@
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   width: 100%;
-  min-height: calc(100vh - 4.75rem);
+  min-height: calc(100% - 4.75rem);
 }
 
 .game-shell__main,
