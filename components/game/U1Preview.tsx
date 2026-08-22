@@ -26,7 +26,7 @@ export function U1Preview({
     U1_PREVIEW_SCREENS[0];
 
   return (
-    <div className="u1-preview u1-preview__reference-frame min-h-screen p-4 sm:p-6">
+    <div className="u1-preview u1-preview__reference-frame p-6">
       <nav
         className="u1-preview__navigation mb-4"
         aria-label="U1 프리뷰 화면"

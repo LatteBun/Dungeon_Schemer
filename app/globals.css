@@ -72,6 +72,18 @@ body {
 }
 
 /*
+ * 화면 루트는 기본적으로 고정 캔버스 전체를 쓴다.
+ * 내부 여백은 각 화면이 정하되 루트 높이를 화면마다 다시 선언하지 않는다.
+ * 승인된 intrinsic 예외만 spec과 테스트를 갖춘 뒤 이 기본값에서 빠질 수 있다.
+ */
+.game-canvas > :not([data-canvas-layout="intrinsic"]) {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/*
  * 상단 상태 바 — 모든 화면이 공유하는 단 하나의 정의.
  *
  * 화면마다 다시 선언하면 값이 갈라진다. 실제로 u1·u2·u3 의 바 높이가
@@ -223,6 +235,18 @@ body {
 
 .game-shell__right-panel {
   background-color: var(--color-shell-surface-alt);
+}
+
+.u1-preview {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+.u1-preview > .game-shell {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .u1-preview__navigation {

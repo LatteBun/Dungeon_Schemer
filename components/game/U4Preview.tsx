@@ -20,10 +20,7 @@ export function U4Preview({ deadPreview = false }: U4PreviewProps) {
   const [feedback, setFeedback] = useState("");
 
   return (
-    <div
-      className="u4-preview"
-      style={{ height: "100%", minHeight: 0, position: "relative" }}
-    >
+    <div className="u4-preview">
       <U4DungeonMapScreen
         status={preview.status}
         dungeonName={preview.dungeonName}

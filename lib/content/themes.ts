@@ -332,8 +332,8 @@ const DESERT_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     "desert",
     "desert-burning-waste",
     4,
-    ["desert-lizard-heat", "desert-spirit-dry", "desert-wind-track"],
-    ["desert-lizard", "desert-spirit"],
+    ["desert-spirit-dry", "desert-mummy-silent", "desert-wind-track"],
+    ["desert-spirit", "desert-mummy"],
   ),
 ];
 
@@ -500,22 +500,22 @@ const GRAVEYARD_ECOLOGY_PROFILES: readonly EcologyProfile[] = [
     "graveyard",
     "graveyard-grave-robber",
     3,
-    ["graveyard-silence", "graveyard-guard", "graveyard-desecration"],
-    ["graveyard-zombie", "graveyard-soldier"],
+    ["graveyard-light", "graveyard-guard", "graveyard-desecration"],
+    ["graveyard-mage", "graveyard-soldier"],
   ),
   ecologyProfile(
     "graveyard",
     "graveyard-hunters",
     4,
-    ["graveyard-ghoul-sound", "graveyard-archer-light", "graveyard-guard"],
-    ["graveyard-ghoul", "graveyard-archer", "graveyard-soldier"],
+    ["graveyard-archer-light", "graveyard-guard", "graveyard-desecration"],
+    ["graveyard-archer", "graveyard-soldier"],
   ),
   ecologyProfile(
     "graveyard",
     "graveyard-blighted-tomb",
     5,
-    ["graveyard-ghoul-sound", "graveyard-archer-light", "graveyard-desecration"],
-    ["graveyard-ghoul", "graveyard-archer"],
+    ["graveyard-light", "graveyard-archer-light", "graveyard-desecration"],
+    ["graveyard-mage", "graveyard-archer"],
   ),
 ];
 

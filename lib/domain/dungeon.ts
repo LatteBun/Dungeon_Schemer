@@ -49,6 +49,9 @@ export interface MonsterDef {
   name: string;
   /** 생태 규칙이 가리킬 수 있는 특성. 규칙이 검증 가능해지는 근거다. */
   traits: readonly string[];
+  maxHp?: number;
+  baseDamage?: number;
+  targetWeightMultipliers?: Readonly<Record<string, number>>;
 }
 
 /** 규칙과 그 규칙이 허용하는 잡몹을 함께 묶은 생태 패키지다. */
@@ -79,6 +82,7 @@ export interface BossDef {
   /** 파티가 깎아야 하는 양. baseDamage와 함께 전투 길이를 정한다. */
   maxHp: number;
   rules: readonly BossRule[];
+  targetWeightMultipliers?: Readonly<Record<string, number>>;
 }
 
 export interface BossRule {

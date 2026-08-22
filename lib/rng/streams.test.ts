@@ -15,6 +15,7 @@ describe("캠페인 난수 스트림 계약", () => {
       "boss",
       "trust",
       "worldturn",
+      "battle",
     ]);
   });
 
@@ -27,6 +28,16 @@ describe("캠페인 난수 스트림 계약", () => {
     );
     expect(streams.map((stream) => stream.float())).toEqual(
       RNG_STREAMS.map((name) => root.derive(name).float()),
+    );
+  });
+
+  it("전투 스트림은 event 소비와 독립적으로 결정된다", () => {
+    const root = createRng("battle-stream");
+    const battleBefore = root.derive("battle").float();
+    root.derive("event").shuffle([1, 2, 3, 4]);
+    expect(root.derive("battle").float()).toBe(battleBefore);
+    expect(root.derive("battle").float()).toBe(
+      createRng("battle-stream").derive("battle").float(),
     );
   });
 });

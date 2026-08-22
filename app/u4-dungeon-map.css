@@ -1,3 +1,7 @@
+.u4-preview {
+  position: relative;
+}
+
 /* U4 dungeon map — fixed 1920x1080 GameShell canvas, same 3:2 split as U3. */
 .u4-dungeon-map-screen {
   height: 100%;

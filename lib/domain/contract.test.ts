@@ -33,6 +33,10 @@ import type {
   GeneratedMap,
   NodeId,
   OfferId,
+  EncounterDefinition,
+  EncounterModifier,
+  ImmediateEventEffect,
+  MonsterId,
 } from "@/lib/domain";
 
 function character(overrides: Partial<Character> = {}): Character {
@@ -149,5 +153,34 @@ describe("던전 지도 레이어 계약", () => {
 
     expect(map.layers).toBe(layers);
     expect(map.layers[0]?.depth).toBe(1);
+  });
+});
+
+describe("E3 사건 계약", () => {
+  it("monster 사건은 encounter와 수정 계약을 표현할 수 있다", () => {
+    const event = {
+      id: "monster-1",
+      kind: "monster",
+      theme: "spider",
+      title: "거미",
+      description: "거미가 길을 막는다.",
+      advice: [],
+      defaultResultText: "전투를 피한다.",
+      encounter: {
+        enemies: [{ monsterId: "spider-cave" as MonsterId, count: 2 }],
+      } satisfies EncounterDefinition,
+      encounterModifier: {
+        removeEnemies: [{ monsterId: "spider-cave" as MonsterId, count: 1 }],
+        addEnemies: [{ monsterId: "spider-shadow" as MonsterId, count: 1 }],
+      } satisfies EncounterModifier,
+    };
+
+    expect(event.encounter.enemies[0]?.count).toBe(2);
+    expect(event.encounterModifier.addEnemies?.[0]?.monsterId).toBe("spider-shadow");
+  });
+
+  it("rest/special 기본 결과와 조언은 concrete 즉시 효과를 가질 수 있다", () => {
+    const effect = { kind: "hp", hpDeltaPerMember: 4 } satisfies ImmediateEventEffect;
+    expect(effect).toEqual({ kind: "hp", hpDeltaPerMember: 4 });
   });
 });
