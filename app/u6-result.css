@@ -21,6 +21,19 @@
   background: #090705;
 }
 
+/* 셸의 두 칸을 세로로 꽉 채운다. 그러지 않으면 안쪽 1fr 행이 콘텐츠 높이로
+ * 줄어들어 화면 아래가 비고, 원인 사슬과 연대기가 남는 공간을 못 쓴다. */
+.u6-result-screen .game-shell__main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+.u6-result-screen .game-shell__right-panel {
+  display: grid;
+  min-height: 0;
+}
+
 .u6-settlement-main,
 .u6-settlement-side,
 .u6-ending-main,
@@ -269,9 +282,13 @@
 
 /* ── 엔딩 좌측: 판정과 최종 등급 ── */
 
+/* 판정과 최종 등급을 한 덩어리로 가운데에 모은다. 1fr 로 밀어내면 표제와
+ * 등급이 화면 위아래로 흩어져 한눈에 읽히지 않는다. */
 .u6-ending-main {
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
   align-content: center;
+  justify-items: center;
+  gap: clamp(0.8rem, 1cqw, 1.6rem);
   text-align: center;
 }
 
