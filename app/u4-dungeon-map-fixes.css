@@ -1,0 +1,239 @@
+/*
+ * U4 visual correction layer.
+ * Keep this after u4-dungeon-map.css so browser-capture fixes stay isolated
+ * from the initial implementation and remain easy to review/remove.
+ */
+
+/* Keep only a restrained structural edge. The ornate map PNG frame is no
+ * longer rendered by U4DungeonMapScreen. */
+.u4-map-panel {
+  border-color: #4a351d;
+  box-shadow: inset 0 0 0 1px rgb(87 63 34 / 34%), 0 0.18rem 0.55rem rgb(0 0 0 / 36%);
+}
+
+.u4-map-surface__frame {
+  display: none;
+}
+
+/* Make the topology read as a dungeon passage rather than a hairline graph. */
+.u4-corridor {
+  height: clamp(1.05rem, 1.35cqh, 1.35rem);
+  opacity: 0.34;
+  filter: grayscale(0.38) brightness(0.72) contrast(1.04);
+}
+
+.u4-corridor.is-visited {
+  opacity: 0.58;
+  filter: grayscale(0.52) brightness(0.88);
+}
+
+.u4-corridor.is-selectable {
+  opacity: 0.96;
+  filter: sepia(0.3) saturate(1.28) brightness(1.12) drop-shadow(0 0 0.24rem rgb(218 169 70 / 62%));
+}
+
+/* Room names are intentionally omitted from the spatial map. Make the
+ * iconography carry more of the room-type recognition load. */
+.u4-room__icon {
+  width: 49%;
+  height: 49%;
+  transform: translate(-50%, -55%);
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 82%));
+}
+
+.u4-room__current-marker {
+  top: -31%;
+  width: 48%;
+}
+
+.u4-room--entry,
+.u4-room--boss {
+  z-index: 8;
+}
+
+.u4-room--entry .u4-room__icon,
+.u4-room--boss .u4-room__icon {
+  width: 46%;
+  height: 46%;
+}
+
+/* Give the selected destination roughly the lower third of the right panel,
+ * which moves its top edge upward while leaving three readable party cards. */
+.u4-right-panel {
+  grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
+  gap: clamp(0.42rem, 0.58cqh, 0.54rem);
+}
+
+.u4-party,
+.u4-destination {
+  padding: clamp(0.52rem, 0.76cqw, 0.68rem);
+}
+
+.u4-party h2,
+.u4-destination h2 {
+  margin-bottom: 0.42rem;
+  font-size: clamp(0.96rem, 1.18cqw, 1.12rem);
+}
+
+.u4-party__list {
+  gap: clamp(0.32rem, 0.46cqh, 0.44rem);
+}
+
+.u4-party-card {
+  grid-template-columns: clamp(6.15rem, 6.8cqw, 7.35rem) minmax(0, 1fr);
+}
+
+.u4-party-card__content {
+  gap: clamp(0.36rem, 0.46cqh, 0.48rem);
+  padding: clamp(0.54rem, 0.72cqw, 0.68rem) clamp(0.62rem, 0.82cqw, 0.76rem);
+}
+
+.u4-party-card__content > header {
+  gap: 0.46rem;
+  padding-bottom: 0.34rem;
+}
+
+.u4-party-card__content > header strong {
+  font-size: clamp(0.9rem, 1.08cqw, 1.04rem);
+  letter-spacing: 0.015em;
+}
+
+.u4-party-card__content > header span {
+  font-size: clamp(0.7rem, 0.86cqw, 0.82rem);
+}
+
+.u4-party-card__content > header small {
+  color: #b5a487;
+  font-size: clamp(0.68rem, 0.82cqw, 0.78rem);
+  font-weight: 700;
+}
+
+.u4-party-card__stats {
+  grid-template-columns: 1fr 0.9fr;
+  gap: clamp(0.34rem, 0.44cqh, 0.44rem) clamp(0.66rem, 0.9cqw, 0.88rem);
+  align-content: stretch;
+}
+
+.u4-party-card__stats dt,
+.u4-party-card__stats dd {
+  font-size: clamp(0.68rem, 0.82cqw, 0.79rem);
+}
+
+.u4-party-card__stats dd {
+  align-self: center;
+}
+
+.u4-meter {
+  height: 0.3rem;
+}
+
+.u4-party-card__gold {
+  padding-top: 0.3rem;
+}
+
+.u4-party-card__gold img {
+  width: 1rem;
+  height: 1rem;
+}
+
+.u4-party-card__death {
+  font-size: 0.64rem;
+}
+
+/* The destination frame PNG contains a dark center, so it must sit behind
+ * the actual thumbnail/copy rather than on top of them. */
+.u4-destination {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.34rem;
+  overflow: visible;
+  padding-bottom: clamp(0.3rem, 0.42cqh, 0.42rem);
+}
+
+.u4-destination__panel {
+  min-height: clamp(5.15rem, 7.1cqh, 6.05rem);
+  overflow: hidden;
+  background: #090705;
+}
+
+.u4-destination__panel-frame {
+  z-index: 1;
+  opacity: 0.9;
+}
+
+.u4-destination__summary {
+  z-index: 2;
+  grid-template-columns: clamp(4.4rem, 5cqw, 5.2rem) minmax(0, 1fr);
+  min-height: clamp(5.15rem, 7.1cqh, 6.05rem);
+  padding: 0.52rem 0.94rem;
+}
+
+.u4-destination__icon {
+  width: 42%;
+  height: 42%;
+}
+
+.u4-destination__summary span,
+.u4-destination__summary small {
+  font-size: clamp(0.62rem, 0.76cqw, 0.72rem);
+}
+
+.u4-destination__summary strong {
+  font-size: clamp(0.96rem, 1.22cqw, 1.12rem);
+}
+
+.u4-destination__empty {
+  z-index: 2;
+  min-height: clamp(5.15rem, 7.1cqh, 6.05rem);
+  font-size: clamp(0.74rem, 0.9cqw, 0.84rem);
+}
+
+/* cta_button_center.png is already a complete horizontal button skin.
+ * Render one complete center skin and the separate chevron. */
+.u4-move-button {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: clamp(3.7rem, 5.45cqh, 4.35rem);
+  min-height: 0;
+  place-items: center;
+  overflow: visible;
+  padding: 0 3.2rem 0 1rem;
+}
+
+.u4-move-button__skin {
+  inset: 0.1rem 2.45rem 0.1rem 0.35rem;
+  display: block;
+}
+
+.u4-move-button__left,
+.u4-move-button__right {
+  display: none;
+}
+
+.u4-move-button__center {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.u4-move-button strong {
+  grid-column: 1;
+  justify-self: center;
+  padding-left: 1.5rem;
+  font-size: clamp(0.9rem, 1.12cqw, 1.04rem);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.u4-move-button__arrow {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  width: auto;
+  height: clamp(2.45rem, 3.55cqh, 3rem);
+  transform: translateY(-50%);
+}
+
+.u4-move-button:focus-visible:not(:disabled)::after {
+  inset: 0.22rem 2.35rem 0.22rem 0.25rem;
+}
