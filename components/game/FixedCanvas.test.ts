@@ -21,6 +21,23 @@ function styleSheets(): string[] {
   );
 }
 
+function uiSources(): Array<{ name: string; source: string }> {
+  return ["app", join("components", "game")].flatMap((root) => {
+    const absoluteRoot = join(process.cwd(), root);
+
+    return readdirSync(absoluteRoot, { recursive: true })
+      .filter((name) => name.endsWith(".tsx"))
+      .map((name) => {
+        const relativeName = join(root, name);
+
+        return {
+          name: relativeName,
+          source: readFileSync(join(process.cwd(), relativeName), "utf8"),
+        };
+      });
+  });
+}
+
 describe("16:9 고정 캔버스", () => {
   it("루트 글꼴 크기가 창에 맞춘 축척을 만든다", () => {
     expect(css("globals.css")).toContain("min(100vw / 120, 100vh / 67.5)");
@@ -47,6 +64,44 @@ describe("16:9 고정 캔버스", () => {
     const layout = readFileSync(join(process.cwd(), "app", "layout.tsx"), "utf8");
 
     expect(layout).toContain('className="game-canvas"');
+  });
+
+  it("일반 화면 루트는 캔버스 전체를 점유한다", () => {
+    const sheet = css("globals.css");
+
+    expect(sheet).toContain(
+      '.game-canvas > :not([data-canvas-layout="intrinsic"])',
+    );
+    expect(sheet).toMatch(
+      /\.game-canvas > :not\(\[data-canvas-layout="intrinsic"\]\)\s*\{[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*min-width:\s*0;[^}]*min-height:\s*0;/s,
+    );
+  });
+
+  it("현재 승인된 intrinsic 화면 예외는 없다", () => {
+    const offenders = uiSources()
+      .filter(({ source }) =>
+        source.includes('data-canvas-layout="intrinsic"'),
+      )
+      .map(({ name }) => name);
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("캔버스 내부 화면은 브라우저 높이를 요구하지 않는다", () => {
+    const offenders = uiSources()
+      .filter(({ name }) => name !== join("app", "layout.tsx"))
+      .filter(({ source }) => source.includes("min-h-screen"))
+      .map(({ name }) => name);
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("캔버스 내부 화면은 브라우저 폭 breakpoint를 요구하지 않는다", () => {
+    const offenders = uiSources()
+      .filter(({ source }) => /\b(?:sm|md|lg|xl|2xl):/.test(source))
+      .map(({ name }) => name);
+
+    expect(offenders).toEqual([]);
   });
 
   it("고정 비율 화면에는 창 반응형 미디어 쿼리가 없다", () => {
