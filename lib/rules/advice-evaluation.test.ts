@@ -29,23 +29,23 @@ describe("조언 공개", () => {
   });
 
   it("활성 규칙 공개 수는 위험도에 따라 결정적이다", () => {
-    const active = ["spider-shadow", "spider-fire", "spider-vibration"] as any;
-    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, riskLevel: 1, activeRuleIds: active })).toHaveLength(3);
-    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, riskLevel: 5, activeRuleIds: active })).toHaveLength(1);
-    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, riskLevel: 2, activeRuleIds: active })).toEqual(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, riskLevel: 2, activeRuleIds: active }));
+    const active = ["spider-shadow", "spider-fire", "spider-vibration"] as never;
+    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, riskLevel: 1, activeRuleIds: active })).toHaveLength(3);
+    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, riskLevel: 5, activeRuleIds: active })).toHaveLength(1);
+    expect(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, riskLevel: 2, activeRuleIds: active })).toEqual(disclosedRuleIds({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, riskLevel: 2, activeRuleIds: active }));
   });
 
   it("조언 순서는 입력을 보존하며 같은 입력에서 재현된다", () => {
-    const first = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, attempt: 1, depth: 2, event: event as any });
-    const second = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, attempt: 1, depth: 2, event: event as any });
+    const first = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, attempt: 1, depth: 2, event: event as never });
+    const second = presentShuffledAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, attempt: 1, depth: 2, event: event as never });
     expect(first).toEqual(second);
     expect(event.advice.map((option) => option.id)).toEqual(["a", "b", "c"]);
     expect(first[0]).not.toHaveProperty("outcome");
   });
 
   it("살아 있는 파티원 반응으로 실행 여부를 결정하고 적용 뒤 신뢰를 계산한다", () => {
-    const member = { id: "character-a", name: "A", classId: "test", personality: "righteous", maxHp: 10, hp: 10, trust: 100, gold: 10, alive: true, gravelyWounded: false } as any;
-    const decision = decideImmediateAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as any, attempt: 1, depth: 1, event: event as any, adviceId: "a" as any, members: [member] });
+    const member = { id: "character-a", name: "A", classId: "test", personality: "righteous", maxHp: 10, hp: 10, trust: 100, gold: 10, alive: true, gravelyWounded: false } as never;
+    const decision = decideImmediateAdvice({ campaignSeed: "seed", dungeonId: "dungeon-spider-01" as never, attempt: 1, depth: 1, event: event as never, adviceId: "a" as never, members: [member] });
     expect(decision.reactions).toHaveLength(1);
     expect(typeof decision.executed).toBe("boolean");
     expect(() => finalizeImmediateAdviceTrust({ decision, members: [member], applied: { executed: decision.executed, resultText: "결과" } })).not.toThrow();
