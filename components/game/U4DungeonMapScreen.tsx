@@ -390,7 +390,7 @@ function RightPanel({
 
   return (
     <div className="u4-right-panel">
-      <section className="u4-party" aria-labelledby="u4-party-title">
+      <section className="panel-section u4-party" aria-labelledby="u4-party-title">
         <h2 id="u4-party-title">파티 상태</h2>
         <div className="u4-party__list party-list">
           {party.map((member) => (
@@ -400,7 +400,7 @@ function RightPanel({
       </section>
 
       <section
-        className="u4-destination"
+        className="panel-section u4-destination"
         aria-labelledby="u4-destination-title"
       >
         <h2 id="u4-destination-title">선택한 다음 지점</h2>

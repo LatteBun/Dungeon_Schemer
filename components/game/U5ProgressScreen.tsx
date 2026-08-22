@@ -221,8 +221,8 @@ export function U5ProgressScreen({
           </div>
         }
         rightPanel={
-          <div className="u5-party" data-testid="u5-party">
-            <h3>파티 상태</h3>
+          <section className="panel-section u5-party" data-testid="u5-party" aria-labelledby="u5-party-title">
+            <h3 id="u5-party-title">파티 상태</h3>
             <ul className="party-list">
               {progress.party.map((member) => (
                 <li key={member.id}>
@@ -230,7 +230,7 @@ export function U5ProgressScreen({
                 </li>
               ))}
             </ul>
-          </div>
+          </section>
         }
         rightPanelLabel="파티 상태"
       />

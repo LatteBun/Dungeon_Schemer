@@ -334,35 +334,16 @@ button.u4-room {
   min-height: 0;
 }
 
-.u4-party,
-.u4-destination {
-  min-width: 0;
-  border: 1px solid #4e3921;
-  background: linear-gradient(180deg, #15110d, #0c0907);
-  box-shadow: inset 0 1px 0 rgb(239 207 139 / 5%), 0 0.22rem 0.65rem rgb(0 0 0 / 35%);
-  padding: clamp(0.55rem, 0.85cqw, 0.72rem);
-}
-
 .u4-party {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
 }
 
-.u4-party h2,
-.u4-destination h2 {
-  margin: 0 0 0.48rem;
-  color: #d9b45f;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(0.86rem, 1.05cqw, 1rem);
-  letter-spacing: 0.02em;
-}
-
 .u4-destination {
   position: relative;
   display: grid;
   grid-template-rows: auto auto auto;
-  gap: 0.45rem;
 }
 
 .u4-destination__panel {

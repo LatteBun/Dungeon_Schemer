@@ -109,6 +109,11 @@ body {
   --shell-padding: clamp(0.85rem, 0.95cqw, 1.45rem);
   --shell-title-size: clamp(1.05rem, 1.15cqw, 1.6rem);
   --shell-title-gap: clamp(0.42rem, 0.5cqw, 0.8rem);
+
+  /* 패널 안의 덩어리 — 테두리·여백·제목. 화면별 파일에서 다시 정하지 않는다. */
+  --panel-section-padding: clamp(0.7rem, 0.85cqw, 1.3rem);
+  --panel-title-size: clamp(1rem, 1.05cqw, 1.45rem);
+  --panel-title-gap: clamp(0.35rem, 0.42cqw, 0.7rem);
 }
 
 .game-shell__status-bar {
@@ -253,6 +258,42 @@ body {
 
 .game-shell__right-panel {
   background-color: var(--color-shell-surface-alt);
+}
+
+/*
+ * 패널 안의 덩어리.
+ *
+ * 화면마다 따로 그리는 바람에 같은 파티 목록인데도 카드가 시작하는 자리가
+ * u3 80.5px, u4 63.7px, u5 56.2px 로 흔들렸다. u5 는 테두리가 아예 없었고
+ * u5·u6 의 제목만 기본 서체였다. 단계를 넘길 때 오른쪽이 통째로 다시 그려지는
+ * 것처럼 보이는 원인이 이것이다. 덩어리 하나의 모양을 여기서 정하고, 화면은
+ * 그 안에 무엇을 담을지만 정한다.
+ */
+.panel-section {
+  /*
+   * 제목 아래 간격은 덩어리가 준다. 제목에 margin 으로 주면 그리드로 짠 화면
+   * 에서는 그 화면의 gap 과 겹쳐 두 번 벌어진다. 실제로 u5 는 카드가 9px
+   * 아래에서 시작했고 u4 의 다음 지점 칸도 그랬다.
+   */
+  display: grid;
+  align-content: start;
+  row-gap: var(--panel-title-gap);
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid #4d3922;
+  background: linear-gradient(180deg, #15110d, #0d0a08);
+  box-shadow: inset 0 1px 0 rgb(239 207 139 / 5%);
+  padding: var(--panel-section-padding);
+}
+
+.panel-section > h2,
+.panel-section > h3 {
+  margin: 0;
+  color: #d6ae5b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: var(--panel-title-size);
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .u1-preview {

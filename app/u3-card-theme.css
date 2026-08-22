@@ -189,12 +189,13 @@
 .u3-detail-section.u3-contract-card {
   /*
    * 장면 한 칸의 원본은 512x288 이다. 카드 폭(약 733px)에 꽉 채우면 1.43배로
-   * 늘어나 흐려지고 그만큼 크게 보인다. 늘리는 비율을 1.14배까지만 두고,
-   * 남는 가장자리는 scrim 이 카드 바탕색으로 덮는다.
+   * 늘어나 흐려지고 그만큼 크게 보인다. 1.28배까지만 늘리고 남는 가장자리는
+   * scrim 이 카드 바탕색으로 덮는다. 1.14배까지 줄여 봤더니 덮어야 할 띠가
+   * 넓어져 비네팅이 진해졌다. 확대와 비네팅을 맞바꾸는 자리라 그 사이를 잡는다.
    *
    * 512px = 32rem 이다. rem 으로 쓰므로 고정 캔버스가 줄어도 같이 줄어든다.
    */
-  --scene-frame-width: 36.5rem;
+  --scene-frame-width: 41rem;
 
   background-color: #0b0806;
   background-image: url("/assets/u3/extracted/theme-scenes-wide.avif");

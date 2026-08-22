@@ -20,8 +20,9 @@ function styleSheets(): string[] {
   return readdirSync(APP).filter((name) => name.endsWith(".css"));
 }
 
+/** 주석은 규칙이 아니다. 주석에 클래스 이름을 적었다고 걸리면 안 된다. */
 function read(name: string): string {
-  return readFileSync(join(APP, name), "utf8");
+  return readFileSync(join(APP, name), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
 }
 
 /** `.selector { ... }` 한 덩어리씩 끊는다. 여러 줄 선언을 놓치지 않으려는 것이다. */
@@ -31,6 +32,23 @@ function rules(css: string): Array<{ selector: string; body: string }> {
     found.push({ selector: match[1].trim(), body: match[2] });
   }
   return found;
+}
+
+/** 컴포넌트에서 panel-section 과 함께 붙는 클래스를 모은다. */
+function panelSectionClasses(): string[] {
+  const dir = join(process.cwd(), "components", "game");
+  const found = new Set<string>();
+
+  for (const name of readdirSync(dir).filter((file) => file.endsWith(".tsx"))) {
+    const source = readFileSync(join(dir, name), "utf8");
+    for (const match of source.matchAll(/className="([^"]*\bpanel-section\b[^"]*)"/g)) {
+      for (const token of match[1].split(/\s+/)) {
+        if (token !== "" && token !== "panel-section") found.add(token);
+      }
+    }
+  }
+
+  return [...found].sort();
 }
 
 describe("셸 틀", () => {
@@ -59,8 +77,50 @@ describe("셸 틀", () => {
   it("틀의 값은 토큰으로만 정한다", () => {
     const globals = read("globals.css");
 
-    for (const token of ["--shell-padding", "--shell-title-size", "--shell-title-gap"]) {
+    for (const token of [
+      "--shell-padding",
+      "--shell-title-size",
+      "--shell-title-gap",
+      "--panel-section-padding",
+      "--panel-title-size",
+      "--panel-title-gap",
+    ]) {
       expect(globals).toContain(token);
     }
+  });
+
+  it("panel-section 자체를 globals.css 밖에서 손대지 않는다", () => {
+    const offenders = styleSheets()
+      .filter((name) => name !== "globals.css")
+      .filter((name) => read(name).includes("panel-section"));
+
+    expect(offenders).toEqual([]);
+  });
+
+  /*
+   * 덩어리의 겉모습은 화면마다 다시 정하지 않는다.
+   *
+   * 클래스 목록을 손으로 적지 않고 컴포넌트에서 읽어 온다. 새 화면이
+   * panel-section 을 쓰기 시작하면 그 화면도 저절로 이 검사에 들어온다.
+   */
+  it("덩어리를 쓰는 화면이 겉모습을 다시 정하지 않는다", () => {
+    const classes = panelSectionClasses();
+    expect(classes.length).toBeGreaterThan(0);
+
+    const chrome = /(^|[\s;])(padding(-\w+)?|border(-(top|right|bottom|left|radius|color|width))?|font-size|font-family)\s*:/;
+    const offenders: string[] = [];
+
+    for (const name of styleSheets()) {
+      if (name === "globals.css") continue;
+      for (const rule of rules(read(name))) {
+        const hit = classes.find((cls) => new RegExp(`\\.${cls}(?![\\w-])`).test(rule.selector));
+        if (hit === undefined) continue;
+        if (/[>\s]\s*h[23]\b/.test(rule.selector) || !/[>\s+~]/.test(rule.selector.replace(/^\s*[.\w-]+\s*$/, ""))) {
+          if (chrome.test(rule.body)) offenders.push(`${name} — ${rule.selector}`);
+        }
+      }
+    }
+
+    expect(offenders).toEqual([]);
   });
 });

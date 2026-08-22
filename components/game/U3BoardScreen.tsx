@@ -117,7 +117,7 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
   return (
     <div className="u3-contract-detail">
       {/* 파티를 맨 위에 둔다. U4·U5 도 우측 첫 자리가 파티다. */}
-      <section className="u3-detail-section u3-party" aria-labelledby="u3-party-title">
+      <section className="panel-section u3-party" aria-labelledby="u3-party-title">
         <h3 id="u3-party-title">파티 구성</h3>
         <ul className="party-list">
           {detail.party.map((member, index) => (

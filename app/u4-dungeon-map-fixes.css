@@ -79,28 +79,11 @@
   gap: clamp(0.42rem, 0.58cqh, 0.54rem);
 }
 
-.u4-party,
-.u4-destination {
-  padding: clamp(0.52rem, 0.76cqw, 0.68rem);
-}
-
-.u4-party h2,
-.u4-destination h2 {
-  margin-bottom: 0.42rem;
-  font-size: clamp(0.96rem, 1.18cqw, 1.12rem);
-}
-
-.u4-party__list {
-  gap: clamp(0.32rem, 0.46cqh, 0.44rem);
-}
-
 /* The destination frame PNG contains a dark center, so it must sit behind
  * the actual thumbnail/copy rather than on top of them. */
 .u4-destination {
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 0.34rem;
   overflow: visible;
-  padding-bottom: clamp(0.3rem, 0.42cqh, 0.42rem);
 }
 
 .u4-destination__panel {
