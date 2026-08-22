@@ -92,15 +92,15 @@ describe("U3BoardScreen", () => {
   it("파티 초상 매핑 슬롯과 기존 골드 SVG를 데이터 행에 재사용한다", () => {
     const html = render("offer-1");
     expect(html).toContain("/assets/characters/adel.webp");
-    expect((html.match(/data-testid=\"u3-party-gold-icon\"/g) ?? [])).toHaveLength(3);
+    expect((html.match(/class="party-card__gold"/g) ?? [])).toHaveLength(3);
     expect(html).toContain("/assets/u2/status-gold.svg");
   });
 
-  it("파티 소지 골드는 아이콘과 라벨을 같은 행에 한 번만 표시한다", () => {
+  /* 공용 카드로 옮기며 라벨 문구를 없앴다. 아이콘과 금액이 붙어 있으면 읽힌다. */
+  it("파티 소지 골드는 라벨 문구 없이 아이콘과 금액으로 표시한다", () => {
     const html = render("offer-1");
-    expect((html.match(/data-testid=\"u3-party-gold-row\"/g) ?? [])).toHaveLength(3);
-    expect((html.match(/class=\"u3-party-card__gold-label\"/g) ?? [])).toHaveLength(3);
-    expect((html.match(/>소지 골드<\/span>/g) ?? [])).toHaveLength(3);
+    expect((html.match(/class="party-card__gold"/g) ?? [])).toHaveLength(3);
+    expect(html).not.toContain(">소지 골드<");
   });
 
   it("계약 CTA는 작은 계약 인장과 화살표를 같은 중심선에 둔다", () => {
@@ -124,7 +124,7 @@ describe("U3BoardScreen", () => {
     expect((html.match(/data-testid=\"u3-party-member\"/g) ?? [])).toHaveLength(3);
     expect(html).toContain("아델");
     expect(html).toContain("40 / 45");
-    expect(html).toContain("신뢰 72");
+    expect(html).toContain("<dt>신뢰</dt><dd>72</dd>");
     expect(html).toContain("소지 골드");
     expect(html).toContain(">24<");
     expect(html).toContain("전원 생존 시");

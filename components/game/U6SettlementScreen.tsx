@@ -49,7 +49,7 @@ function Promotion({ promotion, onPromote }: {
   const open = promotion.byReputation || promotion.byGold;
 
   return (
-    <section className="u6-promotion" data-testid="u6-promotion" aria-labelledby="u6-promotion-title">
+    <section className="panel-section u6-promotion" data-testid="u6-promotion" aria-labelledby="u6-promotion-title">
       <h3 id="u6-promotion-title">
         승급 {promotion.from} → {promotion.to}
       </h3>
@@ -87,7 +87,7 @@ function Promotion({ promotion, onPromote }: {
 
 function Changes({ settlement }: { settlement: U6SettlementView }) {
   return (
-    <section className="u6-changes" aria-labelledby="u6-changes-title">
+    <section className="panel-section u6-changes" aria-labelledby="u6-changes-title">
       <h3 id="u6-changes-title">캠페인 변화</h3>
 
       <div className="u6-risk-change" data-testid="u6-risk-change">

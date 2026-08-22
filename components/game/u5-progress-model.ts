@@ -1,3 +1,4 @@
+import type { PartyMemberCardView } from "./PartyMemberCard";
 import type {
   ChoiceId,
   InfoReaction,
@@ -78,15 +79,8 @@ export interface U5OutcomeView {
   changes: readonly U5ChangeView[];
 }
 
-export interface U5PartyMemberView {
-  id: string;
-  name: string;
-  job: string;
-  personality: string;
-  hp: number;
-  maxHp: number;
-  trust: number;
-}
+/** 파티원 표시는 화면마다 갈리지 않도록 공용 카드 타입을 그대로 쓴다. */
+export type U5PartyMemberView = PartyMemberCardView;
 
 export interface U5ProgressView {
   dungeonName: string;

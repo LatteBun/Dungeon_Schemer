@@ -75,93 +75,14 @@
 /* Give the selected destination roughly the lower third of the right panel,
  * which moves its top edge upward while leaving three readable party cards. */
 .u4-right-panel {
-  grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
   gap: clamp(0.42rem, 0.58cqh, 0.54rem);
-}
-
-.u4-party,
-.u4-destination {
-  padding: clamp(0.52rem, 0.76cqw, 0.68rem);
-}
-
-.u4-party h2,
-.u4-destination h2 {
-  margin-bottom: 0.42rem;
-  font-size: clamp(0.96rem, 1.18cqw, 1.12rem);
-}
-
-.u4-party__list {
-  gap: clamp(0.32rem, 0.46cqh, 0.44rem);
-}
-
-.u4-party-card {
-  grid-template-columns: clamp(6.15rem, 6.8cqw, 7.35rem) minmax(0, 1fr);
-}
-
-.u4-party-card__content {
-  gap: clamp(0.36rem, 0.46cqh, 0.48rem);
-  padding: clamp(0.54rem, 0.72cqw, 0.68rem) clamp(0.62rem, 0.82cqw, 0.76rem);
-}
-
-.u4-party-card__content > header {
-  gap: 0.46rem;
-  padding-bottom: 0.34rem;
-}
-
-.u4-party-card__content > header strong {
-  font-size: clamp(0.9rem, 1.08cqw, 1.04rem);
-  letter-spacing: 0.015em;
-}
-
-.u4-party-card__content > header span {
-  font-size: clamp(0.7rem, 0.86cqw, 0.82rem);
-}
-
-.u4-party-card__content > header small {
-  color: #b5a487;
-  font-size: clamp(0.68rem, 0.82cqw, 0.78rem);
-  font-weight: 700;
-}
-
-.u4-party-card__stats {
-  grid-template-columns: 1fr 0.9fr;
-  gap: clamp(0.34rem, 0.44cqh, 0.44rem) clamp(0.66rem, 0.9cqw, 0.88rem);
-  align-content: stretch;
-}
-
-.u4-party-card__stats dt,
-.u4-party-card__stats dd {
-  font-size: clamp(0.68rem, 0.82cqw, 0.79rem);
-}
-
-.u4-party-card__stats dd {
-  align-self: center;
-}
-
-.u4-meter {
-  height: 0.3rem;
-}
-
-.u4-party-card__gold {
-  padding-top: 0.3rem;
-}
-
-.u4-party-card__gold img {
-  width: 1rem;
-  height: 1rem;
-}
-
-.u4-party-card__death {
-  font-size: 0.64rem;
 }
 
 /* The destination frame PNG contains a dark center, so it must sit behind
  * the actual thumbnail/copy rather than on top of them. */
 .u4-destination {
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 0.34rem;
+  grid-template-rows: auto auto auto;
   overflow: visible;
-  padding-bottom: clamp(0.3rem, 0.42cqh, 0.42rem);
 }
 
 .u4-destination__panel {
