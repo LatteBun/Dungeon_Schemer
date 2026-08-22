@@ -8,6 +8,7 @@ import "./u3-card-theme.css";
 import "./u3-large-screen.css";
 import "./u3-contract-layout.css";
 import "./u3-responsive-layout.css";
+import "./u4-dungeon-map.css";
 
 export const metadata: Metadata = {
   title: "Dungeon Schemer",
