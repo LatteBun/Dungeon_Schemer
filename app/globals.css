@@ -24,6 +24,24 @@
 }
 
 /*
+ * CTA 아이콘 광학 정렬.
+ *
+ * 한글 글자는 라인박스 중앙보다 잉크가 위에 놓인다. 하강부 자리를 비워 두지만
+ * 한글 글리프가 거의 쓰지 않기 때문이다. 그래서 아이콘을 박스 중앙에 두면
+ * 글자보다 낮아 보인다. 두 CTA 에서 실측한 어긋남은 글자 크기의 10.3~10.9%
+ * 로 일정했다. 그 비율만큼 아이콘을 끌어올려 글자의 광학 중심선에 맞춘다.
+ *
+ * 자산 자체의 잉크가 캔버스 중앙에 있는 아이콘에만 그대로 쓴다. 화살표처럼
+ * 자산이 이미 위로 치우친 경우에는 그 치우침이 같은 몫을 하므로 빼야 한다.
+ *
+ * 새 CTA 를 만들 때는 버튼에 --cta-text-size 를 선언하고 아이콘에 translate 를
+ * 그대로 쓴다. 값을 눈대중으로 다시 고르지 않는다.
+ */
+:root {
+  --cta-icon-optical-lift: 0.105;
+}
+
+/*
  * 16:9 고정 캔버스.
  *
  * 루트 글꼴 크기가 축척이다. 120 × 16px = 1920, 67.5 × 16px = 1080 이므로
@@ -53,6 +71,106 @@ body {
   container-name: game;
 }
 
+/*
+ * 상단 상태 바 — 모든 화면이 공유하는 단 하나의 정의.
+ *
+ * 화면마다 다시 선언하면 값이 갈라진다. 실제로 u1·u2·u3 의 바 높이가
+ * 88.8 / 67.4 / 82.6px 로 제각각이었고, 둘을 맞추려고 만든 동기화 파일이
+ * 또 하나의 정의가 되어 셋이 넷이 됐다.
+ *
+ * 화면별 재선언을 하지 않는다. 크기는 아래 토큰으로만 조정하고, 그러면
+ * 모든 화면이 함께 움직인다. 새 화면도 GameShell 을 쓰면 그대로 따라온다.
+ */
+:root {
+  --status-bar-padding-block: clamp(0.65rem, 0.6cqw, 1rem);
+  --status-bar-padding-inline: clamp(0.8rem, 2cqw, 1.5rem);
+  --status-list-gap: clamp(0.45rem, 1.1cqw, 0.8rem);
+  --status-chip-min-width: clamp(8.7rem, 14cqw, 11.3rem);
+  --status-chip-min-height: clamp(3rem, 3cqw, 4.35rem);
+  --status-chip-gap: clamp(0.5rem, 0.5cqw, 0.8rem);
+  --status-chip-padding-inline: clamp(0.65rem, 0.75cqw, 1.2rem);
+  --status-icon-size: clamp(1.45rem, 1.35cqw, 2.15rem);
+  --status-label-size: clamp(0.72rem, 0.72cqw, 1.1rem);
+  --status-value-size: clamp(0.86rem, 0.82cqw, 1.25rem);
+}
+
+.game-shell__status-bar {
+  position: relative;
+  z-index: 10;
+  min-width: 0;
+  padding: var(--status-bar-padding-block) var(--status-bar-padding-inline);
+  border-top: 1px solid rgb(112 79 34 / 65%);
+  border-bottom: 1px solid #6b502a;
+  background: linear-gradient(180deg, rgb(5 5 4 / 99%), rgb(9 7 5 / 99%));
+  box-shadow: 0 0.125rem 0.75rem rgb(0 0 0 / 72%);
+}
+
+.game-shell__status-list {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--status-list-gap);
+  margin: 0;
+  min-width: 0;
+}
+
+.game-shell__status-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  overflow-wrap: anywhere;
+}
+
+.game-shell__status-chip {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--status-chip-gap);
+  min-width: var(--status-chip-min-width);
+  min-height: var(--status-chip-min-height);
+  padding: 0.4rem var(--status-chip-padding-inline);
+  border: 1px solid rgb(122 91 49 / 42%);
+  border-radius: 0.36rem;
+  background: linear-gradient(180deg, rgb(22 17 12 / 93%), rgb(13 10 7 / 95%));
+  box-shadow: inset 0 1px 0 rgb(244 214 145 / 6%), 0 1px 2px rgb(0 0 0 / 55%);
+}
+
+.game-shell__status-icon {
+  width: var(--status-icon-size);
+  height: var(--status-icon-size);
+  flex: 0 0 auto;
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 70%));
+}
+
+.game-shell__status-copy {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.36rem;
+}
+
+.game-shell__status-copy dt,
+.game-shell__status-copy dd {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.game-shell__status-copy dt,
+.game-shell__status-chip dt {
+  color: #a99678;
+  font-size: var(--status-label-size);
+  font-weight: 600;
+}
+
+.game-shell__status-copy dd,
+.game-shell__status-chip dd {
+  color: #ead5aa;
+  font-size: var(--status-value-size);
+  font-weight: 700;
+}
+
 .game-shell,
 .game-shell__body,
 .game-shell__main,
@@ -68,46 +186,6 @@ body {
     var(--color-shell-ink);
   color: var(--color-parchment);
   overflow-wrap: anywhere;
-}
-
-.game-shell__status-bar {
-  min-width: 0;
-  border-bottom: 1px solid var(--color-shell-metal);
-  background: linear-gradient(180deg, #2c2016 0%, #171009 100%);
-  box-shadow: 0 2px 0 var(--color-shell-shadow);
-  padding: 0.75rem 1rem 0.875rem;
-}
-
-.game-shell__status-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0;
-  min-width: 0;
-}
-
-.game-shell__status-item {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem;
-  overflow-wrap: anywhere;
-}
-
-.game-shell__status-chip {
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 58%, transparent);
-  background: var(--color-shell-chip);
-  box-shadow: inset 0 1px 0 rgb(255 233 175 / 8%);
-  padding: 0.35rem 0.55rem;
-}
-
-.game-shell__status-chip dt {
-  color: var(--color-muted);
-}
-
-.game-shell__status-chip dd {
-  color: var(--color-parchment);
 }
 
 .game-shell__body {

@@ -12,30 +12,6 @@
 .u3-theme-scene--spider { background-position: 50% center; }
 .u3-theme-scene--graveyard { background-position: 100% center; }
 
-/* 1920×1080 캔버스에서 항상 적용되던 대화면 고밀도 규칙. 고정 비율이 되면서 기본값이 되었다. */
-.u3-board-screen .game-shell__status-bar {
-  padding-block: clamp(0.65rem, 0.6cqw, 1rem);
-}
-
-.u3-board-screen .game-shell__status-chip {
-  min-height: clamp(3rem, 3cqw, 4.35rem);
-  gap: clamp(0.5rem, 0.5cqw, 0.8rem);
-  padding-inline: clamp(0.65rem, 0.75cqw, 1.2rem);
-}
-
-.u3-board-screen .game-shell__status-icon {
-  width: clamp(1.45rem, 1.35cqw, 2.15rem);
-  height: clamp(1.45rem, 1.35cqw, 2.15rem);
-}
-
-.u3-board-screen .game-shell__status-copy dt {
-  font-size: clamp(0.72rem, 0.72cqw, 1.1rem);
-}
-
-.u3-board-screen .game-shell__status-copy dd {
-  font-size: clamp(0.86rem, 0.82cqw, 1.25rem);
-}
-
 .u3-board-screen .game-shell__main,
 .u3-board-screen .game-shell__right-panel {
   padding: clamp(0.8rem, 0.9cqw, 1.6rem);
@@ -248,8 +224,16 @@
   padding-inline: clamp(1.15rem, 1.25cqw, 2rem);
 }
 
+.u3-contract-button {
+  --cta-text-size: clamp(1.25rem, 1.22cqw, 1.9rem);
+}
+
+.u3-contract-button .u3-contract-button__seal {
+  translate: 0 calc(var(--cta-text-size) * var(--cta-icon-optical-lift) * -1);
+}
+
 .u3-contract-button strong {
-  font-size: clamp(1.25rem, 1.22cqw, 1.9rem);
+  font-size: var(--cta-text-size);
   line-height: 1.15;
 }
 

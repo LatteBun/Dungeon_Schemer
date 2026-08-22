@@ -177,11 +177,13 @@ describe("U3 extracted asset-board assets", () => {
     expect(css).toContain("clamp(1.5rem, 1.6cqw, 2.4rem)");
   });
 
-  it("대화면에서는 상태바부터 공고와 상세까지 텍스트가 함께 확대된다", () => {
+  /*
+   * 상태 바는 이 목록에서 빠졌다. 화면별 재선언을 없애고 globals.css 한 곳으로
+   * 옮겼기 때문이다. 그 계약은 StatusBarConsistency.test.ts 가 지킨다.
+   */
+  it("공고와 상세의 텍스트 크기를 캔버스 기준으로 고정한다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
 
-    expect(css).toContain(".u3-board-screen .game-shell__status-copy dt");
-    expect(css).toContain(".u3-board-screen .game-shell__status-copy dd");
     expect(css).toContain(".u3-notice__heading strong");
     expect(css).toContain(".u3-notice__heading small");
     expect(css).toContain(".u3-party-card__identity strong");
