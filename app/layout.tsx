@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
       <body className="min-h-screen bg-ink font-sans text-parchment antialiased">
-        {children}
+        <div className="game-canvas">{children}</div>
       </body>
     </html>
   );

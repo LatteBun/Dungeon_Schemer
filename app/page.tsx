@@ -9,7 +9,7 @@ import { Panel } from "@/components/ui/Panel";
  */
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-4 p-8">
+    <main className="mx-auto flex min-h-full max-w-3xl flex-col justify-center gap-4 p-8">
       <h1 className="text-2xl font-semibold">Dungeon Schemer</h1>
       <Panel title="캠페인 개편 진행 중">
         <div className="flex flex-col gap-3 px-3 py-3 text-sm leading-relaxed">
