@@ -20,7 +20,10 @@ export function U4Preview({ deadPreview = false }: U4PreviewProps) {
   const [feedback, setFeedback] = useState("");
 
   return (
-    <div className="u4-preview">
+    <div
+      className="u4-preview"
+      style={{ height: "100%", minHeight: 0, position: "relative" }}
+    >
       <U4DungeonMapScreen
         status={preview.status}
         dungeonName={preview.dungeonName}
@@ -42,9 +45,27 @@ export function U4Preview({ deadPreview = false }: U4PreviewProps) {
           );
         }}
       />
-      <p className="u4-preview__feedback" role="status" aria-live="polite">
-        {feedback}
-      </p>
+      {feedback === "" ? null : (
+        <p
+          className="u4-preview__feedback"
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "absolute",
+            right: "0.75rem",
+            bottom: "0.75rem",
+            zIndex: 50,
+            margin: 0,
+            border: "1px solid #7c6536",
+            background: "#15100b",
+            color: "#d8c49c",
+            padding: "0.4rem 0.65rem",
+            fontSize: "0.72rem",
+          }}
+        >
+          {feedback}
+        </p>
+      )}
     </div>
   );
 }
