@@ -123,7 +123,8 @@
 /* ── 정산 우측: 변화와 승급 ── */
 
 .u6-settlement-side {
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: start;
 }
 
 .u6-risk-change {

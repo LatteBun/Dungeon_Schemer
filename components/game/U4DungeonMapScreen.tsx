@@ -307,7 +307,7 @@ function DungeonMap({
   );
 }
 
-function U4PartyMember({ member }: { member: U4PartyMemberView }) {
+function U4PartyMember({ member, index }: { member: U4PartyMemberView; index: number }) {
   /* 표시는 공용 카드가 맡는다. 여기서는 U4 의 뷰를 카드 뷰로 옮기기만 한다. */
   return (
     <PartyMemberCard
@@ -323,6 +323,7 @@ function U4PartyMember({ member }: { member: U4PartyMemberView }) {
         portraitSrc: member.portraitSrc,
         alive: member.alive,
       }}
+      index={index}
       testId="u4-party-member"
     />
   );
@@ -391,19 +392,21 @@ function RightPanel({
   return (
     <div className="u4-right-panel">
       <section className="panel-section u4-party" aria-labelledby="u4-party-title">
-        <h2 id="u4-party-title">파티 상태</h2>
-        <div className="u4-party__list party-list">
-          {party.map((member) => (
-            <U4PartyMember key={member.id} member={member} />
+        <h3 id="u4-party-title">파티 상태</h3>
+        <ul className="party-list">
+          {party.map((member, index) => (
+            <li key={member.id}>
+              <U4PartyMember member={member} index={index} />
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section
         className="panel-section u4-destination"
         aria-labelledby="u4-destination-title"
       >
-        <h2 id="u4-destination-title">선택한 다음 지점</h2>
+        <h3 id="u4-destination-title">선택한 다음 지점</h3>
         <div className="u4-destination__panel">
           {destination === undefined ? (
             <p className="u4-destination__empty">다음 지점을 선택하세요</p>

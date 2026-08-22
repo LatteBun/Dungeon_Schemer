@@ -328,7 +328,9 @@ button.u4-room {
 
 .u4-right-panel {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  /* 두 덩어리 모두 내용 높이다. 남는 자리는 패널 바탕으로 둔다. */
+  grid-template-rows: auto auto;
+  align-content: start;
   gap: clamp(0.55rem, 0.8cqh, 0.7rem);
   height: 100%;
   min-height: 0;
@@ -336,7 +338,7 @@ button.u4-room {
 
 .u4-party {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
   min-height: 0;
 }
 

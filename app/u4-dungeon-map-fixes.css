@@ -75,14 +75,13 @@
 /* Give the selected destination roughly the lower third of the right panel,
  * which moves its top edge upward while leaving three readable party cards. */
 .u4-right-panel {
-  grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
   gap: clamp(0.42rem, 0.58cqh, 0.54rem);
 }
 
 /* The destination frame PNG contains a dark center, so it must sit behind
  * the actual thumbnail/copy rather than on top of them. */
 .u4-destination {
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
   overflow: visible;
 }
 

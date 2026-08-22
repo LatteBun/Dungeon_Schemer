@@ -224,9 +224,9 @@ export function U5ProgressScreen({
           <section className="panel-section u5-party" data-testid="u5-party" aria-labelledby="u5-party-title">
             <h3 id="u5-party-title">파티 상태</h3>
             <ul className="party-list">
-              {progress.party.map((member) => (
+              {progress.party.map((member, index) => (
                 <li key={member.id}>
-                  <PartyMemberCard member={member} testId="u5-party-member" />
+                  <PartyMemberCard member={member} index={index} testId="u5-party-member" />
                 </li>
               ))}
             </ul>
