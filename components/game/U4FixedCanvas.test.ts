@@ -4,6 +4,24 @@ import { describe, expect, it } from "vitest";
 const globals = readFileSync("app/globals.css", "utf8");
 const layout = readFileSync("app/layout.tsx", "utf8");
 
+function numericDeclaration(
+  css: string,
+  selector: string,
+  property: string,
+): number {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const rule = css.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
+  const declaration = rule?.[1]?.match(
+    new RegExp(`${property}\\s*:\\s*(\\d+(?:\\.\\d+)?)`),
+  );
+
+  if (declaration?.[1] === undefined) {
+    throw new Error(`${selector}의 ${property} 값을 찾을 수 없습니다.`);
+  }
+
+  return Number(declaration[1]);
+}
+
 describe("U4 fixed 16:9 canvas contract", () => {
   it("inherits the shared 1920x1080 canvas and 60:40 GameShell split", () => {
     expect(globals).toContain("width: 120rem");
@@ -40,6 +58,36 @@ describe("U4 fixed 16:9 canvas contract", () => {
     expect(fixes).toMatch(
       /\.u4-corridor\s*\{[\s\S]*height:\s*clamp\(1\.05rem/,
     );
+  });
+
+  it("keeps the complete route topology visible while preserving state priority", () => {
+    const fixes = readFileSync("app/u4-dungeon-map-fixes.css", "utf8");
+    const inactiveCorridor = numericDeclaration(
+      fixes,
+      ".u4-corridor",
+      "opacity",
+    );
+    const visitedCorridor = numericDeclaration(
+      fixes,
+      ".u4-corridor.is-visited",
+      "opacity",
+    );
+    const selectableCorridor = numericDeclaration(
+      fixes,
+      ".u4-corridor.is-selectable",
+      "opacity",
+    );
+    const inactiveRoom = numericDeclaration(
+      fixes,
+      ".u4-room.is-inactive",
+      "opacity",
+    );
+
+    expect(inactiveCorridor).toBeGreaterThanOrEqual(0.62);
+    expect(visitedCorridor).toBeGreaterThan(inactiveCorridor);
+    expect(selectableCorridor).toBeGreaterThan(visitedCorridor);
+    expect(inactiveRoom).toBeGreaterThanOrEqual(0.68);
+    expect(inactiveRoom).toBeLessThan(visitedCorridor);
   });
 
   it("moves destination upward and enlarges party information without leaving the fixed canvas", () => {
