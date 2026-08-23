@@ -86,7 +86,12 @@ export interface U6EndingView {
   finalReputation: number;
   cumulativeGold: number;
   adviceTotal: number;
+  /** `C8-A` 가 센 값이다. 전멸 횟수의 분모라 함께 있어야 뜻이 산다. */
+  totalExpeditions: number;
+  clearedExpeditions: number;
   wipedExpeditions: number;
+  /** 가장 깊이 간 던전 순번. 0 이면 하나도 클리어하지 못했다. */
+  highestDungeonCleared: number;
   turningPoint: { label: string; detail: string } | null;
   /** 15줄 나열이 아니라 두세 문장의 산문이다. */
   chronicleSummary: string;

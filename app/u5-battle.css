@@ -210,6 +210,74 @@
   white-space: nowrap;
 }
 
+/*
+ * 보스 정보가 작용한 순간.
+ *
+ * 믿음은 그것을 들고 간 사람의 것이므로 그 참가자 위에 띄운다. 피해 숫자와 같은
+ * 자리 규칙을 따르되, 겹치지 않게 위쪽에 둔다. 한때 화면 아래 글상자에 문장으로
+ * 적었는데, 누구의 믿음인지를 글로 다시 말해야 해서 장면과 따로 놀았다.
+ */
+.u5-battle-cue {
+  position: absolute;
+  /* 초상 위쪽 여백에 앉는다. 얼굴을 덮지 않으면서 그 사람의 것임이 보인다. */
+  top: -0.2rem;
+  left: 50%;
+  z-index: 4;
+  display: grid;
+  gap: 0.02rem;
+  justify-items: center;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 0.2rem;
+  /* 장면이 어두워도 밝아도 읽히게 거의 불투명하게 깐다. */
+  background: rgb(8 6 5 / 94%);
+  box-shadow: 0 0.2rem 0.5rem rgb(0 0 0 / 60%);
+  font-size: clamp(0.52rem, 1.3cqh, 0.76rem);
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.u5-battle-cue b {
+  color: #f3e6c4;
+  font-size: 1.06em;
+  font-weight: 700;
+}
+
+/* 색만으로 가르지 않는다. 문구가 방향을 그대로 말한다. */
+.u5-battle-cue.is-beneficial { color: #9fc27a; }
+.u5-battle-cue.is-harmful { color: #dd8b74; }
+
+/*
+ * 전투 뒤 신뢰 검증. 인과 사슬의 마지막 칸이라 장면 아래에 모아 둔다.
+ */
+.u5-battle-verifications {
+  position: absolute;
+  bottom: clamp(2.6rem, 8cqh, 3.6rem);
+  left: 50%;
+  display: grid;
+  gap: 0.14rem;
+  justify-items: center;
+  width: max-content;
+  max-width: min(90%, 46rem);
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid rgb(214 174 91 / 26%);
+  border-radius: 0.2rem;
+  background: rgb(9 7 5 / 72%);
+  list-style: none;
+  color: #e6d5ae;
+  font-size: clamp(0.62rem, 1.5cqh, 0.88rem);
+  line-height: 1.3;
+  text-align: center;
+  text-shadow: 0 0.08rem 0.18rem #000;
+  transform: translateX(-50%);
+  backdrop-filter: blur(2px);
+}
+
 .u5-battle-controls {
   position: absolute;
   top: clamp(0.3rem, 1cqh, 0.65rem);

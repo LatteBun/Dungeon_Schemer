@@ -75,7 +75,10 @@ describe("U6EndingScreen", () => {
 
     expect(html).toContain('data-testid="u6-stats"');
     expect(html).toContain("누적 조언");
-    expect(html).toContain("전멸 원정");
+    /* 전멸 횟수는 총 원정 수와 함께 나온다. 분모 없이 놓으면 뜻이 서지 않는다. */
+    expect(html).toContain("전멸");
+    expect(html).toContain("클리어");
+    expect(html).toContain("도달 깊이");
   });
 
   it("연대기는 15줄 나열이 아니라 산문 요약이다", () => {

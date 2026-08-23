@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState, type CSSProperties } from "react";
 import { withObjectParticle, withSubjectParticle } from "./korean-particle";
 import type {
+  U5BattleCueView,
   U5BattleReplay,
   U5BattleReplayFrame,
   U5BattleReplayParticipant,
@@ -34,6 +35,26 @@ function participantById(replay: U5BattleReplay, id: string | null) {
  * 흘려보내느니 아무 말도 하지 않는다. 숫자 뒤에는 조사를 붙이지 않는다.
  * 3 은 "삼", 12 는 "십이" 라 읽는 방식에 따라 조사가 갈리기 때문이다.
  */
+/*
+ * 보스 정보가 전투에서 어떻게 드러나는지 옮긴다.
+ *
+ * `E4` 가 `boss-info.{축}.{방향}` 키를 준다. 축은 셋뿐이고 방향은 둘뿐이라
+ * 표로 적을 수 있다. 화면이 문구를 지어내지 않고 이 표만 본다.
+ */
+const CUE_AXIS_WORD: Readonly<Record<U5BattleCueView["axis"], string>> = {
+  targetWeight: "노려지는 자리",
+  incomingDamage: "받는 피해",
+  outgoingDamage: "주는 피해",
+};
+
+/** 전투 뒤 신뢰 검증. 인과 사슬의 마지막 칸이다. */
+const VERIFICATION_WORD: Readonly<Record<U5BattleReplay["verifications"][number]["action"], string>> = {
+  adviceHelped: "믿은 정보가 옳았습니다",
+  adviceHarmed: "믿은 정보가 해로웠습니다",
+  suspicionWasCostly: "의심한 정보가 실은 도움이었습니다",
+  suspicionWasCorrect: "의심이 옳았습니다",
+};
+
 function frameDescription(replay: U5BattleReplay, frame: U5BattleReplayFrame): string {
   const actor = participantById(replay, frame.actorId);
   const target = participantById(replay, frame.targetId);
@@ -122,6 +143,8 @@ function Participant({ participant, frame, reducedMotion }: {
   readonly frame: U5BattleReplayFrame;
   readonly reducedMotion: boolean;
 }) {
+  /* 믿음은 그것을 들고 간 사람의 것이다. 피해 숫자가 대상 위에 뜨듯 여기 붙인다. */
+  const cue = frame.cues.find((one) => one.characterId === participant.id);
   const hp = frame.hpByParticipantId[participant.id] ?? participant.finalHp;
   const hpPercent = Math.max(0, Math.min(100, hp / participant.maxHp * 100));
   const defeated = frame.defeatedParticipantIds.includes(participant.id);
@@ -178,6 +201,19 @@ function Participant({ participant, frame, reducedMotion }: {
           </span>
         ) : null}
       </AnimatePresence>
+      <AnimatePresence>
+        {cue === undefined ? null : (
+          <motion.span
+            className={`u5-battle-cue is-${cue.direction}`}
+            initial={{ opacity: 0, y: reducedMotion ? 0 : "24%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <b>{CUE_AXIS_WORD[cue.axis]}</b>
+            {cue.direction === "beneficial" ? "믿음이 통했다" : "믿음이 어긋났다"}
+          </motion.span>
+        )}
+      </AnimatePresence>
       {defeated ? <span className="u5-battle-defeated">쓰러짐</span> : null}
     </article>
   );
@@ -227,6 +263,15 @@ export function U5BattleScene({ replay }: U5BattleSceneProps) {
         </div>
       </div>
       <p className="u5-battle-live">{frameDescription(replay, frame)}</p>
+      {!complete || replay.verifications.length === 0 ? null : (
+        <ul className="u5-battle-verifications" data-testid="u5-battle-verifications">
+          {replay.verifications.map((one) => (
+            <li key={`${one.characterId}-${one.action}`}>
+              {participantById(replay, one.characterId)?.name ?? one.characterId} · {VERIFICATION_WORD[one.action]}
+            </li>
+          ))}
+        </ul>
+      )}
       <p className="u5-battle-announcement" aria-live="polite">{announcement(replay, frame)}</p>
       <div className="u5-battle-controls">
         {complete ? (

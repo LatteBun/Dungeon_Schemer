@@ -1,3 +1,4 @@
+import type { BossInfoPresentationCue, BossInfoVerification } from "@/lib/domain";
 import type { BattleResolution } from "@/lib/rules/battle-engine";
 
 export interface U5BattleParticipantPresentation {
@@ -9,6 +10,15 @@ export interface U5BattleParticipantPresentation {
 export interface U5BattleReplayInput {
   readonly resolution: BattleResolution;
   readonly presentations: readonly U5BattleParticipantPresentation[];
+  /*
+   * `E4` 가 보스전에서 낸 정보 표시 신호다.
+   *
+   * `actionIndex` 로 어느 행동에서 그 믿음이 작용했는지를 가리킨다. 규칙 계층이
+   * 그 값을 계산할 이유는 재생을 위한 것 말고 없다. 일반 전투에는 없다.
+   */
+  readonly cues?: readonly BossInfoPresentationCue[];
+  /** 전투 뒤 그 믿음이 옳았는지. `E4` 가 판정한다. */
+  readonly verifications?: readonly BossInfoVerification[];
 }
 
 export interface U5BattleReplayParticipant {
@@ -31,6 +41,15 @@ export interface U5BattleReplayFrame {
   readonly damage: number | null;
   readonly hpByParticipantId: Readonly<Record<string, number>>;
   readonly defeatedParticipantIds: readonly string[];
+  /** 이 프레임에서 드러나는 보스 정보다. 없으면 빈 배열이다. */
+  readonly cues: readonly U5BattleCueView[];
+}
+
+export interface U5BattleCueView {
+  readonly characterId: string;
+  readonly axis: BossInfoPresentationCue["axis"];
+  readonly direction: BossInfoPresentationCue["direction"];
+  readonly presentationKey: string;
 }
 
 export interface U5BattleReplay {
@@ -38,6 +57,14 @@ export interface U5BattleReplay {
   readonly frames: readonly U5BattleReplayFrame[];
   readonly outcome: BattleResolution["status"];
   readonly termination: BattleResolution["termination"];
+  /** 전투 뒤 신뢰 검증. 화면이 인과 사슬의 마지막 칸으로 쓴다. */
+  readonly verifications: readonly U5BattleVerificationView[];
+}
+
+export interface U5BattleVerificationView {
+  readonly characterId: string;
+  readonly action: BossInfoVerification["action"];
+  readonly applied: boolean;
 }
 
 type ParticipantSource = BattleResolution["party"][number] | BattleResolution["enemies"][number];
@@ -51,6 +78,19 @@ function addUnique<T extends { readonly id: string }>(map: Map<string, T>, value
   map.set(value.id, value);
 }
 
+/**
+ * `E4` 의 timing 을 재생 단계에 옮긴다.
+ *
+ * 규칙은 전투 안의 어느 순간인지를 말하고, 재생은 그것을 프레임으로 나눠 놓았다.
+ * 둘을 잇는 표가 여기 하나만 있어야 화면이 제 마음대로 고르지 않는다.
+ */
+const PHASE_BY_TIMING: Readonly<Record<BossInfoPresentationCue["timing"], U5BattleReplayPhase>> = {
+  battleStart: "idle",
+  beforeTarget: "attack",
+  beforeDamage: "impact",
+  afterDamage: "settle",
+};
+
 function snapshot(
   phase: U5BattleReplayPhase,
   actionIndex: number | null,
@@ -59,8 +99,10 @@ function snapshot(
   damage: number | null,
   hpByParticipantId: Readonly<Record<string, number>>,
   defeatedParticipantIds: ReadonlySet<string>,
+  cues: readonly U5BattleCueView[] = [],
 ): U5BattleReplayFrame {
   return {
+    cues,
     phase,
     actionIndex,
     actorId,
@@ -107,9 +149,23 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
     return { id: source.id, side, name: presentation.name, imageSrc: presentation.imageSrc, maxHp: source.maxHp, initialHp: initialHpByParticipantId[source.id], finalHp: source.hp };
   });
 
+  const cueViews = (input.cues ?? []).map((cue) => ({
+    actionIndex: cue.actionIndex,
+    phase: PHASE_BY_TIMING[cue.timing],
+    view: {
+      characterId: String(cue.characterId),
+      axis: cue.axis,
+      direction: cue.direction,
+      presentationKey: cue.presentationKey,
+    } satisfies U5BattleCueView,
+  }));
+  const cuesFor = (phase: U5BattleReplayPhase, actionIndex: number | null): readonly U5BattleCueView[] =>
+    cueViews.filter((one) => one.phase === phase && one.actionIndex === actionIndex).map((one) => one.view);
+
   let currentHpByParticipantId: Record<string, number> = { ...initialHpByParticipantId };
   const defeatedParticipantIds = new Set<string>();
-  const frames: U5BattleReplayFrame[] = [snapshot("idle", null, null, null, null, currentHpByParticipantId, defeatedParticipantIds)];
+    /* battleStart 큐는 어느 행동에도 매이지 않으므로 idle 프레임이 받는다. */
+  const frames: U5BattleReplayFrame[] = [snapshot("idle", null, null, null, null, currentHpByParticipantId, defeatedParticipantIds, cueViews.filter((one) => one.phase === "idle").map((one) => one.view))];
 
   input.resolution.actions.forEach((action, actionIndex) => {
     const actor = participantsById.get(action.actorId);
@@ -124,11 +180,11 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
     if (currentHpByParticipantId[action.targetId] !== action.targetHpBefore) invalid(`target HP chain이 맞지 않는다: ${action.targetId}`);
     if (action.defeated !== (action.targetHpAfter === 0)) invalid(`defeated와 targetHpAfter가 맞지 않는다: ${action.targetId}`);
 
-    frames.push(snapshot("attack", actionIndex, action.actorId, action.targetId, null, currentHpByParticipantId, defeatedParticipantIds));
-    frames.push(snapshot("impact", actionIndex, action.actorId, action.targetId, action.damage, currentHpByParticipantId, defeatedParticipantIds));
+    frames.push(snapshot("attack", actionIndex, action.actorId, action.targetId, null, currentHpByParticipantId, defeatedParticipantIds, cuesFor("attack", actionIndex)));
+    frames.push(snapshot("impact", actionIndex, action.actorId, action.targetId, action.damage, currentHpByParticipantId, defeatedParticipantIds, cuesFor("impact", actionIndex)));
     currentHpByParticipantId = { ...currentHpByParticipantId, [action.targetId]: action.targetHpAfter };
     if (action.defeated) defeatedParticipantIds.add(action.targetId);
-    frames.push(snapshot("settle", actionIndex, action.actorId, action.targetId, null, currentHpByParticipantId, defeatedParticipantIds));
+    frames.push(snapshot("settle", actionIndex, action.actorId, action.targetId, null, currentHpByParticipantId, defeatedParticipantIds, cuesFor("settle", actionIndex)));
   });
 
   for (const [participantId, participant] of participantsById) {
@@ -136,5 +192,15 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
   }
   frames.push(snapshot("complete", null, null, null, null, currentHpByParticipantId, defeatedParticipantIds));
 
-  return { participants, frames, outcome: input.resolution.status, termination: input.resolution.termination };
+  return {
+    participants,
+    frames,
+    outcome: input.resolution.status,
+    termination: input.resolution.termination,
+    verifications: (input.verifications ?? []).map((one) => ({
+      characterId: String(one.characterId),
+      action: one.action,
+      applied: one.applied,
+    })),
+  };
 }

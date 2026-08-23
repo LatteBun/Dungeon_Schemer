@@ -125,7 +125,19 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
           <h2 id="u6-campaign-title">당신의 캠페인</h2>
           <dl className="u6-result-list">
             <ResultRow icon="icon_advice" label="누적 조언" value={`${ending.adviceTotal}회`} />
-            <ResultRow icon="icon_expeditions" label="전멸 원정" value={`${ending.wipedExpeditions}회`} />
+            {/* 전멸 횟수만 두면 분모가 없다. 다섯 번 중 셋인지 스무 번 중 셋인지 알 수 없다. */}
+            <ResultRow
+              icon="icon_expeditions"
+              label="원정"
+              value={`${ending.totalExpeditions}회 · 클리어 ${ending.clearedExpeditions} · 전멸 ${ending.wipedExpeditions}`}
+            />
+            <ResultRow
+              icon="icon_expeditions"
+              label="도달 깊이"
+              value={ending.highestDungeonCleared === 0
+                ? "클리어한 던전 없음"
+                : `던전 ${ending.highestDungeonCleared}번째까지`}
+            />
           </dl>
           <div className="u6-turning" data-testid="u6-turning-point">
             <img src={`${ASSET}/stats/icon_turning_point.png`} alt="" aria-hidden="true" width={142} height={115} />

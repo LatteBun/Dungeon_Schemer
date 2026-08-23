@@ -1,10 +1,11 @@
 import { CLASSES } from "@/lib/content/classes";
 import { eventsForTheme } from "@/lib/content/event-registry";
 import { SPIDER_THEME } from "@/lib/content/themes";
-import type { Character, SituationEvent } from "@/lib/domain";
+import type { Character, InfoRecord, SituationEvent } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import type { BattleResolution } from "@/lib/rules/battle-engine";
 import { resolveBossBattle } from "@/lib/rules/boss-battle-adapter";
+import { presentShuffledAdvice, resolveBossInfoAdvice } from "@/lib/rules/advice-evaluation";
 import { resolveMonsterEventBattle } from "@/lib/rules/expedition-events";
 import type { TopStatusView } from "./TopStatusBar";
 import { portraitSrcForCharacter } from "./u4-dungeon-map-model";
@@ -65,17 +66,49 @@ const bossDungeonCandidate = campaign.dungeons.find(
 if (bossDungeonCandidate === undefined) throw new Error(`U5-2 프리뷰에 쓸 ${boss.id} 던전이 캠페인에 없다`);
 const bossDungeon = bossDungeonCandidate;
 
-function createBossResolution(): BattleResolution {
+/**
+ * 보스 정보를 실제로 하나 받아 보스전까지 들고 간다.
+ *
+ * 전에는 `infoRecords: []` 를 넘겼다. 그러면 `E4` 가 낼 표시 신호도 사후 검증도
+ * 없어서, 화면이 그것을 그리도록 고쳐도 보여줄 것이 없다. 이 던전의 보스를
+ * 가리키는 `special` 사건을 찾아 조언을 하나 고르고, `E2` 가 만든 지연 기록을
+ * 그대로 넘긴다. 아무도 수용하지 않으면 기록이 비고, 그것도 규칙의 결과다.
+ */
+function bossInfoRecords(): readonly InfoRecord[] {
+  const event = eventsForTheme(SPIDER_THEME.id).find((candidate) =>
+    candidate.kind === "special" && candidate.targetBossId === boss.id);
+  if (event === undefined) return [];
+
+  const presented = presentShuffledAdvice({
+    campaignSeed: "u5-2-boss-preview", dungeonId: bossDungeon.id,
+    attempt: 0, depth: 1, event,
+  });
+  /* 도움·방해 조언이라야 지연 기록이 생긴다. 중립은 modifier 를 만들지 않는다. */
+  const carried = presented.find((one) => {
+    const option = event.advice.find((candidate) => candidate.id === one.id);
+    return option !== undefined && option.outcome !== "neutral";
+  });
+  if (carried === undefined) return [];
+
+  return resolveBossInfoAdvice({
+    campaignSeed: "u5-2-boss-preview", dungeonId: bossDungeon.id,
+    attempt: 0, depth: 1, event, adviceId: carried.id,
+    members, dungeon: bossDungeon,
+  }).decision.delayedRecords;
+}
+
+const bossInfo = bossInfoRecords();
+
+function resolveBoss() {
   return resolveBossBattle({
     dungeon: bossDungeon,
     theme: SPIDER_THEME,
     members,
     classDefs: CLASSES,
-    /* 지연형 보스 정보를 아직 수용하지 않은 상태다. 조언 연계는 U5 의 몫이다. */
-    infoRecords: [],
+    infoRecords: bossInfo,
     seed: "u5-2-boss-preview",
     pendingMerchantEffect: null,
-  }).bossResult.battle;
+  });
 }
 
 function partyPresentations() {
@@ -129,9 +162,19 @@ export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] 
     resolution: e3Resolution,
     presentations: [...partyPresentations(), ...enemyPresentations(e3Resolution)],
   });
-  const bossResolution = createBossResolution();
+  const boss4 = resolveBoss();
+  const bossResolution = boss4.bossResult.battle;
   const bossReplay = createU5BattleReplay({
     resolution: bossResolution,
+    /*
+     * `E4` 가 낸 정보 표시 신호와 사후 검증을 그대로 넘긴다.
+     *
+     * `cues` 의 `actionIndex` 는 전투 기록의 몇 번째 행동인지를 가리킨다.
+     * 규칙이 그 값을 계산할 이유는 재생을 위한 것 말고 없는데, 한동안 화면이
+     * 통째로 버리고 있었다. 그래서 보스전이 그냥 때리고 맞는 장면이었다.
+     */
+    cues: boss4.bossResult.cues,
+    verifications: boss4.bossResult.verifications,
     /* 보스 ID 는 규칙이 정한다. 화면이 지어낸 이름을 쓰지 않는다. */
     presentations: [
       ...partyPresentations(),
