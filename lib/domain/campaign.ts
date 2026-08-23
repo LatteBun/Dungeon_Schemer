@@ -36,6 +36,36 @@ export const PROMOTION_GOLD: Readonly<Record<Exclude<GuideRank, "C">, number>> =
   S: 600,
 };
 
+export type PromotionMethod = "reputation" | "gold";
+
+export interface PromotionEligibility {
+  fromRank: GuideRank;
+  toRank: Exclude<GuideRank, "C">;
+  newlyUnlockedRiskLevel: RiskLevel;
+  reputationRequired: number;
+  goldRequired: number;
+  currentReputation: number;
+  currentGold: number;
+  canPromoteByReputation: boolean;
+  canPromoteByGold: boolean;
+}
+
+export interface PromotionResult {
+  fromRank: GuideRank;
+  toRank: GuideRank;
+  method: PromotionMethod;
+  reputationBefore: number;
+  reputationAfter: number;
+  goldBefore: number;
+  goldAfter: number;
+  newlyUnlockedRiskLevel: RiskLevel;
+}
+
+export interface PromotionExecution {
+  campaign: CampaignState;
+  result: PromotionResult;
+}
+
 export const REPUTATION_START = 30;
 /** 명성은 승급 요구치로만 쓰이므로 음수까지 내려갈 이유가 없다. */
 export const REPUTATION_MIN = 0;

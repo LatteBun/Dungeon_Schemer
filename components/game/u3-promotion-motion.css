@@ -1,0 +1,6 @@
+@media (prefers-reduced-motion: reduce) {
+  .game-shell__status-chip--action.is-available {
+    animation: none;
+    box-shadow: inset 0 1px 0 rgb(244 214 145 / 12%), 0 0 0 2px rgb(212 178 96 / 45%);
+  }
+}

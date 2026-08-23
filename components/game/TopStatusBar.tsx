@@ -20,11 +20,14 @@ interface StatusItemProps {
   label: string;
   value: ReactNode;
   iconSrc?: string;
+  onClick?: () => void;
+  testId?: string;
+  available?: boolean;
 }
 
-function StatusItem({ label, value, iconSrc }: StatusItemProps) {
-  return (
-    <div className="game-shell__status-item game-shell__status-chip">
+function StatusItem({ label, value, iconSrc, onClick, testId, available = false }: StatusItemProps) {
+  const content = (
+    <>
       {iconSrc === undefined ? null : (
         <img
           className="game-shell__status-icon"
@@ -39,15 +42,34 @@ function StatusItem({ label, value, iconSrc }: StatusItemProps) {
         <dt className="text-xs text-muted">{label}</dt>
         <dd className="text-sm font-semibold tabular-nums text-parchment">{value}</dd>
       </div>
-    </div>
+    </>
+  );
+
+  if (onClick === undefined) {
+    return <div className="game-shell__status-item game-shell__status-chip">{content}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      className={`game-shell__status-item game-shell__status-chip game-shell__status-chip--action${available ? " is-available" : ""}`}
+      data-testid={testId}
+      data-promotion-available={available ? "true" : "false"}
+      aria-label={`${label}: ${value}`}
+      onClick={onClick}
+    >
+      {content}
+    </button>
   );
 }
 
 interface TopStatusBarProps {
   status: TopStatusView;
+  onOpenPromotion?: () => void;
 }
 
-export function TopStatusBar({ status }: TopStatusBarProps) {
+export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
+  const canOpenPromotion = onOpenPromotion !== undefined && status.nextPromotion !== undefined;
   const promotionLabel = status.nextPromotion
     ? `${status.reputation} / ${status.nextPromotion.rank} ${status.nextPromotion.reputationRequired}`
     : status.canPromote
@@ -66,6 +88,9 @@ export function TopStatusBar({ status }: TopStatusBarProps) {
           label="영구 등급"
           value={status.rank}
           iconSrc="/assets/u2/status-rank.svg"
+          onClick={canOpenPromotion ? onOpenPromotion : undefined}
+          testId={canOpenPromotion ? "u3-promotion-trigger" : undefined}
+          available={status.canPromote}
         />
         <StatusItem
           label="현재 명성"

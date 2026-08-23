@@ -135,6 +135,7 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "전체 점유",
     "data-canvas-layout",
     "색만으로",
+    "조건 미달이어도",
   ],
   "experience/ONBOARDING_AND_INTERFACE.md": [
     "인트로",
@@ -153,11 +154,11 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
   ],  "README.md": ["위험도", "테마 3종", "회의 기록"],
   "diagram/README.md": ["엔딩 5종", "화면 일곱 장", "생태 규칙", "REFERENCE_UI_01_CAMPAIGN_BOARD.png"],
   "diagram/campaign-state.md": ["엔딩 5종", "월드턴", "인력 소진"],
-  "diagram/campaign-sequence.md": ["캐릭터 30", "월드턴", "승급하기"],
+  "diagram/campaign-sequence.md": ["캐릭터 30", "월드턴", "게시판 상단"],
   "diagram/expedition-state.md": ["위험도", "월드턴", "활성 생태 규칙"],
   "diagram/expedition-sequence.md": ["활성 생태 규칙", "유형 비공개", "턴 단위"],
   /* D8 에서 인트로와 자동 전투가 더해져 여섯 장이 일곱 장이 됐다. */
-  "diagram/screens.md": ["위험도", "활성 생태 규칙", "화면 일곱 장"],
+  "diagram/screens.md": ["위험도", "활성 생태 규칙", "화면 일곱 장", "게시판", "정산"],
 };
 
 function read(relativePath: string): string {

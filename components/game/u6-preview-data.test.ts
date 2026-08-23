@@ -49,13 +49,6 @@ describe("U6 프리뷰 데이터", () => {
     expect(capped?.riskCapped).toBe(false);
   });
 
-  it("승급 가능 정산은 두 경로가 함께 열린다", () => {
-    const promotion = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-promotion")
-      ?.settlement?.promotion;
-
-    expect(promotion).toMatchObject({ byReputation: true, byGold: true });
-  });
-
   it("엔딩마다 이유 세 줄과 보고서·결말 항목 넷을 갖춘다", () => {
     for (const entry of U6_PREVIEW_ENTRIES) {
       if (!entry.ending) continue;

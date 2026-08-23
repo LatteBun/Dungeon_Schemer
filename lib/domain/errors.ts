@@ -5,6 +5,7 @@ export type RuleErrorCode =
   | "DUPLICATE_ID"
   | "INVALID_GENERATION"
   | "INSUFFICIENT_GOLD"
+  | "INVALID_PROMOTION"
   | "INVALID_SETTLEMENT";
 
 export type RuleErrorDetails = Record<string, unknown>;

@@ -120,7 +120,7 @@
   color: #d8a68e !important;
 }
 
-/* ── 정산 우측: 변화와 승급 ── */
+/* ── 정산 우측: 캠페인 변화 ── */
 
 .u6-settlement-side {
   grid-template-rows: auto auto;
@@ -182,87 +182,6 @@
 
 .u6-next-reward strong {
   color: var(--color-shell-gold);
-}
-
-.u6-promotion__crest {
-  display: block;
-  width: auto;
-  height: clamp(4rem, 4.6cqw, 7rem);
-  margin: 0 auto clamp(0.4rem, 0.5cqw, 0.8rem);
-  object-fit: contain;
-}
-
-.u6-promotion__paths {
-  display: grid;
-  gap: clamp(0.35rem, 0.45cqw, 0.7rem);
-  margin: 0 0 clamp(0.5rem, 0.6cqw, 0.9rem);
-}
-
-.u6-promotion__paths > div {
-  display: grid;
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-  align-items: baseline;
-  gap: 0.6rem;
-  padding: clamp(0.3rem, 0.38cqw, 0.55rem) clamp(0.4rem, 0.5cqw, 0.75rem);
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 32%, transparent);
-  border-radius: 0.22rem;
-  background: rgb(10 8 6 / 55%);
-}
-
-.u6-promotion__paths > div.is-open {
-  border-color: var(--color-shell-active);
-  background: rgb(116 146 96 / 14%);
-}
-
-.u6-promotion__paths dt {
-  color: var(--color-parchment);
-  font-size: clamp(0.84rem, 0.84cqw, 1.2rem);
-  font-weight: 700;
-}
-
-.u6-promotion__paths dd {
-  display: grid;
-  gap: 0.1rem;
-  margin: 0;
-  color: var(--color-muted);
-  font-size: clamp(0.8rem, 0.8cqw, 1.15rem);
-}
-
-.u6-promotion__paths small {
-  font-size: clamp(0.72rem, 0.72cqw, 1rem);
-}
-
-.u6-promotion__actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.4rem, 0.5cqw, 0.8rem);
-}
-
-/* 계약 버튼과 다른 모양을 쓴다. 계약은 한 화면에 하나뿐인 결단이지만
- * 승급은 두 경로 중 하나를 고르는 선택이라 나란한 크기여야 한다. */
-.u6-promotion__actions button {
-  border: 1px solid var(--color-shell-active);
-  border-radius: 0.25rem;
-  background: rgb(116 146 96 / 18%);
-  color: #dcebd1;
-  padding: clamp(0.45rem, 0.55cqw, 0.8rem);
-  font-size: clamp(0.86rem, 0.86cqw, 1.25rem);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.u6-promotion__actions button:disabled {
-  border-color: var(--color-edge);
-  background: rgb(30 24 18 / 60%);
-  color: var(--color-muted);
-  cursor: not-allowed;
-}
-
-.u6-promotion__locked,
-.u6-promotion__max {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: clamp(0.78rem, 0.78cqw, 1.1rem);
 }
 
 /* ── /u6-test 프리뷰 전환 ──

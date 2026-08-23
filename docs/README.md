@@ -102,6 +102,7 @@
 - [C4 원정 정산 설계](superpowers/specs/2026-08-23-lattebun-c4-expedition-settlement-design.md): 정산 계약, 유품, 응급 편성, C7·C8·U6 경계
 - [C4 원정 정산 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-expedition-settlement.md): C4와 연계 계약의 테스트 우선 구현 순서
 - [C4 PR 리뷰 수정 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-pr-review-fixes.md): 전멸 전용 다음 보상과 중상 경계 판정 수정 순서
+- [C5 길잡이 승급 설계](superpowers/specs/2026-08-23-lattebun-c5-guide-promotion-design.md): 게시판에서 명성 또는 골드로 길잡이 등급을 승급하는 규칙과 화면 경계
 - [C1 캠페인 초기화·생태 패키지 설계](superpowers/specs/2026-08-20-sanghwan-yoo-c1-campaign-initialization-design.md): 고정 던전 슬롯, 생태 패키지, 초기 캠페인 상태의 구현 경계
 - [C1 캠페인 초기화·생태 패키지 구현 계획](superpowers/plans/2026-08-20-sanghwan-yoo-c1-campaign-initialization.md): 도메인 계약, 콘텐츠 검증, 시드 초기화의 구현 순서
 - [U2 인트로 게시판 진입 연결 설계](superpowers/specs/2026-08-20-sanghwan-yoo-u2-intro-board-navigation-design.md): U2 CTA와 기존 U1 게시판 프리뷰의 라우팅 계약

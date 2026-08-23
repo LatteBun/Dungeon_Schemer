@@ -65,12 +65,35 @@ View 타입도 규칙이 정한 모양에 따라 바뀔 수 있다. 그때는 �
 쓰므로, 체인이 어긋나거나 쓰러진 참가자가 다시 등장하면 설명 가능한 오류로
 거부한다. 전투 기록이 스스로 앞뒤가 맞아야 한다는 뜻이다.
 
-## U6 정산·승급·엔딩 ← C4 · C5 · C6 · C8
+## U3 게시판·승급 ← C2 · C5
+
+`components/game/U3Preview.tsx`가 C2 게시판 View와 C5 승급 규칙을 연결하는
+`U3PromotionView`를 만든다. 실제 캠페인 Store가 연결될 때도 화면은 다음 계약만
+소비한다.
+
+### `U3PromotionView` — C5 승급
+
+| 칸 | 뜻 | 어디서 오나 |
+| --- | --- | --- |
+| `eligibility` | 현재 등급의 다음 승급 등급·두 비용·각 경로 가능 여부. S에서는 `null` | C5 `getGuidePromotionEligibility` |
+| `isOpen` | 게시판에서 승급 선택 오버레이가 열렸는지 | C5 phase |
+| `result` | 확정한 한 단계 승급의 전후 등급·사용 경로·골드 변화·새 위험도 | C5 `promoteGuide` |
+
+U3은 `eligibility`의 요구치와 가능 여부를 다시 계산하지 않는다. C·B·A의 상단
+등급 버튼은 조건 미달이어도 선택 화면을 열며, `canPromoteByReputation`과
+`canPromoteByGold`는 상단 버튼의 강조와 각 경로 버튼 활성화에만 사용한다. 명성·
+골드의 현재값·요구값·부족 사유는 각각 보여준다. S에서는 eligibility가 `null`이므로
+승급 진입을 제공하지 않는다.
+확정 결과를 확인하면 C2의 `createBoardOffers`를 같은 `seed`·`worldTurn`으로
+호출해 새 등급의 공고를 만든다. 승급은 게시판 안에서만 열고 취소·확정 뒤에도
+`board` phase로 돌아온다.
+
+## U6 정산·엔딩 ← C4 · C6 · C8
 
 네 규칙이 다 없어서 `components/game/u6-preview-data.ts`가 통째로 fixture다.
 화면이 지금 기대하는 모양은 다음 둘이다.
 
-### `U6SettlementView` — C4 정산 · C5 승급
+### `U6SettlementView` — C4 정산
 
 `components/game/u6-settlement-model.ts`에 있다. 주요 칸만 옮기면,
 
@@ -82,10 +105,9 @@ View 타입도 규칙이 정한 모양에 따라 바뀔 수 있다. 그때는 �
 | `reputationDelta` · `goldDelta` | 증감분 | C4 |
 | `relicGold` | 전멸에서만 회수, 그 외 `0` | C4 |
 | `nextReward` | 전멸 뒤 다음 공고 보상, 클리어면 `null` | C4 |
-| `promotion` | 최고 등급이면 `null` | C5 |
-
-`U6PromotionView`의 `byReputation`과 `byGold`는 **따로 판정한다.** 하나로
-합치면 어느 쪽으로 벌었는지가 지워지고, 화면이 두 버튼을 못 그린다.
+U6은 승급 가능 여부를 정산 정보의 설명 문구로만 표시할 수 있지만, 승급 버튼·
+선택 오버레이·결과 ViewModel을 제공하지 않는다. 승급의 유일한 진입점은 U3
+게시판 상단 등급 버튼이다.
 
 ### `U6EndingView` — C6 엔딩 · C8 통계
 

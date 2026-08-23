@@ -88,6 +88,10 @@ export type {
   EndingKind,
   GuideRank,
   OfferLockReason,
+  PromotionEligibility,
+  PromotionExecution,
+  PromotionMethod,
+  PromotionResult,
 } from "./campaign";
 
 export {

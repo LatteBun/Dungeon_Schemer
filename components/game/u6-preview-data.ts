@@ -2,7 +2,7 @@ import type { EndingKind, RiskLevel, ThemeId } from "@/lib/domain";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U6EndingView } from "./u6-ending-model";
 import { ENDING_TITLE } from "./u6-ending-model";
-import { CAUSE_ORDER, createU6PromotionView, type U6SettlementView } from "./u6-settlement-model";
+import { CAUSE_ORDER, type U6SettlementView } from "./u6-settlement-model";
 
 /**
  * `/u6-test` 프리뷰 고정 데이터.
@@ -65,7 +65,6 @@ const settlementPartial: U6SettlementView = {
   goldDelta: 19,
   relicGold: 0,
   nextReward: null,
-  promotion: createU6PromotionView("C", 74, 186),
 };
 
 /** ★2 에서 전멸. 명성 손실은 상승 전 ★2 의 10 이고 위험도가 ★3 으로 오른다. */
@@ -87,11 +86,10 @@ const settlementWipe: U6SettlementView = {
   goldDelta: 0,
   relicGold: 84,
   nextReward: { reputation: 15, gold: 32 },
-  promotion: createU6PromotionView("C", 30, 270),
 };
 
-/** ★5 에서 전멸이라 위험도가 더 오르지 않는다. 두 승급 경로가 함께 열렸다. */
-const settlementPromotion: U6SettlementView = {
+/** ★5 에서 전멸이라 위험도가 더 오르지 않는 정산 변화 사례. */
+const settlementCapped: U6SettlementView = {
   dungeonName: "사막 5",
   themeId: "desert" satisfies ThemeId,
   survivors: 3,
@@ -109,7 +107,6 @@ const settlementPromotion: U6SettlementView = {
   goldDelta: 60,
   relicGold: 0,
   nextReward: null,
-  promotion: createU6PromotionView("C", 88, 214),
 };
 
 function ending(
@@ -283,9 +280,9 @@ export const U6_PREVIEW_ENTRIES: readonly U6PreviewEntry[] = [
   },
   {
     id: "settlement-promotion",
-    label: "정산 · 승급 가능",
+    label: "정산 · 캠페인 변화",
     status: status({ reputation: 88, gold: 214 }),
-    settlement: settlementPromotion,
+    settlement: settlementCapped,
   },
   {
     id: "ending-completed",

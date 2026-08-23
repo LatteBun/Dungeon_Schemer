@@ -4,6 +4,7 @@ import type { TopStatusView } from "./TopStatusBar";
 
 export interface GameShellProps {
   status: TopStatusView;
+  onOpenPromotion?: () => void;
   screenTitle: string;
   main: ReactNode;
   rightPanel?: ReactNode;
@@ -12,6 +13,7 @@ export interface GameShellProps {
 
 export function GameShell({
   status,
+  onOpenPromotion,
   screenTitle,
   main,
   rightPanel,
@@ -21,7 +23,7 @@ export function GameShell({
 
   return (
     <div className="game-shell game-shell--reference" data-testid="game-shell">
-      <TopStatusBar status={status} />
+      <TopStatusBar status={status} onOpenPromotion={onOpenPromotion} />
       <main className="game-shell__body" data-testid="game-shell-body">
         <section
           className="game-shell__main game-shell__surface"

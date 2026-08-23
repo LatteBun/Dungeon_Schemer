@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { CharacterId } from "@/lib/domain";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U3BoardView, U3OfferDetailView } from "./u3-board-model";
+import type { U3PromotionView } from "./u3-promotion-model";
 import { U3BoardScreen } from "./U3BoardScreen";
 
 const status: TopStatusView = {
@@ -50,13 +51,37 @@ const board: U3BoardView = {
   detailsByOfferId: { [first.offerId]: first, [second.offerId]: second },
 };
 
-function render(selectedOfferId: string): string {
+const promotion: U3PromotionView = {
+  eligibility: {
+    fromRank: "C",
+    toRank: "B",
+    newlyUnlockedRiskLevel: 3,
+    reputationRequired: 60,
+    goldRequired: 150,
+    currentReputation: 60,
+    currentGold: 120,
+    canPromoteByReputation: true,
+    canPromoteByGold: false,
+  },
+  result: null,
+  isOpen: false,
+};
+
+function render(
+  selectedOfferId: string,
+  overrides: { status?: TopStatusView; promotion?: U3PromotionView } = {},
+): string {
   return renderToStaticMarkup(createElement(U3BoardScreen, {
-    status,
+    status: overrides.status ?? status,
     board,
     selectedOfferId,
+    promotion: overrides.promotion ?? promotion,
     onSelectOffer: () => undefined,
     onContract: () => undefined,
+    onOpenPromotion: () => undefined,
+    onCancelPromotion: () => undefined,
+    onConfirmPromotion: () => undefined,
+    onDismissPromotionResult: () => undefined,
   }));
 }
 
@@ -139,5 +164,122 @@ describe("U3BoardScreen", () => {
     expect(html).toContain("진입 불가");
     expect(html).toContain("현재 C급은 ★3 던전에 진입할 수 없습니다. (최대 ★2)");
     expect(html).toMatch(/disabled=\"\"/);
+  });
+
+  it("게시판 상단 등급 버튼과 승급 결과 dialog를 렌더링한다", () => {
+    const html = renderToStaticMarkup(createElement(U3BoardScreen, {
+      status: { ...status, canPromote: true },
+      board,
+      selectedOfferId: "offer-1",
+      promotion: {
+        ...promotion,
+        isOpen: true,
+        result: {
+          fromRank: "C",
+          toRank: "B",
+          method: "reputation",
+          reputationBefore: 60,
+          reputationAfter: 60,
+          goldBefore: 120,
+          goldAfter: 120,
+          newlyUnlockedRiskLevel: 3,
+        },
+      },
+      onSelectOffer: () => undefined,
+      onContract: () => undefined,
+      onOpenPromotion: () => undefined,
+      onCancelPromotion: () => undefined,
+      onConfirmPromotion: () => undefined,
+      onDismissPromotionResult: () => undefined,
+    }));
+
+    expect(html).toContain('data-testid="u3-promotion-trigger"');
+    expect(html).toContain('data-testid="u3-promotion-dialog"');
+    expect(html).toContain("★3 던전 계약이 해금되었습니다.");
+    expect(html).toContain('aria-modal="true"');
+  });
+
+  it("조건 미달이어도 두 승급 경로의 부족량을 보여주고 취소에 포커스를 둔다", () => {
+    const html = renderToStaticMarkup(createElement(U3BoardScreen, {
+      status: {
+        ...status,
+        canPromote: false,
+      },
+      board,
+      selectedOfferId: "offer-1",
+      promotion: {
+        ...promotion,
+        isOpen: true,
+        eligibility: {
+          ...promotion.eligibility!,
+          currentReputation: 30,
+          currentGold: 10,
+          canPromoteByReputation: false,
+          canPromoteByGold: false,
+        },
+      },
+      onSelectOffer: () => undefined,
+      onContract: () => undefined,
+      onOpenPromotion: () => undefined,
+      onCancelPromotion: () => undefined,
+      onConfirmPromotion: () => undefined,
+      onDismissPromotionResult: () => undefined,
+    }));
+
+    expect(html).toContain("명성 60 / 현재 30");
+    expect(html).toContain("골드 150 / 현재 10");
+    expect(html).toContain("명성 부족");
+    expect(html).toContain("골드 부족");
+    expect(html.match(/disabled=""/g)).toHaveLength(2);
+    expect(html).toMatch(/class="u3-promotion-dialog__cancel"[^>]*autofocus=""/);
+  });
+
+  it("S등급은 승급 진입 버튼과 선택 dialog를 제공하지 않는다", () => {
+    const html = renderToStaticMarkup(createElement(U3BoardScreen, {
+      status: {
+        ...status,
+        rank: "S",
+        nextPromotion: undefined,
+      },
+      board,
+      selectedOfferId: "offer-1",
+      promotion: { eligibility: null, isOpen: false, result: null },
+      onSelectOffer: () => undefined,
+      onContract: () => undefined,
+      onOpenPromotion: () => undefined,
+      onCancelPromotion: () => undefined,
+      onConfirmPromotion: () => undefined,
+      onDismissPromotionResult: () => undefined,
+    }));
+
+    expect(html).not.toContain('data-testid="u3-promotion-trigger"');
+    expect(html).not.toContain('data-testid="u3-promotion-dialog"');
+  });
+
+  it("승급 결과를 닫으면 결과 dialog만 사라지고 게시판은 남는다", () => {
+    const withResult = render("offer-1", {
+      promotion: {
+        ...promotion,
+        isOpen: false,
+        result: {
+          fromRank: "C",
+          toRank: "B",
+          method: "reputation",
+          reputationBefore: 60,
+          reputationAfter: 60,
+          goldBefore: 120,
+          goldAfter: 120,
+          newlyUnlockedRiskLevel: 3,
+        },
+      },
+    });
+    const afterDismiss = render("offer-1", {
+      promotion: { ...promotion, isOpen: false, result: null },
+    });
+
+    expect(withResult).toContain("승급 완료!");
+    expect(withResult).toContain("게시판으로 돌아가기");
+    expect(afterDismiss).not.toContain('data-testid="u3-promotion-dialog"');
+    expect(afterDismiss).toContain("길드 게시판");
   });
 });

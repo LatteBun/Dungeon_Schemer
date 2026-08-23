@@ -1,6 +1,9 @@
 import { GameShell } from "./GameShell";
 import { PartyMemberCard } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
+import { U3PromotionDialog } from "./U3PromotionDialog";
+import type { U3PromotionView } from "./u3-promotion-model";
+import type { PromotionMethod } from "@/lib/domain";
 import type {
   U3BoardNoticeView,
   U3BoardView,
@@ -11,8 +14,13 @@ export interface U3BoardScreenProps {
   status: TopStatusView;
   board: U3BoardView;
   selectedOfferId: string;
+  promotion: U3PromotionView;
   onSelectOffer: (offerId: string) => void;
   onContract: (offerId: string) => void;
+  onOpenPromotion: () => void;
+  onCancelPromotion: () => void;
+  onConfirmPromotion: (method: PromotionMethod) => void;
+  onDismissPromotionResult: () => void;
 }
 
 function ThemeScene({ theme, testId }: { theme: U3BoardNoticeView["theme"]; testId?: string }) {
@@ -164,7 +172,35 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
   );
 }
 
-export function U3BoardScreen({ status, board, selectedOfferId, onSelectOffer, onContract }: U3BoardScreenProps) {
+export function U3BoardScreen({
+  status,
+  board,
+  selectedOfferId,
+  promotion,
+  onSelectOffer,
+  onContract,
+  onOpenPromotion,
+  onCancelPromotion,
+  onConfirmPromotion,
+  onDismissPromotionResult,
+}: U3BoardScreenProps) {
   const detail = board.detailsByOfferId[selectedOfferId];
-  return <div className="expedition-screen u3-board-screen"><GameShell status={status} screenTitle="길드 게시판" main={<NoticeBoard board={board} selectedOfferId={selectedOfferId} onSelectOffer={onSelectOffer} />} rightPanel={<ContractDetail detail={detail} onContract={onContract} />} rightPanelLabel="계약 상세" /></div>;
+  return (
+    <div className="expedition-screen u3-board-screen">
+      <GameShell
+        status={status}
+        onOpenPromotion={onOpenPromotion}
+        screenTitle="길드 게시판"
+        main={<NoticeBoard board={board} selectedOfferId={selectedOfferId} onSelectOffer={onSelectOffer} />}
+        rightPanel={<ContractDetail detail={detail} onContract={onContract} />}
+        rightPanelLabel="계약 상세"
+      />
+      <U3PromotionDialog
+        view={promotion}
+        onCancel={onCancelPromotion}
+        onConfirm={onConfirmPromotion}
+        onDismissResult={onDismissPromotionResult}
+      />
+    </div>
+  );
 }
