@@ -78,7 +78,7 @@ function validateSettlement(campaign: CampaignState, snapshot: SettlementSnapsho
 function normalizedMember(member: Character): Character {
   return {
     ...member,
-    gravelyWounded: member.alive && member.hp / member.maxHp < 0.2,
+    gravelyWounded: member.alive && member.hp * 5 < member.maxHp,
   };
 }
 

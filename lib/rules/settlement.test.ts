@@ -129,10 +129,11 @@ describe("settleExpedition", () => {
   });
 
   it("정확히 20% HP는 중상이 아니고 그보다 낮으면 중상이다", () => {
-    const campaign = campaignFixture();
-    const members = partyMembers(campaign);
-    const exact = { ...members[0], hp: Math.floor(members[0].maxHp * 0.2) };
-    const below = { ...members[1], hp: Math.floor(members[1].maxHp * 0.2) - 1 };
+    const initial = campaignFixture();
+    const members = partyMembers(initial);
+    const exact = { ...members[0], maxHp: 15, hp: 3 };
+    const below = { ...members[1], maxHp: 15, hp: 2 };
+    const campaign = withMembers([exact, below], initial);
     const finalMembers = [exact, below, members[2]];
     const { campaign: resultCampaign } = settleExpedition(campaign, snapshotFixture(campaign, { finalMembers }));
     expect(resultCampaign.pool.byId[exact.id].gravelyWounded).toBe(false);
