@@ -44,7 +44,7 @@ SettlementResult contains:
 - `goldDelta`: contract gold only, excluding relic recovery
 - `relicGold`: recovered relic gold only
 - risk before/after and whether the ★5 cap applied
-- next reward
+- `nextReward`: 전멸이면 위험도 상승 뒤 다음 계약 보상, 클리어면 `null`
 - a structured five-step cause chain: `choice`, `reactions`, `damage`,
   `economy`, `campaignChange`
 
@@ -58,7 +58,7 @@ C8 records the same result without recomputing rewards or losses.
 3. calculate clear/wipe outcome
 4. apply economy changes
 5. update dungeon state
-6. calculate next reward
+6. calculate the next reward only for a wipe
 7. return new state and settlement result
 
 Failed validation must not partially mutate campaign state.
@@ -132,7 +132,8 @@ by one, and increases risk by one unless it is already ★5.
 
 Failure uses the original contract risk for losses.
 
-Next reward uses the increased risk after failure.
+Only a wipe has a next reward, calculated with the increased risk after failure.
+Clearing a dungeon ends that contract and returns `nextReward: null`.
 
 Example:
 

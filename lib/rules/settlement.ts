@@ -161,7 +161,7 @@ export function settleExpedition(
     riskBefore,
     riskAfter,
     riskCapped: wiped && riskBefore === RISK_LEVEL_MAX,
-    nextReward: rewardForSurvivors(riskAfter, 3),
+    nextReward: wiped ? rewardForSurvivors(riskAfter, 3) : null,
     causeChain: createCauseChain(snapshot, survivorCount, reputationDelta, goldDelta, relicGold, riskBefore, riskAfter),
   };
   return { campaign: nextCampaign, result };

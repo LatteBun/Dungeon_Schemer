@@ -3,6 +3,7 @@ import type {
   CampaignState,
   GuideRank,
   RiskLevel,
+  Reward,
   SettlementResult,
   ThemeId,
 } from "@/lib/domain";
@@ -55,7 +56,7 @@ export interface U6SettlementView {
   goldDelta: number;
   /** 전멸에서만 회수한다. 그 외에는 0. */
   relicGold: number;
-  nextReward: { reputation: number; gold: number };
+  nextReward: Reward | null;
   /** 최고 등급이면 null. */
   promotion: U6PromotionView | null;
 }

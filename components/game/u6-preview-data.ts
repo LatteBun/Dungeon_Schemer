@@ -64,7 +64,7 @@ const settlementPartial: U6SettlementView = {
   reputationDelta: 9,
   goldDelta: 19,
   relicGold: 0,
-  nextReward: { reputation: 15, gold: 32 },
+  nextReward: null,
   promotion: createU6PromotionView("C", 74, 186),
 };
 
@@ -108,7 +108,7 @@ const settlementPromotion: U6SettlementView = {
   reputationDelta: 28,
   goldDelta: 60,
   relicGold: 0,
-  nextReward: { reputation: 28, gold: 60 },
+  nextReward: null,
   promotion: createU6PromotionView("C", 88, 214),
 };
 

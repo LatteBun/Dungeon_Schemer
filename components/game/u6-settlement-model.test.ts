@@ -84,6 +84,17 @@ describe("U6 정산 화면 모델", () => {
     expect(view.causeChain.map((step) => step.order)).toEqual([1, 2, 3, 4, 5]);
   });
 
+  it("클리어 결과의 다음 보상 null을 재계산 없이 보존한다", () => {
+    const campaign = initializeCampaign("u6-settlement-clear");
+    const view = createU6SettlementView(campaign, result({
+      status: "cleared",
+      survivorCount: 3,
+      nextReward: null,
+    }), "사막 5", "desert");
+
+    expect(view.nextReward).toBeNull();
+  });
+
   it("★5 클리어는 위험도 상한에 막힌 실패가 아니다", () => {
     const campaign = initializeCampaign("u6-settlement-cap");
     const view = createU6SettlementView(campaign, result({

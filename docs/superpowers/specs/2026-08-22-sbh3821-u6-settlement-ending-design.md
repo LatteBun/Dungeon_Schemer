@@ -80,7 +80,7 @@
 ### 4.2 우측 — 변화와 승급
 
 - 던전 위험도 변화: `★2 → ★3` 처럼 전후를 함께 보여준다. ★5 상한에 걸리면 오르지 않았음을 밝힌다.
-- 다음 보상 변화: 위험도가 오르면 보상도 오른다. 오른 값을 함께 보여준다.
+- 다음 보상 변화: 전멸로 위험도가 오르면 오른 다음 보상을 보여준다. 클리어는 다음 계약이 없으므로 표시하지 않는다.
 - `승급하기` 버튼: 요건을 만족할 때만 활성이다.
 
 승급은 두 경로가 나란히 있어야 한다. 하나로 합치면 어느 쪽으로 벌었는지가 지워진다.
@@ -143,7 +143,7 @@ export interface U6SettlementView {
   reputationDelta: number;
   goldDelta: number;
   relicGold: number;              // 전멸 유품. 그 외에는 0
-  nextReward: { reputation: number; gold: number };
+  nextReward: { reputation: number; gold: number } | null; // 전멸 뒤에만 다음 계약 보상
   promotion: U6PromotionView | null;   // 최고 등급이면 null
 }
 

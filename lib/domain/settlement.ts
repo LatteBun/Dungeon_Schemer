@@ -74,6 +74,7 @@ export interface SettlementResult {
   readonly riskBefore: RiskLevel;
   readonly riskAfter: RiskLevel;
   readonly riskCapped: boolean;
-  readonly nextReward: Reward;
+  /** 전멸 뒤에만 계산한다. 클리어한 던전에는 다음 계약이 없다. */
+  readonly nextReward: Reward | null;
   readonly causeChain: SettlementCauseChain;
 }

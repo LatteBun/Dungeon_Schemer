@@ -74,7 +74,13 @@ describe("settleExpedition", () => {
       snapshotFixture(campaign, { contractRisk: 3, finalMembers, status: "cleared" }),
     );
 
-    expect(result).toMatchObject({ survivorCount: survivors, reputationDelta: reputation, goldDelta: gold, relicGold: 0 });
+    expect(result).toMatchObject({
+      survivorCount: survivors,
+      reputationDelta: reputation,
+      goldDelta: gold,
+      relicGold: 0,
+      nextReward: null,
+    });
     expect(resultCampaign).toMatchObject({ reputation: 30 + reputation, gold: 10 + gold, cumulativeGold: gold });
   });
 
@@ -96,7 +102,15 @@ describe("settleExpedition", () => {
       }),
     );
 
-    expect(result).toMatchObject({ reputationDelta: -10, goldDelta: 0, relicGold: 90, riskBefore: 2, riskAfter: 3 });
+    expect(result).toMatchObject({
+      status: "wiped",
+      reputationDelta: -10,
+      goldDelta: 0,
+      relicGold: 90,
+      riskBefore: 2,
+      riskAfter: 3,
+      nextReward: { reputation: 15, gold: 32 },
+    });
     expect(resultCampaign.reputation).toBe(0);
     expect(resultCampaign.gold).toBe(100);
     expect(resultCampaign.cumulativeGold).toBe(90);

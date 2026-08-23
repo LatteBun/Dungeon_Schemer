@@ -30,6 +30,15 @@ describe("U6 프리뷰 데이터", () => {
     expect(wipe?.relicGold).toBeGreaterThan(0);
     expect(wipe?.reputationDelta).toBeLessThan(0);
     expect(wipe?.riskAfter).toBe((wipe?.riskBefore ?? 0) + 1);
+    expect(wipe?.nextReward).toEqual({ reputation: 15, gold: 32 });
+  });
+
+  it("클리어 정산에는 다음 계약 보상이 없다", () => {
+    const partial = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-partial")?.settlement;
+    const promotion = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-promotion")?.settlement;
+
+    expect(partial?.nextReward).toBeNull();
+    expect(promotion?.nextReward).toBeNull();
   });
 
   it("★5 전멸이 아니면 위험도 상한 표시를 하지 않는다", () => {
