@@ -48,11 +48,30 @@ describe("TopStatusBar U2/U3", () => {
 
   it("게시판에서만 등급 상태 칩을 승급 진입 버튼으로 바꾼다", () => {
     const html = renderToStaticMarkup(createElement(TopStatusBar, {
-      status: { ...baseStatus, canPromote: true },
+      status: {
+        ...baseStatus,
+        canPromote: true,
+        nextPromotion: { rank: "B", reputationRequired: 60 },
+      },
       onOpenPromotion: () => undefined,
     }));
 
     expect(html).toContain('data-testid="u3-promotion-trigger"');
-    expect(html).toContain("승급 가능");
+    expect(html).toContain('data-promotion-available="true"');
+  });
+
+  it("조건 미달이어도 다음 승급 목표를 확인할 수 있다", () => {
+    const html = renderToStaticMarkup(createElement(TopStatusBar, {
+      status: {
+        ...baseStatus,
+        canPromote: false,
+        nextPromotion: { rank: "B", reputationRequired: 60 },
+      },
+      onOpenPromotion: () => undefined,
+    }));
+
+    expect(html).toContain('data-testid="u3-promotion-trigger"');
+    expect(html).toContain('data-promotion-available="false"');
+    expect(html).not.toContain('disabled=""');
   });
 });

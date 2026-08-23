@@ -56,7 +56,6 @@ function StatusItem({ label, value, iconSrc, onClick, testId, available = false 
       data-testid={testId}
       data-promotion-available={available ? "true" : "false"}
       aria-label={`${label}: ${value}`}
-      disabled={!available}
       onClick={onClick}
     >
       {content}
@@ -70,6 +69,7 @@ interface TopStatusBarProps {
 }
 
 export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
+  const canOpenPromotion = onOpenPromotion !== undefined && status.nextPromotion !== undefined;
   const promotionLabel = status.nextPromotion
     ? `${status.reputation} / ${status.nextPromotion.rank} ${status.nextPromotion.reputationRequired}`
     : status.canPromote
@@ -88,8 +88,8 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
           label="영구 등급"
           value={status.rank}
           iconSrc="/assets/u2/status-rank.svg"
-          onClick={onOpenPromotion}
-          testId="u3-promotion-trigger"
+          onClick={canOpenPromotion ? onOpenPromotion : undefined}
+          testId={canOpenPromotion ? "u3-promotion-trigger" : undefined}
           available={status.canPromote}
         />
         <StatusItem

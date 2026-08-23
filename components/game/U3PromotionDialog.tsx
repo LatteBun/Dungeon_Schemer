@@ -52,6 +52,11 @@ function PromotionPath({
 function SelectionDialog({ view, onCancel, onConfirm }: U3PromotionDialogProps) {
   const eligibility = view.eligibility;
   if (eligibility === null) return null;
+  const firstAvailable = eligibility.canPromoteByReputation
+    ? "reputation"
+    : eligibility.canPromoteByGold
+      ? "gold"
+      : null;
 
   return (
     <div
@@ -76,7 +81,7 @@ function SelectionDialog({ view, onCancel, onConfirm }: U3PromotionDialogProps) 
             required={eligibility.reputationRequired}
             current={eligibility.currentReputation}
             available={eligibility.canPromoteByReputation}
-            autoFocus={eligibility.canPromoteByReputation || !eligibility.canPromoteByGold}
+            autoFocus={firstAvailable === "reputation"}
             onConfirm={onConfirm}
           />
           <PromotionPath
@@ -85,11 +90,11 @@ function SelectionDialog({ view, onCancel, onConfirm }: U3PromotionDialogProps) 
             required={eligibility.goldRequired}
             current={eligibility.currentGold}
             available={eligibility.canPromoteByGold}
-            autoFocus={!eligibility.canPromoteByReputation && eligibility.canPromoteByGold}
+            autoFocus={firstAvailable === "gold"}
             onConfirm={onConfirm}
           />
         </div>
-        <button type="button" className="u3-promotion-dialog__cancel" onClick={onCancel}>
+        <button type="button" className="u3-promotion-dialog__cancel" autoFocus={firstAvailable === null} onClick={onCancel}>
           취소
         </button>
       </section>
