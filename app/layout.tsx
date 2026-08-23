@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import "../components/game/u3-promotion-motion.css";
 import "./u2-intro.css";
 import "./u3-board.css";
 import "./u3-card-theme.css";
