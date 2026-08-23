@@ -433,7 +433,6 @@ function campaignTotals(campaign: CampaignState) {
   return {
     totalExpeditions: campaign.statistics.totalExpeditions,
     clearedExpeditions: campaign.statistics.clearedExpeditions,
-    totalGoldEarned: campaign.statistics.totalGoldEarned,
     highestDungeonCleared: campaign.statistics.highestDungeonCleared,
   };
 }
@@ -466,6 +465,7 @@ function ending(
     consequences: over.consequences,
     chronicleSummary: over.chronicleSummary,
     ...stats,
+    ...campaignTotals(campaign),
     zeroTrustPartySize: stats.zeroTrustCount,
     adviceTotal: campaign.history.events.length,
     turningPoint: null,
