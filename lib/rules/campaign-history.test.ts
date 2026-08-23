@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type {
   AdviceDecision,
+  BoardOffer,
   BossResult,
   BossId,
   CampaignEnding,
@@ -9,10 +10,19 @@ import type {
   ChoiceId,
   DungeonId,
   EventId,
+  CampaignState,
+  CampaignTransition,
+  CampaignTransitionContext,
+  ExpeditionState,
   PromotionResult,
   SettlementResult,
+  SettlementSnapshot,
 } from "@/lib/domain";
-import { createCampaignHistory } from "@/lib/domain";
+import {
+  createCampaignHistory,
+  createCampaignStatistics,
+  createCampaignTransitionContext,
+} from "@/lib/domain";
 import {
   appendCampaignEvent,
   assertCampaignHistoryIntegrity,
@@ -25,6 +35,9 @@ import {
   toGuidePromotedEventDraft,
   toTrustCollapsedEventDraft,
 } from "./campaign-history";
+import { initializeCampaign } from "./campaign-init";
+import { recordSettlementStatistics } from "./campaign-statistics";
+import { transitionCampaign } from "./campaign-transition";
 
 const DUNGEON_ID = "dungeon-spider-01" as DungeonId;
 const EVENT_ID = "event-spider-01" as EventId;
@@ -351,5 +364,101 @@ describe("C8-B campaign history reducer", () => {
 
     expect(selectHighlightedTurningPoint(history.turningPoints)?.kind).toBe("trustCollapse");
     expect(selectHighlightedTurningPoint(history.turningPoints.filter(({ kind }) => kind === "campaignEnded"))).toBeNull();
+  });
+});
+
+describe("C7·C8-A·C8-B composition boundary", () => {
+  function membersFor(offer: BoardOffer, campaign: CampaignState): Character[] {
+    return offer.party.memberIds.map((id) => campaign.pool.byId[id]).filter(
+      (member): member is Character => member !== undefined,
+    );
+  }
+
+  function startAction(
+    campaign: CampaignState,
+    context: CampaignTransitionContext,
+  ): CampaignTransition {
+    const offer = context.selectedOffer;
+    if (offer === null) throw new Error("selected offer fixture is missing");
+    return {
+      type: "START_EXPEDITION",
+      expeditionId: "exp-c8-composition",
+      partyMembers: membersFor(offer, campaign),
+      expedition: {
+        dungeonId: offer.dungeonId,
+        riskLevel: offer.riskLevel,
+        party: offer.party,
+      } as ExpeditionState,
+    };
+  }
+
+  function expeditionFlow(seed: string) {
+    const initial = initializeCampaign(seed);
+    const opened = transitionCampaign(initial, createCampaignTransitionContext(), { type: "OPEN_BOARD" });
+    const offer = opened.campaign.offers.find((candidate) => candidate.lockReason === null);
+    if (offer === undefined) throw new Error("open offer fixture is missing");
+    const contract = transitionCampaign(opened.campaign, opened.context, {
+      type: "SELECT_CONTRACT",
+      offerId: offer.id,
+    });
+    return transitionCampaign(
+      contract.campaign,
+      contract.context,
+      startAction(contract.campaign, contract.context),
+    );
+  }
+
+  function snapshotFor(
+    campaign: CampaignState,
+    context: CampaignTransitionContext,
+  ): SettlementSnapshot {
+    const active = context.activeExpedition;
+    if (active === null) throw new Error("active expedition fixture is missing");
+    return {
+      expeditionId: active.expeditionId,
+      dungeonId: active.expedition.dungeonId,
+      contractRisk: active.expedition.riskLevel,
+      party: active.expedition.party,
+      finalMembers: membersFor(active.offer, campaign),
+      status: "cleared",
+      causeInputs: { choice: "choice", reactions: "reactions", damage: "damage" },
+    };
+  }
+
+  it("C7 전이 뒤 C8-A 통계와 C8-B history를 한 replacement로 조합한다", () => {
+    const expedition = expeditionFlow("c8-composition");
+    const transition = transitionCampaign(expedition.campaign, expedition.context, {
+      type: "COMPLETE_EXPEDITION",
+      snapshot: snapshotFor(expedition.campaign, expedition.context),
+    });
+    const settlement = transition.settlement;
+    if (settlement === null) throw new Error("settlement fixture is missing");
+    const dungeon = transition.campaign.dungeons.find((candidate) => candidate.id === settlement.dungeonId);
+    if (dungeon === undefined) throw new Error("campaign dungeon fixture is missing");
+
+    const statistics = recordSettlementStatistics(
+      transition.campaign.statistics,
+      settlement,
+      dungeon,
+    );
+    const history = appendCampaignEvent(transition.campaign.history, {
+      campaignTurn: transition.campaign.worldTurn,
+      event: toExpeditionSettledEventDraft(settlement),
+    });
+    const committed = { ...transition.campaign, statistics, history };
+
+    expect(committed.phase).toBe("settlement");
+    expect(committed.settledExpeditionIds).toEqual([settlement.expeditionId]);
+    expect(committed.statistics).not.toEqual(createCampaignStatistics());
+    expect(committed.statistics.settlements).toHaveLength(1);
+    expect(committed.history.events).toHaveLength(1);
+    expect(committed.history.events[0]?.type).toBe("EXPEDITION_SETTLED");
+    expect(transition.campaign.statistics).toEqual(createCampaignStatistics());
+    expect(transition.campaign.history).toEqual(createCampaignHistory());
+
+    expect(() => appendCampaignEvent(history, {
+      campaignTurn: transition.campaign.worldTurn,
+      event: toExpeditionSettledEventDraft(settlement),
+    })).toThrowError(expect.objectContaining({ code: "DUPLICATE_ID" }));
   });
 });
