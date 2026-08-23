@@ -215,16 +215,11 @@ I1 → I2 → B1 → Q1 → Q2
 | Q1 | 접근성·전체 검증 | 키보드 조작, 색 외 단서, 변화 사유 표시, lint·typecheck·test·build와 브라우저 흐름 검증, 문서/코드 상수 일치 | I2 B1 | **Q2** |  | ⬜ |
 | Q2 | 데모 배포 | `main` 데모에서 캠페인 핵심 흐름과 시드 재현 확인 | Q1 | — |  | ⬜ |
 
-## 남은 일
+`U6`는 `/u6-test`에서 정산 3종·엔딩 5종을 확인할 수 있고 **fixture 가 없다.** 정산은 `C4`의 `settleExpedition`, 승급 가능 판정은 `C5`, 엔딩은 `C6`의 `evaluateCampaignEnding`이 낸다. 엔딩은 결과를 지어내는 대신 그 결말이 실제로 성립하는 `CampaignState`를 만들고 규칙에 묻는다. 판정이 기대와 다르면 던진다.
 
-`U6`는 화면과 ViewModel 경계까지 만들었고 `/u6-test`에서 정산 3종·엔딩 5종을
-확인할 수 있다. 선행 `C4`~`C8`이 모두 끝났으므로 이제 결정적 fixture 대신 실제
-`CampaignState`를 읽을 수 있다. `components/game/u6-preview-data.ts`가 그 자리다.
-그 연결이 끝나면 `✅`다.
+아직 `🟡`인 이유가 셋이다. 완료 기준의 「누적 통계 표시」가 덜 찼다. `C8-A`가 쌓는 `totalExpeditions`·`clearedExpeditions`·`totalDeaths`·`totalGoldEarned`·`highestDungeonCleared`를 화면이 쓰지 않는다. 상단 상태 바가 아직 하드코딩이라 같은 화면에서 엔딩 패널과 다른 등급·명성을 보인다. `SettlementResult`의 `memberChanges`도 쓰지 않아 누가 죽고 누구 신뢰가 움직였는지가 총합으로만 남는다.
 
-`I1`을 시작할 때는 [세션 저장 검토](SESSION_PERSISTENCE_REVIEW.md)를 먼저 읽는다.
-뒤로가기가 낡은 화면 상태를 되살려 권위 상태와 어긋나는 문제를 다룬다. 저장해야
-할 상태 목록도 거기 있다.
+그 셋을 채우면 `✅`다. 실제 원정 상태와 화면을 잇는 일만 `I2`의 몫으로 남는다.
 
 ## 곁문서
 

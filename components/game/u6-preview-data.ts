@@ -1,19 +1,52 @@
-import type { EndingKind, RiskLevel, ThemeId } from "@/lib/domain";
+import { CLASSES } from "@/lib/content/classes";
+import { SPIDER_THEME } from "@/lib/content/themes";
+import type {
+  CampaignDungeon,
+  CampaignEnding,
+  CampaignState,
+  Character,
+  EndingKind,
+  SettlementSnapshot,
+  ThemeId,
+} from "@/lib/domain";
+import {
+  decideImmediateAdvice,
+  finalizeImmediateAdviceTrust,
+  presentShuffledAdvice,
+} from "@/lib/rules/advice-evaluation";
+import { createBoardOffers } from "@/lib/rules/board";
+import { initializeCampaign } from "@/lib/rules/campaign-init";
+import { generateDungeonMap } from "@/lib/rules/dungeon-map";
+import {
+  applyEventChoice,
+  materializeNodeEvent,
+  prepareExpeditionEvents,
+  resolveMonsterEventBattle,
+} from "@/lib/rules/expedition-events";
+import {
+  evaluateCampaignEnding,
+  evaluateImmediateDistrustEnding,
+} from "@/lib/rules/ending";
+import { executeGuidePromotion, getGuidePromotionEligibility } from "@/lib/rules/promotion";
+import { settleExpedition } from "@/lib/rules/settlement";
 import type { TopStatusView } from "./TopStatusBar";
-import type { U6EndingView } from "./u6-ending-model";
+import type { U6EndingNote, U6EndingView } from "./u6-ending-model";
 import { ENDING_TITLE } from "./u6-ending-model";
-import { CAUSE_ORDER, type U6SettlementView } from "./u6-settlement-model";
+import { createU6SettlementView, type U6SettlementView } from "./u6-settlement-model";
 
 /**
- * `/u6-test` 프리뷰 고정 데이터.
+ * `/u6-test` 프리뷰 데이터.
  *
- * 실제 캠페인 전이와 화면 연결 전에도 화면을 검증할 수 있도록 결정적 상수로
- * 같은 모양을 만든다. 실제 정산은 C4의 SettlementResult를 U6 어댑터에 넣고,
- * 이 파일은 프리뷰 전용으로 남긴다.
+ * 정산은 `C4`, 승급 가능 판정은 `C5`, 엔딩 판정은 `C6`, 누적 통계는 `C8` 이
+ * 한다. 이 파일은 그 결과를 화면 View 로 옮기고 여덟 상태를 고르기만 한다.
  *
- * 값은 docs/systems/PROGRESSION_AND_ENDINGS.md 의 보상표를 손으로 따랐다.
- * 규칙이 검증한 값이 아니므로 여기의 숫자로 밸런스를 논하지 않는다.
+ * 한때 세 정산과 다섯 엔딩을 손으로 적었다. 규칙이 없던 동안의 임시였고, 거기
+ * 적힌 파티원은 이 캠페인에 있지도 않았다.
  */
+
+const PREVIEW_SEED = "u6-settlement-preview";
+const PREVIEW_DUNGEON_ID = "dungeon-spider-03";
+const PREVIEW_ATTEMPT = 1;
 
 export type U6PreviewId =
   | "settlement-partial"
@@ -25,235 +58,458 @@ export type U6PreviewId =
   | "ending-exhausted"
   | "ending-unemployed";
 
-const CAUSE_LABELS = ["선택", "개인 반응", "피해", "보상·손실", "캠페인 변화"] as const;
+const baseCampaign = initializeCampaign(PREVIEW_SEED);
 
-function causeChain(details: readonly [string, string, string, string, string]) {
-  return CAUSE_ORDER.map((order, index) => ({
-    order,
-    label: CAUSE_LABELS[index],
-    detail: details[index],
-  }));
+function previewDungeon(): CampaignDungeon {
+  const found = baseCampaign.dungeons.find((candidate) => candidate.id === PREVIEW_DUNGEON_ID);
+  if (found === undefined) throw new Error(`프리뷰 던전이 캠페인에 없다: ${PREVIEW_DUNGEON_ID}`);
+  return found;
 }
+
+const dungeon = previewDungeon();
+
+/**
+ * 직업이 서로 다른 살아 있는 셋을 고른다.
+ *
+ * `C4` 가 정산 파티를 서로 다른 3개 클래스로 요구한다. 풀 앞에서 셋을 그냥
+ * 자르면 같은 직업이 겹쳐 정산이 거부된다.
+ */
+function previewParty(): readonly Character[] {
+  const picked: Character[] = [];
+  const usedClasses = new Set<string>();
+  for (const id of baseCampaign.pool.order) {
+    const member = baseCampaign.pool.byId[id];
+    if (member === undefined || !member.alive) continue;
+    if (usedClasses.has(member.classId)) continue;
+    usedClasses.add(member.classId);
+    picked.push(member);
+    if (picked.length === 3) break;
+  }
+  if (picked.length !== 3) throw new Error("프리뷰에 쓸 서로 다른 직업 셋이 없다");
+  return picked;
+}
+
+const party = previewParty();
+
+/**
+ * 원인 사슬의 앞 세 칸을 실제 원정에서 얻는다.
+ *
+ * `선택`·`개인 반응`·`피해` 는 규칙이 만든 사실이다. 뒤 두 칸(`보상·손실`,
+ * `캠페인 변화`)은 `C4` 가 정산하면서 직접 쓴다.
+ */
+function causeInputsFromExpedition(): { choice: string; reactions: string; damage: string } {
+  const map = generateDungeonMap({
+    campaignSeed: PREVIEW_SEED, dungeonId: dungeon.id,
+    initialRiskLevel: dungeon.initialRiskLevel, attempt: PREVIEW_ATTEMPT,
+  });
+  const prepared = prepareExpeditionEvents({
+    campaignSeed: PREVIEW_SEED, dungeonId: dungeon.id,
+    initialRiskLevel: dungeon.initialRiskLevel, riskLevel: dungeon.riskLevel,
+    attempt: PREVIEW_ATTEMPT, map, theme: SPIDER_THEME,
+    activeRuleIds: dungeon.activeRuleIds, activeMonsterIds: dungeon.activeMonsterIds,
+  });
+  const layerByNode = new Map(map.layers.flatMap((layer, index) => layer.nodeIds.map((nodeId) => [nodeId, index] as const)));
+
+  let state = prepared;
+  for (const node of map.nodes) {
+    if (node.kind !== "normal") continue;
+    let materialized;
+    try {
+      materialized = materializeNodeEvent({
+        prepared: state, nodeId: node.id, campaignSeed: PREVIEW_SEED,
+        dungeonId: dungeon.id, attempt: PREVIEW_ATTEMPT, theme: SPIDER_THEME,
+        activeRuleIds: dungeon.activeRuleIds, activeMonsterIds: dungeon.activeMonsterIds,
+      });
+    } catch { continue; }
+    state = materialized.state;
+    const isMonster = (candidate: typeof materialized.event): candidate is typeof materialized.event & { readonly kind: "monster" } =>
+      candidate.kind === "monster";
+    if (!isMonster(materialized.event)) continue;
+    const event = materialized.event;
+
+    const depth = layerByNode.get(node.id) ?? 1;
+    const presented = presentShuffledAdvice({
+      campaignSeed: PREVIEW_SEED, dungeonId: dungeon.id,
+      attempt: PREVIEW_ATTEMPT, depth, event,
+    });
+    const first = presented[0];
+    if (first === undefined) continue;
+    const decision = decideImmediateAdvice({
+      campaignSeed: PREVIEW_SEED, dungeonId: dungeon.id,
+      attempt: PREVIEW_ATTEMPT, depth, event, adviceId: first.id, members: party,
+    });
+    const byId = new Map(party.map((member) => [member.id, member]));
+    const applied = applyEventChoice({ event, decision, members: party });
+    const battle = resolveMonsterEventBattle({
+      event, modifier: applied.encounterModifier ?? {},
+      activeMonsterIds: dungeon.activeMonsterIds, monsterDefs: SPIDER_THEME.monsters,
+      members: applied.members, classDefs: CLASSES,
+      seed: `${PREVIEW_SEED}/${dungeon.id}/settlement`, pendingMerchantEffect: null, retrySteps: 0,
+    }).battle;
+
+    const word = (reaction: string) => reaction === "accepted" ? "수용" : reaction === "suspected" ? "의심" : "적발";
+    const hurt = (battle?.party ?? []).flatMap((after) => {
+      const before = party.find((candidate) => String(candidate.id) === String(after.id));
+      if (before === undefined || before.hp === after.hp) return [];
+      return [`${before.name} HP ${before.hp} → ${after.hp}`];
+    });
+
+    return {
+      choice: first.label,
+      reactions: decision.reactions
+        .map((one) => `${byId.get(one.characterId)?.name ?? String(one.characterId)} ${word(one.reaction)}`)
+        .join(" · "),
+      damage: hurt.length > 0 ? hurt.join(" · ") : "피해 없이 지나갔다",
+    };
+  }
+  throw new Error("프리뷰 원정에서 monster 사건을 물질화하지 못했다");
+}
+
+const causeInputs = causeInputsFromExpedition();
+
+/** 정산 상황마다 최종 파티 상태를 만든다. `C4` 가 그것을 읽고 계산한다. */
+function settlementFor(input: {
+  readonly campaign: CampaignState;
+  readonly finalMembers: readonly Character[];
+  readonly status: "cleared" | "wiped";
+}): U6SettlementView {
+  const snapshot: SettlementSnapshot = {
+    expeditionId: `${PREVIEW_SEED}/${dungeon.id}/${input.status}`,
+    dungeonId: dungeon.id,
+    contractRisk: input.campaign.dungeons.find((candidate) => candidate.id === dungeon.id)!.riskLevel,
+    party: { memberIds: party.map((member) => member.id) },
+    finalMembers: input.finalMembers,
+    status: input.status,
+    causeInputs,
+  };
+  return createU6SettlementView(
+    settleExpedition(input.campaign, snapshot).result,
+    dungeon.name,
+    dungeon.theme satisfies ThemeId,
+  );
+}
+
+const [first, second, third] = party;
+
+/** ★2 · 2명 생존. 한 명이 죽고 남은 둘이 상처를 안고 돌아온다. */
+const settlementPartial = settlementFor({
+  campaign: baseCampaign,
+  status: "cleared",
+  finalMembers: [
+    { ...first, hp: Math.max(1, Math.floor(first.hp / 2)), trust: Math.max(0, first.trust - 18) },
+    { ...second, hp: 0, alive: false },
+    { ...third, hp: Math.max(1, third.hp - 6), trust: Math.max(0, third.trust - 6) },
+  ],
+});
+
+/** 전멸. 명성 손실은 상승 전 위험도로 계산하고 유품 골드를 회수한다. */
+const settlementWipe = settlementFor({
+  campaign: baseCampaign,
+  status: "wiped",
+  finalMembers: party.map((member) => ({ ...member, hp: 0, alive: false })),
+});
+
+/** ★5 던전을 전원 생존으로 클리어했다. 전멸이 아니므로 위험도가 오르지 않는다. */
+const cappedCampaign: CampaignState = {
+  ...baseCampaign,
+  dungeons: baseCampaign.dungeons.map((candidate) =>
+    candidate.id === dungeon.id ? { ...candidate, riskLevel: 5 as const } : candidate),
+};
+const settlementCapped = settlementFor({
+  campaign: cappedCampaign,
+  status: "cleared",
+  finalMembers: party.map((member) => ({ ...member, hp: Math.max(1, member.hp - 4) })),
+});
 
 function status(over: Partial<TopStatusView> = {}): TopStatusView {
+  const eligibility = getGuidePromotionEligibility(baseCampaign);
   return {
-    rank: "C",
-    reputation: 74,
-    gold: 186,
-    canPromote: true,
-    remainingDungeons: 11,
+    rank: baseCampaign.rank,
+    reputation: baseCampaign.reputation,
+    gold: baseCampaign.gold,
+    canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
+    remainingDungeons: baseCampaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
     ...over,
   };
 }
 
-/** ★3 · 2명 생존. 보상은 60% 로 깎이고 위험도는 그대로다. */
-const settlementPartial: U6SettlementView = {
-  dungeonName: "거미굴 3",
-  themeId: "spider" satisfies ThemeId,
-  survivors: 2,
-  causeChain: causeChain([
-    "갈림길에서 왼쪽 통로를 권했다. 거미줄 흔적을 말하지 않았다.",
-    "코르빈 수용 · 이반드로 의심 · 브릭스턴 수용",
-    "브릭스턴 사망. 이반드로 HP 9 남음, 신뢰 60 → 42",
-    "2명 생존이라 계약 보상의 60% 를 받는다. 명성 9 · 골드 19",
-    "클리어라 위험도는 ★3 그대로다",
-  ]),
-  riskBefore: 3 satisfies RiskLevel,
-  riskAfter: 3 satisfies RiskLevel,
-  riskCapped: false,
-  reputationDelta: 9,
-  goldDelta: 19,
-  relicGold: 0,
-  nextReward: null,
-};
+/*
+ * 엔딩 판정은 `C6` 가, 누적 통계는 `C8` 이 낸다.
+ *
+ * 산문(부제·이유·보고서·결과)은 화면의 몫이라 여기서 쓴다. 다만 숫자는 하나도
+ * 지어내지 않는다. 전에는 생존 9 · 사망 6 · 명성 148 같은 값이 박혀 있었다.
+ */
+/**
+ * 엔딩마다 그 결말이 실제로 성립하는 캠페인을 만든다.
+ *
+ * 결과를 지어내지 않는다. 입력을 진짜로 만들고 `C6` 가 판정한다. 판정이 기대와
+ * 다르면 던진다. 그러면 규칙이 바뀌었는데 화면만 옛 그림을 들고 있는 일이 없다.
+ */
+function withPool(campaign: CampaignState, change: (member: Character, index: number) => Character): CampaignState {
+  const byId: Record<string, Character> = {};
+  campaign.pool.order.forEach((id, index) => {
+    const member = campaign.pool.byId[id];
+    if (member !== undefined) byId[id] = change(member, index);
+  });
+  return { ...campaign, pool: { ...campaign.pool, byId } };
+}
 
-/** ★2 에서 전멸. 명성 손실은 상승 전 ★2 의 10 이고 위험도가 ★3 으로 오른다. */
-const settlementWipe: U6SettlementView = {
-  dungeonName: "묘지 1",
-  themeId: "graveyard" satisfies ThemeId,
-  survivors: 0,
-  causeChain: causeChain([
-    "보스방 직전에 휴식 대신 전진을 권했다.",
-    "에다 적발 · 니오 의심 · 라샤 수용",
-    "세 명 모두 사망",
-    "계약 보상 없음. 유품으로 소지 골드 84 회수",
-    "던전은 남고 위험도가 ★2 에서 ★3 으로 오른다",
-  ]),
-  riskBefore: 2 satisfies RiskLevel,
-  riskAfter: 3 satisfies RiskLevel,
-  riskCapped: false,
-  reputationDelta: -10,
-  goldDelta: 0,
-  relicGold: 84,
-  nextReward: { reputation: 15, gold: 32 },
-};
+interface Judged {
+  readonly campaign: CampaignState;
+  readonly verdict: CampaignEnding;
+}
 
-/** ★5 에서 전멸이라 위험도가 더 오르지 않는 정산 변화 사례. */
-const settlementCapped: U6SettlementView = {
-  dungeonName: "사막 5",
-  themeId: "desert" satisfies ThemeId,
-  survivors: 3,
-  causeChain: causeChain([
-    "모래폭풍 징후를 그대로 알렸다. 감춘 것이 없다.",
-    "세 명 모두 수용",
-    "전원 생존. 신뢰가 각각 올랐다",
-    "3명 생존이라 계약 보상 전액. 명성 28 · 골드 60",
-    "클리어라 위험도는 ★5 그대로다",
-  ]),
-  riskBefore: 5 satisfies RiskLevel,
-  riskAfter: 5 satisfies RiskLevel,
-  riskCapped: false,
-  reputationDelta: 28,
-  goldDelta: 60,
-  relicGold: 0,
-  nextReward: null,
-};
+function judged(kind: EndingKind, campaign: CampaignState, party?: readonly Character[]): Judged {
+  const verdict = party === undefined
+    ? evaluateCampaignEnding(campaign)
+    : evaluateImmediateDistrustEnding(campaign, party);
+  if (verdict === null || verdict.kind !== kind) {
+    throw new Error(`프리뷰가 만든 캠페인이 ${kind} 로 판정되지 않는다: ${verdict?.kind ?? "판정 없음"}`);
+  }
+  /* 화면의 표제와 C6 의 표제가 갈라지면 여기서 드러난다. */
+  if (ENDING_TITLE[kind] !== verdict.title) {
+    throw new Error(`엔딩 표제가 C6 와 다르다: 화면 "${ENDING_TITLE[kind]}" · 규칙 "${verdict.title}"`);
+  }
+  return { campaign, verdict };
+}
+
+/*
+ * 던전 15곳을 모두 클리어하고 S 까지 올라섰다.
+ *
+ * 등급을 손으로 적지 않는다. 명성을 채워 두고 `C5` 의 승급을 세 번 실행한다.
+ * 요구치가 바뀌면 여기서 드러난다.
+ */
+function promotedToTop(campaign: CampaignState): CampaignState {
+  let current: CampaignState = { ...campaign, reputation: 1000, gold: 1000 };
+  while (getGuidePromotionEligibility(current) !== null) {
+    current = executeGuidePromotion(current, "reputation").campaign;
+  }
+  return current;
+}
+
+const completedCampaign = judged("completed", promotedToTop(withPool({
+  ...baseCampaign,
+  dungeons: baseCampaign.dungeons.map((candidate) => ({ ...candidate, status: "cleared" as const })),
+  /* 열다섯 번의 원정에 대가가 없을 수 없다. 여섯을 묻고 왔다. */
+}, (member, index) => index < 6 ? { ...member, alive: false, hp: 0 } : member)));
+
+/*
+ * 살아 있는 신뢰 0 이 고발 문턱을 딱 넘었다.
+ *
+ * 풀 전체를 0 으로 만들면 서른 명이 한꺼번에 고발하는 그림이 된다. 문턱은
+ * 다섯이므로 다섯만 0 으로 두고 나머지는 그대로 둔다.
+ */
+const denouncedCampaign = judged("denounced", withPool(baseCampaign, (member, index) => {
+  if (index < 4) return { ...member, alive: false, hp: 0 };
+  if (index < 9) return { ...member, trust: 0 };
+  return member;
+}));
+
+/*
+ * 서로 다른 직업 셋을 채울 수 없다.
+ *
+ * 전원을 죽이면 "사망 30명" 이 된다. 살아 있는 사람이 두 직업뿐이면 편성이
+ * 막히므로, 그 조건까지만 만든다.
+ */
+const survivingClasses = new Set<string>();
+const exhaustedCampaign = judged("exhausted", withPool(baseCampaign, (member) => {
+  if (survivingClasses.size < 2 || survivingClasses.has(member.classId)) {
+    survivingClasses.add(member.classId);
+    return member;
+  }
+  return { ...member, alive: false, hp: 0 };
+}));
+
+/*
+ * 게시판의 공고가 전부 등급 미달로 잠겼다.
+ *
+ * `initializeCampaign` 은 공고를 만들지 않는다. 게시판을 채우는 것은 `C2` 다.
+ * 공고가 0 개면 이 판정 자체가 성립하지 않으므로 먼저 게시판을 만든다.
+ */
+const boardedCampaign: CampaignState = { ...baseCampaign, offers: createBoardOffers(baseCampaign) };
+const unemployedCampaign = judged("unemployed", {
+  ...boardedCampaign,
+  offers: boardedCampaign.offers.map((offer) => ({ ...offer, lockReason: "rankTooLow" as const })),
+});
+
+/** 원정 생존자 전원의 신뢰가 0 이다. 즉시 불신으로 끝난다. */
+const distrustParty = party.map((member) => ({ ...member, trust: 0 }));
+const distrustCampaign = judged("distrust", baseCampaign, distrustParty);
+
+function endingStatistics(campaign: CampaignState) {
+  const pool = campaign.pool.order.map((id) => campaign.pool.byId[id]).filter((member): member is Character => member !== undefined);
+  return {
+    finalRank: campaign.rank,
+    survivedCount: pool.filter((member) => member.alive).length,
+    diedCount: pool.filter((member) => !member.alive).length,
+    zeroTrustCount: pool.filter((member) => member.alive && member.trust === 0).length,
+    finalReputation: campaign.reputation,
+    cumulativeGold: campaign.cumulativeGold,
+    wipedExpeditions: campaign.statistics.wipedExpeditions,
+  };
+}
 
 function ending(
-  kind: EndingKind,
-  over: Partial<U6EndingView> & Pick<U6EndingView, "subtitle" | "reasons" | "report" | "consequences" | "chronicleSummary" | "finalRank">,
+  judgement: Judged,
+  over: {
+    readonly subtitle: string;
+    /** 판정 근거 뒤에 오는 두 줄. 이야기를 짓는 자리다. */
+    readonly narrative: readonly [string, string];
+    readonly report: readonly string[];
+    readonly consequences: readonly U6EndingNote[];
+    readonly chronicleSummary: string;
+  },
 ): U6EndingView {
+  const { campaign, verdict } = judgement;
+  const stats = endingStatistics(campaign);
   return {
-    kind,
-    survivedCount: 9,
-    diedCount: 6,
-    zeroTrustCount: 0,
-    zeroTrustPartySize: 1,
-    finalReputation: 148,
-    cumulativeGold: 382,
-    adviceTotal: 106,
-    wipedExpeditions: 3,
-    turningPoint: { label: "잊힌 묘지 회랑", detail: "아델 전사 합류" },
-    ...over,
+    kind: verdict.kind,
+    subtitle: over.subtitle,
+    /*
+     * 첫 줄은 `C6` 가 쓴 판정 근거다. 화면이 다시 쓰지 않는다.
+     *
+     * 전에는 "총 15곳의 던전을 정복하며, 캠페인의 모든 임무를 완수했습니다"
+     * 처럼 손으로 옮겨 적었다. 규칙이 문턱을 바꾸면 화면만 옛 문장을 들고 있게
+     * 된다. 나머지 두 줄은 그 사실 위에 얹는 이야기다.
+     */
+    reasons: [verdict.reason, ...over.narrative],
+    report: over.report,
+    consequences: over.consequences,
+    chronicleSummary: over.chronicleSummary,
+    ...stats,
+    zeroTrustPartySize: stats.zeroTrustCount,
+    adviceTotal: campaign.history.events.length,
+    turningPoint: null,
   };
 }
 
+/** 그 결말을 부른 사람들의 이름이다. `C6` 가 결정적 순서로 넘겨준다. */
+function triggerNames(judgement: Judged): string {
+  const names = judgement.verdict.triggerCharacterIds
+    .map((id) => judgement.campaign.pool.byId[id]?.name)
+    .filter((name): name is string => name !== undefined);
+  return names.length === 0 ? "" : names.join(" · ");
+}
+
+/*
+ * 산문은 화면이 쓴다.
+ *
+ * `C6` 가 주는 것은 판정 근거 한 줄이다. 결말을 어떤 목소리로 전할지는 규칙의
+ * 일이 아니므로 여기서 쓴다. 다만 **사실을 다시 쓰지는 않는다.** 숫자와 이름은
+ * 전부 캠페인에서 끌어온다. 전에는 "파티원 생존 1명 유지", "최종 등급 S 달성"
+ * 처럼 손으로 적혀 있었고 어느 것도 이 캠페인의 값이 아니었다.
+ */
+const completedStats = endingStatistics(completedCampaign.campaign);
+const denouncedStats = endingStatistics(denouncedCampaign.campaign);
+const exhaustedStats = endingStatistics(exhaustedCampaign.campaign);
+const unemployedStats = endingStatistics(unemployedCampaign.campaign);
+const distrustStats = endingStatistics(distrustCampaign.campaign);
+
 const ENDINGS: Readonly<Record<EndingKind, U6EndingView>> = {
-  completed: ending("completed", {
-    subtitle: "당신은 길을 안내했지만, 결국 선택한 것은 당신 자신의 길이었다.",
-    finalRank: "S",
-    reasons: [
-      "총 15곳의 던전을 정복하며, 캠페인의 모든 임무를 완수했습니다.",
-      "전우들과 함께 위기를 극복하고, 길드의 목표를 달성했습니다.",
-      "마지막 선택에서 당신의 신념을 지키며, 올바른 길을 선택했습니다.",
+  completed: ending(completedCampaign, {
+    subtitle: "당신은 길을 안내했을 뿐이다. 걸어간 것은 그들이었다.",
+    narrative: [
+      `열다섯 번의 원정에서 ${completedStats.diedCount}명을 묻고 ${completedStats.survivedCount}명과 함께 돌아왔습니다.`,
+      "길드는 당신의 이름을 기록에 남겼고, 아무도 그 대가를 세지 않았습니다.",
     ],
-    report: ["던전 15곳 정복", "캠페인 임무 완료", "마지막 선택을 마주함", "길드의 명예를 드높임"],
+    report: [
+      "던전 15곳 정복",
+      `최종 등급 ${completedStats.finalRank}`,
+      `전멸한 원정 ${completedStats.wipedExpeditions}회`,
+      `누적 골드 ${completedStats.cumulativeGold}`,
+    ],
     consequences: [
-      { label: "완벽한 정복", detail: "모든 던전 정복" },
-      { label: "명예로운 귀환", detail: "캠페인 임무 완료" },
-      { label: "전우와 함께", detail: "파티원 생존 1명 유지" },
-      { label: "길드의 영광", detail: "최종 등급 S 달성" },
+      { label: "완주", detail: "던전 15곳을 남김없이 지나왔다." },
+      { label: "생환", detail: `${completedStats.survivedCount}명이 마지막까지 살아남았다.` },
+      { label: "대가", detail: `${completedStats.diedCount}명이 돌아오지 못했다.` },
+      { label: "등급", detail: `길잡이 등급 ${completedStats.finalRank} 에 이르렀다.` },
     ],
     chronicleSummary:
-      "위기의 순간마다 당신의 조언은 길잡이가 되었고, 전우들은 그 신뢰에 응답했습니다. 당신의 전략과 선택은 길드의 승리를 이끌었습니다.",
+      "처음에는 아무도 당신의 말을 믿지 않았고, 나중에는 아무도 묻지 않고 따랐습니다. 그 변화가 무엇을 뜻하는지는 마지막 던전을 나선 뒤에야 알게 됩니다.",
   }),
-  distrust: ending("distrust", {
-    subtitle: "모든 선택에는 길이 있었고, 모든 길에는 대가가 있었다.",
-    finalRank: "B",
-    survivedCount: 3,
-    diedCount: 8,
-    zeroTrustCount: 3,
-    zeroTrustPartySize: 3,
-    finalReputation: 72,
-    cumulativeGold: 144,
-    adviceTotal: 91,
-    wipedExpeditions: 2,
-    turningPoint: { label: "붉은 종루", detail: "신뢰 붕괴 사건" },
-    reasons: [
-      "생존한 파티원 전원이 신뢰 0에 도달했습니다.",
-      "의심이 협력을 삼켜, 모든 유대가 무너졌습니다.",
-      "불신은 원정을 붕괴시키고, 모두를 파멸로 이끌었습니다.",
+  distrust: ending(distrustCampaign, {
+    subtitle: "믿음은 한 번에 무너지지 않는다. 조금씩, 조언 하나마다 깎여 나간다.",
+    narrative: [
+      "돌아온 이들은 당신의 말을 더 듣지 않기로 했습니다.",
+      "다음 원정에 그들을 다시 부를 수 없습니다.",
     ],
-    report: ["생존 파티원 전원 신뢰 0", "원정 내 갈등 극대화", "마지막 선택 이후 관계 파탄", "길드의 평판 하락"],
+    report: [
+      "원정 생존자 전원 신뢰 0",
+      `신뢰 0 인 생존자 ${distrustStats.zeroTrustCount}명`,
+      `최종 명성 ${distrustStats.finalReputation}`,
+      `전멸한 원정 ${distrustStats.wipedExpeditions}회`,
+    ],
     consequences: [
-      { label: "끝없는 의심", detail: "모든 파티원의 신뢰가 0이 되었다." },
-      { label: "깨진 동맹", detail: "동료 간의 유대가 완전히 붕괴되었다." },
-      { label: "거짓된 조언", detail: "잘못된 선택이 비극적 결과를 낳았다." },
-      { label: "되돌릴 수 없는 결과", detail: "불신의 대가는 모든 것을 앗아갔다." },
+      { label: "불신", detail: "살아 돌아온 이들이 모두 등을 돌렸다." },
+      { label: "고립", detail: "조언을 받아들일 사람이 남지 않았다." },
+      { label: "명성", detail: `명성은 ${distrustStats.finalReputation} 에서 멈췄다.` },
+      { label: "기록", detail: "길드는 원인을 묻지 않고 계약을 정리했다." },
     ],
     chronicleSummary:
-      "신뢰는 아끼지 않고 소모되었고, 의심은 끝없이 쌓여갔다. 결국 동료들은 서로에게 등을 돌렸고, 원정은 끝내 무너졌다.",
+      "당신의 조언은 매번 맞았을 수도 있고, 한 번도 맞지 않았을 수도 있습니다. 그들이 아는 것은 몇 명이 돌아오지 못했다는 사실뿐이었습니다.",
   }),
-  denounced: ending("denounced", {
-    subtitle: "모든 선택에는 길이 있었고, 모든 길에는 대가가 있었다.",
-    finalRank: "B",
-    survivedCount: 5,
-    diedCount: 7,
-    zeroTrustCount: 5,
-    zeroTrustPartySize: 5,
-    finalReputation: 58,
-    cumulativeGold: 121,
-    adviceTotal: 98,
-    wipedExpeditions: 1,
-    turningPoint: { label: "잿빛 기록보관소", detail: "고발 기록 확정" },
-    reasons: [
-      "캠페인 중 5명의 캐릭터 신뢰가 0에 도달했습니다.",
-      "반복된 선택과 조언이 고발로 누적되었습니다.",
-      "길드는 당신이 더 이상 적합하지 않다고 판단했습니다.",
+  denounced: ending(denouncedCampaign, {
+    subtitle: "한 사람의 침묵은 견딜 수 있다. 다섯 사람의 증언은 그렇지 않다.",
+    narrative: [
+      `${triggerNames(denouncedCampaign)} 가 길드에 같은 말을 했습니다.`,
+      "길드는 그 말을 기록으로 남겼고, 당신의 이름을 명부에서 지웠습니다.",
     ],
-    report: ["신뢰 0 캐릭터 5명 도달", "누적 고발 기록 확정", "길드 조사 종료", "자격 정지"],
+    report: [
+      `불신을 증언한 용사 ${denouncedStats.zeroTrustCount}명`,
+      `살아 있는 용사 ${denouncedStats.survivedCount}명`,
+      `사망한 용사 ${denouncedStats.diedCount}명`,
+      `최종 명성 ${denouncedStats.finalReputation}`,
+    ],
     consequences: [
-      { label: "조사 완료", detail: "길드 조사단이 모든 행적을 검토했습니다." },
-      { label: "고발 확정", detail: "누적된 고발 기록이 공식적으로 확정되었습니다." },
-      { label: "신뢰 붕괴", detail: "5명의 동료와의 신뢰가 완전히 붕괴했습니다." },
-      { label: "길드 판결", detail: "길드는 당신의 자격을 정지하고 추방을 결정했습니다." },
+      { label: "고발", detail: `${denouncedStats.zeroTrustCount}명이 같은 증언을 남겼다.` },
+      { label: "박탈", detail: "길잡이 자격이 회수되었다." },
+      { label: "명성", detail: `쌓아 둔 명성 ${denouncedStats.finalReputation} 은 소용이 없었다.` },
+      { label: "이후", detail: "그들은 다른 길잡이와 다시 원정을 나선다." },
     ],
     chronicleSummary:
-      "당신의 조언은 때로 길을 열었다. 그러나 반복된 편의의 선택은 결국 당신을 향한 증거가 되었다.",
+      "고발은 한 번에 오지 않았습니다. 돌아온 이들이 하나씩 말을 옮겼고, 다섯 번째 증언에서 길드가 움직였습니다.",
   }),
-  exhausted: ending("exhausted", {
-    subtitle: "모든 길의 끝에는, 당신의 선택이 남았다.",
-    finalRank: "C",
-    survivedCount: 2,
-    diedCount: 11,
-    zeroTrustCount: 0,
-    zeroTrustPartySize: 1,
-    finalReputation: 64,
-    cumulativeGold: 150,
-    adviceTotal: 87,
-    wipedExpeditions: 4,
-    turningPoint: { label: "유리 광산", detail: "전력 붕괴" },
-    reasons: [
-      "세 가지 서로 다른 직업을 더 이상 구성할 수 없었습니다.",
-      "반복된 손실로 길드의 기반은 텅 비어버렸습니다.",
-      "더는 원정을 이어갈 인력이 없어, 캠페인은 여기서 끝납니다.",
+  exhausted: ending(exhaustedCampaign, {
+    subtitle: "던전은 그대로 있다. 들어갈 사람이 없을 뿐이다.",
+    narrative: [
+      `${exhaustedStats.diedCount}명을 잃고 나니 서로 다른 직업 셋을 채울 수 없습니다.`,
+      "공고는 그대로 걸려 있지만 계약할 수 없습니다.",
     ],
-    report: ["서로 다른 직업 3인 편성 불가", "생존 인력 급감", "원정 지속 불가", "캠페인 종료"],
+    report: [
+      "서로 다른 직업 3명을 편성할 수 없음",
+      `사망한 용사 ${exhaustedStats.diedCount}명`,
+      `남은 용사 ${exhaustedStats.survivedCount}명`,
+      `전멸한 원정 ${exhaustedStats.wipedExpeditions}회`,
+    ],
     consequences: [
-      { label: "공석 확대", detail: "전원 전투 불가" },
-      { label: "전력 붕괴", detail: "전투력 심각한 악화" },
-      { label: "길드 고갈", detail: "운영 기반 붕괴" },
-      { label: "마지막 원정 종단", detail: "원정 활동 종단" },
+      { label: "소진", detail: `${exhaustedStats.diedCount}명이 돌아오지 못했다.` },
+      { label: "정지", detail: "편성할 파티가 없어 원정이 멈췄다." },
+      { label: "잔고", detail: `골드 ${exhaustedStats.cumulativeGold} 은 쓸 곳이 없다.` },
+      { label: "이후", detail: "길드는 다른 길잡이에게 남은 던전을 넘긴다." },
     ],
     chronicleSummary:
-      "모든 손실은 길을 좁혀 갔고, 서로를 잃을 때마다 동료는 줄어들었습니다. 결국 길은 닫혔고, 더는 원정을 떠날 자가 남지 않았습니다.",
+      "전멸은 매번 다른 이유로 일어났지만 결과는 같았습니다. 마지막에 남은 것은 채울 수 없는 세 자리였습니다.",
   }),
-  unemployed: ending("unemployed", {
-    subtitle: "모든 길의 끝에는, 당신의 선택이 남았다.",
-    finalRank: "C",
-    survivedCount: 4,
-    diedCount: 9,
-    zeroTrustCount: 0,
-    zeroTrustPartySize: 2,
-    finalReputation: 39,
-    cumulativeGold: 96,
-    adviceTotal: 74,
-    wipedExpeditions: 3,
-    turningPoint: { label: "검은 성가대", detail: "마지막 진입 가능 공고 소멸" },
-    reasons: [
-      "모든 게시된 계약이 진입 불가능 상태가 되었습니다.",
-      "캠페인 진행이 완전히 멈추었습니다.",
-      "길드 가이드의 생계가 끊어졌습니다.",
+  unemployed: ending(unemployedCampaign, {
+    subtitle: "게시판은 매일 채워진다. 당신이 읽을 수 있는 줄이 없을 뿐이다.",
+    narrative: [
+      `등급 ${unemployedStats.finalRank} 로는 남은 공고를 하나도 계약할 수 없습니다.`,
+      "명성을 더 쌓을 원정이 없으므로 등급도 오르지 않습니다.",
     ],
-    report: ["모든 공고 진입 불가", "남은 선택지 없음", "길드 활동 정지", "실직 확정"],
+    report: [
+      "남은 공고가 전부 등급 미달",
+      `길잡이 등급 ${unemployedStats.finalRank}`,
+      `최종 명성 ${unemployedStats.finalReputation}`,
+      `누적 골드 ${unemployedStats.cumulativeGold}`,
+    ],
     consequences: [
-      { label: "진입 불가", detail: "더 이상 들어갈 수 없습니다." },
-      { label: "공고 소멸", detail: "더 이상 확인할 수 없습니다." },
-      { label: "길드 정지", detail: "길드 활동이 중단되었습니다." },
-      { label: "마지막 기회 상실", detail: "되돌릴 수 없는 선택이었습니다." },
+      { label: "정체", detail: `등급 ${unemployedStats.finalRank} 에서 더 나아가지 못했다.` },
+      { label: "봉쇄", detail: "계약할 수 있는 공고가 남지 않았다." },
+      { label: "명성", detail: `명성 ${unemployedStats.finalReputation} 은 승급에 모자랐다.` },
+      { label: "이후", detail: "길드는 조용히 당신의 자리를 비웠다." },
     ],
     chronicleSummary:
-      "모든 진입 불가 계약은, 미래를 닫아갔습니다. 선택 따라 하나씩 사라진 길 위에, 남은 것은 아무것도 없었습니다.",
+      "실패한 원정마다 던전의 위험도가 올랐습니다. 어느 날 게시판을 보니 읽을 수 있는 공고가 한 줄도 남아 있지 않았습니다.",
   }),
 };
 
