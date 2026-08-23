@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { presentShuffledAdvice } from "@/lib/rules/advice-evaluation";
 import { eventsForTheme } from "@/lib/content/event-registry";
-import { U5_PREVIEW_ENTRIES } from "./u5-preview-data";
+import { U5_PREVIEW_ENTRIES, U5_PREVIEW_SOURCE } from "./u5-preview-data";
 
 /**
  * 프리뷰가 값을 지어내지 않고 실제 규칙을 거친다는 것을 고정한다.
@@ -26,15 +26,15 @@ describe("U5 프리뷰 데이터", () => {
   /* 화면이 다시 섞으면 같은 seed 에서 다른 순서가 나온다. */
   it("조언 순서를 화면이 아니라 E2 가 정한다", () => {
     const before = U5_PREVIEW_ENTRIES.find((entry) => entry.id === "monster-before");
-    const monster = eventsForTheme("spider").find((event) => event.kind === "monster");
-    expect(monster).toBeDefined();
 
+    /* 프리뷰가 실제로 쓴 입력을 그대로 본다. 여기서 다시 지어내면 프리뷰가
+     * 바뀌어도 검사는 옛 입력으로 통과한다. */
     const presented = presentShuffledAdvice({
-      campaignSeed: "u5-dungeon-progress-preview",
-      dungeonId: "spider-1" as never,
-      attempt: 1,
-      depth: 2,
-      event: monster!,
+      campaignSeed: U5_PREVIEW_SOURCE.seed,
+      dungeonId: U5_PREVIEW_SOURCE.dungeonId,
+      attempt: U5_PREVIEW_SOURCE.attempt,
+      depth: U5_PREVIEW_SOURCE.samples.monster.depth,
+      event: U5_PREVIEW_SOURCE.samples.monster.event,
     });
 
     expect(before?.progress.advice.map((one) => one.text)).toEqual(

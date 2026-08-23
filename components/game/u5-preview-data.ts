@@ -4,14 +4,18 @@ import {
   disclosedRuleIds,
   presentShuffledAdvice,
 } from "@/lib/rules/advice-evaluation";
-import { eventsForTheme } from "@/lib/content/event-registry";
+import { generateDungeonMap } from "@/lib/rules/dungeon-map";
+import {
+  materializeNodeEvent,
+  prepareExpeditionEvents,
+} from "@/lib/rules/expedition-events";
 import { SPIDER_THEME } from "@/lib/content/themes";
 import type {
+  CampaignDungeon,
   Character,
   ChoiceId,
   DungeonId,
   SituationEvent,
-  ThemeId,
 } from "@/lib/domain";
 import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacter } from "./character-labels";
 import type { TopStatusView } from "./TopStatusBar";
@@ -26,15 +30,18 @@ import {
 /**
  * `/u5-test` 프리뷰 데이터.
  *
- * U6 와 다르다. 조언 제시·반응 판정·생태 공개를 **실제 E2 함수가 한다.**
- * 이 파일이 지어내는 것은 어떤 사건이 나왔는가 하나뿐이다.
+ * 지어내는 것이 없다. 지도는 `E1`, 사건 배치와 물질화는 `E3`, 조언 제시와
+ * 반응 판정과 생태 공개는 `E2` 가 한다. 던전 이름·위험도·사건 제목·깊이도
+ * 규칙이 낸 값을 그대로 쓴다.
  *
- * E3(사건 물질화)가 들어오면 아래 `pickEvent` 자리에 실제 물질화 결과가
- * 들어오고 나머지는 그대로다.
+ * 이 파일이 하는 일은 **아홉 상태를 고르는 것**뿐이다. 실제 원정에서는
+ * 플레이어의 경로 선택이 그 일을 하고, 그 연결이 `I2` 의 몫이다.
  */
 
 const PREVIEW_SEED = "u5-dungeon-progress-preview";
-const PREVIEW_DUNGEON = "spider-1" as DungeonId;
+/* 캠페인에 실제로 있는 던전이다. 전에는 어디에도 없는 "spider-1" 을 시드
+ * 문자열로만 쓰고 있어서, 던전을 조회하는 순간 드러났다. */
+const PREVIEW_DUNGEON = "dungeon-spider-03" as DungeonId;
 const PREVIEW_ATTEMPT = 1;
 
 const campaign = initializeCampaign(PREVIEW_SEED);
@@ -44,15 +51,96 @@ const members: readonly Character[] = Object.values(campaign.pool.byId)
   .filter((member): member is Character => member !== undefined && member.alive)
   .slice(0, 3);
 
-/** E3 가 들어오면 이 자리가 실제 물질화 결과로 바뀐다. */
-function pickEvent(kind: SituationEvent["kind"], theme: ThemeId): SituationEvent {
-  const found = eventsForTheme(theme).find((event) => event.kind === kind)
-    ?? eventsForTheme(theme)[0];
-  if (found === undefined) {
-    throw new Error(`프리뷰에 쓸 ${kind} 사건이 없다`);
-  }
+/* 좁힌 타입을 돌려준다. 아래 함수들이 hoisting 때문에 좁힘을 물려받지 못한다. */
+function previewDungeon(): CampaignDungeon {
+  const found = campaign.dungeons.find((candidate) => candidate.id === PREVIEW_DUNGEON);
+  if (found === undefined) throw new Error(`프리뷰 던전이 캠페인에 없다: ${PREVIEW_DUNGEON}`);
   return found;
 }
+
+const dungeon = previewDungeon();
+
+const previewMap = generateDungeonMap({
+  campaignSeed: PREVIEW_SEED,
+  dungeonId: PREVIEW_DUNGEON,
+  initialRiskLevel: dungeon.initialRiskLevel,
+  attempt: PREVIEW_ATTEMPT,
+});
+
+const preparedEvents = prepareExpeditionEvents({
+  campaignSeed: PREVIEW_SEED,
+  dungeonId: PREVIEW_DUNGEON,
+  initialRiskLevel: dungeon.initialRiskLevel,
+  riskLevel: dungeon.riskLevel,
+  attempt: PREVIEW_ATTEMPT,
+  map: previewMap,
+  theme: SPIDER_THEME,
+  activeRuleIds: dungeon.activeRuleIds,
+  activeMonsterIds: dungeon.activeMonsterIds,
+});
+
+interface Sample {
+  readonly event: SituationEvent;
+  /** 그 노드가 놓인 층이다. 조언 섞기가 이 값을 쓴다. */
+  readonly depth: number;
+}
+
+/**
+ * 실제 지도를 걸어 분류마다 사건 하나씩을 얻는다.
+ *
+ * 노드를 지도 순서대로 방문한다. 강한 연계의 후속 노드는 선행 단서를 아직
+ * 들고 있지 않으면 `E3` 가 거부하는데, 그것은 규칙이 옳게 도는 것이므로
+ * 건너뛰고 다음 노드를 본다. 프리뷰가 필요한 것은 분류별 표본 하나씩이다.
+ */
+function materializeSamples(): Readonly<Record<SituationEvent["kind"], Sample>> {
+  const layerByNode = new Map(previewMap.layers.flatMap((layer, index) => layer.nodeIds.map((nodeId) => [nodeId, index] as const)));
+  const found = new Map<SituationEvent["kind"], Sample>();
+  let state = preparedEvents;
+
+  for (const node of previewMap.nodes) {
+    if (node.kind !== "normal") continue;
+    let materialized;
+    try {
+      materialized = materializeNodeEvent({
+        prepared: state,
+        nodeId: node.id,
+        campaignSeed: PREVIEW_SEED,
+        dungeonId: PREVIEW_DUNGEON,
+        attempt: PREVIEW_ATTEMPT,
+        theme: SPIDER_THEME,
+        activeRuleIds: dungeon.activeRuleIds,
+        activeMonsterIds: dungeon.activeMonsterIds,
+      });
+    } catch {
+      continue;
+    }
+    state = materialized.state;
+    if (found.has(materialized.event.kind)) continue;
+    found.set(materialized.event.kind, { event: materialized.event, depth: layerByNode.get(node.id) ?? 1 });
+  }
+
+  const kinds: readonly SituationEvent["kind"][] = ["monster", "merchant", "special", "rest"];
+  const missing = kinds.filter((kind) => !found.has(kind));
+  if (missing.length > 0) throw new Error(`프리뷰 지도에서 물질화하지 못한 분류가 있다: ${missing.join(", ")}`);
+
+  return Object.fromEntries(kinds.map((kind) => [kind, found.get(kind)!])) as Readonly<Record<SituationEvent["kind"], Sample>>;
+}
+
+const samples = materializeSamples();
+
+/*
+ * 프리뷰가 무엇을 근거로 그렸는지 밝힌다.
+ *
+ * 검사가 이 값을 다시 지어내면 프리뷰와 검사가 따로 놀아, 프리뷰가 바뀌어도
+ * 검사는 옛 입력으로 통과한다. 실제로 그런 검사가 하나 있었다.
+ */
+export const U5_PREVIEW_SOURCE = {
+  seed: PREVIEW_SEED,
+  dungeonId: PREVIEW_DUNGEON,
+  attempt: PREVIEW_ATTEMPT,
+  dungeon,
+  samples,
+} as const;
 
 const ecologyRuleText = new Map(SPIDER_THEME.rules.map((rule) => [rule.id, rule.text]));
 
@@ -83,7 +171,7 @@ function status(over: Partial<TopStatusView> = {}): TopStatusView {
     gold: 186,
     canPromote: false,
     remainingDungeons: 11,
-    currentDungeon: { name: "거미굴 1", riskLevel: 2 },
+    currentDungeon: { name: dungeon.name, riskLevel: dungeon.riskLevel },
     ...over,
   };
 }
@@ -127,7 +215,7 @@ function progressFor(input: {
   });
 
   const base: U5ProgressView = {
-    dungeonName: "거미굴 1",
+    dungeonName: dungeon.name,
     theme: "spider",
     sceneKind: input.sceneKind,
     nodeLabel: input.nodeLabel,
@@ -213,12 +301,12 @@ export interface U5PreviewEntry {
   initialFilter?: "all" | "clue" | "battle" | "ecology";
 }
 
-const monsterEvent = pickEvent("monster", "spider");
-const merchantEvent = pickEvent("merchant", "spider");
-const specialEvent = pickEvent("special", "spider");
-const restEvent = pickEvent("rest", "spider");
+const monsterSample = samples.monster;
+const merchantSample = samples.merchant;
+const specialSample = samples.special;
+const restSample = samples.rest;
 
-const monsterBefore = progressFor({ event: monsterEvent, sceneKind: "monster", nodeLabel: "좁은 갈림길" });
+const monsterBefore = progressFor({ event: monsterSample.event, sceneKind: "monster", nodeLabel: monsterSample.event.title, depth: monsterSample.depth });
 
 export const U5_PREVIEW_ENTRIES: readonly U5PreviewEntry[] = [
   {
@@ -227,43 +315,43 @@ export const U5_PREVIEW_ENTRIES: readonly U5PreviewEntry[] = [
     status: status(),
     progress: monsterBefore,
     log: LOG,
-    ecology: ecologyFor(2),
+    ecology: ecologyFor(dungeon.riskLevel),
   },
   {
     id: "monster-after",
     label: "일반 사건 · 선택 후",
     status: status(),
-    progress: progressFor({ event: monsterEvent, sceneKind: "monster", nodeLabel: "좁은 갈림길", chosenSlot: 0 }),
+    progress: progressFor({ event: monsterSample.event, sceneKind: "monster", nodeLabel: monsterSample.event.title, depth: monsterSample.depth, chosenSlot: 0 }),
     log: LOG,
-    ecology: ecologyFor(2),
+    ecology: ecologyFor(dungeon.riskLevel),
   },
   {
     id: "monster-default",
     label: "아무도 수용하지 않음",
     status: status(),
     progress: progressFor({
-      event: monsterEvent,
+      event: monsterSample.event,
       sceneKind: "monster",
       nodeLabel: "좁은 갈림길",
       chosenSlot: 1,
       forceDefaultResult: true,
     }),
     log: LOG,
-    ecology: ecologyFor(2),
+    ecology: ecologyFor(dungeon.riskLevel),
   },
   {
     id: "merchant",
     label: "상인 사건",
     status: status(),
-    progress: progressFor({ event: merchantEvent, sceneKind: "merchant", nodeLabel: "떠도는 상인", depth: 3 }),
+    progress: progressFor({ event: merchantSample.event, sceneKind: "merchant", nodeLabel: merchantSample.event.title, depth: merchantSample.depth }),
     log: LOG,
-    ecology: ecologyFor(2),
+    ecology: ecologyFor(dungeon.riskLevel),
   },
   {
     id: "special",
     label: "특수 사건",
     status: status(),
-    progress: progressFor({ event: specialEvent, sceneKind: "special", nodeLabel: "봉인된 방", depth: 4 }),
+    progress: progressFor({ event: specialSample.event, sceneKind: "special", nodeLabel: specialSample.event.title, depth: specialSample.depth }),
     log: LOG,
     ecology: ecologyFor(3),
   },
@@ -271,9 +359,9 @@ export const U5_PREVIEW_ENTRIES: readonly U5PreviewEntry[] = [
     id: "rest",
     label: "휴식 지점",
     status: status(),
-    progress: progressFor({ event: restEvent, sceneKind: "rest", nodeLabel: "꺼진 모닥불", depth: 5 }),
+    progress: progressFor({ event: restSample.event, sceneKind: "rest", nodeLabel: restSample.event.title, depth: restSample.depth }),
     log: LOG,
-    ecology: ecologyFor(2),
+    ecology: ecologyFor(dungeon.riskLevel),
   },
   {
     id: "log-clue",
@@ -281,7 +369,7 @@ export const U5_PREVIEW_ENTRIES: readonly U5PreviewEntry[] = [
     status: status(),
     progress: monsterBefore,
     log: LOG,
-    ecology: ecologyFor(2),
+    ecology: ecologyFor(dungeon.riskLevel),
     initialMode: "log",
     initialFilter: "clue",
   },
@@ -291,7 +379,7 @@ export const U5_PREVIEW_ENTRIES: readonly U5PreviewEntry[] = [
     status: status(),
     progress: monsterBefore,
     log: LOG,
-    ecology: ecologyFor(2),
+    ecology: ecologyFor(dungeon.riskLevel),
     initialMode: "log",
     initialFilter: "battle",
   },
@@ -301,7 +389,7 @@ export const U5_PREVIEW_ENTRIES: readonly U5PreviewEntry[] = [
     status: status(),
     progress: monsterBefore,
     log: LOG,
-    ecology: ecologyFor(2),
+    ecology: ecologyFor(dungeon.riskLevel),
     initialMode: "log",
     initialFilter: "ecology",
   },
