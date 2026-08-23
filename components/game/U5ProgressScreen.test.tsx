@@ -39,7 +39,7 @@ const base: U5ProgressView = {
   ],
   outcome: null,
   party: [
-    { id: "a", name: "코르빈", job: "도적", personality: "신중한", hp: 32, maxHp: 32, trust: 40 },
+    { id: "a", name: "코르빈", classLabel: "도적", personalityLabel: "신중한", hp: 32, maxHp: 32, trust: 40, gold: 20 },
   ],
 };
 

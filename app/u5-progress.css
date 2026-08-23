@@ -25,11 +25,12 @@
 .u5-progress-screen .game-shell__right-panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  min-height: 0;
 }
 
+/* 덩어리를 위에서부터 쌓는다. 늘리지 않는다. U3 가 그렇게 되어 있다. */
 .u5-progress-screen .game-shell__right-panel {
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-content: start;
 }
 
 /* 위 40% 장면 · 아래 60% 콘솔. 조작 영역이 장면보다 넓다는 원칙이다. */
@@ -348,68 +349,11 @@
 
 .u5-party {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(0.35rem, 0.48cqw, 0.75rem);
+  /* 내용 높이에 맞춘다. minmax(0, 1fr) 로 늘리면 카드 아래가 빈 상자가 된다. */
+  grid-template-rows: auto auto;
+  /* gap 을 두지 않는다. 제목 아래 간격은 panel-section 의 --panel-title-gap
+   * 이 이미 주고 있어서, 여기서 또 주면 u5 만 카드가 9px 아래에서 시작한다. */
   min-height: 0;
-}
-
-.u5-party h3 {
-  margin: 0;
-  color: var(--color-shell-gold);
-  font-size: clamp(0.95rem, 1cqw, 1.42rem);
-}
-
-.u5-party ul {
-  display: grid;
-  align-content: start;
-  gap: clamp(0.3rem, 0.42cqw, 0.65rem);
-  margin: 0;
-  padding: 0;
-  min-height: 0;
-  list-style: none;
-}
-
-.u5-party-card {
-  display: grid;
-  gap: 0.1rem;
-  padding: clamp(0.4rem, 0.55cqw, 0.85rem);
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 40%, var(--color-edge));
-  border-radius: 0.22rem;
-  background: linear-gradient(180deg, rgb(26 19 13 / 90%), rgb(14 11 8 / 94%));
-}
-
-.u5-party-card strong {
-  color: var(--color-parchment);
-  font-size: clamp(0.88rem, 0.94cqw, 1.3rem);
-}
-
-.u5-party-card__job {
-  color: var(--color-muted);
-  font-size: clamp(0.74rem, 0.78cqw, 1.05rem);
-}
-
-.u5-party-card dl {
-  display: flex;
-  gap: clamp(0.6rem, 0.85cqw, 1.3rem);
-  margin: 0.15rem 0 0;
-}
-
-.u5-party-card dl > div {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-}
-
-.u5-party-card dt {
-  color: var(--color-muted);
-  font-size: clamp(0.74rem, 0.78cqw, 1.05rem);
-}
-
-.u5-party-card dd {
-  margin: 0;
-  color: var(--color-parchment);
-  font-size: clamp(0.8rem, 0.86cqw, 1.18rem);
-  font-weight: 700;
 }
 
 /* ── /u5-test 프리뷰 전환 ──

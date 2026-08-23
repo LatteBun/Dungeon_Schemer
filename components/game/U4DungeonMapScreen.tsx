@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { NodeId } from "@/lib/domain";
 import { GameShell } from "./GameShell";
+import { PartyMemberCard } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U4MapLayout } from "./u4-dungeon-map-layout";
 import type {
@@ -306,63 +307,25 @@ function DungeonMap({
   );
 }
 
-function PartyMemberCard({ member }: { member: U4PartyMemberView }) {
-  const hpPercent =
-    member.maxHp <= 0
-      ? 0
-      : Math.max(0, Math.min(100, (member.hp / member.maxHp) * 100));
-  const trustPercent = Math.max(0, Math.min(100, member.trust));
-
+function U4PartyMember({ member, index }: { member: U4PartyMemberView; index: number }) {
+  /* 표시는 공용 카드가 맡는다. 여기서는 U4 의 뷰를 카드 뷰로 옮기기만 한다. */
   return (
-    <article
-      className={`u4-party-card${member.alive ? "" : " is-dead"}`}
-      data-testid="u4-party-member"
-    >
-      <div className="u4-party-card__portrait">
-        <img src={member.portraitSrc} alt={`${member.name} 초상`} />
-        {member.alive ? null : (
-          <strong className="u4-party-card__death">사망</strong>
-        )}
-      </div>
-      <div className="u4-party-card__content">
-        <header>
-          <strong>{member.name}</strong>
-          <span>{member.classLabel}</span>
-          <small>{member.personalityLabel}</small>
-        </header>
-        <dl className="u4-party-card__stats">
-          <div>
-            <dt>HP</dt>
-            <dd>
-              {member.hp} / {member.maxHp}
-            </dd>
-            <span className="u4-meter" aria-hidden="true">
-              <i style={{ width: `${hpPercent}%` }} />
-            </span>
-          </div>
-          <div>
-            <dt>신뢰</dt>
-            <dd>{member.trust}</dd>
-            <span className="u4-meter u4-meter--trust" aria-hidden="true">
-              <i style={{ width: `${trustPercent}%` }} />
-            </span>
-          </div>
-          <div className="u4-party-card__gold">
-            <dt>
-              <img
-                src="/assets/u2/status-gold.svg"
-                alt=""
-                aria-hidden="true"
-                width={16}
-                height={16}
-              />
-              소지 골드
-            </dt>
-            <dd>{member.gold}</dd>
-          </div>
-        </dl>
-      </div>
-    </article>
+    <PartyMemberCard
+      member={{
+        id: String(member.id),
+        name: member.name,
+        classLabel: member.classLabel,
+        personalityLabel: member.personalityLabel,
+        hp: member.hp,
+        maxHp: member.maxHp,
+        trust: member.trust,
+        gold: member.gold,
+        portraitSrc: member.portraitSrc,
+        alive: member.alive,
+      }}
+      index={index}
+      testId="u4-party-member"
+    />
   );
 }
 
@@ -428,20 +391,22 @@ function RightPanel({
 
   return (
     <div className="u4-right-panel">
-      <section className="u4-party" aria-labelledby="u4-party-title">
-        <h2 id="u4-party-title">파티 상태</h2>
-        <div className="u4-party__list">
-          {party.map((member) => (
-            <PartyMemberCard key={member.id} member={member} />
+      <section className="panel-section u4-party" aria-labelledby="u4-party-title">
+        <h3 id="u4-party-title">파티 상태</h3>
+        <ul className="party-list">
+          {party.map((member, index) => (
+            <li key={member.id}>
+              <U4PartyMember member={member} index={index} />
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section
-        className="u4-destination"
+        className="panel-section u4-destination"
         aria-labelledby="u4-destination-title"
       >
-        <h2 id="u4-destination-title">선택한 다음 지점</h2>
+        <h3 id="u4-destination-title">선택한 다음 지점</h3>
         <div className="u4-destination__panel">
           {destination === undefined ? (
             <p className="u4-destination__empty">다음 지점을 선택하세요</p>

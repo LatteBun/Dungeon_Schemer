@@ -123,23 +123,8 @@
 /* ── 정산 우측: 변화와 승급 ── */
 
 .u6-settlement-side {
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
-.u6-changes,
-.u6-promotion {
-  min-width: 0;
-  padding: clamp(0.6rem, 0.75cqw, 1.1rem);
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 46%, var(--color-edge));
-  border-radius: 0.3rem;
-  background: linear-gradient(180deg, rgb(26 19 13 / 90%), rgb(14 11 8 / 94%));
-}
-
-.u6-changes h3,
-.u6-promotion h3 {
-  margin: 0 0 clamp(0.4rem, 0.5cqw, 0.8rem);
-  color: var(--color-shell-gold);
-  font-size: clamp(1rem, 1cqw, 1.5rem);
+  grid-template-rows: auto auto;
+  align-content: start;
 }
 
 .u6-risk-change {

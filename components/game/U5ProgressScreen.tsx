@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GameShell } from "./GameShell";
+import { PartyMemberCard } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
 import {
   U5_LOG_FILTERS,
@@ -226,21 +227,16 @@ export function U5ProgressScreen({
           </div>
         }
         rightPanel={
-          <div className="u5-party" data-testid="u5-party">
-            <h3>파티 상태</h3>
-            <ul>
-              {progress.party.map((member) => (
-                <li key={member.id} className="u5-party-card">
-                  <strong>{member.name}</strong>
-                  <span className="u5-party-card__job">{member.job} · {member.personality}</span>
-                  <dl>
-                    <div><dt>HP</dt><dd>{member.hp} / {member.maxHp}</dd></div>
-                    <div><dt>신뢰</dt><dd>{member.trust}</dd></div>
-                  </dl>
+          <section className="panel-section u5-party" data-testid="u5-party" aria-labelledby="u5-party-title">
+            <h3 id="u5-party-title">파티 상태</h3>
+            <ul className="party-list">
+              {progress.party.map((member, index) => (
+                <li key={member.id}>
+                  <PartyMemberCard member={member} index={index} testId="u5-party-member" />
                 </li>
               ))}
             </ul>
-          </div>
+          </section>
         }
         rightPanelLabel="파티 상태"
       />
