@@ -140,6 +140,25 @@ describe("settleExpedition", () => {
     expect(resultCampaign.pool.byId[below.id].gravelyWounded).toBe(true);
   });
 
+  it("신뢰 0인 용사를 정산으로 회복시키지 않는다", () => {
+    const initial = campaignFixture();
+    const members = partyMembers(initial);
+    const zeroTrustMember = { ...members[0], trust: 0 };
+    const campaign = withMembers([zeroTrustMember], initial);
+    const finalMembers = members.map((member, index) => index === 0
+      ? { ...zeroTrustMember, trust: 1 }
+      : member);
+    const snapshot = snapshotFixture(campaign, { finalMembers });
+    const beforeCampaign = structuredClone(campaign);
+    const beforeSnapshot = structuredClone(snapshot);
+
+    expect(() => settleExpedition(campaign, snapshot)).toThrowError(
+      expect.objectContaining({ code: "INVALID_SETTLEMENT" }),
+    );
+    expect(campaign).toEqual(beforeCampaign);
+    expect(snapshot).toEqual(beforeSnapshot);
+  });
+
   it("잘못된 파티와 상태는 적용 전에 INVALID_SETTLEMENT로 거부한다", () => {
     const campaign = campaignFixture();
     const members = partyMembers(campaign);

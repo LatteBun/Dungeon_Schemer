@@ -1,6 +1,6 @@
 import type { CampaignDungeon, RiskLevel } from "./dungeon";
 import type { CharacterPool, ExpeditionParty } from "./pool";
-import type { DungeonId, OfferId } from "./ids";
+import type { CharacterId, DungeonId, OfferId } from "./ids";
 import type { CampaignStatistics } from "./statistics";
 
 /**
@@ -79,7 +79,8 @@ export const BOARD_OFFER_MAX = 5;
 export const DENOUNCE_THRESHOLD = 5;
 
 /**
- * 엔딩 5종이다. 배열 순서가 곧 판정 순서이며 먼저 성립한 것만 적용한다.
+ * 엔딩 5종의 표시·완전성 순서다. 실제 전이는 즉시 distrust와 C3 뒤
+ * 정상 4종 판정으로 나뉜다.
  * docs/systems/PROGRESSION_AND_ENDINGS.md
  */
 export type EndingKind =
@@ -99,9 +100,13 @@ export const ENDING_ORDER = [
 
 export interface CampaignEnding {
   kind: EndingKind;
+  /** U6가 엔딩 판정 로직을 다시 계산하지 않도록 C6이 제공하는 제목이다. */
+  title: string;
   /** "생존자 전원의 신뢰가 0"처럼 판정 근거를 사람이 읽는 문장으로 남긴다. */
   reason: string;
   finalRank: GuideRank;
+  /** 항상 campaign.pool.order 순서의 결정적 ID 목록이다. */
+  triggerCharacterIds: readonly CharacterId[];
 }
 
 /** 진입 불가 공고를 왜 못 들어가는지 게시판이 그대로 보여준다. */
