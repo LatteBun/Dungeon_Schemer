@@ -194,9 +194,9 @@ function bossEvent(overrides: Partial<NonMerchantSituationEvent> = {}): NonMerch
     title: "보스 흔적",
     description: "벽 한쪽에 거대한 긁힌 자국이 남아 있다.",
     advice: [
-      themedAdvice("help", "help", { source, bossDamageModifier: -0.2 }),
-      themedAdvice("harm", "harm", { source, bossDamageModifier: 0.25 }),
-      themedAdvice("neutral", "neutral", { bossDamageModifier: -0.1 }),
+      themedAdvice("help", "help", { source }),
+      themedAdvice("harm", "harm", { source }),
+      themedAdvice("neutral", "neutral"),
     ],
     defaultResultText: "파티가 흔적을 살피고 이동한다.",
     ...overrides,
@@ -410,10 +410,10 @@ describe("validateSituationEvent merchant", () => {
     }))).toThrow(/참조 근거/);
   });
 
-  it("공용 merchant에 bossDamageModifier가 있으면 생성 오류다", () => {
+  it("공용 merchant는 보스 source도 가질 수 없다", () => {
     expect(() => validateSituationEvent(merchantEventWithPaidAdvice({
-      bossDamageModifier: -0.2,
-    }))).toThrow(/보스.*피해/);
+      source: { kind: "boss", bossRuleId: "boss-ragna-turning" as BossRuleId },
+    }))).toThrow(/참조 근거/);
   });
 });
 
@@ -484,7 +484,7 @@ describe("validateSituationEvent 테마 전용", () => {
   it("보스 대상 사건의 modifier가 빠지면 생성 오류다", () => {
     const event = bossEvent({
       advice: [
-        { ...bossEvent().advice[0], bossDamageModifier: undefined },
+        { ...bossEvent().advice[0], source: undefined },
         bossEvent().advice[1],
         bossEvent().advice[2],
       ],
@@ -518,15 +518,15 @@ describe("validateSituationEvent 공용", () => {
     expect(() => validateSituationEvent(event)).toThrow(RuleError);
   });
 
-  it("공용 조언에 보스 피해 보정이 있으면 생성 오류다", () => {
+  it("공용 조언은 구형 보스 피해 보정 없이 통과한다", () => {
     const event = sharedEvent({
       advice: [
-        advice("a", "help", { bossDamageModifier: -0.2 }),
+        advice("a", "help"),
         advice("b", "harm"),
         advice("c", "neutral"),
       ],
     });
-    expect(() => validateSituationEvent(event)).toThrow(RuleError);
+    expect(() => validateSituationEvent(event)).not.toThrow();
   });
 
   it("몬스터 사건에 테마가 없으면 생성 오류다", () => {

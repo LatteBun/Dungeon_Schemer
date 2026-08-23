@@ -209,7 +209,6 @@ describe("SHARED_EVENTS", () => {
         expect(option.effectTags.every((tag) => EVENT_EFFECT_TAGS.includes(tag))).toBe(true);
         expect(option.relation).toBe("unrelated");
         expect(option.source).toBeUndefined();
-        expect(option.bossDamageModifier).toBeUndefined();
       }
     }
   });

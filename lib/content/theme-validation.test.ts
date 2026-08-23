@@ -39,7 +39,10 @@ function boss(id: string, minRiskLevel: 1 | 2 | 3 | 4): BossDef {
     minRiskLevel,
     baseDamage: 10,
     maxHp: 100,
-    rules: [],
+    rules: [
+      { id: `${id}-rule-1` as BossRuleId, text: `특징 ${id} 1` },
+      { id: `${id}-rule-2` as BossRuleId, text: `특징 ${id} 2` },
+    ],
   };
 }
 
@@ -156,8 +159,13 @@ describe("validateThemes", () => {
     expect(() => validateThemes([theme])).toThrow(/보스 이름이 비어 있다/);
   });
 
-  it("보스 특징이 비어 있어도 아직 작성하지 않은 테마는 통과한다", () => {
+  it("보스 특징이 정확히 2개면 통과한다", () => {
     expect(() => validateThemes([validTheme()])).not.toThrow();
+  });
+
+  it("보스 특징이 2개가 아니면 거부한다", () => {
+    const bosses = validTheme().bosses;
+    expect(() => validateThemes([{ ...validTheme(), bosses: [{ ...bosses[0], rules: bosses[0].rules.slice(0, 1) }, ...bosses.slice(1)] }])).toThrow(/정확히 2개/);
   });
 
   it("같은 보스 안에서 특징 ID가 중복이면 거부한다", () => {

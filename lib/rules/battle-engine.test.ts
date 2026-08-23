@@ -58,4 +58,27 @@ describe("공통 BattleEngine", () => {
     });
     expect(result.actions.find((action) => action.actorSide === "enemy")?.targetId).toBe("mage");
   });
+
+  it("같은 직업이어도 member ID별 target weight를 적용한다", () => {
+    const result = resolveBattle({
+      seed: "battle-member-target-weight",
+      party: [
+        { id: "warrior-a", classId: "warrior", hp: 20, maxHp: 20, attack: 0, hitWeight: 1 },
+        { id: "warrior-b", classId: "warrior", hp: 20, maxHp: 20, attack: 0, hitWeight: 1 },
+      ],
+      enemies: [{ id: "rat#1", monsterId: "rat", hp: 50, maxHp: 50, baseDamage: 1 }],
+      targetWeightMultiplierByMemberId: { "warrior-a": 0.01, "warrior-b": 100 },
+    });
+    expect(result.actions.find((action) => action.actorSide === "enemy")?.targetId).toBe("warrior-b");
+  });
+
+  it("outgoing damage를 member ID별로 적용한다", () => {
+    const result = resolveBattle({
+      seed: "battle-member-outgoing",
+      party: [{ id: "warrior-a", classId: "warrior", hp: 20, maxHp: 20, attack: 10, hitWeight: 1 }],
+      enemies: [{ id: "rat#1", monsterId: "rat", hp: 50, maxHp: 50, baseDamage: 0 }],
+      outgoingDamageMultiplierByMemberId: { "warrior-a": 0.8 },
+    });
+    expect(result.actions[0]?.damage).toBe(8);
+  });
 });

@@ -1,4 +1,5 @@
 import { RuleError } from "@/lib/domain";
+import { validateBossTraitMappings } from "@/lib/content/boss-traits";
 import { validateThemes } from "@/lib/content/theme-validation";
 import type {
   BossDef,
@@ -591,6 +592,7 @@ export const GRAVEYARD_THEME: ThemeContent = {
 export const THEMES: readonly ThemeContent[] = [SPIDER_THEME, DESERT_THEME, GRAVEYARD_THEME];
 
 validateThemes(THEMES);
+validateBossTraitMappings(THEMES);
 
 /**
  * 던전의 초기 위험도로 그 테마의 보스를 고른다.

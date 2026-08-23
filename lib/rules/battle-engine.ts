@@ -1,43 +1,7 @@
 import { createRng } from "@/lib/rng";
 import { RuleError } from "@/lib/domain";
-
-export interface BattlePartyMember {
-  readonly id: string;
-  readonly classId: string;
-  readonly hp: number;
-  readonly maxHp: number;
-  readonly attack: number;
-  readonly hitWeight: number;
-}
-
-export interface BattleEnemyInput {
-  readonly id: string;
-  readonly monsterId: string;
-  readonly hp: number;
-  readonly maxHp: number;
-  readonly baseDamage: number;
-  readonly targetWeightMultipliers?: Readonly<Record<string, number>>;
-}
-
-export interface BattleActionRecord {
-  readonly round: number;
-  readonly actorSide: "party" | "enemy";
-  readonly actorId: string;
-  readonly targetId: string;
-  readonly damage: number;
-  readonly targetHpBefore: number;
-  readonly targetHpAfter: number;
-  readonly defeated: boolean;
-}
-
-export interface BattleResolution {
-  readonly status: "victory" | "wipe";
-  readonly termination: "defeatedEnemies" | "partyWipe" | "roundLimit";
-  readonly rounds: number;
-  readonly actions: readonly BattleActionRecord[];
-  readonly party: readonly BattlePartyMember[];
-  readonly enemies: readonly BattleEnemyInput[];
-}
+import type { BattleActionRecord, BattleEnemyInput, BattlePartyMember, BattleResolution } from "@/lib/domain";
+export type { BattleActionRecord, BattleEnemyInput, BattlePartyMember, BattleResolution } from "@/lib/domain";
 
 export interface BattleInput {
   readonly seed: string;
@@ -48,7 +12,9 @@ export interface BattleInput {
   readonly enemyHpMultiplier?: number;
   readonly enemyDamageMultiplier?: number;
   readonly targetWeightMultipliers?: Readonly<Record<string, number>>;
+  readonly targetWeightMultiplierByMemberId?: Readonly<Record<string, number>>;
   readonly incomingDamageMultiplierByMemberId?: Readonly<Record<string, number>>;
+  readonly outgoingDamageMultiplierByMemberId?: Readonly<Record<string, number>>;
 }
 
 function invalid(message: string): never {
@@ -80,7 +46,7 @@ export function resolveBattle(input: BattleInput): BattleResolution {
       const target = aliveEnemies()[0];
       if (target === undefined) break;
       const before = target.hp;
-      const dealt = damage(member.attack * (input.partyDamageMultiplier ?? 1));
+      const dealt = damage(member.attack * (input.partyDamageMultiplier ?? 1) * (input.outgoingDamageMultiplierByMemberId?.[member.id] ?? 1));
       target.hp = Math.max(0, target.hp - dealt);
       actions.push({ round: rounds, actorSide: "party", actorId: member.id, targetId: target.id, damage: dealt, targetHpBefore: before, targetHpAfter: target.hp, defeated: target.hp === 0 });
     }
@@ -89,7 +55,7 @@ export function resolveBattle(input: BattleInput): BattleResolution {
       if (enemy.hp <= 0) continue;
       const targets = aliveParty();
       if (targets.length === 0) return { status: "wipe", termination: "partyWipe", rounds, actions, party, enemies };
-      const weighted = targets.flatMap((member) => Array.from({ length: Math.max(1, Math.round(member.hitWeight * (input.targetWeightMultipliers?.[member.classId] ?? 1) * (enemy.targetWeightMultipliers?.[member.classId] ?? 1) * 10)) }, () => member));
+      const weighted = targets.flatMap((member) => Array.from({ length: Math.max(1, Math.round(member.hitWeight * (input.targetWeightMultipliers?.[member.classId] ?? 1) * (input.targetWeightMultiplierByMemberId?.[member.id] ?? 1) * (enemy.targetWeightMultipliers?.[member.classId] ?? 1) * 10)) }, () => member));
       const target = rng.pick(weighted);
       const before = target.hp;
       const dealt = damage(enemy.baseDamage * (input.incomingDamageMultiplier ?? 1) * (input.incomingDamageMultiplierByMemberId?.[target.id] ?? 1));

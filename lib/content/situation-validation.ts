@@ -159,9 +159,6 @@ function validateBossAdvice(
   } else if (source?.kind !== "boss") {
     invalid(`보스 정보 조언이 보스 특징을 참조하지 않는다: ${option.id}`, details);
   }
-  if (option.bossDamageModifier === undefined) {
-    invalid(`보스 정보 조언의 보스 피해 보정이 없다: ${option.id}`, details);
-  }
   if (theme !== undefined && source?.kind === "boss") {
     const targetBoss = theme.bosses.find((boss) => boss.id === event.targetBossId);
     if (targetBoss === undefined) {
@@ -200,13 +197,6 @@ function validateSharedAdvice(option: BaseAdviceOption, eventId: string): void {
     invalid(`공용 조언이 참조 근거를 갖는다: ${option.id}`, {
       ...details,
       source: option.source,
-    });
-  }
-  // 보스는 테마에 속한다. 모든 테마에 나오는 사건이 특정 보스의 피해를 바꿀 수 없다.
-  if (option.bossDamageModifier !== undefined) {
-    invalid(`공용 조언이 보스 피해 보정을 갖는다: ${option.id}`, {
-      ...details,
-      bossDamageModifier: option.bossDamageModifier,
     });
   }
 }
@@ -468,7 +458,7 @@ function validateConditionalRules(event: SituationEvent, theme?: ThemeContent): 
  * 조언 콘텐츠 하나가 계약을 만족하는지 검사한다.
  *
  * 수량·문구·태그만 본다. 유형 판정, 수용·의심·적발 확률, 개인별 반응,
- * 보스 피해 보정은 규칙(E2)의 몫이다. 한 던전 안의 중복 방지는 배치(E3)가 한다.
+ * 보스전 modifier는 규칙(E2/E4)의 몫이다. 한 던전 안의 중복 방지는 배치(E3)가 한다.
  * docs/systems/INFORMATION_AND_DECEPTION.md
  */
 export function validateSituationEvent(event: SituationEvent, theme?: ThemeContent): void {
@@ -497,12 +487,6 @@ export function validateSituationEvent(event: SituationEvent, theme?: ThemeConte
       ...details,
       kind: event.kind,
     });
-  }
-  if (
-    event.targetBossId === undefined &&
-    event.advice.some((option) => option.bossDamageModifier !== undefined)
-  ) {
-    invalid(`보스 대상이 없는 사건이 보스 피해 보정을 갖는다: ${event.id}`, details);
   }
   requireText(event.title, `사건 제목이 비어 있다: ${event.id}`, details);
   requireText(event.description, `사건 묘사가 비어 있다: ${event.id}`, details);

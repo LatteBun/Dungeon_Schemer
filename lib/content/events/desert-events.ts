@@ -21,8 +21,8 @@ function boss(bossRuleId: string): AdviceSource {
   return { kind: "boss", bossRuleId: bossRuleId as BossRuleId };
 }
 
-function advice(id: string, outcome: AdviceOutcome, label: string, line: string, resultText: string, effectTags: readonly EventEffectTag[], source?: AdviceSource, bossDamageModifier?: number): AdviceOption {
-  return { id: id as ChoiceId, label, line, outcome, source, relation: outcome === "help" ? "consistent" : outcome === "harm" ? "contradictory" : "unrelated", effectTags, bossDamageModifier, resultText };
+function advice(id: string, outcome: AdviceOutcome, label: string, line: string, resultText: string, effectTags: readonly EventEffectTag[], source?: AdviceSource): AdviceOption {
+  return { id: id as ChoiceId, label, line, outcome, source, relation: outcome === "help" ? "consistent" : outcome === "harm" ? "contradictory" : "unrelated", effectTags, resultText };
 }
 
 function ecologyAdvice(id: string, outcome: "help" | "harm", ruleId: string, label: string, line: string, resultText: string): AdviceOption {
@@ -39,8 +39,7 @@ function desertEvent(id: string, title: string, description: string, adviceOptio
 }
 
 function bossAdvice(id: string, outcome: AdviceOutcome, bossRuleId: string | undefined, label: string, line: string, resultText: string): AdviceOption {
-  const modifier = outcome === "help" ? -0.2 : outcome === "neutral" ? -0.1 : 0.25;
-  return advice(id, outcome, label, line, resultText, [outcome === "harm" ? "sabotage" : "information"], bossRuleId === undefined ? undefined : boss(bossRuleId), modifier);
+  return advice(id, outcome, label, line, resultText, [outcome === "harm" ? "sabotage" : "information"], bossRuleId === undefined ? undefined : boss(bossRuleId));
 }
 
 function bossEvent(id: string, targetBossId: string, title: string, description: string, adviceOptions: readonly AdviceOption[], defaultResultText: string): NonMerchantSituationEvent {

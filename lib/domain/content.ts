@@ -65,8 +65,6 @@ export interface BaseAdviceOption {
   source?: AdviceSource;
   relation: EcologyRelation;
   effectTags: readonly EventEffectTag[];
-  /** 지연형만 갖는다. 수용한 파티원의 보스 피해를 바꾼다. */
-  bossDamageModifier?: number;
   /** 수용됐을 때 보여줄 결과 문구. */
   resultText: string;
   immediateEffect?: ImmediateEventEffect;
