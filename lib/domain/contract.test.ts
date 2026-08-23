@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ACTIVE_ECOLOGY_RULES,
   BOARD_OFFER_MAX,
+  CAMPAIGN_DUNGEON_ORDERS,
   CAMPAIGN_DUNGEON_COUNT,
   CHARACTER_POOL_SIZE,
   CHARACTERS_PER_CLASS,
@@ -24,6 +25,7 @@ import {
   canDeploy,
   canDeployEmergency,
   createCampaignTransitionContext,
+  createCampaignStatistics,
   rewardForSurvivors,
 } from "@/lib/domain";
 import type {
@@ -60,6 +62,20 @@ function character(overrides: Partial<Character> = {}): Character {
 }
 
 describe("도메인 상수", () => {
+  it("캠페인 던전 순서와 빈 통계 계약을 공개한다", () => {
+    expect(CAMPAIGN_DUNGEON_ORDERS).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+    expect(createCampaignStatistics()).toEqual({
+      settlements: [],
+      settlementHistory: [],
+      totalExpeditions: 0,
+      clearedExpeditions: 0,
+      wipedExpeditions: 0,
+      totalDeaths: 0,
+      totalGoldEarned: 0,
+      highestDungeonCleared: 0,
+    });
+  });
+
   it("새 캠페인 전이 컨텍스트는 선택 공고와 활성 원정이 없다", () => {
     expect(createCampaignTransitionContext()).toEqual({
       selectedOffer: null,

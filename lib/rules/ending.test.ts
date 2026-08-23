@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createCampaignStatistics } from "@/lib/domain";
 import type { BoardOffer, CampaignEnding, CampaignState, Character, CharacterId } from "@/lib/domain";
 import { initializeCampaign } from "./campaign-init";
 import {
@@ -155,7 +156,7 @@ describe("정상 경로 엔딩 우선순위", () => {
     const completed = {
       ...campaign,
       worldTurn: 2,
-      statistics: { settlements: [] },
+      statistics: createCampaignStatistics(),
       dungeons: campaign.dungeons.map((dungeon) => ({ ...dungeon, status: "cleared" as const })),
     };
 

@@ -4,6 +4,7 @@ import { THEMES, selectThemeBoss } from "@/lib/content/themes";
 import { createRng } from "@/lib/rng";
 import {
   CAMPAIGN_DUNGEON_COUNT,
+  createCampaignStatistics,
   GOLD_START,
   REPUTATION_START,
   RuleError,
@@ -110,6 +111,7 @@ export function initializeCampaign(seed: string): CampaignState {
       id: slot.id,
       name: slot.name,
       theme: slot.theme,
+      campaignOrder: slot.campaignOrder,
       initialRiskLevel: slot.initialRiskLevel,
       riskLevel: slot.initialRiskLevel,
       ecologyProfileId: profile.id,
@@ -134,6 +136,6 @@ export function initializeCampaign(seed: string): CampaignState {
     worldTurn: 0,
     ending: null,
     settledExpeditionIds: [],
-    statistics: { settlements: [] },
+    statistics: createCampaignStatistics(),
   };
 }

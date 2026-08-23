@@ -112,11 +112,15 @@ U6은 승급 가능 여부를 정산 정보의 설명 문구로만 표시할 수
 ### `U6EndingView` — C6 엔딩 · C8 통계
 
 `components/game/u6-ending-model.ts`에 있다. `kind`(엔딩 5종)와 판정 이유
-`reasons`, 그리고 `survivedCount`·`diedCount`·`zeroTrustCount`·`adviceTotal`·
-`wipedExpeditions`·`turningPoint` 같은 누적 통계가 `C8`에서 온다.
+`reasons`는 C6에서 오며, C8-A는 `totalExpeditions`·`clearedExpeditions`·
+`wipedExpeditions`·`totalDeaths`·`totalGoldEarned`·`highestDungeonCleared`의
+정산 누계를 제공한다.
 
-`reasons`가 배열인 이유는 화면이 세 줄로 그리기 때문이다. `turningPoint`는
-없을 수 있어 `null`을 받는다.
+`survivedCount`·`diedCount`·`zeroTrustCount`는 최종 `CampaignState.pool`에서
+읽는 현재 상태이고, C8-A가 다시 세지 않는다. `adviceTotal`·`turningPoint`·
+`chronicleSummary`는 `SettlementResult`만으로 만들 수 없으므로 C8-B와 I2 연결
+전에는 fixture로 남긴다. `reasons`가 배열인 이유는 화면이 세 줄로 그리기
+때문이며, `turningPoint`는 없을 수 있어 `null`을 받는다.
 
 ## 어긋났을 때
 

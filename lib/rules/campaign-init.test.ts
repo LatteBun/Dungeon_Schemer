@@ -3,6 +3,8 @@ import { INITIAL_DUNGEON_SLOTS } from "@/lib/content/campaign-dungeons";
 import { THEMES, selectThemeBoss } from "@/lib/content/themes";
 import {
   CAMPAIGN_DUNGEON_COUNT,
+  CAMPAIGN_DUNGEON_ORDERS,
+  createCampaignStatistics,
   GOLD_START,
   REPUTATION_START,
 } from "@/lib/domain";
@@ -29,6 +31,8 @@ describe("initializeCampaign", () => {
     expect(state.ending).toBeNull();
     expect(state.pool.order).toHaveLength(30);
     expect(state.dungeons).toHaveLength(CAMPAIGN_DUNGEON_COUNT);
+    expect(state.dungeons.map((dungeon) => dungeon.campaignOrder)).toEqual(CAMPAIGN_DUNGEON_ORDERS);
+    expect(state.statistics).toEqual(createCampaignStatistics());
   });
 
   it("고정 슬롯마다 패키지와 보스를 테마·위험도에 맞춰 연결한다", () => {
@@ -42,6 +46,7 @@ describe("initializeCampaign", () => {
       );
 
       expect(dungeon.id).toBe(slot.id);
+      expect(dungeon.campaignOrder).toBe(slot.campaignOrder);
       expect(dungeon.name).toBe(slot.name);
       expect(dungeon.theme).toBe(slot.theme);
       expect(dungeon.initialRiskLevel).toBe(slot.initialRiskLevel);
