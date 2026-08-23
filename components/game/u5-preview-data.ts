@@ -7,6 +7,7 @@ import {
 } from "@/lib/rules/advice-evaluation";
 import { CLASSES } from "@/lib/content/classes";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
+import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import {
   applyEventChoice,
   materializeNodeEvent,
@@ -205,14 +206,24 @@ function ecologyFor(riskLevel: 1 | 2 | 3 | 4 | 5): U5EcologyView {
   };
 }
 
+/**
+ * 상태 바도 캠페인에서 온다.
+ *
+ * 전에는 명성 74 · 골드 186 · 남은 던전 11 이 박혀 있었다. 이 캠페인의 값은
+ * 명성 30 · 골드 10 · 남은 던전 15 다. 화면이 규칙과 다른 숫자를 말하고 있었다.
+ */
 function status(over: Partial<TopStatusView> = {}): TopStatusView {
+  const eligibility = getGuidePromotionEligibility(campaign);
   return {
-    rank: "C",
-    reputation: 74,
-    gold: 186,
-    canPromote: false,
-    remainingDungeons: 11,
+    rank: campaign.rank,
+    reputation: campaign.reputation,
+    gold: campaign.gold,
+    canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
+    remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
     currentDungeon: { name: dungeon.name, riskLevel: dungeon.riskLevel },
+    ...(eligibility === null ? {} : {
+      nextPromotion: { rank: eligibility.toRank, reputationRequired: eligibility.reputationRequired },
+    }),
     ...over,
   };
 }
