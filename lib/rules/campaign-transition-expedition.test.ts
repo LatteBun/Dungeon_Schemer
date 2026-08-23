@@ -10,7 +10,7 @@ import type {
 } from "@/lib/domain";
 import { initializeCampaign } from "./campaign-init";
 import { generateDungeonMap } from "./dungeon-map";
-import { transitionCampaign } from "./campaign-transition";
+import { createExpeditionForOffer, transitionCampaign } from "./campaign-transition";
 
 /**
  * 원정 안쪽 전이.
@@ -231,5 +231,83 @@ describe("원정 안쪽 전이", () => {
 
     expect(JSON.stringify(run().context.activeExpedition!.expedition))
       .toBe(JSON.stringify(run().context.activeExpedition!.expedition));
+  });
+});
+
+describe("공고에서 원정 상태를 만든다", () => {
+  it("지도·공개 규칙·파티가 규칙에서 나온다", () => {
+    const { campaign, context } = boardedCampaign();
+    const offer = campaign.offers.find((one) => one.lockReason === null)!;
+    const selected = transitionCampaign(campaign, context, { type: "SELECT_CONTRACT", offerId: offer.id });
+    const built = createExpeditionForOffer(selected.campaign, offer);
+    const dungeon = selected.campaign.dungeons.find((one) => one.id === offer.dungeonId)!;
+
+    expect(built.partyMembers).toHaveLength(3);
+    expect(built.expedition.map.entryNodeId).toBe(built.expedition.currentNodeId);
+    expect(built.expedition.visitedNodeIds).toEqual([built.expedition.map.entryNodeId]);
+    /* 계약 시점의 위험도다. 던전이 올라도 이 원정은 이 값으로 정산한다. */
+    expect(built.expedition.riskLevel).toBe(dungeon.riskLevel);
+    /* 공개 규칙 수는 위험도가 정한다. 활성 3개 중 일부만 나온다. */
+    expect(built.expedition.disclosedRuleIds.length).toBeGreaterThan(0);
+    expect(built.expedition.disclosedRuleIds.length).toBeLessThanOrEqual(3);
+    for (const ruleId of built.expedition.disclosedRuleIds) {
+      expect(built.expedition.activeRuleIds).toContain(ruleId);
+    }
+  });
+
+  it("같은 시드는 같은 원정을 낸다", () => {
+    const { campaign, context } = boardedCampaign();
+    const offer = campaign.offers.find((one) => one.lockReason === null)!;
+    const selected = transitionCampaign(campaign, context, { type: "SELECT_CONTRACT", offerId: offer.id });
+
+    expect(JSON.stringify(createExpeditionForOffer(selected.campaign, offer)))
+      .toBe(JSON.stringify(createExpeditionForOffer(selected.campaign, offer)));
+  });
+
+  it("만든 원정이 그대로 START_EXPEDITION 을 통과한다", () => {
+    const { campaign, context } = boardedCampaign();
+    const offer = campaign.offers.find((one) => one.lockReason === null)!;
+    const selected = transitionCampaign(campaign, context, { type: "SELECT_CONTRACT", offerId: offer.id });
+    const built = createExpeditionForOffer(selected.campaign, offer);
+
+    expect(() => transitionCampaign(selected.campaign, selected.context, {
+      type: "START_EXPEDITION", expeditionId: "exp-built-01", ...built,
+    })).not.toThrow();
+  });
+});
+
+describe("원정 이력", () => {
+  /*
+   * `C8-B` 가 그릇과 draft 함수를 만들어 두었는데 아무도 부르지 않고 있었다.
+   * 정산의 원인 사슬과 엔딩의 전환점이 여기서 나온다.
+   */
+  it("조언마다 이력이 쌓인다", () => {
+    let state = started();
+    expect(state.campaign.history.events).toHaveLength(0);
+
+    state = transitionCampaign(state.campaign, state.context, {
+      type: "VISIT_NODE", nodeId: firstStep(state),
+    });
+    const event = state.context.activeExpedition!.pendingEvent!;
+    state = transitionCampaign(state.campaign, state.context, {
+      type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
+    });
+
+    expect(state.campaign.history.events).toHaveLength(1);
+    const recorded = state.campaign.history.events[0]!;
+    expect(recorded.type).toBe("ADVICE_RESOLVED");
+    /* `CampaignEvent` 는 종류마다 모양이 다르다. 좁혀서 본다. */
+    if (recorded.type !== "ADVICE_RESOLVED") throw new Error("조언 이력이 아니다");
+    expect(recorded.expeditionId).toBe("exp-inner-01");
+  });
+
+  it("거부된 전이는 이력을 남기지 않는다", () => {
+    const begun = started();
+
+    try {
+      transitionCampaign(begun.campaign, begun.context, { type: "CHOOSE_ADVICE", adviceId: "없는-조언" as never });
+    } catch { /* 거부는 정상이다 */ }
+
+    expect(begun.campaign.history.events).toHaveLength(0);
   });
 });
