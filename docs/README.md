@@ -67,6 +67,8 @@
 - [DEVELOPMENT_ENVIRONMENT.md](technical/DEVELOPMENT_ENVIRONMENT.md): GitHub Codespaces, Next.js, React, TypeScript, Tailwind CSS, Framer Motion, Zustand, Supabase, Vercel의 책임
 - [CAMPAIGN_REWORK_WORK_ASSIGNMENT.md](technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md): 캠페인 개편의 유일한 작업 기준. 계층, 의존성 그래프, 담당과 상태
 - [SCREEN_ADAPTER_CONTRACT.md](technical/SCREEN_ADAPTER_CONTRACT.md): 화면이 아직 없는 규칙 자리를 어떤 fixture로 메우고 있는지. 우선권은 로직에 있다
+- [DEFERRED_WORK.md](technical/DEFERRED_WORK.md): 배정표 밖에서 나중에 하기로 미룬 일과 그 근거
+- [SESSION_PERSISTENCE_REVIEW.md](technical/SESSION_PERSISTENCE_REVIEW.md): 뒤로가기·bfcache 검토와 저장해야 할 상태 목록. I1 시작 전에 읽는다
 - [TEAM_DEVELOPMENT_WORKFLOW.md](technical/TEAM_DEVELOPMENT_WORKFLOW.md): 브랜치, 리뷰, 병합 규약
 
 ## 회의 기록
