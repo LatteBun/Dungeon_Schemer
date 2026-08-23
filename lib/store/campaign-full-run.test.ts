@@ -153,28 +153,29 @@ describe("캠페인 한 판", () => {
 });
 
 /**
- * 알려진 결함 — 지도가 규칙이 거부할 이동을 내놓는다.
+ * 지도는 규칙이 거부할 이동을 내놓지 않는다.
  *
- * 강한 연계의 후속 지점은 선행 단서를 들고 있어야 물질화된다. 그런데 배치는
- * "선행에서 **도달 가능**" 만 요구하므로, 갈림길에서 다른 갈래로 가면 선행을
- * 밟지 않고 후속에 닿는다. 지도는 그 지점을 고를 수 있게 내놓고, 이동하면
- * 규칙이 거부한다 - 실제 플레이에서 막다른 길이다.
+ * 한때 40 시드 중 23 이 막혔다. 강한 연계의 후속 지점은 선행 단서를 들고 있어야
+ * 물질화되는데, 배치가 "선행에서 **도달 가능**" 만 요구했기 때문이다. 갈림길에서
+ * 다른 갈래로 가면 선행을 밟지 않고 후속에 닿고, 그 지점은 지도에서 고를 수 있게
+ * 보였다. 이제 배치가 후속에 닿는 **모든** 길이 선행을 지날 것을 요구한다.
  *
- * `E3` 의 몫이라 여기서 고치지 않는다. 고쳐지면 이 검사가 빨개져 알려 준다.
+ * 한 시드로는 못 본다. 지도가 갈라지는 모양이 시드마다 다르고, 막히는 것은 그
+ * 갈래 중 하나를 골랐을 때뿐이다.
  */
-describe("알려진 결함", () => {
-  it("절반 넘는 시드가 도중에 막힌다", () => {
-    let blocked = 0;
-    const total = 40;
-    for (let index = 0; index < total; index += 1) {
-      try { runToEnd(`scan-${index}`); } catch (error) {
-        if (!(error instanceof Error) || !error.message.includes("strong follower")) throw error;
-        blocked += 1;
+describe("막다른 길이 없다", () => {
+  it("어느 시드로 시작해도 끝까지 간다", () => {
+    const stuck: string[] = [];
+    for (let index = 0; index < 40; index += 1) {
+      const seed = `scan-${index}`;
+      try {
+        const run = runToEnd(seed);
+        if (run.campaign.phase !== "ended") stuck.push(`${seed}: ${run.campaign.phase} 에서 멈춤`);
+      } catch (error) {
+        stuck.push(`${seed}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
-    /* 지금은 40 중 23 이다. 이 줄이 깨지면 결함이 고쳐졌거나 더 나빠진 것이다. */
-    expect(blocked).toBe(23);
-    expect(blocked / total).toBeGreaterThan(0.5);
+    expect(stuck).toEqual([]);
   });
 });

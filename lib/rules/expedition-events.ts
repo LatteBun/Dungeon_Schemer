@@ -27,17 +27,33 @@ function cutDepths(riskLevel: RiskLevel, layerCount: number): readonly number[] 
   return Array.from({ length: count }, (_, index) => Math.min(layerCount - 2, first + index));
 }
 
-function reachableNodes(map: GeneratedMap, start: NodeId): ReadonlySet<NodeId> {
+function reachableNodes(map: GeneratedMap, start: NodeId, blocked?: NodeId): ReadonlySet<NodeId> {
   const nodes = new Map(map.nodes.map((node) => [node.id, node]));
   const visited = new Set<NodeId>();
   const queue: NodeId[] = [start];
   while (queue.length > 0) {
     const nodeId = queue.shift()!;
-    if (visited.has(nodeId)) continue;
+    if (visited.has(nodeId) || nodeId === blocked) continue;
     visited.add(nodeId);
     for (const nextNodeId of nodes.get(nodeId)?.nextNodeIds ?? []) queue.push(nextNodeId);
   }
   return visited;
+}
+
+/**
+ * 후속에 닿는 **모든** 길이 선행을 지나는가.
+ *
+ * 도달 가능한 것과 반드시 거쳐 가는 것은 다르다. 지도가 갈라지면 선행을 밟지
+ * 않고 후속에 닿는 길이 생기고, 그 길로 간 길잡이에게는 후속 사건이 뜻을 잃는다
+ * — "아까 본 그 자국" 을 본 적이 없다.
+ *
+ * 그때 물질화가 거부하는데, 지도는 그 지점을 고를 수 있게 이미 내놓은 뒤다.
+ * 실제 플레이에서 막다른 길이었고 40 시드 중 23 이 걸렸다. 배치에서 막는다.
+ *
+ * 선행을 지운 지도에서 후속에 닿을 수 없으면 반드시 거쳐 간다는 뜻이다.
+ */
+function passesThrough(map: GeneratedMap, predecessorId: NodeId, followerId: NodeId): boolean {
+  return !reachableNodes(map, map.entryNodeId, predecessorId).has(followerId);
 }
 
 /*
@@ -114,8 +130,8 @@ function eventMatchesProfile(event: SituationEvent, activeRuleIds: ReadonlySet<R
 /*
  * 강한 연계가 쓸 노드의 분류를 확보한다.
  *
- * 짝이 성립하려면 선행이 후속보다 앞선 층에 있고 후속이 선행에서 도달
- * 가능해야 한다. 그 조건을 만족하는 자유 노드 둘을 골라, 분류를 그 단서의
+ * 짝이 성립하려면 선행이 후속보다 앞선 층에 있고, 후속에 닿는 **모든** 길이
+ * 선행을 지나야 한다. 그 조건을 만족하는 자유 노드 둘을 골라, 분류를 그 단서의
  * 사건이 요구하는 종류로 바꾼다. 지도 순서로 훑으므로 결정적이다.
  *
  * hiddenRole 은 건드리지 않는다. 그것은 뒤에서 findSelection 이 정한다.
@@ -148,7 +164,8 @@ function reserveStrongLinkCategories(input: {
       const reachable = reachableNodes(input.map, predecessorId);
       const followerId = free.find((candidate) => candidate !== predecessorId
         && (input.layerByNode.get(candidate) ?? -1) > predecessorLayer
-        && reachable.has(candidate));
+        && reachable.has(candidate)
+        && passesThrough(input.map, predecessorId, candidate));
       if (followerId !== undefined) { pair = [predecessorId, followerId]; break; }
     }
     if (pair === undefined) continue;
@@ -217,6 +234,7 @@ export function prepareExpeditionEvents(input: {
           .filter((followerNode) => followerNode.hiddenRole === "normal" && !reservedNodes.has(followerNode.nodeId)
             && (layerByNode.get(followerNode.nodeId) ?? -1) > (layerByNode.get(predecessorNode.nodeId) ?? -1)
             && reachable.has(followerNode.nodeId)
+            && passesThrough(input.map, predecessorNode.nodeId, followerNode.nodeId)
             && followerEvents.some((event) => event.kind === followerNode.category))
           .map((followerNode) => ({ predecessorNode, followerNode }));
       }));
