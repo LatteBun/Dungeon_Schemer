@@ -66,4 +66,4 @@ sequenceDiagram
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
 - [성장과 엔딩](../systems/PROGRESSION_AND_ENDINGS.md)
 - [캐릭터 풀과 월드턴](../systems/CHARACTER_POOL_AND_WORLDTURN.md)
-- [대표 화면 와이어프레임](screen-wireframes.md)
+- [대표 화면](screens.md)
