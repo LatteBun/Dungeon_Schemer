@@ -34,6 +34,9 @@ function validateCharacter(member: Character, before: Character | undefined): vo
   if (!Number.isSafeInteger(member.trust) || member.trust < TRUST_MIN || member.trust > TRUST_MAX) {
     invalid("정산 신뢰가 유효하지 않다", { characterId: member.id, trust: member.trust });
   }
+  if (before.trust === TRUST_MIN && member.trust > TRUST_MIN) {
+    invalid("정산으로 신뢰 0을 회복할 수 없다", { characterId: member.id });
+  }
   if (!Number.isSafeInteger(member.gold) || member.gold < 0) {
     invalid("정산 골드가 유효하지 않다", { characterId: member.id, gold: member.gold });
   }
