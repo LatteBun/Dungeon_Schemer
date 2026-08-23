@@ -50,15 +50,13 @@ View 타입도 규칙이 정한 모양에 따라 바뀔 수 있다. 그때는 �
 
 ## U5-2 자동 전투 ← E3 · E4
 
-일반 몬스터 전투는 이미 `E3`의 `resolveMonsterEventBattle` 결과를 소비한다.
-**보스전만 fixture다.**
+**둘 다 실제 규칙을 소비한다. fixture가 없다.**
 
-- 필요한 것: `lib/rules/battle-engine`의 `BattleResolution`
-- 지금 상태: `components/game/u5-battle-preview-data.ts`의
-  `BOSS_FIXTURE_RESOLUTION`이 `resolveBossBattle`을 호출하지 않고 같은 모양을
-  손으로 만든다. 화면에도 `E4 미연결 fixture`라고 표시한다.
-- `E4`가 `BattleResolution`을 그대로 내주면 어댑터가 필요 없다. 다른 모양이면
-  `createU5BattleReplay` 앞에 변환 한 겹이 붙는다.
+일반 몬스터 전투는 `E3`의 `resolveMonsterEventBattle`, 보스전은 `E4`의
+`resolveBossBattle`이 낸 결과를 쓴다.
+
+어댑터는 필요 없었다. `BossBattleResolution.bossResult.battle`이 곧
+`BattleResolution`이라 `createU5BattleReplay`에 그대로 들어간다.
 
 `createU5BattleReplay`가 입력을 깐깐하게 검증한다는 점만 미리 알아 두면 좋다.
 `damage`로 HP를 역산하지 않고 `targetHpBefore`·`targetHpAfter` 체인을 그대로
