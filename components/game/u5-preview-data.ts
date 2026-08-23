@@ -2,12 +2,16 @@ import { initializeCampaign } from "@/lib/rules/campaign-init";
 import {
   decideImmediateAdvice,
   disclosedRuleIds,
+  finalizeImmediateAdviceTrust,
   presentShuffledAdvice,
 } from "@/lib/rules/advice-evaluation";
+import { CLASSES } from "@/lib/content/classes";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
 import {
+  applyEventChoice,
   materializeNodeEvent,
   prepareExpeditionEvents,
+  resolveMonsterEventBattle,
 } from "@/lib/rules/expedition-events";
 import { SPIDER_THEME } from "@/lib/content/themes";
 import type {
@@ -128,6 +132,43 @@ function materializeSamples(): Readonly<Record<SituationEvent["kind"], Sample>> 
 
 const samples = materializeSamples();
 
+/**
+ * 아무도 수용하지 않는 (사건, 슬롯) 을 실제 판정으로 찾는다.
+ *
+ * 전에는 수용 반응이 나온 판정에 기본 결과 문구만 덮어썼다. 그래서 "아무도
+ * 수용하지 않음" 이라는 이름표 옆에 수용·수용·의심이 나란히 섰다. 규칙을
+ * 뒤집는 대신, 규칙이 그렇게 내는 자리를 찾아 보여준다.
+ *
+ * 신뢰가 낮거나 의심 많은 파티원이 모이면 좋은 조언도 통하지 않는다는 것이
+ * 이 화면이 말하려는 바다. 그것을 지어내면 말이 되지 않는다.
+ */
+function findUnacceptedCase(): { readonly sample: Sample; readonly slot: 0 | 1 | 2 } {
+  for (const sample of [samples.monster, samples.special, samples.rest, samples.merchant]) {
+    const presented = presentShuffledAdvice({
+      campaignSeed: PREVIEW_SEED,
+      dungeonId: PREVIEW_DUNGEON,
+      attempt: PREVIEW_ATTEMPT,
+      depth: sample.depth,
+      event: sample.event,
+    });
+    for (const slot of [0, 1, 2] as const) {
+      const decision = decideImmediateAdvice({
+        campaignSeed: PREVIEW_SEED,
+        dungeonId: PREVIEW_DUNGEON,
+        attempt: PREVIEW_ATTEMPT,
+        depth: sample.depth,
+        event: sample.event,
+        adviceId: adviceIdForSlot(presented, slot),
+        members,
+      });
+      if (!decision.executed) return { sample, slot };
+    }
+  }
+  throw new Error("아무도 수용하지 않는 경우를 프리뷰 파티에서 찾지 못했다");
+}
+
+const unaccepted = findUnacceptedCase();
+
 /*
  * 프리뷰가 무엇을 근거로 그렸는지 밝힌다.
  *
@@ -201,8 +242,6 @@ function progressFor(input: {
   nodeLabel: string;
   /** 고른 슬롯. 없으면 선택 전이다. */
   chosenSlot?: 0 | 1 | 2;
-  /** 아무도 수용하지 않은 경로를 보여준다. */
-  forceDefaultResult?: boolean;
   depth?: number;
 }): U5ProgressView {
   const depth = input.depth ?? 2;
@@ -241,8 +280,36 @@ function progressFor(input: {
   });
 
   const byId = new Map(members.map((member) => [member.id, member]));
-  const accepted = decision.reactions.some((one) => one.reaction === "accepted");
   const chosen = input.event.advice.find((one) => one.id === adviceId);
+  /*
+   * 실행 여부는 규칙이 정한다.
+   *
+   * 한 명이라도 수용하면 실행이고, 아무도 수용하지 않으면 파티가 자기 방식대로
+   * 처리한다. 화면이 이 값을 뒤집으면 "아무도 수용하지 않음" 문구 옆에 수용
+   * 반응이 나란히 서는 일이 생긴다. 실제로 그랬다.
+   */
+  const resultText = decision.executed
+    ? chosen?.resultText ?? input.event.defaultResultText
+    : input.event.defaultResultText;
+
+  /* executed 가 판정과 다르면 여기서 던진다. 화면이 결과를 지어낼 수 없다. */
+  const resolution = finalizeImmediateAdviceTrust({
+    decision,
+    members,
+    applied: { executed: decision.executed, resultText },
+  });
+
+  const applied = applyEventChoice({ event: input.event, decision, members });
+  const hpChanges = applied.members.flatMap((after) => {
+    const before = byId.get(after.id);
+    if (before === undefined || before.hp === after.hp) return [];
+    return [{ label: "HP", detail: `${after.name} ${before.hp} → ${after.hp}` }];
+  });
+  const trustChanges = resolution.trustChanges.flatMap((change) => {
+    const member = byId.get(change.characterId);
+    if (member === undefined || change.delta === 0) return [];
+    return [{ label: "신뢰", detail: `${member.name} ${member.trust} → ${member.trust + change.delta}` }];
+  });
 
   return {
     ...base,
@@ -257,27 +324,112 @@ function progressFor(input: {
               ? "눈을 가늘게 뜨고 한 박자 늦게 따른다."
               : "손을 멈추고 이쪽을 돌아본다.",
       })),
-      resultText:
-        input.forceDefaultResult || !accepted
-          ? input.event.defaultResultText
-          : chosen?.resultText ?? input.event.defaultResultText,
-      changes: [
-        { label: "HP", detail: "브릭스턴 32 → 20" },
-        { label: "신뢰", detail: "이반드로 60 → 54" },
-      ],
+      resultText,
+      /* 변화가 없으면 없다고 적는다. 지어내지 않는다. */
+      changes: [...hpChanges, ...trustChanges].length === 0
+        ? [{ label: "변화", detail: "수치와 신뢰가 그대로다." }]
+        : [...hpChanges, ...trustChanges],
     },
   };
 }
 
-const LOG: readonly U5LogEntry[] = [
-  { order: 1, tags: ["ecology"], label: "생태 공개", detail: "이 던전의 활성 규칙이 드러났다." },
-  { order: 2, tags: ["clue"], label: "관찰", detail: "바닥에 그을린 자국이 남아 있다." },
-  { order: 3, tags: [], label: "조언 선택", detail: "성긴 쪽 통로를 권했다." },
-  { order: 4, tags: [], label: "파티 반응", detail: "코르빈 수용 · 이반드로 의심" },
-  { order: 5, tags: ["battle", "clue"], label: "전투", detail: "거미 두 마리가 굴을 타고 내려온다." },
-  { order: 6, tags: ["battle"], label: "피해", detail: "브릭스턴 HP 12 감소" },
-  { order: 7, tags: ["clue"], label: "관찰", detail: "천장 거미줄이 한쪽만 성기다." },
-];
+/**
+ * 진행 기록도 지어내지 않는다.
+ *
+ * 전에는 각본이었고, 거기 적힌 코르빈·이반드로·브릭스턴은 이 프리뷰의 파티도
+ * 아니었다. 지금은 실제로 공개된 생태 규칙, 실제 사건 묘사, 실제 반응 판정,
+ * 실제 전투 기록에서 만든다.
+ *
+ * 실제 원정이라면 플레이어가 걸어온 길이 이 목록을 만든다. 프리뷰는 한 지점만
+ * 걷고, 그 연결이 `I2` 의 몫이다.
+ */
+/** 화면 문구와 같은 낱말을 쓴다. 내부 판정값은 내지 않는다. */
+function reactionWord(reaction: "accepted" | "suspected" | "exposed"): string {
+  return reaction === "accepted" ? "수용" : reaction === "suspected" ? "의심" : "적발";
+}
+
+function buildLog(): readonly U5LogEntry[] {
+  const sample = samples.monster;
+  const event = sample.event;
+  /*
+   * 분류로 뽑은 표본이라 monster 여야 한다. `NonMerchantSituationEvent` 는
+   * kind 가 유니온인 한 덩어리라 조건문으로 좁혀지지 않으므로, 술어로 확인한다.
+   */
+  const isMonster = (candidate: SituationEvent): candidate is SituationEvent & { readonly kind: "monster" } =>
+    candidate.kind === "monster";
+  if (!isMonster(event)) throw new Error("monster 표본이 monster 사건이 아니다");
+  const monsterEvent = event;
+
+  const presented = presentShuffledAdvice({
+    campaignSeed: PREVIEW_SEED, dungeonId: PREVIEW_DUNGEON,
+    attempt: PREVIEW_ATTEMPT, depth: sample.depth, event,
+  });
+  const adviceId = adviceIdForSlot(presented, 0);
+  const decision = decideImmediateAdvice({
+    campaignSeed: PREVIEW_SEED, dungeonId: PREVIEW_DUNGEON,
+    attempt: PREVIEW_ATTEMPT, depth: sample.depth, event, adviceId, members,
+  });
+  const byId = new Map(members.map((member) => [member.id, member]));
+  const applied = applyEventChoice({ event: monsterEvent, decision, members });
+  const battle = resolveMonsterEventBattle({
+    event: monsterEvent,
+    modifier: applied.encounterModifier ?? {},
+    activeMonsterIds: dungeon.activeMonsterIds,
+    monsterDefs: SPIDER_THEME.monsters,
+    members: applied.members,
+    classDefs: CLASSES,
+    seed: `${PREVIEW_SEED}/${PREVIEW_DUNGEON}/log`,
+    pendingMerchantEffect: null,
+    retrySteps: 0,
+  }).battle;
+
+  const disclosed = disclosedRuleIds({
+    campaignSeed: PREVIEW_SEED,
+    dungeonId: PREVIEW_DUNGEON,
+    activeRuleIds: dungeon.activeRuleIds,
+    riskLevel: dungeon.riskLevel,
+  });
+  const entries: U5LogEntry[] = [
+    {
+      order: 1, tags: ["ecology"], label: "생태 공개",
+      detail: disclosed.map((ruleId) => ecologyRuleText.get(ruleId) ?? String(ruleId)).join(" · "),
+    },
+    { order: 2, tags: ["clue"], label: "관찰", detail: event.description },
+    {
+      order: 3, tags: [], label: "조언 선택",
+      /* 조언 식별자는 내부 정답을 담고 있어 화면에 내지 않는다. 문구만 쓴다. */
+      detail: presented.find((one) => one.id === adviceId)?.label ?? "",
+    },
+    {
+      order: 4, tags: [], label: "파티 반응",
+      detail: decision.reactions
+        .map((one) => `${byId.get(one.characterId)?.name ?? String(one.characterId)} ${reactionWord(one.reaction)}`)
+        .join(" · "),
+    },
+  ];
+
+  if (battle !== null) {
+    entries.push({
+      order: entries.length + 1, tags: ["battle"], label: "전투",
+      detail: `${battle.rounds}라운드 · ${battle.status === "victory" ? "파티 생환" : "파티 전멸"}`,
+    });
+    const hurt = battle.party.flatMap((after) => {
+      const before = members.find((candidate) => String(candidate.id) === String(after.id));
+      if (before === undefined || before.hp === after.hp) return [];
+      return [`${before.name} HP ${before.hp} → ${after.hp}`];
+    });
+    if (hurt.length > 0) {
+      entries.push({ order: entries.length + 1, tags: ["battle"], label: "피해", detail: hurt.join(" · ") });
+    }
+  }
+
+  if (event.revealsClue !== undefined) {
+    entries.push({ order: entries.length + 1, tags: ["clue"], label: "단서", detail: event.title });
+  }
+  return entries;
+}
+
+const LOG: readonly U5LogEntry[] = buildLog();
 
 export type U5PreviewId =
   | "monster-before"
@@ -330,11 +482,11 @@ export const U5_PREVIEW_ENTRIES: readonly U5PreviewEntry[] = [
     label: "아무도 수용하지 않음",
     status: status(),
     progress: progressFor({
-      event: monsterSample.event,
-      sceneKind: "monster",
-      nodeLabel: "좁은 갈림길",
-      chosenSlot: 1,
-      forceDefaultResult: true,
+      event: unaccepted.sample.event,
+      sceneKind: unaccepted.sample.event.kind,
+      nodeLabel: unaccepted.sample.event.title,
+      depth: unaccepted.sample.depth,
+      chosenSlot: unaccepted.slot,
     }),
     log: LOG,
     ecology: ecologyFor(dungeon.riskLevel),
