@@ -583,3 +583,44 @@ body {
   width: 100%;
   margin-top: 0.75rem;
 }
+
+/*
+ * 다음 단계로 넘어가는 버튼.
+ *
+ * 정산 뒤의 월드턴과 보스전 뒤의 정산이 같은 모양을 쓴다. 화면마다 따로
+ * 만들면 같은 뜻의 버튼이 화면마다 달라 보인다 — 화면을 통일하며 고쳐 온
+ * 것이 그것이다.
+ */
+.u6-settlement-continue,
+.u5-battle-settle {
+  justify-self: start;
+  min-height: clamp(2.6rem, 5cqh, 3.2rem);
+  padding: 0 clamp(1.1rem, 1.6cqw, 1.9rem);
+  cursor: pointer;
+  border: 1px solid #b99145;
+  border-radius: 0.18rem;
+  background: linear-gradient(180deg, #342417 0%, #1d140e 55%, #130d09 100%);
+  box-shadow: inset 0 0 0 2px #0e0906, inset 0 0 0 3px rgb(189 147 69 / 58%);
+  color: #e6d3a3;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(0.95rem, 1cqw, 1.3rem);
+  letter-spacing: 0.06em;
+}
+
+.u6-settlement-continue:hover,
+.u6-settlement-continue:focus-visible,
+.u5-battle-settle:hover,
+.u5-battle-settle:focus-visible {
+  outline: 2px solid #d9c37c;
+  outline-offset: 2px;
+  border-color: #e1bd68;
+  filter: brightness(1.12);
+}
+
+/* 보스전 위에 얹는다. 장면이 절대 배치라 흐름 안에 자리가 없다. */
+.u5-battle-settle {
+  position: absolute;
+  right: clamp(1rem, 1.5cqw, 2rem);
+  bottom: clamp(1rem, 1.5cqh, 2rem);
+  z-index: 2;
+}

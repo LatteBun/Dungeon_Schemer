@@ -17,7 +17,7 @@ import type {
 import { createCampaignTransitionContext, createCampaignStatistics } from "@/lib/domain";
 import { initializeCampaign } from "./campaign-init";
 import { recordSettlementStatistics } from "./campaign-statistics";
-import { transitionCampaign } from "./campaign-transition";
+import { createExpeditionForOffer, transitionCampaign } from "./campaign-transition";
 
 const DUNGEON_ID = "dungeon-spider-01" as DungeonId;
 const CHARACTER_IDS = [
@@ -104,12 +104,8 @@ function startAction(
   return {
     type: "START_EXPEDITION",
     expeditionId: "exp-c8-transition",
-    partyMembers: membersFor(offer, campaign),
-    expedition: {
-      dungeonId: offer.dungeonId,
-      riskLevel: offer.riskLevel,
-      party: offer.party,
-    } as ExpeditionState,
+    /* 규칙이 만든 원정을 쓴다. 손으로 만든 최소 상태는 지도가 없다. */
+    ...createExpeditionForOffer(campaign, offer),
   };
 }
 

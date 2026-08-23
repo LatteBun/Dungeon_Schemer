@@ -46,6 +46,14 @@
 `createExpeditionForOffer(campaign, offer)` 를 내주고 호출부가 그 결과를 넘긴다.
 액션 모양을 바꾸면 기존 검사가 통째로 깨지는데, 얻는 것이 없다.
 
+**사건 계획은 원정을 시작할 때 만든다.** 첫 방문 때로 미루면 지도 화면이
+노드별 공개 분류를 얻지 못한다. 지점을 밟기 **전에** 무엇이 있는지 보여주는
+것이 지도의 일이므로, 계획이 그때 이미 있어야 한다.
+
+`SettlementSnapshot` 도 같은 이유로 규칙이 만든다 —
+`createSettlementSnapshotFor(campaign, active)`. 무엇이 최종 파티인지 · 어떤
+상태로 끝났는지는 규칙의 판단이다.
+
 ### 4.2 `U4MapNodeView` 의 `publicKindByNodeId`
 
 `createU4MapNodeViews` 가 노드별 공개 분류를 입력으로 받는다. `E3` 의
@@ -68,11 +76,14 @@
 | U3 | `onOpenPromotion` · `onCancelPromotion` · `onConfirmPromotion` | `OPEN_PROMOTION` · `CANCEL_PROMOTION` · `PROMOTE_GUIDE` |
 | U4 | `onMove` | `VISIT_NODE` |
 | U5 | `onSelectAdvice(slot)` | `CHOOSE_ADVICE(adviceId)` |
-| U5-2 | 보스방 도달 | `ENTER_BOSS` |
+| U5-2 | 보스방 도달 | `VISIT_NODE` → `ENTER_BOSS` |
 | U6 | 다음으로 | `COMPLETE_EXPEDITION` → `START_WORLD_TURN` → `COMPLETE_WORLD_TURN` |
 
 `onSelectNextNode` 는 액션이 아니다. 고르기만 하고 아직 움직이지 않은 상태라
 화면의 것이다.
+
+**보스방은 두 걸음이다.** 규칙이 `currentNodeId === bossNodeId` 를 요구하므로
+밟은 뒤에 들어간다. 한 번에 하려다 거부됐고, 재현 검사가 그것을 잡았다.
 
 ### 5.1 슬롯과 조언 ID
 
@@ -116,9 +127,12 @@
 
 | 상태 | 화면 |
 | --- | --- |
-| `pendingEvent === null` · 보스방 아님 | U4 지도 |
+| `bossResult !== null` 또는 `result !== null` | U5-2 보스 재생 → 정산 |
 | `pendingEvent !== null` | U5 진행 |
-| `bossResult !== null` | U5-2 보스 재생 |
+| 그 밖 | U4 지도 |
+
+**끝난 것을 먼저 본다.** 도중에 전멸하면 보스전 없이 원정이 끝나므로
+`bossResult` 만 보면 그 판이 지도에 갇힌다.
 
 전투 재생이 끝나야 다음으로 갈 수 있다는 것도 화면의 몫이다. 규칙은 이미
 결과를 다 냈고 재생은 표현이다.
@@ -142,6 +156,22 @@
 
 덤으로 `U6` 엔딩의 「가장 큰 전환점」이 지금 `null` 인 것도 함께 채워진다.
 `deriveTurningPoints` 와 `selectHighlightedTurningPoint` 가 이미 있다.
+
+### 10.1 이력만으로는 모자랐다 — 만들고 나서 안 것
+
+`ADVICE_RESOLVED` 는 조언 **식별자**와 반응을 남기지만 조언 **문구**도 사건
+서술도 HP 변화도 담지 않는다. 원인 사슬의 세 줄 중 두 줄을 이력에서 만들 수
+없다. 캠페인 이력에 필요한 것과 한 원정을 되짚는 데 필요한 것이 다르다.
+
+그래서 전이 문맥에 `records` 를 따로 쌓는다. `C8-B` 의 이력은 그대로 두고,
+원정 안에서만 사는 기록을 나란히 둔다. `U5` 의 진행 기록도 같은 것을 읽는다 —
+`log` 가 계속 빈 배열이었고, 던전을 걸어도 기록 패널이 비어 있었다.
+
+### 10.2 보스전이 원인 사슬의 마지막 칸을 덮어쓴다
+
+마지막 **조언**의 피해만 남기면 보스에게 전멸한 원정이 "피해 없이 지나갔다" 로
+정산된다. 브라우저로 걸어 본 한 판이 정확히 그랬다 — 셋 다 HP 0 인데 피해가
+없다고 적혀 있었다. 결과를 정한 것이 보스전이면 원인도 보스전이어야 한다.
 
 ## 11. 선행 — C7 확장
 

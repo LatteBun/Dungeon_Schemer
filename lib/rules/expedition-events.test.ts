@@ -94,3 +94,71 @@ describe("E3 원정 사건 준비와 물질화", () => {
     expect(result.battle?.enemies[0]?.targetWeightMultipliers).toEqual({ mage: 3 });
   });
 });
+
+/** 그 시드로 ★3 던전 하나를 준비한다. 짝이 안 놓이면 `null` 이다. */
+function prepareForSeed(seed: string) {
+  const input = {
+    campaignSeed: seed,
+    dungeonId: "dungeon-spider-01" as DungeonId,
+    initialRiskLevel: 3 as const,
+    riskLevel: 3 as const,
+    attempt: 0,
+    activeRuleIds: THEMES[0].rules.map((rule) => rule.id),
+    activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id),
+  };
+  const map = generateDungeonMap(input);
+  try {
+    return { map, prepared: prepareExpeditionEvents({ ...input, map, theme: THEMES[0] }) };
+  } catch { return null; }
+}
+
+/** 한 노드를 지운 지도에서 닿을 수 있는 곳. */
+function walk(map: ReturnType<typeof generateDungeonMap>, start: NodeId, blocked: NodeId): ReadonlySet<NodeId> {
+  const byId = new Map(map.nodes.map((node) => [node.id, node]));
+  const seen = new Set<NodeId>();
+  const queue: NodeId[] = [start];
+  while (queue.length > 0) {
+    const nodeId = queue.shift()!;
+    if (seen.has(nodeId) || nodeId === blocked) continue;
+    seen.add(nodeId);
+    for (const nextNodeId of byId.get(nodeId)?.nextNodeIds ?? []) queue.push(nextNodeId);
+  }
+  return seen;
+}
+
+describe("강한 연계의 배치", () => {
+  /*
+   * 후속에 닿는 모든 길이 선행을 지나야 한다.
+   *
+   * 도달 가능하기만 하면 갈림길에서 선행을 건너뛸 수 있고, 그러면 후속 사건이
+   * 뜻을 잃는다 — "아까 본 그 자국" 을 본 적이 없다. 물질화가 그때 거부하는데,
+   * 지도는 이미 그 지점을 고를 수 있게 내놓은 뒤다.
+   */
+  it("선행을 지나지 않고 후속에 닿는 길이 없다", () => {
+    const checked: string[] = [];
+    for (let index = 0; index < 25; index += 1) {
+      const prepared = prepareForSeed(`link-dominance-${index}`);
+      if (prepared === null) continue;
+      for (const link of prepared.prepared.strongLinks) {
+        checked.push(link.clueId);
+        const withoutPredecessor = walk(prepared.map, prepared.map.entryNodeId, link.predecessorNodeId);
+
+        expect(withoutPredecessor.has(link.followerNodeId)).toBe(false);
+      }
+    }
+
+    /* 짝이 하나도 없으면 위 단언이 한 번도 돌지 않는다. */
+    expect(checked.length).toBeGreaterThan(0);
+  });
+
+  it("선행이 후속보다 앞선 층에 있다", () => {
+    for (let index = 0; index < 25; index += 1) {
+      const prepared = prepareForSeed(`link-layer-${index}`);
+      if (prepared === null) continue;
+      const layerOf = new Map(prepared.map.layers.flatMap((layer, depth) => layer.nodeIds.map((id) => [id, depth] as const)));
+      for (const link of prepared.prepared.strongLinks) {
+        expect(layerOf.get(link.predecessorNodeId)!).toBeLessThan(layerOf.get(link.followerNodeId)!);
+      }
+    }
+  });
+});

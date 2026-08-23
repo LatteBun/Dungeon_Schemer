@@ -4,6 +4,13 @@ import type { TopStatusView } from "./TopStatusBar";
 export interface IntroScreenProps {
   status: TopStatusView;
   boardHref: string;
+  /*
+   * 통합 화면에서는 진입이 링크가 아니라 액션이다.
+   *
+   * 프리뷰는 `/uN-test` 사이를 오가므로 링크가 맞다. 캠페인 한 페이지 안에서는
+   * 옮겨 갈 주소가 없고 `phase` 가 화면을 정한다. 주면 버튼, 없으면 링크다.
+   */
+  onEnterBoard?: () => void;
 }
 
 const introCards = [
@@ -27,7 +34,17 @@ const introCards = [
   },
 ] as const;
 
-function IntroMainContent({ boardHref }: { boardHref: string }) {
+function CtaBody() {
+  return (
+    <>
+      <img className="u2-intro__cta-emblem" src="/assets/u3/extracted/contract-emblem.png" alt="" aria-hidden="true" width={48} height={43} />
+      <strong>길드 게시판으로</strong>
+      <img className="u2-intro__cta-arrow" src="/assets/u3/extracted/arrow-right.png" alt="" aria-hidden="true" width={70} height={27} />
+    </>
+  );
+}
+
+function IntroMainContent({ boardHref, onEnterBoard }: { boardHref: string; onEnterBoard?: () => void }) {
   return (
     <main className="u2-intro-stage" aria-labelledby="u2-intro-title">
       <div className="u2-intro" data-testid="u2-intro">
@@ -53,21 +70,25 @@ function IntroMainContent({ boardHref }: { boardHref: string }) {
           ))}
         </div>
 
-        <a className="u2-intro__cta" href={boardHref}>
-          <img className="u2-intro__cta-emblem" src="/assets/u3/extracted/contract-emblem.png" alt="" aria-hidden="true" width={48} height={43} />
-          <strong>길드 게시판으로</strong>
-          <img className="u2-intro__cta-arrow" src="/assets/u3/extracted/arrow-right.png" alt="" aria-hidden="true" width={70} height={27} />
-        </a>
+        {onEnterBoard === undefined ? (
+          <a className="u2-intro__cta" href={boardHref}>
+            <CtaBody />
+          </a>
+        ) : (
+          <button className="u2-intro__cta" type="button" onClick={onEnterBoard}>
+            <CtaBody />
+          </button>
+        )}
       </div>
     </main>
   );
 }
 
-export function IntroScreen({ status, boardHref }: IntroScreenProps) {
+export function IntroScreen({ status, boardHref, onEnterBoard }: IntroScreenProps) {
   return (
     <div className="u2-intro-shell">
       <TopStatusBar status={status} />
-      <IntroMainContent boardHref={boardHref} />
+      <IntroMainContent boardHref={boardHref} onEnterBoard={onEnterBoard} />
     </div>
   );
 }

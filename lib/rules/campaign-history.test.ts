@@ -37,7 +37,7 @@ import {
 } from "./campaign-history";
 import { initializeCampaign } from "./campaign-init";
 import { recordSettlementStatistics } from "./campaign-statistics";
-import { transitionCampaign } from "./campaign-transition";
+import { createExpeditionForOffer, transitionCampaign } from "./campaign-transition";
 
 const DUNGEON_ID = "dungeon-spider-01" as DungeonId;
 const EVENT_ID = "event-spider-01" as EventId;
@@ -383,12 +383,8 @@ describe("C7·C8-A·C8-B composition boundary", () => {
     return {
       type: "START_EXPEDITION",
       expeditionId: "exp-c8-composition",
-      partyMembers: membersFor(offer, campaign),
-      expedition: {
-        dungeonId: offer.dungeonId,
-        riskLevel: offer.riskLevel,
-        party: offer.party,
-      } as ExpeditionState,
+      /* 규칙이 만든 원정을 쓴다. 손으로 만든 최소 상태는 지도가 없다. */
+      ...createExpeditionForOffer(campaign, offer),
     };
   }
 

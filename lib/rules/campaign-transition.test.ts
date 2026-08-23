@@ -13,7 +13,7 @@ import {
 } from "@/lib/domain";
 import { initializeCampaign } from "./campaign-init";
 import { createBoardOffers } from "./board";
-import { transitionCampaign } from "./campaign-transition";
+import { createExpeditionForOffer, transitionCampaign } from "./campaign-transition";
 import { createRng } from "@/lib/rng";
 
 function membersFor(offer: BoardOffer, campaign: CampaignState): Character[] {
@@ -29,17 +29,13 @@ function startAction(
 ): CampaignTransition {
   const offer = context.selectedOffer;
   if (offer === null) throw new Error("selected offer fixture is missing");
-  const partyMembers = membersFor(offer, campaign);
-  return {
-    type: "START_EXPEDITION",
-    expeditionId,
-    partyMembers,
-    expedition: {
-      dungeonId: offer.dungeonId,
-      riskLevel: offer.riskLevel,
-      party: offer.party,
-    } as ExpeditionState,
-  };
+  /*
+   * 최소 ExpeditionState 를 손으로 만들지 않는다.
+   *
+   * 규칙이 원정 상태를 만들게 됐으므로 그것을 쓴다. 손으로 만든 것은 지도가
+   * 없어서, 사건 계획을 원정 시작 때 만들도록 바꾸자마자 깨졌다.
+   */
+  return { type: "START_EXPEDITION", expeditionId, ...createExpeditionForOffer(campaign, offer) };
 }
 
 function snapshotFor(

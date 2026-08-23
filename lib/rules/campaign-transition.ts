@@ -14,6 +14,7 @@ import type {
   CampaignTransitionContext,
   CampaignTransitionResult,
   Character,
+  ExpeditionRecord,
   ExpeditionState,
   SettlementSnapshot,
 } from "@/lib/domain";
@@ -424,6 +425,28 @@ function transitionChooseAdvice(
     }),
   };
 
+  /*
+   * 이 조언이 남긴 사실을 붙든다.
+   *
+   * 정산은 원정이 끝난 뒤에 온다. 그때는 사건도 조언 목록도 사라진 뒤라, 무엇을
+   * 골랐는지 물을 곳이 없다. 사라지기 전에 적어 둔다.
+   */
+  const chosen = event.advice.find((option) => option.id === resolution.decision.adviceId);
+  const record: ExpeditionRecord = {
+    observation: event.description,
+    choice: chosen?.label ?? "",
+    reactions: resolution.decision.reactions.map((one) => ({ characterId: one.characterId, reaction: one.reaction })),
+    damage: withTrust.flatMap((after) => {
+      const before = active.partyMembers.find((candidate) => candidate.id === after.id);
+      return before === undefined || before.hp === after.hp
+        ? []
+        : [{ characterId: after.id, before: before.hp, after: after.hp }];
+    }),
+    battle: battle?.battle == null
+      ? null
+      : { rounds: battle.battle.rounds, victory: battle.battle.status === "victory" },
+  };
+
   return emptyResult(withHistory, {
     ...context,
     activeExpedition: {
@@ -431,6 +454,7 @@ function transitionChooseAdvice(
       expedition: nextExpedition,
       partyMembers: withTrust,
       pendingEvent: null,
+      records: [...active.records, record],
     },
   });
 }
@@ -495,9 +519,46 @@ function transitionEnterBoss(
     }),
   };
 
+  /*
+   * 보스전이 원인 사슬의 마지막 칸을 덮어쓴다.
+   *
+   * 마지막 조언의 피해만 남겨 두면 보스에게 전멸한 원정이 "피해 없이
+   * 지나갔다" 로 정산된다 - 실제로 걸어 본 한 판이 그랬다. 결과를 정한 것이
+   * 보스전이라면 원인도 보스전이어야 한다.
+   *
+   * 고른 것은 무엇을 믿고 들어갔는가다. `E4` 가 실제로 적용한 믿음만 센다.
+   */
+  const applied = resolved.bossResult.applications.length;
+  const bossRecord: ExpeditionRecord = {
+    observation: "보스방에 들었다",
+    choice: applied === 0
+      ? "보스 정보 없이 보스방에 들었다"
+      : `수용한 보스 정보 ${applied}건을 믿고 들었다`,
+    /* 누구의 믿음이 어떻게 돌아왔는지. `E4` 가 판정한 것을 옮긴다. */
+    reactions: resolved.bossResult.verifications.map((one) => ({
+      characterId: one.characterId,
+      reaction: one.action,
+    })),
+    damage: withTrust.flatMap((after) => {
+      const before = active.partyMembers.find((candidate) => candidate.id === after.id);
+      return before === undefined || before.hp === after.hp
+        ? []
+        : [{ characterId: after.id, before: before.hp, after: after.hp }];
+    }),
+    battle: {
+      rounds: resolved.bossResult.battle.rounds,
+      victory: resolved.bossResult.status === "cleared",
+    },
+  };
+
   return emptyResult(withHistory, {
     ...context,
-    activeExpedition: { ...active, expedition: nextExpedition, partyMembers: withTrust },
+    activeExpedition: {
+      ...active,
+      expedition: nextExpedition,
+      partyMembers: withTrust,
+      records: [...active.records, bossRecord],
+    },
   });
 }
 
@@ -511,6 +572,54 @@ function transitionEnterBoss(
  * 액션의 payload 는 바꾸지 않는다. 호출부가 이 함수를 부르고 그 결과를 넘긴다.
  * 액션 모양을 바꾸면 기존 검사가 통째로 깨지는데 얻는 것이 없다.
  */
+/**
+ * 원정을 정산 입력으로 옮긴다.
+ *
+ * 화면이 `SettlementSnapshot` 을 조립하지 않게 한다. 그것은 `C4` 의 입력이고,
+ * 무엇이 최종 파티인지 · 어떤 상태로 끝났는지는 규칙의 판단이다. 화면이 그것을
+ * 조립하면 정산의 근거를 화면이 소유하게 된다.
+ *
+ * 원인 사슬의 세 줄은 사람 이름이 붙은 문장이다. 이름을 붙일 수 있는 곳은
+ * 파티를 들고 있는 여기뿐이라 여기서 짓는다.
+ */
+export function createSettlementSnapshotFor(
+  campaign: CampaignState,
+  active: NonNullable<CampaignTransitionContext["activeExpedition"]>,
+): SettlementSnapshot {
+  const expedition = active.expedition;
+  const status = expedition.result?.status ?? expedition.bossResult?.status;
+  if (status === undefined) invalidTransition("아직 끝나지 않은 원정이다", { expeditionId: active.expeditionId });
+
+  const nameOf = (characterId: Character["id"]) =>
+    active.partyMembers.find((member) => member.id === characterId)?.name ?? String(characterId);
+  const word: Readonly<Record<string, string>> = {
+    accepted: "수용", suspected: "의심", detected: "적발",
+    /* `E4` 가 보스전 뒤에 그 믿음이 옳았는지 판정한 결과다. */
+    adviceHelped: "믿음이 맞았다", adviceHarmed: "믿음이 틀렸다",
+    suspicionWasCorrect: "의심이 맞았다", suspicionWasCostly: "의심이 손해였다",
+  };
+  const cause = active.records.at(-1) ?? null;
+
+  return {
+    expeditionId: active.expeditionId,
+    dungeonId: expedition.dungeonId,
+    /* 계약 시점의 위험도다. 던전이 그 사이 올랐어도 이 원정은 이 값으로 센다. */
+    contractRisk: expedition.riskLevel,
+    party: { memberIds: [...expedition.party.memberIds] },
+    finalMembers: active.partyMembers.map((member) => ({ ...member })),
+    status,
+    causeInputs: {
+      choice: cause?.choice ?? "조언을 고를 일이 없었다",
+      reactions: cause === undefined || cause === null || cause.reactions.length === 0
+        ? "반응한 사람이 없다"
+        : cause.reactions.map((one) => `${nameOf(one.characterId)} ${word[one.reaction] ?? one.reaction}`).join(" · "),
+      damage: cause === undefined || cause === null || cause.damage.length === 0
+        ? "피해 없이 지나갔다"
+        : cause.damage.map((one) => `${nameOf(one.characterId)} HP ${one.before} → ${one.after}`).join(" · "),
+    },
+  };
+}
+
 export function createExpeditionForOffer(
   campaign: CampaignState,
   offer: BoardOffer,
@@ -556,6 +665,11 @@ export function createExpeditionForOffer(
   };
 }
 
+/** 재도전 횟수다. 사건 배치가 재도전마다 달라야 하므로 시드에 들어간다. */
+function attemptOf(campaign: CampaignState, expedition: ExpeditionState): number {
+  return campaign.dungeons.find((candidate) => candidate.id === expedition.dungeonId)?.attempts ?? 0;
+}
+
 function copyActiveExpedition(
   campaign: CampaignState,
   action: Extract<CampaignTransition, { type: "START_EXPEDITION" }>,
@@ -572,8 +686,16 @@ function copyActiveExpedition(
       party: { memberIds: [...action.expedition.party.memberIds] },
     },
     partyMembers: action.partyMembers.map((member) => ({ ...member })),
-    preparedEvents: null,
+    /*
+     * 원정을 시작할 때 만든다.
+     *
+     * 첫 방문 때로 미뤘더니 지도 화면이 노드별 공개 분류를 얻지 못했다. 지점을
+     * 밟기 전에 무엇이 있는지 보여주는 것이 지도의 일이므로, 계획이 그때 이미
+     * 있어야 한다.
+     */
+    preparedEvents: prepareFor(campaign, action.expedition, attemptOf(campaign, action.expedition)),
     pendingEvent: null,
+    records: [],
   };
 }
 
@@ -722,6 +844,7 @@ export function transitionCampaign(
       }
       validateSnapshot(active, action.snapshot);
       const execution = settleExpedition(campaign, action.snapshot);
+
       return {
         ...emptyResult(
           {

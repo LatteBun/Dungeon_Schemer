@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CAMPAIGN_PHASES } from "@/lib/domain";
-import type { CampaignPhase } from "@/lib/domain";
+import type { CampaignPhase, CampaignTransition } from "@/lib/domain";
+import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { createCampaignStore, screenForPhase } from "./campaign-store";
 
 /**
@@ -112,5 +113,63 @@ describe("phase 가 화면을 정한다", () => {
 
   it("종료는 엔딩 화면이다", () => {
     expect(screenForPhase("ended")).toBe("ending");
+  });
+});
+
+/** 원정 하나를 끝까지 걷고 정산까지 간다. */
+function settleOnce() {
+  const store = createCampaignStore("c8a-settle");
+  const act = (action: CampaignTransition) => store.getState().dispatch(action);
+  act({ type: "OPEN_BOARD" });
+  const offer = store.getState().campaign.offers.find((one) => one.lockReason === null)!;
+  act({ type: "SELECT_CONTRACT", offerId: offer.id });
+  act({ type: "START_EXPEDITION", expeditionId: "c8a-exp", ...createExpeditionForOffer(store.getState().campaign, offer) });
+
+  for (let step = 0; step < 30; step += 1) {
+    const active = store.getState().context.activeExpedition;
+    if (active === null) break;
+    if (active.expedition.bossResult !== null || active.expedition.result !== null) {
+      act({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(store.getState().campaign, active) });
+      break;
+    }
+    if (active.pendingEvent !== null) {
+      act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+      continue;
+    }
+    const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
+    const next = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
+    if (next === undefined) { act({ type: "ENTER_BOSS" }); continue; }
+    act({ type: "VISIT_NODE", nodeId: next });
+    if (next === active.expedition.map.bossNodeId) act({ type: "ENTER_BOSS" });
+  }
+
+  const state = store.getState();
+  return { campaign: state.campaign, settlement: state.last?.settlement ?? null };
+}
+
+describe("C8-A 누적", () => {
+  /* C7 은 통계를 건드리지 않는다. 소비는 스토어의 몫이다. */
+  it("정산 한 번을 통계에 쌓는다", () => {
+    const run = settleOnce();
+
+    expect(run.campaign.statistics.totalExpeditions).toBe(1);
+    expect(run.campaign.statistics.settlements).toHaveLength(1);
+  });
+
+  it("정산 결과를 다시 계산하지 않는다", () => {
+    const run = settleOnce();
+    const recorded = run.campaign.statistics.settlements[0]!;
+
+    expect(recorded.expeditionId).toBe(run.settlement!.expeditionId);
+    expect(recorded.dungeonId).toBe(run.settlement!.dungeonId);
+  });
+
+  /* 정산이 없는 전이는 통계를 건드리지 않는다. */
+  it("정산이 아닌 전이는 통계를 그대로 둔다", () => {
+    const store = createCampaignStore("c8a-noop");
+    const before = store.getState().campaign.statistics;
+    store.getState().dispatch({ type: "OPEN_BOARD" });
+
+    expect(store.getState().campaign.statistics).toBe(before);
   });
 });
