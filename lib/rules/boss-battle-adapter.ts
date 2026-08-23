@@ -107,7 +107,14 @@ function compareApplications(left: BossInfoApplication, right: BossInfoApplicati
 
 function actionFor(record: InfoRecord): BossInfoVerificationAction {
   if (record.reaction === "accepted") return record.outcome === "help" ? "adviceHelped" : "adviceHarmed";
-  return record.outcome === "help" ? "suspicionWasCostly" : "suspicionWasCorrect";
+  if (record.reaction === "suspected") {
+    return record.outcome === "help" ? "suspicionWasCostly" : "suspicionWasCorrect";
+  }
+  invalid("적발된 보스 정보는 사후 검증할 수 없다", {
+    record: recordKey(record),
+    characterId: record.characterId,
+    reaction: record.reaction,
+  });
 }
 
 function sortedRecords(records: readonly InfoRecord[]): readonly InfoRecord[] {
@@ -150,6 +157,13 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
     if (!rules.has(record.bossRuleId)) invalid("현재 보스에 없는 BossRuleId 정보다", { bossId: boss.id, bossRuleId: record.bossRuleId });
     const member = memberById.get(record.characterId);
     if (member === undefined) invalid("보스 정보 대상 캐릭터가 참가자가 아니다", { characterId: record.characterId });
+    if (record.reaction === "exposed") {
+      invalid("적발된 보스 정보는 E4 지연 기록이 될 수 없다", {
+        record: key,
+        characterId: record.characterId,
+        reaction: record.reaction,
+      });
+    }
     if (!member.alive) continue;
     if (record.pendingVerification !== true) invalid("미검증 보스 정보 기록이 아니다", { record: key });
     if (record.outcome === "neutral") continue;

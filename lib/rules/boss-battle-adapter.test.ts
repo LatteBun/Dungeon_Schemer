@@ -227,6 +227,21 @@ describe("E4 보스 BattleEngine adapter", () => {
     expect(firstPartyAction(result).damage).toBeLessThan(firstPartyAction(resolve(input)).damage);
   });
 
+  it("exposed delayed record는 trust나 verification을 만들지 않고 INVALID_GENERATION으로 거부한다", () => {
+    const exposed = info({
+      reaction: "exposed",
+      pendingVerification: true,
+    });
+
+    expectRuleError(() => resolve({ infoRecords: [exposed] }), {
+      code: "INVALID_GENERATION",
+      details: {
+        record: "boss-event/boss-advice/member-1",
+        reaction: "exposed",
+      },
+    });
+  });
+
   it.each([
     ["다른 보스 rule", [info({ bossRuleId: "boss-zakar-burrow-trace" as BossRuleId })]],
     ["중복 delayed record", [info(), info()]],
