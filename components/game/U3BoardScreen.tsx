@@ -118,7 +118,7 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
     <div className="u3-contract-detail">
       {/* 파티를 맨 위에 둔다. U4·U5 도 우측 첫 자리가 파티다. */}
       <section className="panel-section u3-party" aria-labelledby="u3-party-title">
-        <h3 id="u3-party-title">파티 구성</h3>
+        <h3 id="u3-party-title">파티 상태</h3>
         <ul className="party-list">
           {detail.party.map((member, index) => (
             <li key={member.id}>
@@ -166,5 +166,5 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
 
 export function U3BoardScreen({ status, board, selectedOfferId, onSelectOffer, onContract }: U3BoardScreenProps) {
   const detail = board.detailsByOfferId[selectedOfferId];
-  return <div className="u3-board-screen"><GameShell status={status} screenTitle="길드 게시판" main={<NoticeBoard board={board} selectedOfferId={selectedOfferId} onSelectOffer={onSelectOffer} />} rightPanel={<ContractDetail detail={detail} onContract={onContract} />} rightPanelLabel="계약 상세" /></div>;
+  return <div className="expedition-screen u3-board-screen"><GameShell status={status} screenTitle="길드 게시판" main={<NoticeBoard board={board} selectedOfferId={selectedOfferId} onSelectOffer={onSelectOffer} />} rightPanel={<ContractDetail detail={detail} onContract={onContract} />} rightPanelLabel="계약 상세" /></div>;
 }

@@ -1,22 +1,5 @@
 /* U3 visual language comes from the approved guild asset board. */
-.u3-board-screen,
-.u3-board-screen .game-shell,
-.u3-board-screen .game-shell__body,
-.u3-board-screen .game-shell__right-panel {
-  background-color: #0a0907;
-  background-image:
-    linear-gradient(rgb(6 5 4 / 34%), rgb(6 5 4 / 34%)),
-    url("/assets/u3/extracted/screen-texture-tile.png");
-  background-repeat: repeat;
-}
 
-.u3-board-screen .game-shell__main {
-  background-color: #130d08;
-  background-image:
-    radial-gradient(circle at 12% 96%, rgb(178 108 37 / 8%), transparent 18rem),
-    url("/assets/u3/extracted/screen-texture-tile.png");
-  background-repeat: no-repeat, repeat;
-}
 
 .u3-guild-board {
   background-color: #27170c;
@@ -178,7 +161,7 @@
   background-color: #0d0b09;
   background-image:
     linear-gradient(180deg, rgb(28 22 16 / 74%), rgb(10 8 7 / 90%)),
-    url("/assets/u3/extracted/screen-texture-tile.png");
+    url("/assets/shared/screen-texture-tile.png");
   background-repeat: repeat;
 }
 

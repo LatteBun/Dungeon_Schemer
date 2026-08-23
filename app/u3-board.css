@@ -12,33 +12,19 @@
   grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
   min-height: 0;
-  overflow: hidden;
-  background: #090705;
-}
+  overflow: hidden;}
 
 .u3-board-screen .game-shell__body {
   height: auto;
   min-height: 0;
   overflow: hidden;
-  background: #0b0806;
 }
 
 
 .u3-board-screen .game-shell__main {
   display: flex;
   flex-direction: column;
-  border-right-color: #7b5a2e;
-  background:
-    radial-gradient(circle at 12% 96%, rgb(178 108 37 / 10%), transparent 18rem),
-    #120c08;
-}
-
-.u3-board-screen .game-shell__right-panel {
-  background:
-    linear-gradient(90deg, rgb(187 136 63 / 3%), transparent 12%),
-    #0d0a07;
-}
-
+  border-right-color: #7b5a2e;}
 
 .u3-guild-board {
   position: relative;

@@ -98,6 +98,60 @@ describe("셸 틀", () => {
   });
 
   /*
+   * 원정 화면(U3·U4·U5)의 바탕과 질감도 한 곳에서 정한다.
+   *
+   * 본문 바탕이 u3 #130d08, u4 #100b07 이고 u5 는 아무것도 정하지 않아 기본값
+   * #201710 이 나와 u4 보다 두 배 밝았다. 질감 타일도 u3 만 깔고 있었다. 한
+   * 화면만 보면 알 수 없고, 단계를 넘길 때 재질이 바뀌는 것으로만 드러난다.
+   *
+   * U2(도입)와 U6(정산·엔딩)은 아직 별개 화면이라 여기 들어오지 않는다.
+   */
+  it("셸의 바탕을 globals.css 밖에서 정하지 않는다", () => {
+    const offenders: string[] = [];
+
+    for (const name of styleSheets()) {
+      if (name === "globals.css") continue;
+      for (const rule of rules(read(name))) {
+        /* U2·U6 은 아직 원정 화면과 별개다. 그 둘로 범위를 좁힌 규칙은 넘어간다. */
+        if (/\.(u2|u6)[\w-]*(?=[\s.:,])/.test(rule.selector)) continue;
+        if (!/\.game-shell(__(main|right-panel|body))?(?![\w-])/.test(rule.selector)) continue;
+        if (/(^|[\s;])background(-(color|image|repeat))?\s*:/.test(rule.body)) offenders.push(`${name} — ${rule.selector}`);
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("원정 화면 셋이 공통 바탕 클래스를 쓴다", () => {
+    const dir = join(process.cwd(), "components", "game");
+    const wearing = ["U3BoardScreen", "U4DungeonMapScreen", "U5ProgressScreen"]
+      .filter((name) => readFileSync(join(dir, `${name}.tsx`), "utf8").includes('className="expedition-screen'));
+
+    expect(wearing).toEqual(["U3BoardScreen", "U4DungeonMapScreen", "U5ProgressScreen"]);
+    expect(read("globals.css")).toContain("--screen-texture");
+  });
+
+  /*
+   * 같은 파티를 보여주는 자리는 같은 문구를 쓴다.
+   *
+   * U3 만 "파티 구성" 이고 나머지가 "파티 상태" 였다. 카드에 담긴 것이 HP·신뢰
+   * ·골드 라는 상태이므로 어느 화면에서든 같은 말이어야 한다.
+   */
+  it("파티 블록의 문구가 화면마다 같다", () => {
+    const dir = join(process.cwd(), "components", "game");
+    const headings = new Set<string>();
+
+    for (const name of readdirSync(dir).filter((file) => file.endsWith(".tsx"))) {
+      const source = readFileSync(join(dir, name), "utf8");
+      for (const match of source.matchAll(/<h[23][^>]*id="u\d-party-title"[^>]*>([^<]+)<\/h[23]>/g)) {
+        headings.add(match[1].trim());
+      }
+    }
+
+    expect([...headings]).toEqual(["파티 상태"]);
+  });
+
+  /*
    * 덩어리의 겉모습은 화면마다 다시 정하지 않는다.
    *
    * 클래스 목록을 손으로 적지 않고 컴포넌트에서 읽어 온다. 새 화면이

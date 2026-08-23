@@ -466,7 +466,7 @@ export function U4DungeonMapScreen({
   onMove,
 }: U4DungeonMapScreenProps) {
   return (
-    <div className="u4-dungeon-map-screen">
+    <div className="expedition-screen u4-dungeon-map-screen">
       <GameShell
         status={status}
         screenTitle="던전 지도"

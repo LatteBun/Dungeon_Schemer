@@ -114,6 +114,12 @@ body {
   --panel-section-padding: clamp(0.7rem, 0.85cqw, 1.3rem);
   --panel-title-size: clamp(1rem, 1.05cqw, 1.45rem);
   --panel-title-gap: clamp(0.35rem, 0.42cqw, 0.7rem);
+
+  /* 원정 화면(U3·U4·U5)의 공통 바탕과 질감. */
+  --screen-shell-base: #090705;
+  --screen-surface: #130d08;
+  --screen-surface-alt: #0d0a07;
+  --screen-texture: url("/assets/shared/screen-texture-tile.png");
 }
 
 .game-shell__status-bar {
@@ -258,6 +264,32 @@ body {
 
 .game-shell__right-panel {
   background-color: var(--color-shell-surface-alt);
+}
+
+/*
+ * 원정 화면의 바탕.
+ *
+ * 같은 원정을 이어 가는데도 화면마다 바탕이 달랐다. 본문이 u3 #130d08,
+ * u4 #100b07 이고 u5 는 아무것도 정하지 않아 기본값 #201710 이 나와 u4 보다
+ * 두 배 밝았다. 질감 타일도 u3 만 깔고 있었다. 셋을 여기서 함께 정한다.
+ *
+ * U2(도입)와 U6(정산·엔딩)은 아직 별개 화면이라 이 클래스를 붙이지 않는다.
+ */
+.expedition-screen .game-shell,
+.expedition-screen .game-shell__body {
+  background: var(--screen-shell-base);
+}
+
+.expedition-screen .game-shell__main {
+  background-color: var(--screen-surface);
+  background-image: var(--screen-texture);
+  background-repeat: repeat;
+}
+
+.expedition-screen .game-shell__right-panel {
+  background-color: var(--screen-surface-alt);
+  background-image: var(--screen-texture);
+  background-repeat: repeat;
 }
 
 /*
