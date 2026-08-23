@@ -28,7 +28,9 @@ A character's trust is persistent during the campaign.
 
 Reason:
 
-- Trust 0 is already permanent: normal trust evaluation cannot restore it.
+- Trust 0 is already permanent: E2's `evaluateTrust` returns a trust-0 member
+  unchanged, and C4 rejects a settlement snapshot that raises a campaign
+  member from trust 0 to a positive value.
 - Therefore, for a living character, `trust === 0` is the single source of truth for both permanent distrust and the cumulative-denouncement count.
 - A second history flag would duplicate the same state and introduce a synchronization failure mode without changing an ending result.
 
@@ -70,13 +72,22 @@ Result:
 
 This is the only ending evaluated during an expedition. C7 records the result atomically as `phase: "ended"`; a later transition may not settle or end the same expedition again. This prevents the order of party-member processing inside one advice result from changing the result.
 
+C7 passes the latest active-expedition party state after the entire trust-change
+batch has been applied. That state is the source of truth for `alive` and
+`trust`, because it can be newer than the campaign pool. Before calling C6, C7
+validates that the members are exactly the three distinct contracted party IDs;
+C6 does not repair duplicate, missing, or stale party entries.
+
 ## 6. Ending Evaluation
 
 All endings are valid campaign conclusions. They are not separated into good/bad categories.
 
-Evaluation priority:
+Immediate transition:
 
 1. `distrust` - 불신의 대가
+
+Normal post-C3 transition:
+
 2. `denounced` - 누적 고발
 3. `completed` - 원정 종료
 4. `exhausted` - 인력 소진
@@ -253,6 +264,6 @@ denounced.triggerCharacterIds = [C, A, B, D, E]
 - C3 runs before normal C6 evaluation. Immediate `distrust` bypasses it.
 - C4 provides normal expedition settlement data. Immediate `distrust` bypasses it.
 - C5 provides promotion/rank data.
-- C7 owns phase validation and atomically writes the C6 result as `ended`; it rejects duplicate settlement or ending transitions.
+- C7 owns phase validation, active-party identity validation, and atomically writes the C6 result as `ended`; it rejects duplicate settlement or ending transitions.
 - C8 records only settlements that actually occur. It records no settlement for an aborted `distrust` expedition.
 - U6 consumes `CampaignEnding` and does not recalculate conditions, title, reason, rank, or trigger characters.

@@ -79,7 +79,8 @@ export const BOARD_OFFER_MAX = 5;
 export const DENOUNCE_THRESHOLD = 5;
 
 /**
- * 엔딩 5종이다. 배열 순서가 곧 판정 순서이며 먼저 성립한 것만 적용한다.
+ * 엔딩 5종의 표시·완전성 순서다. 실제 전이는 즉시 distrust와 C3 뒤
+ * 정상 4종 판정으로 나뉜다.
  * docs/systems/PROGRESSION_AND_ENDINGS.md
  */
 export type EndingKind =

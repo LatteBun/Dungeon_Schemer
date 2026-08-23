@@ -65,13 +65,15 @@ Failed validation must not partially mutate campaign state.
 
 Validation rejects a missing result, an unknown dungeon or member, duplicate
 member IDs, a party other than exactly three members, final members not exactly
-matching that party, invalid HP/trust/gold ranges, contradictory alive/HP state,
-or a clear/wipe result inconsistent with the final survivors. Duplicate
-settlement IDs are rejected at the C7 boundary, before C4 is called.
+matching that party, invalid HP/trust/gold ranges, a trust-0 member raised to a
+positive trust value, contradictory alive/HP state, or a clear/wipe result
+inconsistent with the final survivors. Duplicate settlement IDs are rejected
+at the C7 boundary, before C4 is called.
 
 ## Character State
 
-Survivors keep final HP and trust.
+Survivors keep final HP and trust. If the campaign pool already has a member at
+trust 0, settlement cannot restore that member to a positive trust value.
 
 If HP is below 20% of max HP:
 - set gravelyWounded
