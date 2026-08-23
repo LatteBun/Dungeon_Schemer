@@ -556,6 +556,11 @@ export function createExpeditionForOffer(
   };
 }
 
+/** 재도전 횟수다. 사건 배치가 재도전마다 달라야 하므로 시드에 들어간다. */
+function attemptOf(campaign: CampaignState, expedition: ExpeditionState): number {
+  return campaign.dungeons.find((candidate) => candidate.id === expedition.dungeonId)?.attempts ?? 0;
+}
+
 function copyActiveExpedition(
   campaign: CampaignState,
   action: Extract<CampaignTransition, { type: "START_EXPEDITION" }>,
@@ -572,7 +577,14 @@ function copyActiveExpedition(
       party: { memberIds: [...action.expedition.party.memberIds] },
     },
     partyMembers: action.partyMembers.map((member) => ({ ...member })),
-    preparedEvents: null,
+    /*
+     * 원정을 시작할 때 만든다.
+     *
+     * 첫 방문 때로 미뤘더니 지도 화면이 노드별 공개 분류를 얻지 못했다. 지점을
+     * 밟기 전에 무엇이 있는지 보여주는 것이 지도의 일이므로, 계획이 그때 이미
+     * 있어야 한다.
+     */
+    preparedEvents: prepareFor(campaign, action.expedition, attemptOf(campaign, action.expedition)),
     pendingEvent: null,
   };
 }
