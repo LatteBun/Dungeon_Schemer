@@ -1,13 +1,44 @@
 import { describe, expect, it } from "vitest";
 import { GUIDE_RANKS, PROMOTION_GOLD, PROMOTION_REPUTATION } from "@/lib/domain";
+import { initializeCampaign } from "@/lib/rules/campaign-init";
+import type { SettlementResult } from "@/lib/domain";
 import type { GuideRank } from "@/lib/domain";
 import {
   CAUSE_ORDER,
+  createU6SettlementView,
   createU6PromotionView,
   nextRank,
   rankCrestSrc,
   type U6SettlementView,
 } from "./u6-settlement-model";
+
+function result(over: Partial<SettlementResult> = {}): SettlementResult {
+  const campaign = initializeCampaign("u6-settlement-adapter");
+  const dungeon = campaign.dungeons[0];
+  return {
+    expeditionId: "exp-u6",
+    dungeonId: dungeon.id,
+    status: "wiped",
+    survivorIds: [],
+    survivorCount: 0,
+    memberChanges: [],
+    reputationDelta: -6,
+    goldDelta: 0,
+    relicGold: 84,
+    riskBefore: 1,
+    riskAfter: 2,
+    riskCapped: false,
+    nextReward: { reputation: 10, gold: 20 },
+    causeChain: {
+      choice: "선택 내용",
+      reactions: "반응 내용",
+      damage: "피해 내용",
+      economy: "경제 내용",
+      campaignChange: "변화 내용",
+    },
+    ...over,
+  };
+}
 
 const settlement = (over: Partial<U6SettlementView> = {}): U6SettlementView => ({
   dungeonName: "거미굴 3",
@@ -44,6 +75,26 @@ describe("U6 정산 화면 모델", () => {
 
     expect(capped.riskAfter).toBe(capped.riskBefore);
     expect(capped.riskCapped).toBe(true);
+  });
+
+  it("정산 결과의 계약금과 유품을 재계산 없이 U6으로 옮긴다", () => {
+    const campaign = initializeCampaign("u6-settlement-adapter");
+    const view = createU6SettlementView(campaign, result(), "묘지 1", "graveyard");
+    expect(view).toMatchObject({ survivors: 0, goldDelta: 0, relicGold: 84, riskBefore: 1, riskAfter: 2 });
+    expect(view.causeChain.map((step) => step.order)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("★5 클리어는 위험도 상한에 막힌 실패가 아니다", () => {
+    const campaign = initializeCampaign("u6-settlement-cap");
+    const view = createU6SettlementView(campaign, result({
+      status: "cleared",
+      survivorCount: 3,
+      survivorIds: [campaign.pool.order[0]],
+      riskBefore: 5,
+      riskAfter: 5,
+      riskCapped: false,
+    }), "사막 5", "desert");
+    expect(view.riskCapped).toBe(false);
   });
 });
 

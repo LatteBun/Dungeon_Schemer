@@ -1,0 +1,150 @@
+import { describe, expect, it } from "vitest";
+import { initializeCampaign } from "./campaign-init";
+import type {
+  CampaignState,
+  Character,
+  ExpeditionParty,
+  SettlementSnapshot,
+} from "@/lib/domain";
+import { settleExpedition } from "./settlement";
+
+function partyMembers(campaign: CampaignState): Character[] {
+  const selected: Character[] = [];
+  const classes = new Set<string>();
+  for (const id of campaign.pool.order) {
+    const member = campaign.pool.byId[id];
+    if (member !== undefined && !classes.has(member.classId)) {
+      selected.push(member);
+      classes.add(member.classId);
+    }
+    if (selected.length === 3) break;
+  }
+  return selected;
+}
+
+function snapshotFixture(
+  campaign: CampaignState,
+  over: Partial<SettlementSnapshot> = {},
+): SettlementSnapshot {
+  const members = partyMembers(campaign);
+  const contractRisk = over.contractRisk ?? campaign.dungeons[0].riskLevel;
+  const dungeon = campaign.dungeons.find((candidate) => candidate.riskLevel === contractRisk)
+    ?? campaign.dungeons[0];
+  return {
+    expeditionId: "expedition-settlement-test",
+    dungeonId: dungeon.id,
+    contractRisk: dungeon.riskLevel,
+    party: { memberIds: members.map((member) => member.id) },
+    finalMembers: members,
+    status: "cleared",
+    causeInputs: { choice: "선택", reactions: "반응", damage: "피해" },
+    ...over,
+  };
+}
+
+function campaignFixture(over: Partial<CampaignState> = {}): CampaignState {
+  return { ...initializeCampaign("settlement-test"), ...over };
+}
+
+function withMembers(
+  members: readonly Character[],
+  campaign: CampaignState,
+): CampaignState {
+  const byId = { ...campaign.pool.byId };
+  for (const member of members) byId[member.id] = member;
+  return { ...campaign, pool: { ...campaign.pool, byId } };
+}
+
+describe("settleExpedition", () => {
+  it.each([
+    [3, 15, 32],
+    [2, 9, 19],
+    [1, 4, 9],
+  ] as const)("%i명 생존 클리어는 계약금을 현재·누적 골드에 더한다", (survivors, reputation, gold) => {
+    const campaign = campaignFixture();
+    const members = partyMembers(campaign);
+    const finalMembers = members.map((member, index) => ({
+      ...member,
+      alive: index < survivors,
+      hp: index < survivors ? member.hp : 0,
+      gold: member.gold,
+    }));
+    const { campaign: resultCampaign, result } = settleExpedition(
+      campaign,
+      snapshotFixture(campaign, { contractRisk: 3, finalMembers, status: "cleared" }),
+    );
+
+    expect(result).toMatchObject({ survivorCount: survivors, reputationDelta: reputation, goldDelta: gold, relicGold: 0 });
+    expect(resultCampaign).toMatchObject({ reputation: 30 + reputation, gold: 10 + gold, cumulativeGold: gold });
+  });
+
+  it("전멸은 계약 위험도 명성을 잃고 유품만 회수한다", () => {
+    const initial = campaignFixture({ reputation: 6 });
+    const members = partyMembers(initial).map((member, index) => ({
+      ...member,
+      alive: false,
+      hp: 0,
+      gold: 20 + index * 10,
+    }));
+    const campaign = withMembers(members, initial);
+    const { campaign: resultCampaign, result } = settleExpedition(
+      campaign,
+      snapshotFixture(campaign, {
+        contractRisk: 2,
+        finalMembers: members,
+        status: "wiped",
+      }),
+    );
+
+    expect(result).toMatchObject({ reputationDelta: -10, goldDelta: 0, relicGold: 90, riskBefore: 2, riskAfter: 3 });
+    expect(resultCampaign.reputation).toBe(0);
+    expect(resultCampaign.gold).toBe(100);
+    expect(resultCampaign.cumulativeGold).toBe(90);
+    expect(members.every((member) => resultCampaign.pool.byId[member.id].gold === 0)).toBe(true);
+  });
+
+  it("★5 전멸은 위험도를 올리지 않고 상한을 표시한다", () => {
+    const campaign = campaignFixture();
+    const members = partyMembers(campaign).map((member) => ({ ...member, alive: false, hp: 0 }));
+    const { result } = settleExpedition(campaign, snapshotFixture(campaign, {
+      contractRisk: 5,
+      finalMembers: members,
+      status: "wiped",
+    }));
+    expect(result).toMatchObject({ riskBefore: 5, riskAfter: 5, riskCapped: true });
+  });
+
+  it("정확히 20% HP는 중상이 아니고 그보다 낮으면 중상이다", () => {
+    const campaign = campaignFixture();
+    const members = partyMembers(campaign);
+    const exact = { ...members[0], hp: Math.floor(members[0].maxHp * 0.2) };
+    const below = { ...members[1], hp: Math.floor(members[1].maxHp * 0.2) - 1 };
+    const finalMembers = [exact, below, members[2]];
+    const { campaign: resultCampaign } = settleExpedition(campaign, snapshotFixture(campaign, { finalMembers }));
+    expect(resultCampaign.pool.byId[exact.id].gravelyWounded).toBe(false);
+    expect(resultCampaign.pool.byId[below.id].gravelyWounded).toBe(true);
+  });
+
+  it("잘못된 파티와 상태는 적용 전에 INVALID_SETTLEMENT로 거부한다", () => {
+    const campaign = campaignFixture();
+    const members = partyMembers(campaign);
+    const duplicateParty: ExpeditionParty = { memberIds: [members[0].id, members[0].id, members[1].id] };
+    const before = structuredClone(campaign);
+    expect(() => settleExpedition(campaign, snapshotFixture(campaign, {
+      party: duplicateParty,
+      finalMembers: members,
+    }))).toThrowError(expect.objectContaining({ code: "INVALID_SETTLEMENT" }));
+    expect(campaign).toEqual(before);
+  });
+
+  it("중복 클래스 파티는 정산 전에 거부한다", () => {
+    const campaign = campaignFixture();
+    const members = partyMembers(campaign);
+    const duplicateClassMembers = members.map((member, index) => index === 2
+      ? { ...member, classId: members[0].classId }
+      : member);
+    expect(() => settleExpedition(campaign, snapshotFixture(campaign, {
+      finalMembers: duplicateClassMembers,
+    }))).toThrowError(expect.objectContaining({ code: "INVALID_SETTLEMENT" }));
+  });
+});

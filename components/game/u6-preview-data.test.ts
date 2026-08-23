@@ -32,12 +32,12 @@ describe("U6 프리뷰 데이터", () => {
     expect(wipe?.riskAfter).toBe((wipe?.riskBefore ?? 0) + 1);
   });
 
-  it("★5 정산은 위험도가 오르지 않는다", () => {
+  it("★5 전멸이 아니면 위험도 상한 표시를 하지 않는다", () => {
     const capped = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-promotion")?.settlement;
 
     expect(capped?.riskBefore).toBe(5);
     expect(capped?.riskAfter).toBe(5);
-    expect(capped?.riskCapped).toBe(true);
+    expect(capped?.riskCapped).toBe(false);
   });
 
   it("승급 가능 정산은 두 경로가 함께 열린다", () => {

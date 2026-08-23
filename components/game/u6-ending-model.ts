@@ -3,8 +3,8 @@ import type { EndingKind, GuideRank } from "@/lib/domain";
 /**
  * U6 엔딩 화면의 모델 경계.
  *
- * 엔딩 판정은 C6, 통계 누적은 C8 의 몫이고 둘 다 아직 없다. 화면은 판정 순서를
- * 알 필요가 없다. kind 와 reason 을 받아 표시만 한다.
+ * 엔딩 판정과 통계 누적은 각각 C6/C8의 몫이다. 화면은 판정 순서를 알 필요가
+ * 없다. kind 와 reason 을 받아 표시만 한다.
  */
 
 export const ENDING_TITLE: Readonly<Record<EndingKind, string>> = {

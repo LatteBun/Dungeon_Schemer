@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CharacterId } from "@/lib/domain";
+import { rewardForSurvivors } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createBoardOffers } from "@/lib/rules/board";
 import {
@@ -39,6 +40,13 @@ describe("U3 board model", () => {
         reputationLoss: 15,
       },
     ]);
+  });
+
+  it("게시판 보상은 도메인 정산 보상과 같은 값을 사용한다", () => {
+    for (const survivors of [3, 2, 1] as const) {
+      const view = contractOutcomesForRisk(3).find((outcome) => outcome.survivors === survivors);
+      expect(view).toMatchObject(rewardForSurvivors(3, survivors));
+    }
   });
 
   it("C2 공고 모델은 공개 환경 특성을 투영하지 않는다", () => {

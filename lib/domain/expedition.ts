@@ -57,8 +57,6 @@ export interface BossResult {
 export interface ExpeditionResult {
   status: ExpeditionStatus;
   survivorIds: readonly CharacterId[];
-  /** 전멸했을 때만 채운다. 사망자 전원의 소지 골드 합이다. */
-  salvagedGold: number;
 }
 
 export interface PendingMerchantEffect {

@@ -1,26 +1,13 @@
 import { CLASSES } from "@/lib/content/classes";
-import { RANK_RISK_LIMIT } from "@/lib/domain";
+import { RANK_RISK_LIMIT, rewardForSurvivors } from "@/lib/domain";
 import { PERSONALITY_LABEL, portraitSrcForCharacter } from "./character-labels";
 import type {
   BoardOffer,
   CampaignState,
   CharacterId,
-  Personality,
   RiskLevel,
   ThemeId,
 } from "@/lib/domain";
-
-const FULL_SURVIVOR_REWARD = {
-  1: { reputation: 6, gold: 12 },
-  2: { reputation: 10, gold: 20 },
-  3: { reputation: 15, gold: 32 },
-  4: { reputation: 21, gold: 45 },
-  5: { reputation: 28, gold: 60 },
-} as const satisfies Readonly<
-  Record<RiskLevel, { reputation: number; gold: number }>
->;
-
-
 
 const THEME_LABELS: Readonly<Record<ThemeId, string>> = {
   spider: "거미굴",
@@ -77,7 +64,7 @@ export type U3PortraitMap = Readonly<Partial<Record<CharacterId, string>>>;
 export function contractOutcomesForRisk(
   riskLevel: RiskLevel,
 ): readonly U3ContractOutcomeView[] {
-  const full = FULL_SURVIVOR_REWARD[riskLevel];
+  const full = rewardForSurvivors(riskLevel, 3);
 
   return [
     {
@@ -90,15 +77,15 @@ export function contractOutcomesForRisk(
     {
       survivors: 2,
       label: "2명 생존 시",
-      reputation: Math.floor(full.reputation * 0.6),
-      gold: Math.floor(full.gold * 0.6),
+      reputation: rewardForSurvivors(riskLevel, 2).reputation,
+      gold: rewardForSurvivors(riskLevel, 2).gold,
       reputationLoss: 0,
     },
     {
       survivors: 1,
       label: "1명 생존 시",
-      reputation: Math.floor(full.reputation * 0.3),
-      gold: Math.floor(full.gold * 0.3),
+      reputation: rewardForSurvivors(riskLevel, 1).reputation,
+      gold: rewardForSurvivors(riskLevel, 1).gold,
       reputationLoss: 0,
     },
     {
@@ -144,7 +131,7 @@ export function createU3BoardView(
       throw new Error(`U3 공고의 던전을 찾을 수 없습니다: ${offer.dungeonId}`);
     }
 
-    const fullReward = FULL_SURVIVOR_REWARD[offer.riskLevel];
+    const fullReward = rewardForSurvivors(offer.riskLevel, 3);
     const notice: U3BoardNoticeView = {
       offerId: offer.id,
       dungeonId: offer.dungeonId,
