@@ -30,6 +30,7 @@ export interface BossInfoVerification {
   readonly eventId: EventId;
   readonly adviceId: ChoiceId;
   readonly characterId: CharacterId;
+  readonly bossRuleId: import("./ids").BossRuleId;
   readonly action: BossInfoVerificationAction;
   readonly applied: boolean;
 }

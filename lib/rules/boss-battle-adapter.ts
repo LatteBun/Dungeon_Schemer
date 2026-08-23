@@ -4,6 +4,7 @@ import { evaluateTrust } from "@/lib/rules/trust";
 import { resolveBattle } from "@/lib/rules/battle-engine";
 import {
   bossTraitForRule,
+  clampBossInfoMultiplier,
   modifierForBossInfo,
 } from "@/lib/content/boss-traits";
 import { RuleError } from "@/lib/domain";
@@ -69,6 +70,13 @@ function recordKey(record: InfoRecord): string {
   return `${record.eventId}/${record.adviceId}/${record.characterId}`;
 }
 
+function compareInfoRecords(left: InfoRecord, right: InfoRecord): number {
+  return left.characterId.localeCompare(right.characterId)
+    || left.bossRuleId.localeCompare(right.bossRuleId)
+    || left.eventId.localeCompare(right.eventId)
+    || left.adviceId.localeCompare(right.adviceId);
+}
+
 function directionFor(outcome: "help" | "harm"): BossInfoDirection {
   return outcome === "help" ? "beneficial" : "harmful";
 }
@@ -87,16 +95,16 @@ function actionFor(record: InfoRecord): BossInfoVerificationAction {
 }
 
 function sortedRecords(records: readonly InfoRecord[]): readonly InfoRecord[] {
-  return [...records].sort((left, right) => recordKey(left).localeCompare(recordKey(right)));
+  return [...records].sort(compareInfoRecords);
 }
 
-function multiplyAxis(map: Map<string, number>, memberId: string, axis: BossInfoAxis, value: number): void {
+function multiplyRawAxis(map: Map<string, number>, memberId: string, axis: BossInfoAxis, value: number): void {
   const key = `${memberId}:${axis}`;
-  map.set(key, Math.max(0.7, Math.min(1.5, (map.get(key) ?? 1) * value)));
+  map.set(key, (map.get(key) ?? 1) * value);
 }
 
-function axisValue(map: Map<string, number>, memberId: string, axis: BossInfoAxis): number {
-  return map.get(`${memberId}:${axis}`) ?? 1;
+function finalAxisValue(map: ReadonlyMap<string, number>, memberId: string, axis: BossInfoAxis): number {
+  return clampBossInfoMultiplier(map.get(`${memberId}:${axis}`) ?? 1);
 }
 
 export function resolveBossBattle(input: BossBattleInput): BossBattleResolution {
@@ -133,7 +141,7 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
     eligibleRecords.push(record);
     if (record.reaction !== "accepted") continue;
     const direction = directionFor(record.outcome);
-    multiplyAxis(axisMultipliers, record.characterId, trait.axis, modifierForBossInfo(trait.axis, record.outcome));
+    multiplyRawAxis(axisMultipliers, record.characterId, trait.axis, modifierForBossInfo(trait.axis, record.outcome));
     applications.push({
       eventId: record.eventId,
       adviceId: record.adviceId,
@@ -160,13 +168,11 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
   const merchantIncoming = consumed.nextBattle?.incomingDamageMultiplier;
   const merchantOutgoing = consumed.nextBattle?.partyDamageMultiplier;
   for (const member of aliveMembers) {
-    targetWeightMultiplierByMemberId[member.id] = axisValue(axisMultipliers, member.id, "targetWeight");
-    incomingDamageMultiplierByMemberId[member.id] = axisValue(axisMultipliers, member.id, "incomingDamage");
-    outgoingDamageMultiplierByMemberId[member.id] = axisValue(axisMultipliers, member.id, "outgoingDamage");
-    if (merchantIncoming !== undefined) multiplyAxis(axisMultipliers, member.id, "incomingDamage", merchantIncoming);
-    if (merchantOutgoing !== undefined) multiplyAxis(axisMultipliers, member.id, "outgoingDamage", merchantOutgoing);
-    incomingDamageMultiplierByMemberId[member.id] = axisValue(axisMultipliers, member.id, "incomingDamage");
-    outgoingDamageMultiplierByMemberId[member.id] = axisValue(axisMultipliers, member.id, "outgoingDamage");
+    if (merchantIncoming !== undefined) multiplyRawAxis(axisMultipliers, member.id, "incomingDamage", merchantIncoming);
+    if (merchantOutgoing !== undefined) multiplyRawAxis(axisMultipliers, member.id, "outgoingDamage", merchantOutgoing);
+    targetWeightMultiplierByMemberId[member.id] = finalAxisValue(axisMultipliers, member.id, "targetWeight");
+    incomingDamageMultiplierByMemberId[member.id] = finalAxisValue(axisMultipliers, member.id, "incomingDamage");
+    outgoingDamageMultiplierByMemberId[member.id] = finalAxisValue(axisMultipliers, member.id, "outgoingDamage");
   }
 
   const battle = resolveBattle({
@@ -193,6 +199,7 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
       eventId: record.eventId,
       adviceId: record.adviceId,
       characterId: record.characterId,
+      bossRuleId: record.bossRuleId,
       action,
       applied: record.reaction === "accepted",
     });

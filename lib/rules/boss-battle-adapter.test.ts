@@ -4,9 +4,11 @@ import { SPIDER_BOSSES, THEMES } from "@/lib/content/themes";
 import { resolveBossBattle, retryBossStats } from "@/lib/rules/boss-battle-adapter";
 import type {
   CampaignDungeon,
+  BossRuleId,
   Character,
   CharacterId,
   ChoiceId,
+  ClassDef,
   ClassId,
   EventId,
   InfoRecord,
@@ -58,6 +60,16 @@ function info(overrides: Partial<InfoRecord> = {}): InfoRecord {
   };
 }
 
+function classesWithWarriorAttack(attack: number): readonly ClassDef[] {
+  return CLASSES.map((classDef) => classDef.id === "warrior" ? { ...classDef, attack } : classDef);
+}
+
+function firstPartyAction(result: ReturnType<typeof resolveBossBattle>) {
+  const action = result.bossResult.battle.actions.find((candidate) => candidate.actorSide === "party");
+  if (action === undefined) throw new Error("party action이 없다");
+  return action;
+}
+
 function resolve(input: Partial<Parameters<typeof resolveBossBattle>[0]> = {}) {
   const members = input.members ?? [member("member-1")];
   return resolveBossBattle({
@@ -81,6 +93,36 @@ describe("E4 보스 BattleEngine adapter", () => {
     expect(result.bossResult.battle.actions.length).toBeGreaterThan(0);
     expect(result.bossResult.applications[0]?.axis).toBe("incomingDamage");
     expect(result.pendingMerchantEffect).toBeNull();
+  });
+
+  it("두 outgoing help와 merchant를 모두 곱한 뒤 한 번만 clamp한다", () => {
+    const result = resolve({
+      dungeon: dungeon({ bossId: SPIDER_BOSSES[1].id }),
+      infoRecords: [
+        info({ bossRuleId: "boss-morkan-cocoon-side" as BossRuleId }),
+        info({ adviceId: "spin" as ChoiceId, bossRuleId: "boss-morkan-spin-pause" as BossRuleId }),
+      ],
+      classDefs: classesWithWarriorAttack(20),
+      pendingMerchantEffect: { adviceId: "merchant" as ChoiceId, nextBattle: { partyDamageMultiplier: 0.5 } },
+    });
+
+    expect(firstPartyAction(result).damage).toBe(16);
+  });
+
+  it("verification 순서를 characterId, bossRuleId, eventId, adviceId로 고정한다", () => {
+    const result = resolve({
+      infoRecords: [
+        info({ eventId: "event-z" as EventId, adviceId: "advice-z" as ChoiceId, bossRuleId: "boss-ragna-turning" as BossRuleId }),
+        info({ eventId: "event-a" as EventId, adviceId: "advice-a" as ChoiceId, bossRuleId: "boss-ragna-crouch" as BossRuleId }),
+      ],
+    });
+
+    expect(result.bossResult.verifications.map(({ characterId, bossRuleId, eventId, adviceId }) =>
+      `${characterId}/${bossRuleId}/${eventId}/${adviceId}`,
+    )).toEqual([
+      "member-1/boss-ragna-crouch/event-a/advice-a",
+      "member-1/boss-ragna-turning/event-z/advice-z",
+    ]);
   });
 
   it("현재 위험도와 초기 위험도의 차이만 보스 scaling에 반영한다", () => {
