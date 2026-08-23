@@ -16,6 +16,7 @@ import {
   adviceIdForSlotIn,
   bossReplayFor,
   ecologyViewFor,
+  logFor,
   progressViewFor,
   publicKindByNodeId,
   statusFor,
@@ -141,7 +142,7 @@ function ExpeditionScreens() {
       <U5ProgressScreen
         status={status}
         progress={progressViewFor(campaign, active)!}
-        log={[]}
+        log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         onSelectAdvice={(slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });

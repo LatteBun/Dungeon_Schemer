@@ -14,7 +14,7 @@ import type {
   CampaignTransitionContext,
   CampaignTransitionResult,
   Character,
-  ExpeditionCauseRecord,
+  ExpeditionRecord,
   ExpeditionState,
   SettlementSnapshot,
 } from "@/lib/domain";
@@ -432,7 +432,8 @@ function transitionChooseAdvice(
    * 골랐는지 물을 곳이 없다. 사라지기 전에 적어 둔다.
    */
   const chosen = event.advice.find((option) => option.id === resolution.decision.adviceId);
-  const lastCause: ExpeditionCauseRecord = {
+  const record: ExpeditionRecord = {
+    observation: event.description,
     choice: chosen?.label ?? "",
     reactions: resolution.decision.reactions.map((one) => ({ characterId: one.characterId, reaction: one.reaction })),
     damage: withTrust.flatMap((after) => {
@@ -441,6 +442,9 @@ function transitionChooseAdvice(
         ? []
         : [{ characterId: after.id, before: before.hp, after: after.hp }];
     }),
+    battle: battle?.battle == null
+      ? null
+      : { rounds: battle.battle.rounds, victory: battle.battle.status === "victory" },
   };
 
   return emptyResult(withHistory, {
@@ -450,7 +454,7 @@ function transitionChooseAdvice(
       expedition: nextExpedition,
       partyMembers: withTrust,
       pendingEvent: null,
-      lastCause,
+      records: [...active.records, record],
     },
   });
 }
@@ -525,7 +529,8 @@ function transitionEnterBoss(
    * 고른 것은 무엇을 믿고 들어갔는가다. `E4` 가 실제로 적용한 믿음만 센다.
    */
   const applied = resolved.bossResult.applications.length;
-  const bossCause: ExpeditionCauseRecord = {
+  const bossRecord: ExpeditionRecord = {
+    observation: "보스방에 들었다",
     choice: applied === 0
       ? "보스 정보 없이 보스방에 들었다"
       : `수용한 보스 정보 ${applied}건을 믿고 들었다`,
@@ -540,11 +545,20 @@ function transitionEnterBoss(
         ? []
         : [{ characterId: after.id, before: before.hp, after: after.hp }];
     }),
+    battle: {
+      rounds: resolved.bossResult.battle.rounds,
+      victory: resolved.bossResult.status === "cleared",
+    },
   };
 
   return emptyResult(withHistory, {
     ...context,
-    activeExpedition: { ...active, expedition: nextExpedition, partyMembers: withTrust, lastCause: bossCause },
+    activeExpedition: {
+      ...active,
+      expedition: nextExpedition,
+      partyMembers: withTrust,
+      records: [...active.records, bossRecord],
+    },
   });
 }
 
@@ -584,7 +598,7 @@ export function createSettlementSnapshotFor(
     adviceHelped: "믿음이 맞았다", adviceHarmed: "믿음이 틀렸다",
     suspicionWasCorrect: "의심이 맞았다", suspicionWasCostly: "의심이 손해였다",
   };
-  const cause = active.lastCause;
+  const cause = active.records.at(-1) ?? null;
 
   return {
     expeditionId: active.expeditionId,
@@ -681,7 +695,7 @@ function copyActiveExpedition(
      */
     preparedEvents: prepareFor(campaign, action.expedition, attemptOf(campaign, action.expedition)),
     pendingEvent: null,
-    lastCause: null,
+    records: [],
   };
 }
 

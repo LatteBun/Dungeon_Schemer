@@ -14,7 +14,7 @@ import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacter } from "./charac
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { TopStatusView } from "./TopStatusBar";
-import type { U5EcologyView } from "./u5-log";
+import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import { toAdviceViews, type U5ProgressView, type U5SceneKind } from "./u5-progress-model";
 
 /**
@@ -157,8 +157,73 @@ export function ecologyViewFor(campaign: CampaignState, active: ActiveExpedition
   const text = new Map(theme.rules.map((rule) => [rule.id, rule.text]));
   return {
     disclosedRules: active.expedition.disclosedRuleIds.map((id) => text.get(id) ?? String(id)),
-    observedClues: [],
+    /*
+     * 사건에서 본 것이다. 규칙 문장으로 승격하지 않는다.
+     *
+     * 공개된 규칙은 `E2` 가 답사로 알려 준 사실이고, 이것은 길잡이가 제 눈으로
+     * 본 것이다. 둘을 같은 칸에 두면 무엇이 확인된 것인지 흐려진다.
+     */
+    observedClues: active.records
+      .filter((record) => record.observation !== "")
+      .map((record) => record.observation),
   };
+}
+
+const REACTION_WORD: Readonly<Record<string, string>> = {
+  accepted: "수용",
+  suspected: "의심",
+  detected: "적발",
+  adviceHelped: "믿음이 맞았다",
+  adviceHarmed: "믿음이 틀렸다",
+  suspicionWasCorrect: "의심이 맞았다",
+  suspicionWasCostly: "의심이 손해였다",
+};
+
+/**
+ * 이 원정의 진행 기록.
+ *
+ * 지나온 자리마다 관찰 · 조언 · 반응 · 전투가 한 묶음이다. 한 항목이 여러
+ * 필터에 걸리므로 필터별로 목록을 복제하지 않는다 — 복제하면 같은 사건이 두
+ * 벌로 남아 한쪽만 고쳐진다.
+ */
+export function logFor(campaign: CampaignState, active: ActiveExpeditionContext): readonly U5LogEntry[] {
+  const theme = themeOf(campaign, active);
+  const text = new Map(theme.rules.map((rule) => [rule.id, rule.text]));
+  const nameOf = (characterId: Character["id"]) =>
+    active.partyMembers.find((member) => member.id === characterId)?.name ?? String(characterId);
+
+  const entries: U5LogEntry[] = [];
+  const push = (tags: U5LogEntry["tags"], label: string, detail: string) => {
+    if (detail !== "") entries.push({ order: entries.length + 1, tags, label, detail });
+  };
+
+  /* 답사가 알려 준 것이 먼저다. 던전에 들기 전에 이미 알고 있던 사실이다. */
+  push(
+    ["ecology"],
+    "생태 공개",
+    active.expedition.disclosedRuleIds.map((id) => text.get(id) ?? String(id)).join(" · "),
+  );
+
+  for (const record of active.records) {
+    push(["clue"], "관찰", record.observation);
+    /* 조언 식별자는 내부 정답을 담고 있어 화면에 내지 않는다. 문구만 쓴다. */
+    push([], "조언 선택", record.choice);
+    push(
+      [],
+      "파티 반응",
+      record.reactions.map((one) => `${nameOf(one.characterId)} ${REACTION_WORD[one.reaction] ?? one.reaction}`).join(" · "),
+    );
+    push(
+      ["battle"],
+      "피해",
+      record.damage.map((one) => `${nameOf(one.characterId)} HP ${one.before} → ${one.after}`).join(" · "),
+    );
+    if (record.battle !== null) {
+      push(["battle"], "전투", `${record.battle.rounds}라운드 · ${record.battle.victory ? "파티 생환" : "파티 전멸"}`);
+    }
+  }
+
+  return entries;
 }
 
 

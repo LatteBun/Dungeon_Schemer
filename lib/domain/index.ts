@@ -103,7 +103,7 @@ export type {
 } from "./history";
 export type {
   ActiveExpeditionContext,
-  ExpeditionCauseRecord,
+  ExpeditionRecord,
   CampaignTransition,
   CampaignTransitionContext,
   CampaignTransitionResult,

@@ -4,6 +4,7 @@ import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
 import {
   adviceIdForSlotIn,
   ecologyViewFor,
+  logFor,
   progressViewFor,
   publicKindByNodeId,
   statusFor,
@@ -154,5 +155,68 @@ describe("생태 View", () => {
     for (const [index, text] of view.disclosedRules.entries()) {
       expect(text).not.toBe(String(active.expedition.disclosedRuleIds[index]));
     }
+  });
+});
+
+/** 조언 하나를 실제로 고른 뒤의 상태. 기록이 한 칸 쌓여 있다. */
+function walkOneEvent() {
+  const store = atEvent();
+  const active = store.getState().context.activeExpedition!;
+  if (active.pendingEvent === null) throw new Error("사건이 확정되지 않았다");
+  store.getState().dispatch({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+  const state = store.getState();
+  return { campaign: state.campaign, active: state.context.activeExpedition! };
+}
+
+function startExpedition() {
+  const state = inExpedition().getState();
+  return { campaign: state.campaign, active: state.context.activeExpedition! };
+}
+
+describe("진행 기록", () => {
+  it("답사가 알려 준 생태를 먼저 적는다", () => {
+    const walked = walkOneEvent();
+    const entries = logFor(walked.campaign, walked.active);
+
+    expect(entries[0]?.label).toBe("생태 공개");
+    expect(entries[0]?.tags).toEqual(["ecology"]);
+  });
+
+  /* 조언 식별자는 내부 정답을 담고 있다. 기록에 문구만 남아야 한다. */
+  it("조언 식별자가 기록에 새지 않는다", () => {
+    const walked = walkOneEvent();
+    const dump = logFor(walked.campaign, walked.active).map((one) => one.detail).join(" ");
+
+    expect(dump).not.toMatch(/-help|-harm|-neutral/);
+  });
+
+  it("지나온 자리마다 관찰과 조언이 남는다", () => {
+    const walked = walkOneEvent();
+    const entries = logFor(walked.campaign, walked.active);
+
+    expect(entries.some((one) => one.label === "관찰")).toBe(true);
+    expect(entries.some((one) => one.label === "조언 선택")).toBe(true);
+  });
+
+  /* 순번은 1부터 빈틈없이 이어져야 필터가 시간 순서를 잃지 않는다. */
+  it("순번이 1부터 이어진다", () => {
+    const entries = logFor(walkOneEvent().campaign, walkOneEvent().active);
+
+    expect(entries.map((one) => one.order)).toEqual(entries.map((_, index) => index + 1));
+  });
+
+  it("아무 데도 가지 않았으면 생태 한 줄뿐이다", () => {
+    const fresh = startExpedition();
+
+    expect(logFor(fresh.campaign, fresh.active).every((one) => one.label === "생태 공개")).toBe(true);
+  });
+
+  /* 본 것과 알려 준 것은 다른 칸에 선다. 섞으면 무엇이 확인된 것인지 흐려진다. */
+  it("관찰한 것을 규칙 문장으로 승격하지 않는다", () => {
+    const walked = walkOneEvent();
+    const ecology = ecologyViewFor(walked.campaign, walked.active);
+
+    expect(ecology.observedClues.length).toBeGreaterThan(0);
+    for (const clue of ecology.observedClues) expect(ecology.disclosedRules).not.toContain(clue);
   });
 });
