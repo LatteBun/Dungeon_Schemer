@@ -117,8 +117,8 @@ graph LR
   C4 --> C5 & C6 & C8 & U6
   C5 --> C7 & U3
   C6 --> C7 & U6
-  C7 --> B1 & I1
-  C8 --> U6
+  C7 --> C8 & B1 & I1
+  C8 --> I1 & U6
   E1 --> E2 & E3 & U4
   E2 --> E3 & E4 & U5
   E3 --> E4 & U5 & U5-2
@@ -153,7 +153,7 @@ graph LR
 E1·E2·E3·E4와 C4 및 콘텐츠 기반이 완료된 현재 남은 캠페인 규칙의 직접 순서는 다음이다.
 
 ```text
-C5·C6 → C7 → I1 → I2 → B1 → Q1 → Q2
+C5·C6 → C7 → C8-A → I1 → I2 → B1 → Q1 → Q2
 ```
 
 E3의 사건·단서·연계와 E4의 보스전 결과가 확정되었고, C4 정산·위험도 상승 구현도 완료되었다.
@@ -191,8 +191,8 @@ E3의 사건·단서·연계와 E4의 보스전 결과가 확정되었고, C4 �
 | C4 | 정산·위험도 상승 | SettlementSnapshot 검증, 생존 3/2/1명 보상, 전멸 손실·유품, 위험도 +1/★5 상한, 누적 골드와 SettlementResult 반영, 클리어 `nextReward: null`·전멸 다음 보상, 응급 편성 연계 | — | **C5 C6 C8 U6** | LatteBun | ✅ |
 | C5 | 승급 | 명성 60/120/200 무료 승급과 골드 150/320/600 승급, 수동 승급·강등 없음. 게시판에서 사용할 승급 가능 판정·결과 계약을 제공 | — | **C7 U3** | LatteBun | ✅ |
 | C6 | 엔딩·신뢰 0 누적 | 살아 있는 신뢰 0 누적 2~4명 수용·적발 보정, 한 신뢰 변화 묶음 뒤 생존 파티 전원 신뢰 0 즉시 불신 결과, `denounced`→`completed`→`exhausted`→`unemployed` 순수 판정과 결정적 trigger ID | — | **C7 U6** | LatteBun | ✅ |
-| C7 | 캠페인 전이 | `intro`·`board`·`contract`·`expedition`·`settlement`·`promotion`·`worldTurn`·`ended`의 순수 전이, 세션 전용 활성 원정 컨텍스트, 정산 ID 중복 거부, C3 뒤 새 공고와 C6 정상 엔딩, 최신 신뢰 변화 묶음 뒤 즉시 불신 `phase: ended` 원자 기록 | — | **B1 I1** | LatteBun | ✅ |
-| C8 | 캠페인 통계 | C7 `CampaignTransitionResult.settlement`의 `SettlementResult`를 재계산하지 않고 소비해 조언·반응, 생환·전멸, 전환점, 원정 연대기와 정산 원인 사슬을 캠페인 상태에 누적 | — | **U6** |  | ⬜ |
+| C7 | 캠페인 전이 | `intro`·`board`·`contract`·`expedition`·`settlement`·`promotion`·`worldTurn`·`ended`의 순수 전이, 세션 전용 활성 원정 컨텍스트, 정산 ID 중복 거부, C3 뒤 새 공고와 C6 정상 엔딩, 최신 신뢰 변화 묶음 뒤 즉시 불신 `phase: ended` 원자 기록 | — | **C8 B1 I1** | LatteBun | ✅ |
+| C8 | 캠페인 통계 | **C8-A:** C7 `CampaignTransitionResult.settlement`의 `SettlementResult`를 재계산하지 않고 단 한 번 소비해 원본 정산 이력, 클리어·전멸·사망·정산 획득 골드·최고 고정 던전 순서를 누적한다. **C8-B 후속:** E2/E3/E4·C5·I1의 확정 이벤트 계약 뒤 조언·반응·전환점·연대기를 별도 설계한다 | C7 | **I1 U6** |  | ⬜ |
 | E1 | 위험도별 지도 생성 | 초기 위험도 기준 6~8 일반 Depth, 폭 1~5, 첫·마지막 ≤2, degree≤2, 전 노드 도달/보스 연결, 동일 경로 길이, 16개 폭 템플릿·결정적 retry 순환, `GeneratedMap.layers`·`INVALID_GENERATION` 검증 | — | **E2 E3 U4** | lattebun | ✅ |
 | E2 | 생태·조언 판정 | C1 `activeRuleIds` 3개를 재추첨하지 않고 현재 위험도별 3/2/1개를 결정적 부분집합으로 공개하며, 조건부 규칙은 사건별 성립 선언이 있을 때만 후보가 된다. 조언 3개를 결정적으로 섞고 살아 있는 파티원별 기본 확률+신뢰 구간+성격+C6 보정으로 수용·의심·적발을 독립 판정한다. 한 명 이상 수용 시 `executed`, 전원 미수용 시 기본 결과를 선택하며 즉시 신뢰와 보스 지연 신뢰 시점을 구분한다. 숨은 `special` exact-once cut의 보스 정보 기회를 현재 위험도별로 준비하고 현재 던전 보스가 아닌 정보를 거부한다 | — | **E3 E4 U5** | LatteBun | ✅ |
 | E3 | 사건 배치·단서·연계·공통 전투 | E1 DAG에 공개 category와 숨은 exact-once `special` cut·strong link를 준비하고 방문 시 EventId를 물질화한다. 단서·effect·monster encounter·merchant pending을 연결하고 공통 BattleEngine action record를 만든다 | — | **E4 U5 U5-2** | LatteBun | ✅ |
