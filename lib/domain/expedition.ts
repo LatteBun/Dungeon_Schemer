@@ -85,7 +85,7 @@ export interface ExpeditionState {
   map: GeneratedMap;
   currentNodeId: NodeId;
   visitedNodeIds: readonly NodeId[];
-  /** 수용한 지연형 조언과 개인별 반응. 보스전과 사후 검증의 입력이다. */
+  /** 보스전 뒤 검증할 지연형 조언의 개인별 반응이다. accepted와 suspected를 보존한다. */
   infoRecords: readonly InfoRecord[];
   pendingMerchantEffect: PendingMerchantEffect | null;
   bossResult: BossResult | null;
