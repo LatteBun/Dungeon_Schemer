@@ -8,6 +8,7 @@ import type {
   CampaignTransitionResult,
 } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
+import { recordSettlementStatistics } from "@/lib/rules/campaign-statistics";
 import { transitionCampaign } from "@/lib/rules/campaign-transition";
 
 /**
@@ -39,6 +40,29 @@ export interface CampaignStoreState {
   snapshot(): Pick<CampaignStoreState, "campaign" | "context" | "last">;
 }
 
+/**
+ * 정산 한 번을 `C8-A` 가 누적한다.
+ *
+ * `C7` 은 통계를 건드리지 않는다 — 정산 결과를 내주고 소유권은 넘긴다. 그 결과를
+ * 「재계산하지 않고 단 한 번 소비」하는 것이 여기의 몫이라고 `C8-A` 가 적어 두었고,
+ * 그동안 아무도 부르지 않아 누적 통계가 전부 0 이었다. 엔딩 보고서가 「원정 0회 ·
+ * 사망 0명」을 내놓는다.
+ *
+ * 다시 계산하지 않는다. 두 번 세면 두 곳이 갈라진다.
+ */
+function accumulate(result: CampaignTransitionResult): CampaignState {
+  const settlement = result.settlement;
+  if (settlement == null) return result.campaign;
+
+  const dungeon = result.campaign.dungeons.find((one) => one.id === settlement.dungeonId);
+  if (dungeon === undefined) return result.campaign;
+
+  return {
+    ...result.campaign,
+    statistics: recordSettlementStatistics(result.campaign.statistics, settlement, dungeon),
+  };
+}
+
 export type CampaignStore = ReturnType<typeof createCampaignStore>;
 
 export function createCampaignStore(seed: string) {
@@ -60,7 +84,7 @@ export function createCampaignStore(seed: string) {
       try {
         const result = transitionCampaign(campaign, context, action);
         set({
-          campaign: result.campaign,
+          campaign: accumulate(result),
           context: result.context,
           last: result,
           rejected: null,

@@ -844,6 +844,7 @@ export function transitionCampaign(
       }
       validateSnapshot(active, action.snapshot);
       const execution = settleExpedition(campaign, action.snapshot);
+
       return {
         ...emptyResult(
           {
