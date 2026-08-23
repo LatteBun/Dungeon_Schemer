@@ -1,4 +1,5 @@
 import { initializeCampaign } from "@/lib/rules/campaign-init";
+import { executeGuidePromotion, getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createBoardOffers } from "@/lib/rules/board";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
 import type {
@@ -42,12 +43,17 @@ export interface U4PreviewData {
 
 function riskThreePreviewCampaign(): CampaignState {
   const campaign = initializeCampaign(PREVIEW_SEED);
-  return {
-    ...campaign,
-    phase: "board",
-    rank: "B",
-    reputation: 75,
-  };
+  /*
+   * 등급을 손으로 적지 않는다.
+   *
+   * ★3 공고를 보려면 C 등급으로는 안 된다. 전에는 `rank: "B"` 와 `reputation: 75`
+   * 를 그냥 써넣었다. 대신 `C5` 가 정한 요구 명성을 채우고 실제로 승급시킨다.
+   * 요구치가 바뀌면 여기가 따라간다.
+   */
+  const eligibility = getGuidePromotionEligibility(campaign);
+  if (eligibility === null) return { ...campaign, phase: "board" };
+  const funded: CampaignState = { ...campaign, phase: "board", reputation: eligibility.reputationRequired };
+  return executeGuidePromotion(funded, "reputation").campaign;
 }
 
 function findRiskThreeMap(
@@ -142,18 +148,19 @@ export function createU4PreviewData(input: {
   const selectedNextNodeId =
     nodes.find((node) => node.state === "selectable")?.id ?? null;
 
+  const eligibility = getGuidePromotionEligibility(campaign);
   const status: TopStatusView = {
     rank: campaign.rank,
     reputation: campaign.reputation,
     gold: campaign.gold,
-    canPromote: false,
+    canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
     remainingDungeons: campaign.dungeons.filter(
       (candidate) => candidate.status !== "cleared",
     ).length,
-    nextPromotion: {
-      rank: "A",
-      reputationRequired: 120,
-    },
+    /* 요구 명성은 `C5` 가 안다. 전에는 120 이 화면에 복사돼 있었다. */
+    ...(eligibility === null ? {} : {
+      nextPromotion: { rank: eligibility.toRank, reputationRequired: eligibility.reputationRequired },
+    }),
     currentDungeon: {
       name: dungeon.name,
       riskLevel: dungeon.riskLevel,

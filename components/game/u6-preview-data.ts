@@ -28,6 +28,7 @@ import {
   evaluateImmediateDistrustEnding,
 } from "@/lib/rules/ending";
 import { executeGuidePromotion, getGuidePromotionEligibility } from "@/lib/rules/promotion";
+import { recordSettlementStatistics } from "@/lib/rules/campaign-statistics";
 import { settleExpedition } from "@/lib/rules/settlement";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U6EndingNote, U6EndingView } from "./u6-ending-model";
@@ -167,12 +168,70 @@ function causeInputsFromExpedition(): { choice: string; reactions: string; damag
 
 const causeInputs = causeInputsFromExpedition();
 
+/**
+ * 원정을 실제로 여러 번 정산해 캠페인 이력을 쌓는다.
+ *
+ * 엔딩 화면은 누적 통계를 보여준다. 그런데 `initializeCampaign` 만으로는
+ * 정산이 한 번도 없어 모두 0 이다. 명성이나 골드를 손으로 채워 넣으면 그 숫자가
+ * 어디서 왔는지 설명할 수 없다. 그래서 `C4` 로 정산하고 `C8-A` 로 누적한다.
+ *
+ * 던전마다 셋 중 하나를 결정적으로 고른다. 전원 생환, 한 명 사망, 전멸이다.
+ * 그러면 생존·사망·전멸 횟수·누적 골드가 전부 그 이력의 결과가 된다.
+ */
+function playedThrough(campaign: CampaignState, dungeonCount: number): CampaignState {
+  let current = campaign;
+  for (let index = 0; index < dungeonCount; index += 1) {
+    const target = current.dungeons[index];
+    if (target === undefined) break;
+
+    const alive = current.pool.order
+      .map((id) => current.pool.byId[id])
+      .filter((member): member is Character => member !== undefined && member.alive);
+    const trio: Character[] = [];
+    const classes = new Set<string>();
+    for (const member of alive) {
+      if (classes.has(member.classId)) continue;
+      classes.add(member.classId);
+      trio.push(member);
+      if (trio.length === 3) break;
+    }
+    if (trio.length !== 3) break;
+
+    /* 셋 중 하나를 순서대로 고른다. 시드가 같으면 이력도 같다. */
+    const outcome = index % 3;
+    const wiped = outcome === 2;
+    const finalMembers = trio.map((member, position) => {
+      if (wiped) return { ...member, hp: 0, alive: false };
+      if (outcome === 1 && position === 1) return { ...member, hp: 0, alive: false };
+      return { ...member, hp: Math.max(1, member.hp - 5), trust: Math.max(0, member.trust - 3) };
+    });
+
+    const execution = settleExpedition(current, {
+      expeditionId: `${PREVIEW_SEED}/${target.id}/${index}`,
+      dungeonId: target.id,
+      contractRisk: target.riskLevel,
+      party: { memberIds: trio.map((member) => member.id) },
+      finalMembers,
+      status: wiped ? "wiped" : "cleared",
+      causeInputs,
+    });
+    current = {
+      ...execution.campaign,
+      statistics: recordSettlementStatistics(execution.campaign.statistics, execution.result, target),
+    };
+  }
+  return current;
+}
+
+/** 열두 번의 원정을 치른 캠페인. 엔딩들이 이 위에서 판정된다. */
+const playedCampaign = playedThrough(baseCampaign, 12);
+
 /** 정산 상황마다 최종 파티 상태를 만든다. `C4` 가 그것을 읽고 계산한다. */
 function settlementFor(input: {
   readonly campaign: CampaignState;
   readonly finalMembers: readonly Character[];
   readonly status: "cleared" | "wiped";
-}): U6SettlementView {
+}): { readonly view: U6SettlementView; readonly campaign: CampaignState } {
   const snapshot: SettlementSnapshot = {
     expeditionId: `${PREVIEW_SEED}/${dungeon.id}/${input.status}`,
     dungeonId: dungeon.id,
@@ -182,11 +241,12 @@ function settlementFor(input: {
     status: input.status,
     causeInputs,
   };
-  return createU6SettlementView(
-    settleExpedition(input.campaign, snapshot).result,
-    dungeon.name,
-    dungeon.theme satisfies ThemeId,
-  );
+  const execution = settleExpedition(input.campaign, snapshot);
+  return {
+    view: createU6SettlementView(execution.result, dungeon.name, dungeon.theme satisfies ThemeId),
+    /* 상태 바는 정산 뒤의 캠페인을 보여준다. 명성과 골드가 이미 반영된 값이다. */
+    campaign: execution.campaign,
+  };
 }
 
 const [first, second, third] = party;
@@ -221,15 +281,24 @@ const settlementCapped = settlementFor({
   finalMembers: party.map((member) => ({ ...member, hp: Math.max(1, member.hp - 4) })),
 });
 
-function status(over: Partial<TopStatusView> = {}): TopStatusView {
-  const eligibility = getGuidePromotionEligibility(baseCampaign);
+/**
+ * 상태 바는 그 화면이 보여주는 캠페인에서 온다.
+ *
+ * 전에는 화면마다 명성·골드·남은 던전을 손으로 적었다. 그래서 엔딩 화면의
+ * 상태 바가 "등급 A · 명성 205" 라고 하는데 같은 화면의 엔딩 패널은 "등급 S ·
+ * 명성 1000" 이라고 하는 일이 있었다. 한 화면이 자기 자신과 어긋났다.
+ */
+function statusOf(campaign: CampaignState): TopStatusView {
+  const eligibility = getGuidePromotionEligibility(campaign);
   return {
-    rank: baseCampaign.rank,
-    reputation: baseCampaign.reputation,
-    gold: baseCampaign.gold,
+    rank: campaign.rank,
+    reputation: campaign.reputation,
+    gold: campaign.gold,
     canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
-    remainingDungeons: baseCampaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
-    ...over,
+    remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
+    ...(eligibility === null ? {} : {
+      nextPromotion: { rank: eligibility.toRank, reputationRequired: eligibility.reputationRequired },
+    }),
   };
 }
 
@@ -280,15 +349,21 @@ function judged(kind: EndingKind, campaign: CampaignState, party?: readonly Char
  * 요구치가 바뀌면 여기서 드러난다.
  */
 function promotedToTop(campaign: CampaignState): CampaignState {
-  let current: CampaignState = { ...campaign, reputation: 1000, gold: 1000 };
-  while (getGuidePromotionEligibility(current) !== null) {
-    current = executeGuidePromotion(current, "reputation").campaign;
+  /* 열다섯 던전을 다 돌면 명성이 요구치를 넘는다. 모자라면 승급이 멈출 뿐이다. */
+  let current: CampaignState = campaign;
+  for (;;) {
+    const eligibility = getGuidePromotionEligibility(current);
+    if (eligibility === null) break;
+    /* 자격이 있다는 것과 지금 올릴 수 있다는 것은 다르다. 명성이나 골드가
+     * 요구치에 닿아야 실제로 오른다. 닿지 못하면 거기서 멈춘다. */
+    if (!eligibility.canPromoteByReputation && !eligibility.canPromoteByGold) break;
+    current = executeGuidePromotion(current, eligibility.canPromoteByReputation ? "reputation" : "gold").campaign;
   }
   return current;
 }
 
 const completedCampaign = judged("completed", promotedToTop(withPool({
-  ...baseCampaign,
+  ...playedCampaign,
   dungeons: baseCampaign.dungeons.map((candidate) => ({ ...candidate, status: "cleared" as const })),
   /* 열다섯 번의 원정에 대가가 없을 수 없다. 여섯을 묻고 왔다. */
 }, (member, index) => index < 6 ? { ...member, alive: false, hp: 0 } : member)));
@@ -299,10 +374,13 @@ const completedCampaign = judged("completed", promotedToTop(withPool({
  * 풀 전체를 0 으로 만들면 서른 명이 한꺼번에 고발하는 그림이 된다. 문턱은
  * 다섯이므로 다섯만 0 으로 두고 나머지는 그대로 둔다.
  */
-const denouncedCampaign = judged("denounced", withPool(baseCampaign, (member, index) => {
-  if (index < 4) return { ...member, alive: false, hp: 0 };
-  if (index < 9) return { ...member, trust: 0 };
-  return member;
+let denouncedRemaining = 5;
+const denouncedCampaign = judged("denounced", withPool(playedCampaign, (member) => {
+  /* 살아 있는 사람만 증언할 수 있다. 이력에 이미 사망자가 있으므로 순번이
+   * 아니라 생존 여부로 센다. */
+  if (!member.alive || denouncedRemaining === 0) return member;
+  denouncedRemaining -= 1;
+  return { ...member, trust: 0 };
 }));
 
 /*
@@ -312,7 +390,7 @@ const denouncedCampaign = judged("denounced", withPool(baseCampaign, (member, in
  * 막히므로, 그 조건까지만 만든다.
  */
 const survivingClasses = new Set<string>();
-const exhaustedCampaign = judged("exhausted", withPool(baseCampaign, (member) => {
+const exhaustedCampaign = judged("exhausted", withPool(playedCampaign, (member) => {
   if (survivingClasses.size < 2 || survivingClasses.has(member.classId)) {
     survivingClasses.add(member.classId);
     return member;
@@ -326,7 +404,7 @@ const exhaustedCampaign = judged("exhausted", withPool(baseCampaign, (member) =>
  * `initializeCampaign` 은 공고를 만들지 않는다. 게시판을 채우는 것은 `C2` 다.
  * 공고가 0 개면 이 판정 자체가 성립하지 않으므로 먼저 게시판을 만든다.
  */
-const boardedCampaign: CampaignState = { ...baseCampaign, offers: createBoardOffers(baseCampaign) };
+const boardedCampaign: CampaignState = { ...playedCampaign, offers: createBoardOffers(playedCampaign) };
 const unemployedCampaign = judged("unemployed", {
   ...boardedCampaign,
   offers: boardedCampaign.offers.map((offer) => ({ ...offer, lockReason: "rankTooLow" as const })),
@@ -334,18 +412,29 @@ const unemployedCampaign = judged("unemployed", {
 
 /** 원정 생존자 전원의 신뢰가 0 이다. 즉시 불신으로 끝난다. */
 const distrustParty = party.map((member) => ({ ...member, trust: 0 }));
-const distrustCampaign = judged("distrust", baseCampaign, distrustParty);
+const distrustCampaign = judged("distrust", playedCampaign, distrustParty);
 
 function endingStatistics(campaign: CampaignState) {
   const pool = campaign.pool.order.map((id) => campaign.pool.byId[id]).filter((member): member is Character => member !== undefined);
   return {
     finalRank: campaign.rank,
     survivedCount: pool.filter((member) => member.alive).length,
-    diedCount: pool.filter((member) => !member.alive).length,
+    /* 사망자는 `C8-A` 가 센 값을 쓴다. 풀을 다시 세면 두 곳이 갈라질 수 있다. */
+    diedCount: campaign.statistics.totalDeaths,
     zeroTrustCount: pool.filter((member) => member.alive && member.trust === 0).length,
     finalReputation: campaign.reputation,
     cumulativeGold: campaign.cumulativeGold,
     wipedExpeditions: campaign.statistics.wipedExpeditions,
+  };
+}
+
+/** `C8-A` 가 쌓은 누적 통계다. 엔딩 보고서가 그대로 읽는다. */
+function campaignTotals(campaign: CampaignState) {
+  return {
+    totalExpeditions: campaign.statistics.totalExpeditions,
+    clearedExpeditions: campaign.statistics.clearedExpeditions,
+    totalGoldEarned: campaign.statistics.totalGoldEarned,
+    highestDungeonCleared: campaign.statistics.highestDungeonCleared,
   };
 }
 
@@ -525,49 +614,49 @@ export const U6_PREVIEW_ENTRIES: readonly U6PreviewEntry[] = [
   {
     id: "settlement-partial",
     label: "정산 · 부분 생존",
-    status: status(),
-    settlement: settlementPartial,
+    status: statusOf(settlementPartial.campaign),
+    settlement: settlementPartial.view,
   },
   {
     id: "settlement-wipe",
     label: "정산 · 전멸",
-    status: status({ reputation: 30, gold: 270, canPromote: false }),
-    settlement: settlementWipe,
+    status: statusOf(settlementWipe.campaign),
+    settlement: settlementWipe.view,
   },
   {
     id: "settlement-promotion",
     label: "정산 · 캠페인 변화",
-    status: status({ reputation: 88, gold: 214 }),
-    settlement: settlementCapped,
+    status: statusOf(settlementCapped.campaign),
+    settlement: settlementCapped.view,
   },
   {
     id: "ending-completed",
     label: `엔딩 · ${ENDING_TITLE.completed}`,
-    status: status({ rank: "A", reputation: 205, gold: 331, canPromote: false, remainingDungeons: 0 }),
+    status: statusOf(completedCampaign.campaign),
     ending: ENDINGS.completed,
   },
   {
     id: "ending-distrust",
     label: `엔딩 · ${ENDING_TITLE.distrust}`,
-    status: status({ rank: "B", reputation: 96, gold: 402, canPromote: false, remainingDungeons: 7 }),
+    status: statusOf(distrustCampaign.campaign),
     ending: ENDINGS.distrust,
   },
   {
     id: "ending-denounced",
     label: `엔딩 · ${ENDING_TITLE.denounced}`,
-    status: status({ rank: "B", reputation: 54, gold: 516, canPromote: false, remainingDungeons: 6 }),
+    status: statusOf(denouncedCampaign.campaign),
     ending: ENDINGS.denounced,
   },
   {
     id: "ending-exhausted",
     label: `엔딩 · ${ENDING_TITLE.exhausted}`,
-    status: status({ rank: "C", reputation: 41, gold: 188, canPromote: false, remainingDungeons: 9 }),
+    status: statusOf(exhaustedCampaign.campaign),
     ending: ENDINGS.exhausted,
   },
   {
     id: "ending-unemployed",
     label: `엔딩 · ${ENDING_TITLE.unemployed}`,
-    status: status({ rank: "C", reputation: 38, gold: 92, canPromote: false, remainingDungeons: 12 }),
+    status: statusOf(unemployedCampaign.campaign),
     ending: ENDINGS.unemployed,
   },
 ];

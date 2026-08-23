@@ -60,8 +60,13 @@ describe("U6EndingScreen", () => {
     expect(render("unemployed")).toContain("조기 종료");
   });
 
-  it("완주는 최종 등급 문장을, 조기 종료는 결말 문양을 쓴다", () => {
-    expect(render("completed")).toContain("rank_s.png");
+  /*
+   * 완주는 등급 문양을, 조기 종료는 결말 문양을 쓴다는 것이 이 검사의 뜻이다.
+   * 전에는 `rank_s.png` 를 콕 집었는데, 그때 프리뷰의 등급이 손으로 적힌 S 라서
+   * 가능한 일이었다. 지금은 실제 캠페인이 도달한 등급이 온다.
+   */
+  it("완주는 최종 등급 문양을, 조기 종료는 결말 문양을 쓴다", () => {
+    expect(render("completed")).toMatch(/rank_[cbas]\.png/);
     expect(render("distrust")).toContain("achievement_together.png");
   });
 

@@ -32,7 +32,9 @@
 
 ## 검수 manifest
 
-자동 검수와 향후 UI 자산 매핑이 필요할 때는 [`DESERT_MONSTER_ASSETS`](../../components/game/DesertMonsterAssets.ts)의 9종 manifest를 먼저 사용한다. 이 manifest는 `id`, 공식 이름, `kind`, 정적 경로, 설명을 제공하지만 게임 도메인의 출현 규칙이나 위험도를 정의하지 않는다.
+UI 자산 매핑은 [`u5-battle-assets.ts`](../../components/game/u5-battle-assets.ts)가 소유한다. 세 테마의 공식 콘텐츠 27종을 전부 담고 `U5-2` 자동 전투 장면이 실제로 쓴다. 이 manifest는 콘텐츠 ID 와 정적 경로만 잇고, 게임 도메인의 출현 규칙이나 위험도를 정의하지 않는다.
+
+사막 9종만 담고 이름·설명까지 복제하던 `DesertMonsterAssets.ts` 는 제거했다. 아무도 쓰지 않으면서 `THEMES` 의 이름과 설명을 두 번째로 적어 두고 있어, 콘텐츠가 바뀌면 조용히 어긋나는 자리였다.
 
 manifest와 이 문서의 경로가 달라지면 실제 `public/assets/monsters/desert/` 파일을 기준으로 수정하고, PNG 계약 테스트와 카탈로그를 함께 확인한다.
 
