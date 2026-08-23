@@ -102,10 +102,10 @@ E4 범위에는 다음을 넣지 않는다.
 - 직업별 액티브 스킬과 고급 전투 AI
 - 특정 BossId에서만 실행하는 임의 전용 combat callback
 - bossInfo가 보스 행동을 완전히 봉쇄하거나 턴을 삭제하는 효과
-- 정확한 최종 피해·가중치 배율 확정
+- B1 이전의 임시 배율·상한 이외의 밸런스 조정
 - 다프레임 보스 애니메이션, 대형 전용 VFX, 컷신, 복잡한 카메라
 
-정확한 전투 배율·cap·위험도 scaling 값은 B1에서 튜닝한다. E4는 계산 축, 적용 위치, 합성 규칙과 결정성만 확정한다.
+E4는 아래의 임시 배율·상한과 위험도 scaling 공식을 구현한다. 이는 플레이 가능한 기준값일 뿐 최종 밸런스가 아니며, B1은 백테스트 결과에 따라 이 값을 중앙 카탈로그에서 조정한다. 사건 콘텐츠에는 배율을 다시 넣지 않는다.
 
 ---
 
@@ -145,6 +145,19 @@ interface CharacterBossModifiers {
 - `outgoingDamageMultiplier`: 해당 캐릭터가 보스에게 주는 피해 배율
 
 이 세 축 밖의 효과가 필요하면 E4 구현에서 즉흥적으로 추가하지 않고 별도 설계 변경으로 다룬다.
+
+### 4.3 E4 임시 modifier 값과 B1 이관
+
+E4는 모든 `BossTrait` 축에 다음 공통 임시값을 적용한다. `help`와 `harm`이 같은 축에서 정확히 반대 방향이 되도록 한 값이며, trait별 수치를 콘텐츠에 복사하지 않는다.
+
+| outcome | `targetWeight` / `incomingDamage` | `outgoingDamage` |
+| --- | ---: | ---: |
+| `accepted + help` | `× 0.80` | `× 1.25` |
+| `accepted + harm` | `× 1.25` | `× 0.80` |
+
+동일 캐릭터의 같은 축 효과와 해당 축에 적용 가능한 merchant 효과를 정해진 순서로 곱한 뒤, 최종 multiplier는 `0.70..1.50`으로 clamp한다. `neutral`·`suspected`·`exposed`는 이 계산에 참여하지 않는다.
+
+이 수치와 상한은 E4의 임시 상수로 공용 trait/modifier 카탈로그 한 곳에만 둔다. B1은 해당 카탈로그와 백테스트 기대치를 함께 갱신하며, `BossRule`·사건 콘텐츠·UI에 별도 수치를 추가하지 않는다.
 
 ---
 
@@ -254,7 +267,7 @@ E2에서 즉시 `adviceHarmed + deceptionExposed` 처리가 끝난 기록이므�
 
 전투 modifier도, 결과 기반 bossInfo 사후 신뢰 검증도 만들지 않는다.
 
-정확한 배율은 B1이 튜닝한다. E4 테스트는 특정 퍼센트가 아니라 **유리/불리 방향과 적용 축**을 계약으로 고정한다.
+E4는 4.3절의 임시 배율과 clamp를 자동 테스트로 고정한다. B1이 수치를 조정할 때에는 해당 기대값을 함께 갱신한다.
 
 ---
 
@@ -276,7 +289,7 @@ finalAxisMultiplier
 
 가능하면 한 보스의 두 trait를 서로 다른 축에 배정해 체감 차이를 만든다. 그러나 동일 축이 겹쳐도 계산은 결정적으로 누적할 수 있어야 한다.
 
-최종 상·하한과 정확한 수치는 B1에서 정한다.
+E4의 임시 상·하한은 4.3절의 `0.70..1.50`이다. B1은 이를 중앙 카탈로그에서 조정할 수 있다.
 
 ---
 
@@ -374,6 +387,20 @@ E4는 동일 입력에 대해 항상 같은 순서로 보스 전투 입력을 �
 곱셈 자체가 교환 가능해도 로그·검증·재현을 위해 합성 순서는 고정한다.
 
 `avoidCombat`처럼 전투 자체를 생략하는 일반전 전용 의미가 merchant 계약에 존재한다면 보스전에 그대로 허용한다고 추정하지 않는다. E3 최종 `NextBattleMerchantEffect` 계약을 확인해 보스전에서 허용되는 효과만 명시적으로 변환한다. 보스전을 건너뛰는 새 의미를 E4가 임의로 추가하지 않는다.
+
+### 11.1 재도전 위험도 scaling
+
+보스 종류는 `initialRiskLevel`로 한 번 선택한 뒤 재도전해도 바꾸지 않는다. HP와 공격력은 현재 위험도로만 다음처럼 계산한다.
+
+```text
+riskIncrease = currentRiskLevel - initialRiskLevel
+bossScale = 1 + (riskIncrease × 0.10)
+
+bossMaxHp = round(BossDef.maxHp × bossScale)
+bossBaseDamage = round(BossDef.baseDamage × bossScale)
+```
+
+`riskIncrease`는 `0..4` 범위다. ★5에서 위험도가 더 오르지 않으므로 실패 횟수나 attempt 수를 직접 scaling 입력으로 쓰지 않는다. 따라서 ★5 도달 뒤 재도전해도 보스 수치가 계속 상승하지 않는다.
 
 ---
 

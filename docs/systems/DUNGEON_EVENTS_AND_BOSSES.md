@@ -106,7 +106,7 @@ E3는 E1의 논리 DAG에서 현재 위험도에 맞는 `special` exact-once cut
 
 E3가 현재 위험도를 기준으로 보스 정보 cut을 예약한다.
 
-| 현재 위험도 | 보스 정보 Depth |
+| 현재 위험도 | 보스 정보 cut 수 |
 | --- | ---: |
 | ★1~2 | 1 |
 | ★3~5 | 2 |
@@ -177,24 +177,20 @@ merchant 조언은 다음 계약을 따른다.
 
 - 파티원별 현재 HP와 사건 효과
 - pending merchant effect
-- 수용한 보스 조언의 개인 피해 modifier
+- 수용한 보스 조언의 개인별 정적 전투 modifier
 - 파티원별 지연 검증 기록
 
 보스에게 정보를 주거나 거래하지 않으며 길잡이가 직접 난입하지도 않는다. 보스방에서는 새 조언을 제시하지 않고, `boss-battle-adapter`가 공통 BattleEngine에 보스·보스 정보·merchant pending을 전달한다.
 
 전투는 파티와 보스가 턴을 주고받으며 진행하고 턴별 행동과 피해를 기록으로 남긴다. 이 기록은 자동 전투 장면 표현이 소비하는 보스전 결과 데이터이며, 화면 연출은 기록을 바꾸거나 다시 계산하지 않는다.
 
-보스 조언의 프로토타입 피해 보정은 다음과 같다.
+보스 조언은 수용한 캐릭터 개인에게만 정적 `targetWeight`·`incomingDamage`·`outgoingDamage` modifier를 만든다. 도움은 해당 축에 유리하게, 방해는 불리하게 작동하며, neutral·suspected·exposed는 전투 modifier를 만들지 않는다. 임시 배율과 `0.70..1.50` 상한은 E4 공용 trait 카탈로그가 소유하고 B1 백테스트에서 조정한다.
 
-- accepted help: -20%
-- accepted neutral: -10%
-- accepted harm: +25%
-- suspected 또는 exposed: 보정 없음
-- 누적 상한: 피해 감소 -30%, 피해 증가 +50%
-
-보정은 파티원마다 독립 적용한다. accepted/suspected help·harm의 결과 기반 신뢰는 조언 선택 순간이 아니라 전투 뒤 검증한다. `exposed harm`만 보스 정보 선택 순간 즉시 `adviceHarmed`와 `deceptionExposed`를 적용하고 보스전에서 중복 검증하지 않는다.
+accepted/suspected help·harm의 결과 기반 신뢰는 조언 선택 순간이 아니라 전투 뒤 검증한다. `exposed harm`만 보스 정보 선택 순간 즉시 `adviceHarmed`와 `deceptionExposed`를 적용하고 보스전에서 중복 검증하지 않는다.
 
 한 명 이상 생존하면 던전을 클리어하고 전멸하면 실패한다. 보스는 테마마다 위험도 구간별로 4종을 두고 던전의 초기 위험도가 그중 하나를 정한다. 고유 콘텐츠와 기본 피해는 [던전 테마와 생태](DUNGEON_THEMES_AND_ECOLOGY.md)의 콘텐츠 데이터로 관리하며 백테스트에서 조정한다.
+
+재도전 보스 scaling은 `currentRiskLevel - initialRiskLevel`만 사용한다. 증가한 위험도 1단계마다 HP와 기본 피해에 `+10%`를 곱하고 반올림한다. ★5는 위험도 상한이므로 이후 재도전은 보스 수치를 추가로 올리지 않는다. 실패 횟수나 attempt 수를 직접 scaling 입력으로 쓰지 않는다.
 
 ## 실패와 재도전
 
@@ -220,7 +216,7 @@ merchant 조언은 다음 계약을 따른다.
 - 사건마다 아무도 수용하지 않았을 때의 기본 결과를 가진다
 - 테마 도움·방해의 생태 source와 relation이 유효하다
 - 조건부 생태 규칙을 참조하는 사건은 현재 장면의 조건 성립을 명시한다
-- 보스 정보는 대상 보스와 전용 source, 세 피해 modifier 계약을 지킨다
+- 보스 정보는 대상 보스와 전용 source, 세 축의 개인 modifier 계약을 지킨다
 - merchant는 H/X 유료, N 0G 비구매와 즉시/다음 전투 1회 효과 계약을 지킨다
 
 콘텐츠 ID·문구·source·수량·수치 위반은 조용히 재추첨하지 않고 `RuleError("INVALID_GENERATION", ...)`로 보고한다.

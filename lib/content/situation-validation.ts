@@ -458,7 +458,7 @@ function validateConditionalRules(event: SituationEvent, theme?: ThemeContent): 
  * 조언 콘텐츠 하나가 계약을 만족하는지 검사한다.
  *
  * 수량·문구·태그만 본다. 유형 판정, 수용·의심·적발 확률, 개인별 반응,
- * 보스 피해 보정은 규칙(E2)의 몫이다. 한 던전 안의 중복 방지는 배치(E3)가 한다.
+ * 보스전 modifier는 규칙(E2/E4)의 몫이다. 한 던전 안의 중복 방지는 배치(E3)가 한다.
  * docs/systems/INFORMATION_AND_DECEPTION.md
  */
 export function validateSituationEvent(event: SituationEvent, theme?: ThemeContent): void {
