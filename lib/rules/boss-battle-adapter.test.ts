@@ -37,6 +37,7 @@ function dungeon(overrides: Partial<CampaignDungeon> = {}): CampaignDungeon {
     id: "dungeon-spider-01" as never,
     name: "거미굴",
     theme: "spider",
+    campaignOrder: 1,
     initialRiskLevel: 1,
     riskLevel: 1,
     activeRuleIds: [],

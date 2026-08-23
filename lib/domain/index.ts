@@ -30,6 +30,7 @@ export type { CharacterPool, ExpeditionParty } from "./pool";
 
 export {
   ACTIVE_ECOLOGY_RULES,
+  CAMPAIGN_DUNGEON_ORDERS,
   ECOLOGY_RULES_PER_THEME,
   RISK_LEVEL_MAX,
   RISK_LEVELS,
@@ -37,6 +38,7 @@ export {
 } from "./dungeon";
 export type {
   BossDef,
+  CampaignDungeonOrder,
   BossRule,
   CampaignDungeon,
   DungeonLayer,
@@ -79,7 +81,8 @@ export type {
   SettlementResult,
   SettlementSnapshot,
 } from "./settlement";
-export type { CampaignStatistics } from "./statistics";
+export { createCampaignStatistics } from "./statistics";
+export type { CampaignStatistics, SettlementSummary } from "./statistics";
 export type {
   ActiveExpeditionContext,
   CampaignTransition,

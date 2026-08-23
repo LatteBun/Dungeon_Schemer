@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createCampaignTransitionContext,
+  createCampaignStatistics,
   runWorldTurn,
   type BoardOffer,
   type CampaignState,
@@ -133,7 +134,7 @@ describe("C7 캠페인 전이", () => {
 
     expect(result.campaign.phase).toBe("settlement");
     expect(result.campaign.settledExpeditionIds).toEqual(["exp-c7-01"]);
-    expect(result.campaign.statistics.settlements).toEqual([]);
+    expect(result.campaign.statistics).toEqual(createCampaignStatistics());
     expect(result.settlement?.expeditionId).toBe("exp-c7-01");
   });
 

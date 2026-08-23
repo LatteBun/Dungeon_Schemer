@@ -87,6 +87,7 @@ function dungeon(bossId = "boss-a"): CampaignDungeon {
     id: DUNGEON_ID,
     name: "거미굴 1",
     theme: "spider",
+    campaignOrder: 1,
     initialRiskLevel: 1,
     riskLevel: 1,
     activeRuleIds: ["spider-fire", "spider-vibration", "spider-carrion"] as never,

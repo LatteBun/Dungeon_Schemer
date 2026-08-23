@@ -19,6 +19,14 @@ export const RISK_LEVELS = [1, 2, 3, 4, 5] as const satisfies readonly RiskLevel
 /** 실패로 위험도가 올라도 여기서 멈춘다. */
 export const RISK_LEVEL_MAX: RiskLevel = 5;
 
+export type CampaignDungeonOrder =
+  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+  | 11 | 12 | 13 | 14 | 15;
+
+export const CAMPAIGN_DUNGEON_ORDERS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+] as const satisfies readonly CampaignDungeonOrder[];
+
 /** 테마는 닫힌 목록이다. 생태 규칙과 몬스터가 테마 단위로 묶인다. */
 export type ThemeId = "spider" | "desert" | "graveyard";
 
@@ -115,6 +123,8 @@ export interface CampaignDungeon {
   id: DungeonId;
   name: string;
   theme: ThemeId;
+  /** 캠페인 전체 15개 고정 슬롯의 순서다. 재도전·위험도 상승으로 바뀌지 않는다. */
+  campaignOrder: CampaignDungeonOrder;
   /** 지점 수를 정한다. 캠페인 동안 바뀌지 않는다. */
   initialRiskLevel: RiskLevel;
   /** 보상·정보 기회·규칙 공개 수를 정한다. 실패마다 1 오른다. */

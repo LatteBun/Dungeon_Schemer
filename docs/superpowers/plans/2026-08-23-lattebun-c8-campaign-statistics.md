@@ -39,6 +39,8 @@
 | `lib/domain/contract.test.ts` | Modify | 새 domain barrel 계약 회귀 |
 | `lib/rules/ending.test.ts` | Modify | 수제 구형 statistics fixture를 빈 통계 factory로 교체 |
 | `lib/rules/campaign-transition.test.ts` | Modify | C7이 확장된 빈 통계를 그대로 보존하는 회귀 |
+| `lib/rules/advice-evaluation.test.ts` | Modify | 직접 만든 CampaignDungeon fixture에 고정 순서 추가 |
+| `lib/rules/boss-battle-adapter.test.ts` | Modify | 직접 만든 CampaignDungeon fixture에 고정 순서 추가 |
 | `lib/rules/campaign-statistics.ts` | Create | C8-A 불변 정산 통계 reducer와 손상 상태 검증 |
 | `lib/rules/campaign-statistics.test.ts` | Create | reducer의 clear/wipe/사망/골드/중복/손상 상태와 C7 조합 회귀 |
 
@@ -54,6 +56,8 @@
 - Modify: `lib/domain/contract.test.ts`
 - Modify: `lib/rules/ending.test.ts`
 - Modify: `lib/rules/campaign-transition.test.ts`
+- Modify: `lib/rules/advice-evaluation.test.ts`
+- Modify: `lib/rules/boss-battle-adapter.test.ts`
 
 **Interfaces:**
 - Consumes: `CampaignDungeon`, `SettlementResult`, `ExpeditionStatus`, `DungeonId`, C1 `INITIAL_DUNGEON_SLOTS`
@@ -151,7 +155,7 @@ Expected: PASS — 15개 던전은 같은 시드에서 같은 전역 순서와 �
 - [ ] **Step 5: 첫 번째 커밋을 만든다.**
 
 ```bash
-git add lib/domain/dungeon.ts lib/content/campaign-dungeons.ts lib/domain/statistics.ts lib/domain/index.ts lib/rules/campaign-init.ts lib/rules/campaign-init.test.ts lib/domain/contract.test.ts lib/rules/ending.test.ts lib/rules/campaign-transition.test.ts
+git add lib/domain/dungeon.ts lib/content/campaign-dungeons.ts lib/domain/statistics.ts lib/domain/index.ts lib/rules/campaign-init.ts lib/rules/campaign-init.test.ts lib/domain/contract.test.ts lib/rules/ending.test.ts lib/rules/campaign-transition.test.ts lib/rules/advice-evaluation.test.ts lib/rules/boss-battle-adapter.test.ts
 git commit -m "기능: 캠페인 정산 통계 도메인 계약을 확장한다" -m "고정 던전 순서와 빈 통계 factory를 추가해 C8 정산 집계의 입력 계약을 마련한다."
 ```
 
