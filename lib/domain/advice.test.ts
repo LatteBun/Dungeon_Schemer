@@ -101,15 +101,13 @@ describe("SituationEvent", () => {
         {
           ...advice("help", "help"),
           source: { kind: "boss", bossRuleId: "boss-ragna-turning" as BossRuleId },
-          bossDamageModifier: -0.2,
         },
         {
           ...advice("harm", "harm"),
           source: { kind: "boss", bossRuleId: "boss-ragna-turning" as BossRuleId },
           relation: "contradictory",
-          bossDamageModifier: 0.25,
         },
-        { ...advice("neutral", "neutral"), bossDamageModifier: -0.1 },
+        { ...advice("neutral", "neutral") },
       ],
       defaultResultText: "파티가 흔적을 확인하고 이동한다.",
     };
@@ -180,12 +178,12 @@ describe("InfoRecord", () => {
       outcome: "help",
       characterId: "character-001" as CharacterId,
       reaction: "accepted",
-      modifier: -0.2,
+      bossRuleId: "boss-ragna-turning" as never,
       pendingVerification: false,
     };
 
     expect(record.outcome).toBe("help");
-    expect(record.modifier).toBeLessThan(0);
+    expect(record.bossRuleId).toBe("boss-ragna-turning");
   });
 });
 

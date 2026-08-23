@@ -95,7 +95,13 @@ export type {
 
 export type {
   BossResult,
-  BossTurnRecord,
+  BossInfoApplication,
+  BossInfoAxis,
+  BossInfoDirection,
+  BossInfoPresentationCue,
+  BossInfoTiming,
+  BossInfoVerification,
+  BossInfoVerificationAction,
   ExpeditionResult,
   ExpeditionState,
   ExpeditionStatus,
@@ -107,6 +113,13 @@ export type {
   MaterializedNodeEvent,
   HiddenNodeRole,
 } from "./expedition";
+
+export type {
+  BattleActionRecord,
+  BattleEnemyInput,
+  BattlePartyMember,
+  BattleResolution,
+} from "./battle";
 
 export { ADVICE_OUTCOMES, ECOLOGY_RELATIONS } from "./info";
 export type {

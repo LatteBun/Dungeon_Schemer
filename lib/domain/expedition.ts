@@ -3,23 +3,53 @@ import type { ExpeditionParty } from "./pool";
 import type { InfoRecord } from "./info";
 import type { ChoiceId, CharacterId, ClueId, DungeonId, EventId, NodeId, RuleId } from "./ids";
 import type { EventKind, SituationEvent } from "./content";
+import type { BattleResolution } from "./battle";
 
 export type ExpeditionStatus = "cleared" | "wiped";
 
-/** 보스전 한 턴의 기록. 규칙이 턴 기록을 남기는 데까지가 이번 범위다. */
-export interface BossTurnRecord {
-  turn: number;
-  /** 이 턴에 보스가 때린 대상. 파티 차례면 null이다. */
-  targetId: CharacterId | null;
-  damage: number;
-  /** "마법사가 보스에게 12" 처럼 사람이 읽는 문장이다. */
-  description: string;
+export type BossInfoAxis = "targetWeight" | "incomingDamage" | "outgoingDamage";
+export type BossInfoDirection = "beneficial" | "harmful";
+export type BossInfoTiming = "battleStart" | "beforeTarget" | "beforeDamage" | "afterDamage";
+
+export interface BossInfoApplication {
+  readonly eventId: EventId;
+  readonly adviceId: ChoiceId;
+  readonly characterId: CharacterId;
+  readonly bossRuleId: import("./ids").BossRuleId;
+  readonly axis: BossInfoAxis;
+  readonly direction: BossInfoDirection;
+}
+
+export type BossInfoVerificationAction =
+  | "adviceHelped"
+  | "adviceHarmed"
+  | "suspicionWasCostly"
+  | "suspicionWasCorrect";
+
+export interface BossInfoVerification {
+  readonly eventId: EventId;
+  readonly adviceId: ChoiceId;
+  readonly characterId: CharacterId;
+  readonly action: BossInfoVerificationAction;
+  readonly applied: boolean;
+}
+
+export interface BossInfoPresentationCue {
+  readonly bossRuleId: import("./ids").BossRuleId;
+  readonly characterId: CharacterId;
+  readonly timing: BossInfoTiming;
+  readonly axis: BossInfoAxis;
+  readonly direction: BossInfoDirection;
+  readonly presentationKey: string;
 }
 
 export interface BossResult {
-  turns: readonly BossTurnRecord[];
+  battle: BattleResolution;
   survivorIds: readonly CharacterId[];
   status: ExpeditionStatus;
+  applications: readonly BossInfoApplication[];
+  verifications: readonly BossInfoVerification[];
+  cues: readonly BossInfoPresentationCue[];
 }
 
 export interface ExpeditionResult {

@@ -1,4 +1,4 @@
-import type { CharacterId, ChoiceId, EventId } from "./ids";
+import type { BossRuleId, CharacterId, ChoiceId, EventId } from "./ids";
 import type { TrustChange } from "./character";
 
 /**
@@ -74,14 +74,14 @@ export interface AdviceFeedback {
  * docs/systems/INFORMATION_AND_DECEPTION.md
  */
 export interface InfoRecord {
-  eventId: EventId;
-  adviceId: ChoiceId;
+  readonly eventId: EventId;
+  readonly adviceId: ChoiceId;
   /** 그 조언이 실제로 무엇이었는지. 보스전 뒤 의심을 검증할 때 쓴다. */
-  outcome: AdviceOutcome;
-  characterId: CharacterId;
-  reaction: InfoReaction;
-  /** 이 조언 하나가 만드는 보스 피해 보정. 합산과 상한은 보스전이 한다. */
-  modifier: number;
+  readonly outcome: AdviceOutcome;
+  readonly characterId: CharacterId;
+  readonly reaction: InfoReaction;
+  /** 보스 특성과 전투 축을 연결하는 유일한 콘텐츠 식별자다. */
+  readonly bossRuleId: BossRuleId;
   /** 수용된 방해라 보스전 뒤 검증할 대상이다. */
-  pendingVerification: boolean;
+  readonly pendingVerification: boolean;
 }
