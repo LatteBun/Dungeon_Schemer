@@ -110,6 +110,7 @@
 - [C7 캠페인 상태 전이 구현 계획](superpowers/plans/2026-08-23-lattebun-c7-campaign-state-transition.md): C2~C6 결과를 단일 순수 전이로 적용하는 테스트 우선 구현 순서
 - [C8-A 캠페인 정산 통계 설계](superpowers/specs/2026-08-23-lattebun-c8-campaign-statistics-design.md): C7 정산 결과의 단일 기록, 정산 누계·이력, C8-B telemetry 분리 경계
 - [C8-A 캠페인 정산 통계 구현 계획](superpowers/plans/2026-08-23-lattebun-c8-campaign-statistics.md): 고정 던전 순서, 불변 정산 reducer, C7 조합 회귀의 테스트 우선 구현 순서
+- [C8-B 캠페인 이력 이벤트 설계](superpowers/specs/2026-08-23-lattebun-c8-b-campaign-history-events-design.md): 결정적 이벤트 이력, 전환점 파생, C8-A·C7·I1·U6 경계
 - [C1 캠페인 초기화·생태 패키지 설계](superpowers/specs/2026-08-20-sanghwan-yoo-c1-campaign-initialization-design.md): 고정 던전 슬롯, 생태 패키지, 초기 캠페인 상태의 구현 경계
 - [C1 캠페인 초기화·생태 패키지 구현 계획](superpowers/plans/2026-08-20-sanghwan-yoo-c1-campaign-initialization.md): 도메인 계약, 콘텐츠 검증, 시드 초기화의 구현 순서
 - [U2 인트로 게시판 진입 연결 설계](superpowers/specs/2026-08-20-sanghwan-yoo-u2-intro-board-navigation-design.md): U2 CTA와 기존 U1 게시판 프리뷰의 라우팅 계약
