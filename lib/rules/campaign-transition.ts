@@ -21,11 +21,18 @@ import { THEMES } from "@/lib/content/themes";
 import { CLASSES } from "@/lib/content/classes";
 import {
   decideImmediateAdvice,
+  disclosedRuleIds,
   finalizeImmediateAdviceTrust,
   resolveBossInfoAdvice,
 } from "./advice-evaluation";
 import { createBoardOffers } from "./board";
+import {
+  appendCampaignEvent,
+  toAdviceResolvedEventDraft,
+  toBossBattleResolvedEventDraft,
+} from "./campaign-history";
 import { resolveBossBattle } from "./boss-battle-adapter";
+import { generateDungeonMap } from "./dungeon-map";
 import { evaluateCampaignEnding, evaluateImmediateDistrustEnding } from "./ending";
 import { executeGuidePromotion, getGuidePromotionEligibility } from "./promotion";
 import {
@@ -397,7 +404,27 @@ function transitionChooseAdvice(
       : active.expedition.result,
   };
 
-  return emptyResult(campaign, {
+  /*
+   * 조언 하나가 끝날 때마다 이력에 남긴다.
+   *
+   * `C8-B` 가 그릇과 draft 함수와 무결성 검사를 만들어 두었는데 아무도 부르지
+   * 않고 있었다. 전이 안에서 붙이면 누락이 구조적으로 불가능하다. 화면이
+   * `dispatch` 뒤에 붙이면 빠뜨릴 수 있고, 캠페인 기록을 화면이 소유하게 된다.
+   */
+  const withHistory: CampaignState = {
+    ...campaign,
+    history: appendCampaignEvent(campaign.history, {
+      campaignTurn: campaign.worldTurn,
+      event: toAdviceResolvedEventDraft({
+        expeditionId: active.expeditionId,
+        dungeonId: dungeon.id,
+        sourceEventId: event.id,
+        decision: resolution.decision,
+      }),
+    }),
+  };
+
+  return emptyResult(withHistory, {
     ...context,
     activeExpedition: {
       ...active,
@@ -455,10 +482,78 @@ function transitionEnterBoss(
     result: { status: resolved.bossResult.status, survivorIds: resolved.bossResult.survivorIds },
   };
 
-  return emptyResult(campaign, {
+  const withHistory: CampaignState = {
+    ...campaign,
+    history: appendCampaignEvent(campaign.history, {
+      campaignTurn: campaign.worldTurn,
+      event: toBossBattleResolvedEventDraft({
+        expeditionId: active.expeditionId,
+        dungeonId: dungeon.id,
+        bossId: dungeon.bossId,
+        result: resolved.bossResult,
+      }),
+    }),
+  };
+
+  return emptyResult(withHistory, {
     ...context,
     activeExpedition: { ...active, expedition: nextExpedition, partyMembers: withTrust },
   });
+}
+
+/**
+ * 공고 하나에서 원정 상태를 만든다.
+ *
+ * `START_EXPEDITION` 이 완성된 `ExpeditionState` 를 받으므로 누군가는 지도를
+ * 만들고 공개 규칙을 정하고 파티를 확정해야 한다. 그 일을 화면이 하면 화면
+ * 계층이 규칙 판단을 하게 된다. 규칙 계층이 내준다.
+ *
+ * 액션의 payload 는 바꾸지 않는다. 호출부가 이 함수를 부르고 그 결과를 넘긴다.
+ * 액션 모양을 바꾸면 기존 검사가 통째로 깨지는데 얻는 것이 없다.
+ */
+export function createExpeditionForOffer(
+  campaign: CampaignState,
+  offer: BoardOffer,
+): { readonly expedition: ExpeditionState; readonly partyMembers: readonly Character[] } {
+  const dungeon = campaign.dungeons.find((candidate) => candidate.id === offer.dungeonId);
+  if (dungeon === undefined) invalidTransition("공고의 던전이 캠페인에 없다", { dungeonId: offer.dungeonId });
+
+  const partyMembers = offer.party.memberIds.map((id) => {
+    const member = campaign.pool.byId[id];
+    if (member === undefined) invalidTransition("공고 파티원이 캠페인 풀에 없다", { characterId: id });
+    return { ...member };
+  });
+
+  const map = generateDungeonMap({
+    campaignSeed: campaign.seed,
+    dungeonId: dungeon.id,
+    initialRiskLevel: dungeon.initialRiskLevel,
+    attempt: dungeon.attempts,
+  });
+
+  return {
+    expedition: {
+      dungeonId: dungeon.id,
+      /* 계약 시점의 위험도다. 던전이 올라도 이 원정은 이 값으로 정산한다. */
+      riskLevel: dungeon.riskLevel,
+      party: { memberIds: [...offer.party.memberIds] },
+      activeRuleIds: [...dungeon.activeRuleIds],
+      disclosedRuleIds: [...disclosedRuleIds({
+        campaignSeed: campaign.seed,
+        dungeonId: dungeon.id,
+        riskLevel: dungeon.riskLevel,
+        activeRuleIds: dungeon.activeRuleIds,
+      })],
+      map,
+      currentNodeId: map.entryNodeId,
+      visitedNodeIds: [map.entryNodeId],
+      infoRecords: [],
+      pendingMerchantEffect: null,
+      bossResult: null,
+      result: null,
+    },
+    partyMembers,
+  };
 }
 
 function copyActiveExpedition(
