@@ -81,6 +81,13 @@ export type {
 } from "./settlement";
 export type { CampaignStatistics } from "./statistics";
 export type {
+  ActiveExpeditionContext,
+  CampaignTransition,
+  CampaignTransitionContext,
+  CampaignTransitionResult,
+} from "./campaign-transition";
+export { createCampaignTransitionContext } from "./campaign-transition";
+export type {
   BoardOffer,
   CampaignEnding,
   CampaignPhase,
