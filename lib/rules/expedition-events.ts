@@ -40,6 +40,55 @@ function reachableNodes(map: GeneratedMap, start: NodeId): ReadonlySet<NodeId> {
   return visited;
 }
 
+/*
+ * 조우 종을 그 던전에 사는 몹으로 갈아끼운다.
+ *
+ * `event-registry` 는 조우를 선언하지 않은 monster 사건에 `theme.monsters[0]`
+ * 을 넣는다. 54개 사건 전부가 그렇다. 저자가 고른 종이 아니라 자리표시자다.
+ * 그 종이 그 던전에 살지 않으면 사건이 통째로 걸러져, `monster` 노드를 계획해
+ * 놓고도 물질화하지 못한다. 생태 패키지 15개 중 9개가 그랬다.
+ *
+ * 어느 몹이 나오는지는 사건이 아니라 던전의 생태가 정한다. 그러니 살지 않는
+ * 종만 갈아끼우고, 이미 사는 종이면 그대로 둔다. 고르는 일은 노드마다 결정적
+ * 이어서 같은 시드가 같은 결과를 낸다.
+ */
+function withLocalSpecies(event: SituationEvent, activeMonsterIds: readonly MonsterId[], rng: ReturnType<typeof createRng>): SituationEvent {
+  if (event.kind !== "monster" || activeMonsterIds.length === 0) return event;
+
+  const active = new Set<MonsterId>(activeMonsterIds);
+  let local: MonsterId | undefined;
+  const swap = (monsterId: MonsterId): MonsterId => {
+    if (active.has(monsterId)) return monsterId;
+    local ??= rng.pick([...activeMonsterIds]);
+    return local;
+  };
+  const swapGroups = <T extends { readonly monsterId: MonsterId }>(groups: readonly T[] | undefined): readonly T[] | undefined =>
+    groups?.map((group) => ({ ...group, monsterId: swap(group.monsterId) }));
+
+  return {
+    ...event,
+    encounter: event.encounter === undefined ? undefined : { ...event.encounter, enemies: swapGroups(event.encounter.enemies) ?? [] },
+    encounterModifier: event.encounterModifier === undefined ? undefined : {
+      ...event.encounterModifier,
+      addEnemies: swapGroups(event.encounterModifier.addEnemies),
+      removeEnemies: swapGroups(event.encounterModifier.removeEnemies),
+    },
+    defaultEncounterModifier: event.defaultEncounterModifier === undefined ? undefined : {
+      ...event.defaultEncounterModifier,
+      addEnemies: swapGroups(event.defaultEncounterModifier.addEnemies),
+      removeEnemies: swapGroups(event.defaultEncounterModifier.removeEnemies),
+    },
+    advice: event.advice.map((option) => option.encounterModifier === undefined ? option : {
+      ...option,
+      encounterModifier: {
+        ...option.encounterModifier,
+        addEnemies: swapGroups(option.encounterModifier.addEnemies),
+        removeEnemies: swapGroups(option.encounterModifier.removeEnemies),
+      },
+    }),
+  };
+}
+
 function eventMatchesProfile(event: SituationEvent, activeRuleIds: ReadonlySet<RuleId>, activeMonsterIds: ReadonlySet<MonsterId>): boolean {
   const referencedRules = event.advice.flatMap((option) => option.source?.kind === "ecology" ? [option.source.ruleId] : []);
   const encounterGroups = event.kind === "merchant" ? [] : [
@@ -55,8 +104,69 @@ function eventMatchesProfile(event: SituationEvent, activeRuleIds: ReadonlySet<R
   ];
   if (event.kind !== "merchant" && event.satisfiedConditionalRuleIds?.some((ruleId) => !activeRuleIds.has(ruleId))) return false;
   if (referencedRules.some((ruleId) => !activeRuleIds.has(ruleId))) return false;
-  if (encounterGroups.some((enemy) => !activeMonsterIds.has(enemy.monsterId))) return false;
+  /* 몹 종은 여기서 거르지 않는다. withLocalSpecies 가 그 던전에 사는 몹으로
+   * 갈아끼우므로, 종 때문에 사건을 버리면 후보만 비고 얻는 것이 없다. */
+  void encounterGroups;
+  void activeMonsterIds;
   return true;
+}
+
+/*
+ * 강한 연계가 쓸 노드의 분류를 확보한다.
+ *
+ * 짝이 성립하려면 선행이 후속보다 앞선 층에 있고 후속이 선행에서 도달
+ * 가능해야 한다. 그 조건을 만족하는 자유 노드 둘을 골라, 분류를 그 단서의
+ * 사건이 요구하는 종류로 바꾼다. 지도 순서로 훑으므로 결정적이다.
+ *
+ * hiddenRole 은 건드리지 않는다. 그것은 뒤에서 findSelection 이 정한다.
+ */
+function reserveStrongLinkCategories(input: {
+  readonly plans: Map<NodeId, PreparedNodePlan>;
+  readonly map: GeneratedMap;
+  readonly layerByNode: ReadonlyMap<NodeId, number>;
+  readonly reservedNodes: ReadonlySet<NodeId>;
+  readonly strongClues: readonly ClueId[];
+  readonly eligibleEvents: readonly SituationEvent[];
+  readonly desired: number;
+}): void {
+  const taken = new Set<NodeId>(input.reservedNodes);
+  let placed = 0;
+
+  for (const clueId of input.strongClues) {
+    if (placed >= input.desired) return;
+    const predecessorKinds = new Set(input.eligibleEvents.filter((event) => event.revealsClue === clueId).map((event) => event.kind));
+    const followerKinds = new Set(input.eligibleEvents.filter((event) => event.requiresClue === clueId).map((event) => event.kind));
+    if (predecessorKinds.size === 0 || followerKinds.size === 0) continue;
+
+    const free = input.map.nodes
+      .filter((node) => node.kind === "normal" && !taken.has(node.id) && input.plans.has(node.id))
+      .map((node) => node.id);
+
+    let pair: readonly [NodeId, NodeId] | undefined;
+    for (const predecessorId of free) {
+      const predecessorLayer = input.layerByNode.get(predecessorId) ?? -1;
+      const reachable = reachableNodes(input.map, predecessorId);
+      const followerId = free.find((candidate) => candidate !== predecessorId
+        && (input.layerByNode.get(candidate) ?? -1) > predecessorLayer
+        && reachable.has(candidate));
+      if (followerId !== undefined) { pair = [predecessorId, followerId]; break; }
+    }
+    if (pair === undefined) continue;
+
+    const [predecessorId, followerId] = pair;
+    const predecessorPlan = input.plans.get(predecessorId)!;
+    const followerPlan = input.plans.get(followerId)!;
+    /* 이미 맞는 분류면 그대로 둔다. 바꿀 때는 정렬해 첫 종류를 쓴다. */
+    if (!predecessorKinds.has(predecessorPlan.category)) {
+      input.plans.set(predecessorId, { ...predecessorPlan, category: [...predecessorKinds].sort()[0]! });
+    }
+    if (!followerKinds.has(followerPlan.category)) {
+      input.plans.set(followerId, { ...followerPlan, category: [...followerKinds].sort()[0]! });
+    }
+    taken.add(predecessorId);
+    taken.add(followerId);
+    placed += 1;
+  }
 }
 
 export function prepareExpeditionEvents(input: {
@@ -94,6 +204,7 @@ export function prepareExpeditionEvents(input: {
   const desiredStrongLinkCount = input.initialRiskLevel >= 5 ? 2 : input.initialRiskLevel >= 3 ? 1 : 0;
   const layerByNode = new Map(input.map.layers.flatMap((layer, index) => layer.nodeIds.map((nodeId) => [nodeId, index] as const)));
   const reservedNodes = new Set([...plans.values()].filter((plan) => plan.hiddenRole !== "normal").map((plan) => plan.nodeId));
+  const buildOptions = (): Map<ClueId, readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[]> => {
   const optionsByClue = new Map<ClueId, readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[]>();
   for (const clueId of strongClues) {
     const predecessorEvents = eligibleEvents.filter((event) => event.revealsClue === clueId);
@@ -111,6 +222,9 @@ export function prepareExpeditionEvents(input: {
       }));
     optionsByClue.set(clueId, pairs.map((pair) => ({ clueId, predecessorNodeId: pair.predecessorNode.nodeId, followerNodeId: pair.followerNode.nodeId })));
   }
+  return optionsByClue;
+  };
+  let optionsByClue = buildOptions();
   const findSelection = (clueIndex: number, selected: readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[], usedNodes: ReadonlySet<NodeId>): readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[] | undefined => {
     if (selected.length === desiredStrongLinkCount) return selected;
     if (strongClues.length - clueIndex < desiredStrongLinkCount - selected.length) return undefined;
@@ -127,7 +241,26 @@ export function prepareExpeditionEvents(input: {
     }
     return undefined;
   };
-  const selectedLinks = findSelection(0, [], reservedNodes);
+  let selectedLinks = findSelection(0, [], reservedNodes);
+  if (selectedLinks === undefined && desiredStrongLinkCount > 0) {
+    /*
+     * 분류를 필요한 만큼만 확보하고 다시 찾는다.
+     *
+     * 노드 분류는 하한 없는 균등 추첨이고, 보스 정보 cut 층은 통째로 special
+     * 로 먼저 빠진다. 그래서 ★3 이상 던전의 9% 가 강한 연계에 쓸 분류의 노드를
+     * 요구 수만큼 갖지 못한 채 나온다. 실제로 노드 21개 중 monster 가 1개인
+     * 던전이 나왔고, 그때 원정이 시작조차 되지 않았다.
+     *
+     * 추첨 결과로 이미 되는 던전은 건드리지 않는다. 안 되는 던전에서만 짝을
+     * 이룰 노드의 분류를 그 단서의 사건이 요구하는 종류로 바꾼다.
+     */
+    reserveStrongLinkCategories({
+      plans, map: input.map, layerByNode, reservedNodes,
+      strongClues, eligibleEvents, desired: desiredStrongLinkCount,
+    });
+    optionsByClue = buildOptions();
+    selectedLinks = findSelection(0, [], reservedNodes);
+  }
   if (selectedLinks === undefined) invalid("요구된 strong link 수를 만족하는 전역 후보 조합이 없다", { desiredStrongLinkCount });
   for (const link of selectedLinks) {
     const predecessorPlan = plans.get(link.predecessorNodeId);
@@ -177,7 +310,9 @@ export function materializeNodeEvent(input: {
   const candidates = normalCandidates(eligibleEvents.filter((event) => event.kind === plan.category), plan.hiddenRole, plan.plannedClueId, input.targetBossId, strongClues);
   const available = candidates.filter((event) => !input.prepared.usedEventIds.has(event.id));
   if (available.length === 0) invalid("방문 노드의 사용 가능한 사건이 없다", { nodeId: input.nodeId, category: plan.category, role: plan.hiddenRole });
-  const event = createRng(`${input.campaignSeed}/${input.dungeonId}/${input.attempt}/${input.nodeId}/${plan.hiddenRole}`).derive("event").pick([...available]);
+  const nodeRng = createRng(`${input.campaignSeed}/${input.dungeonId}/${input.attempt}/${input.nodeId}/${plan.hiddenRole}`).derive("event");
+  const picked = nodeRng.pick([...available]);
+  const event = withLocalSpecies(picked, input.activeMonsterIds, nodeRng);
   const usedEventIds = new Set(input.prepared.usedEventIds);
   usedEventIds.add(event.id);
   const heldClueIds = new Set(input.prepared.heldClueIds);
