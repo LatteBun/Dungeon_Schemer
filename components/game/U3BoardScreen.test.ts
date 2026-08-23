@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { CharacterId } from "@/lib/domain";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U3BoardView, U3OfferDetailView } from "./u3-board-model";
+import type { U3PromotionView } from "./u3-promotion-model";
 import { U3BoardScreen } from "./U3BoardScreen";
 
 const status: TopStatusView = {
@@ -50,13 +51,34 @@ const board: U3BoardView = {
   detailsByOfferId: { [first.offerId]: first, [second.offerId]: second },
 };
 
+const promotion: U3PromotionView = {
+  eligibility: {
+    fromRank: "C",
+    toRank: "B",
+    newlyUnlockedRiskLevel: 3,
+    reputationRequired: 60,
+    goldRequired: 150,
+    currentReputation: 60,
+    currentGold: 120,
+    canPromoteByReputation: true,
+    canPromoteByGold: false,
+  },
+  result: null,
+  isOpen: false,
+};
+
 function render(selectedOfferId: string): string {
   return renderToStaticMarkup(createElement(U3BoardScreen, {
     status,
     board,
     selectedOfferId,
+    promotion,
     onSelectOffer: () => undefined,
     onContract: () => undefined,
+    onOpenPromotion: () => undefined,
+    onCancelPromotion: () => undefined,
+    onConfirmPromotion: () => undefined,
+    onDismissPromotionResult: () => undefined,
   }));
 }
 
@@ -139,5 +161,38 @@ describe("U3BoardScreen", () => {
     expect(html).toContain("진입 불가");
     expect(html).toContain("현재 C급은 ★3 던전에 진입할 수 없습니다. (최대 ★2)");
     expect(html).toMatch(/disabled=\"\"/);
+  });
+
+  it("게시판 상단 등급 버튼과 승급 결과 dialog를 렌더링한다", () => {
+    const html = renderToStaticMarkup(createElement(U3BoardScreen, {
+      status: { ...status, canPromote: true },
+      board,
+      selectedOfferId: "offer-1",
+      promotion: {
+        ...promotion,
+        isOpen: true,
+        result: {
+          fromRank: "C",
+          toRank: "B",
+          method: "reputation",
+          reputationBefore: 60,
+          reputationAfter: 60,
+          goldBefore: 120,
+          goldAfter: 120,
+          newlyUnlockedRiskLevel: 3,
+        },
+      },
+      onSelectOffer: () => undefined,
+      onContract: () => undefined,
+      onOpenPromotion: () => undefined,
+      onCancelPromotion: () => undefined,
+      onConfirmPromotion: () => undefined,
+      onDismissPromotionResult: () => undefined,
+    }));
+
+    expect(html).toContain('data-testid="u3-promotion-trigger"');
+    expect(html).toContain('data-testid="u3-promotion-dialog"');
+    expect(html).toContain("★3 던전 계약이 해금되었습니다.");
+    expect(html).toContain('aria-modal="true"');
   });
 });

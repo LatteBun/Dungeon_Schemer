@@ -1,7 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { U3Preview } from "./U3Preview";
+import { initializeCampaign } from "@/lib/rules/campaign-init";
+import { U3Preview, applyPreviewPromotion } from "./U3Preview";
 
 describe("U3Preview", () => {
   it("C2 실제 공고를 사용해 파티·계약 상세을 렌더링한다", () => {
@@ -18,5 +19,18 @@ describe("U3Preview", () => {
     expect(html).not.toContain("정찰 보고");
     expect(html).not.toContain("의뢰 갱신");
     expect(html).not.toContain("소요 시간");
+  });
+
+  it("승급 확정 뒤 C2 공고를 새 등급으로 다시 만든다", () => {
+    const campaign = {
+      ...initializeCampaign("u3-promotion-preview"),
+      phase: "promotion" as const,
+      reputation: 60,
+    };
+    const execution = applyPreviewPromotion(campaign, "reputation");
+
+    expect(execution.campaign.rank).toBe("B");
+    expect(execution.result.newlyUnlockedRiskLevel).toBe(3);
+    expect(execution.campaign.offers.some((offer) => offer.riskLevel === 3 && offer.lockReason === null)).toBe(true);
   });
 });

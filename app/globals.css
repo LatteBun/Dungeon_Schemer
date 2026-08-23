@@ -165,6 +165,40 @@ body {
   box-shadow: inset 0 1px 0 rgb(244 214 145 / 6%), 0 1px 2px rgb(0 0 0 / 55%);
 }
 
+.game-shell__status-chip--action {
+  cursor: pointer;
+  text-align: left;
+}
+
+.game-shell__status-chip--action:hover,
+.game-shell__status-chip--action:focus-visible {
+  border-color: var(--color-shell-gold);
+  outline: 2px solid rgb(212 178 96 / 70%);
+  outline-offset: 2px;
+}
+
+.game-shell__status-chip--action.is-available {
+  border-color: var(--color-shell-gold);
+  box-shadow: inset 0 1px 0 rgb(244 214 145 / 12%), 0 0 0.8rem rgb(212 178 96 / 36%);
+  animation: u3-promotion-glow 2.4s ease-in-out infinite;
+}
+
+.game-shell__status-chip--action:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+@keyframes u3-promotion-glow {
+  0%,
+  100% {
+    box-shadow: inset 0 1px 0 rgb(244 214 145 / 12%), 0 0 0.45rem rgb(212 178 96 / 22%);
+  }
+
+  50% {
+    box-shadow: inset 0 1px 0 rgb(244 214 145 / 18%), 0 0 1rem rgb(212 178 96 / 48%);
+  }
+}
+
 .game-shell__status-icon {
   width: var(--status-icon-size);
   height: var(--status-icon-size);

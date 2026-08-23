@@ -88,8 +88,8 @@ const settlementWipe: U6SettlementView = {
   nextReward: { reputation: 15, gold: 32 },
 };
 
-/** ★5 에서 전멸이라 위험도가 더 오르지 않는다. 두 승급 경로가 함께 열렸다. */
-const settlementPromotion: U6SettlementView = {
+/** ★5 에서 전멸이라 위험도가 더 오르지 않는 정산 변화 사례. */
+const settlementCapped: U6SettlementView = {
   dungeonName: "사막 5",
   themeId: "desert" satisfies ThemeId,
   survivors: 3,
@@ -280,9 +280,9 @@ export const U6_PREVIEW_ENTRIES: readonly U6PreviewEntry[] = [
   },
   {
     id: "settlement-promotion",
-    label: "정산 · 승급 가능",
+    label: "정산 · 캠페인 변화",
     status: status({ reputation: 88, gold: 214 }),
-    settlement: settlementPromotion,
+    settlement: settlementCapped,
   },
   {
     id: "ending-completed",

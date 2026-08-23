@@ -45,4 +45,14 @@ describe("TopStatusBar U2/U3", () => {
     const html = renderToStaticMarkup(createElement(TopStatusBar, { status: baseStatus }));
     expect(html).toContain("승급 조건 미달");
   });
+
+  it("게시판에서만 등급 상태 칩을 승급 진입 버튼으로 바꾼다", () => {
+    const html = renderToStaticMarkup(createElement(TopStatusBar, {
+      status: { ...baseStatus, canPromote: true },
+      onOpenPromotion: () => undefined,
+    }));
+
+    expect(html).toContain('data-testid="u3-promotion-trigger"');
+    expect(html).toContain("승급 가능");
+  });
 });
