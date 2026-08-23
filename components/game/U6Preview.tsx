@@ -34,7 +34,6 @@ export function U6Preview({ initialId = "settlement-partial" }: U6PreviewProps) 
         <U6SettlementScreen
           status={entry.status}
           settlement={entry.settlement}
-          onPromote={() => {}}
         />
       ) : null}
       {entry.ending ? <U6EndingScreen ending={entry.ending} /> : null}

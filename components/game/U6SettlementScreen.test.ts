@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { U6SettlementScreen } from "./U6SettlementScreen";
-import { CAUSE_ORDER, createU6PromotionView, type U6SettlementView } from "./u6-settlement-model";
+import { CAUSE_ORDER, type U6SettlementView } from "./u6-settlement-model";
 import type { TopStatusView } from "./TopStatusBar";
 
 const status: TopStatusView = {
@@ -31,13 +31,12 @@ const view = (over: Partial<U6SettlementView> = {}): U6SettlementView => ({
   goldDelta: 19,
   relicGold: 0,
   nextReward: { reputation: 15, gold: 32 },
-  promotion: createU6PromotionView("C", 74, 186),
   ...over,
 });
 
 const render = (over: Partial<U6SettlementView> = {}) =>
   renderToStaticMarkup(
-    createElement(U6SettlementScreen, { status, settlement: view(over), onPromote: () => {} }),
+    createElement(U6SettlementScreen, { status, settlement: view(over) }),
   );
 
 describe("U6SettlementScreen", () => {
@@ -84,26 +83,12 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("더 오르지 않");
   });
 
-  it("승급 두 경로를 나란히 보여준다", () => {
+  it("정산에는 승급 제어가 없다", () => {
     const html = render();
 
-    expect(html).toContain("명성 승급");
-    expect(html).toContain("골드 승급");
-    expect(html).toContain('data-testid="u6-promotion"');
-  });
-
-  it("두 경로 모두 미달이면 무엇이 모자란지 적고 버튼을 잠근다", () => {
-    const html = render({ promotion: createU6PromotionView("C", 10, 20) });
-
-    expect(html).toContain("명성 50 부족");
-    expect(html).toContain("골드 130 부족");
-    expect(html).toMatch(/disabled=""/);
-  });
-
-  it("최고 등급이면 승급 영역을 두지 않는다", () => {
-    const html = render({ promotion: null });
-
+    expect(html).not.toContain("명성으로 승급하기");
+    expect(html).not.toContain("골드로 승급하기");
     expect(html).not.toContain('data-testid="u6-promotion"');
-    expect(html).toContain("최고 등급");
+    expect(html).toContain("캠페인 변화");
   });
 });
