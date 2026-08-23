@@ -105,6 +105,7 @@
 - [C5 길잡이 승급 설계](superpowers/specs/2026-08-23-lattebun-c5-guide-promotion-design.md): 게시판에서 명성 또는 골드로 길잡이 등급을 승급하는 규칙과 화면 경계
 - [C6 엔딩·신뢰 붕괴 설계](superpowers/specs/2026-08-23-lattebun-c6-ending-trust-collapse-design.md): 신뢰 0 누적 보정, 원정 중 즉시 불신 전이, 정상 경로 4종 엔딩 판정과 C7 경계
 - [C7 캠페인 상태 전이 설계](superpowers/specs/2026-08-23-lattebun-c7-campaign-state-transition-design.md): 8개 phase 전이, 활성 원정 컨텍스트, C2~C6·C8 경계와 종료 보존 계약
+- [C7 캠페인 상태 전이 구현 계획](superpowers/plans/2026-08-23-lattebun-c7-campaign-state-transition.md): C2~C6 결과를 단일 순수 전이로 적용하는 테스트 우선 구현 순서
 - [C1 캠페인 초기화·생태 패키지 설계](superpowers/specs/2026-08-20-sanghwan-yoo-c1-campaign-initialization-design.md): 고정 던전 슬롯, 생태 패키지, 초기 캠페인 상태의 구현 경계
 - [C1 캠페인 초기화·생태 패키지 구현 계획](superpowers/plans/2026-08-20-sanghwan-yoo-c1-campaign-initialization.md): 도메인 계약, 콘텐츠 검증, 시드 초기화의 구현 순서
 - [U2 인트로 게시판 진입 연결 설계](superpowers/specs/2026-08-20-sanghwan-yoo-u2-intro-board-navigation-design.md): U2 CTA와 기존 U1 게시판 프리뷰의 라우팅 계약
