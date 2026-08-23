@@ -172,7 +172,7 @@ export function U5ProgressScreen({
   const [filter, setFilter] = useState<U5LogFilter>(initialFilter);
 
   return (
-    <div className="u5-progress-screen" data-testid="u5-progress">
+    <div className="expedition-screen u5-progress-screen" data-testid="u5-progress">
       <GameShell
         status={status}
         screenTitle={`${progress.dungeonName} · ${progress.nodeLabel}`}

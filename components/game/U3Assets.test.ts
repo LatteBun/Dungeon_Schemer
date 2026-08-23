@@ -8,7 +8,6 @@ const extractedPngAssets = [
   "risk-star.png",
   "notice-parchment-clean.png",
   "board-wood-tile.png",
-  "screen-texture-tile.png",
   "contract-emblem.png",
   "arrow-right.png",
   "section-divider.png",
@@ -20,6 +19,16 @@ function extractedPath(name: string): string {
   return join(process.cwd(), "public", "assets", "u3", "extracted", name);
 }
 
+
+/* 화면 바탕 질감은 U3 전용이 아니게 됐다. 원정 화면 셋이 함께 쓴다. */
+describe("공용 화면 질감", () => {
+  it("shared 로 옮긴 자리에 실제 PNG 로 있다", () => {
+    const content = readFileSync(join(process.cwd(), "public", "assets", "shared", "screen-texture-tile.png"));
+    expect(content.subarray(0, 8)).toEqual(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+  });
+});
 
 describe("U3 extracted asset-board assets", () => {
   it.each(extractedPngAssets)("%s 는 실제 PNG 파일이다", (asset) => {

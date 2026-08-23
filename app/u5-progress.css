@@ -17,9 +17,7 @@
   grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
   min-height: 0;
-  overflow: hidden;
-  background: #090705;
-}
+  overflow: hidden;}
 
 .u5-progress-screen .game-shell__main,
 .u5-progress-screen .game-shell__right-panel {
