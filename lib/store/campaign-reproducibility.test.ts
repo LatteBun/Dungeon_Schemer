@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CampaignTransition, NodeId } from "@/lib/domain";
-import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
+import type { CampaignTransition, NodeId, SettlementResult } from "@/lib/domain";
+import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { createCampaignStore } from "./campaign-store";
 
 /**
@@ -16,6 +16,8 @@ const SEED = "i2-repro";
 function playOne(seed: string) {
   const store = createCampaignStore(seed);
   const taken: CampaignTransition["type"][] = [];
+  /* 정산 결과는 다음 액션이 `last` 를 덮어쓰기 전에 붙든다. */
+  let settlement: SettlementResult | null = null;
   const act = (action: CampaignTransition) => {
     store.getState().dispatch(action);
     taken.push(action.type);
@@ -50,7 +52,18 @@ function playOne(seed: string) {
     act({ type: "CHOOSE_ADVICE", adviceId: pending.advice[0]!.id });
   }
 
-  return { store, taken };
+  /* 원정이 끝났으면 정산하고 세상을 한 턴 돌린다. 한 바퀴가 닫혀야 한다. */
+  const ended = store.getState().context.activeExpedition;
+  if (ended !== null && (ended.expedition.bossResult !== null || ended.expedition.result !== null)) {
+    act({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(store.getState().campaign, ended) });
+    settlement = store.getState().last?.settlement ?? null;
+    if (store.getState().campaign.phase === "settlement") {
+      act({ type: "START_WORLD_TURN" });
+      act({ type: "COMPLETE_WORLD_TURN" });
+    }
+  }
+
+  return { store, taken, settlement };
 }
 
 describe("시드 재현", () => {
@@ -87,6 +100,44 @@ describe("시드 재현", () => {
     expect(taken.length).toBeGreaterThan(4);
     expect(taken).toContain("VISIT_NODE");
     expect(taken).toContain("CHOOSE_ADVICE");
+  });
+
+  /* 한 바퀴가 닫힌다 - 원정을 끝내고 게시판으로 돌아온다. */
+  it("원정 한 판이 정산까지 간다", () => {
+    const { store, taken } = playOne(SEED);
+
+    expect(taken).toContain("COMPLETE_EXPEDITION");
+    expect(store.getState().context.activeExpedition).toBeNull();
+  });
+
+  /* 정산이 원인 사슬을 세 줄 다 채운다. 빈 줄이 있으면 화면이 빈칸을 그린다. */
+  it("정산의 원인 사슬이 지어낸 값이 아니다", () => {
+    const { settlement } = playOne(SEED);
+    if (settlement === null) throw new Error("정산 결과가 없다");
+
+    expect(settlement.causeChain.choice.length).toBeGreaterThan(0);
+    expect(settlement.causeChain.reactions.length).toBeGreaterThan(0);
+    expect(settlement.causeChain.damage.length).toBeGreaterThan(0);
+    /* 조언 문구는 사건에서 온다. 자리를 채우는 기본값이 아니다. */
+    expect(settlement.causeChain.choice).not.toBe("조언을 고를 일이 없었다");
+  });
+
+  /*
+   * 결과를 정한 것이 보스전이면 원인도 보스전이어야 한다.
+   *
+   * 마지막 조언의 피해만 남기면 보스에게 전멸한 원정이 "피해 없이 지나갔다" 로
+   * 정산된다. 실제로 걸어 본 한 판이 그랬다.
+   */
+  it("보스전이 끝낸 원정은 보스전을 원인으로 적는다", () => {
+    const { store, settlement } = playOne(SEED);
+    if (settlement === null) throw new Error("정산 결과가 없다");
+    if (!store.getState().campaign.history.events.some((one) => one.type === "BOSS_BATTLE_RESOLVED")) {
+      throw new Error("이 시드는 보스전까지 가지 않는다");
+    }
+
+    expect(settlement.causeChain.choice).toContain("보스");
+    /* 전멸했다면 누군가는 HP 0 이 되었다. 피해 없이 전멸할 수는 없다. */
+    if (settlement.survivorIds.length === 0) expect(settlement.causeChain.damage).toContain("→ 0");
   });
 
   /* 조언마다 이력이 쌓여야 정산의 원인 사슬과 엔딩의 전환점이 선다. */

@@ -11,6 +11,8 @@ import type {
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { presentShuffledAdvice } from "@/lib/rules/advice-evaluation";
 import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacter } from "./character-labels";
+import { enemyBattleAssetSrc } from "./u5-battle-assets";
+import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView } from "./u5-log";
 import { toAdviceViews, type U5ProgressView, type U5SceneKind } from "./u5-progress-model";
@@ -159,3 +161,42 @@ export function ecologyViewFor(campaign: CampaignState, active: ActiveExpedition
   };
 }
 
+
+/**
+ * 보스전 재생을 만든다.
+ *
+ * 이름과 그림만 붙인다. 무슨 일이 일어났는지는 `E4` 가 이미 정했다 — 어느
+ * 행동에서 어떤 믿음이 작용했는지(`cues`)와 그 믿음이 옳았는지(`verifications`)
+ * 까지 규칙이 계산해 둔 값이므로 그대로 넘긴다. 한동안 화면이 이 둘을 통째로
+ * 버리고 있었고, 그래서 보스전이 그냥 때리고 맞는 장면이었다.
+ */
+export function bossReplayFor(
+  campaign: CampaignState,
+  active: ActiveExpeditionContext,
+): U5BattleReplay | null {
+  const result = active.expedition.bossResult;
+  if (result === null) return null;
+
+  const dungeon = campaign.dungeons.find((one) => one.id === active.expedition.dungeonId);
+  const theme = THEMES.find((one) => one.id === dungeon?.theme);
+  const boss = theme?.bosses.find((one) => one.id === dungeon?.bossId);
+
+  return createU5BattleReplay({
+    resolution: result.battle,
+    cues: result.cues,
+    verifications: result.verifications,
+    presentations: [
+      ...active.partyMembers.map((member) => ({
+        id: String(member.id),
+        name: member.name,
+        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: member.alive }),
+      })),
+      /* 적의 이름은 콘텐츠에서 온다. 화면이 보스 이름을 지어내지 않는다. */
+      ...result.battle.enemies.map((enemy) => ({
+        id: String(enemy.id),
+        name: boss?.name ?? String(enemy.monsterId),
+        imageSrc: enemyBattleAssetSrc(String(enemy.monsterId)),
+      })),
+    ],
+  });
+}

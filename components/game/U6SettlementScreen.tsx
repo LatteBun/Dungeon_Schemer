@@ -5,6 +5,13 @@ import type { U6SettlementView } from "./u6-settlement-model";
 export interface U6SettlementScreenProps {
   status: TopStatusView;
   settlement: U6SettlementView;
+  /*
+   * 다음으로 넘어가는 길. 프리뷰에는 넘어갈 곳이 없어 주지 않는다.
+   *
+   * 주면 버튼이 서고, 없으면 서지 않는다. 화면이 그다음에 무슨 일이 일어나는지
+   * 아는 대신, 알리기만 한다.
+   */
+  onContinue?: () => void;
 }
 
 function riskStars(level: number): string {
@@ -81,7 +88,7 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
   );
 }
 
-export function U6SettlementScreen({ status, settlement }: U6SettlementScreenProps) {
+export function U6SettlementScreen({ status, settlement, onContinue }: U6SettlementScreenProps) {
   const wiped = settlement.survivors === 0;
 
   return (
@@ -100,6 +107,11 @@ export function U6SettlementScreen({ status, settlement }: U6SettlementScreenPro
               </small>
             </p>
             <CauseChain settlement={settlement} />
+            {onContinue !== undefined && (
+              <button type="button" className="u6-settlement-continue" onClick={onContinue}>
+                세상이 한 턴 돈다
+              </button>
+            )}
           </div>
         }
         rightPanel={

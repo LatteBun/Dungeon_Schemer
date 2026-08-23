@@ -31,7 +31,8 @@ import { executeGuidePromotion, getGuidePromotionEligibility } from "@/lib/rules
 import { recordSettlementStatistics } from "@/lib/rules/campaign-statistics";
 import { settleExpedition } from "@/lib/rules/settlement";
 import type { TopStatusView } from "./TopStatusBar";
-import type { U6EndingNote, U6EndingView } from "./u6-ending-model";
+import type { U6EndingView } from "./u6-ending-model";
+import { createU6EndingView } from "./u6-ending-adapter";
 import { ENDING_TITLE } from "./u6-ending-model";
 import { createU6SettlementView, type U6SettlementView } from "./u6-settlement-model";
 
@@ -178,7 +179,12 @@ const causeInputs = causeInputsFromExpedition();
  * 던전마다 셋 중 하나를 결정적으로 고른다. 전원 생환, 한 명 사망, 전멸이다.
  * 그러면 생존·사망·전멸 횟수·누적 골드가 전부 그 이력의 결과가 된다.
  */
-function playedThrough(campaign: CampaignState, dungeonCount: number): CampaignState {
+function playedThrough(
+  campaign: CampaignState,
+  dungeonCount: number,
+  /** 결말마다 필요한 이력이 다르다. 완주는 전멸이 하나도 없어야 성립한다. */
+  outcomeFor: (index: number) => number = (index) => index % 3,
+): CampaignState {
   let current = campaign;
   for (let index = 0; index < dungeonCount; index += 1) {
     const target = current.dungeons[index];
@@ -198,7 +204,7 @@ function playedThrough(campaign: CampaignState, dungeonCount: number): CampaignS
     if (trio.length !== 3) break;
 
     /* 셋 중 하나를 순서대로 고른다. 시드가 같으면 이력도 같다. */
-    const outcome = index % 3;
+    const outcome = outcomeFor(index);
     const wiped = outcome === 2;
     const finalMembers = trio.map((member, position) => {
       if (wiped) return { ...member, hp: 0, alive: false };
@@ -362,11 +368,18 @@ function promotedToTop(campaign: CampaignState): CampaignState {
   return current;
 }
 
-const completedCampaign = judged("completed", promotedToTop(withPool({
-  ...playedCampaign,
-  dungeons: baseCampaign.dungeons.map((candidate) => ({ ...candidate, status: "cleared" as const })),
-  /* 열다섯 번의 원정에 대가가 없을 수 없다. 여섯을 묻고 왔다. */
-}, (member, index) => index < 6 ? { ...member, alive: false, hp: 0 } : member)));
+/*
+ * 던전 열다섯 곳을 실제로 다 돌았다. 상태를 손으로 덮어쓰지 않는다.
+ *
+ * 전에는 12회 이력 위에 던전 상태만 `cleared` 로 바꿔 놓았다. 그러면 "던전 15곳
+ * 정복" 과 "원정 12회" 가 한 화면에 같이 서고, 어느 쪽도 참이 아니게 된다.
+ * 하드코딩된 "열다섯 번" 이 그 모순을 가리고 있었다. 전멸 없이 열다섯 번을
+ * 치르면 두 숫자가 저절로 맞는다 — 대가는 한 번 걸러 한 명씩 치른다.
+ */
+const completedCampaign = judged(
+  "completed",
+  promotedToTop(playedThrough(baseCampaign, 15, (index) => index % 2)),
+);
 
 /*
  * 살아 있는 신뢰 0 이 고발 문턱을 딱 넘었다.
@@ -414,193 +427,21 @@ const unemployedCampaign = judged("unemployed", {
 const distrustParty = party.map((member) => ({ ...member, trust: 0 }));
 const distrustCampaign = judged("distrust", playedCampaign, distrustParty);
 
-function endingStatistics(campaign: CampaignState) {
-  const pool = campaign.pool.order.map((id) => campaign.pool.byId[id]).filter((member): member is Character => member !== undefined);
-  return {
-    finalRank: campaign.rank,
-    survivedCount: pool.filter((member) => member.alive).length,
-    /* 사망자는 `C8-A` 가 센 값을 쓴다. 풀을 다시 세면 두 곳이 갈라질 수 있다. */
-    diedCount: campaign.statistics.totalDeaths,
-    zeroTrustCount: pool.filter((member) => member.alive && member.trust === 0).length,
-    finalReputation: campaign.reputation,
-    cumulativeGold: campaign.cumulativeGold,
-    wipedExpeditions: campaign.statistics.wipedExpeditions,
-  };
-}
-
-/** `C8-A` 가 쌓은 누적 통계다. 엔딩 보고서가 그대로 읽는다. */
-function campaignTotals(campaign: CampaignState) {
-  return {
-    totalExpeditions: campaign.statistics.totalExpeditions,
-    clearedExpeditions: campaign.statistics.clearedExpeditions,
-    highestDungeonCleared: campaign.statistics.highestDungeonCleared,
-  };
-}
-
-function ending(
-  judgement: Judged,
-  over: {
-    readonly subtitle: string;
-    /** 판정 근거 뒤에 오는 두 줄. 이야기를 짓는 자리다. */
-    readonly narrative: readonly [string, string];
-    readonly report: readonly string[];
-    readonly consequences: readonly U6EndingNote[];
-    readonly chronicleSummary: string;
-  },
-): U6EndingView {
-  const { campaign, verdict } = judgement;
-  const stats = endingStatistics(campaign);
-  return {
-    kind: verdict.kind,
-    subtitle: over.subtitle,
-    /*
-     * 첫 줄은 `C6` 가 쓴 판정 근거다. 화면이 다시 쓰지 않는다.
-     *
-     * 전에는 "총 15곳의 던전을 정복하며, 캠페인의 모든 임무를 완수했습니다"
-     * 처럼 손으로 옮겨 적었다. 규칙이 문턱을 바꾸면 화면만 옛 문장을 들고 있게
-     * 된다. 나머지 두 줄은 그 사실 위에 얹는 이야기다.
-     */
-    reasons: [verdict.reason, ...over.narrative],
-    report: over.report,
-    consequences: over.consequences,
-    chronicleSummary: over.chronicleSummary,
-    ...stats,
-    ...campaignTotals(campaign),
-    zeroTrustPartySize: stats.zeroTrustCount,
-    adviceTotal: campaign.history.events.length,
-    turningPoint: null,
-  };
-}
-
-/** 그 결말을 부른 사람들의 이름이다. `C6` 가 결정적 순서로 넘겨준다. */
-function triggerNames(judgement: Judged): string {
-  const names = judgement.verdict.triggerCharacterIds
-    .map((id) => judgement.campaign.pool.byId[id]?.name)
-    .filter((name): name is string => name !== undefined);
-  return names.length === 0 ? "" : names.join(" · ");
-}
-
 /*
- * 산문은 화면이 쓴다.
+ * 프리뷰도 실제 화면과 같은 어댑터를 쓴다.
  *
- * `C6` 가 주는 것은 판정 근거 한 줄이다. 결말을 어떤 목소리로 전할지는 규칙의
- * 일이 아니므로 여기서 쓴다. 다만 **사실을 다시 쓰지는 않는다.** 숫자와 이름은
- * 전부 캠페인에서 끌어온다. 전에는 "파티원 생존 1명 유지", "최종 등급 S 달성"
- * 처럼 손으로 적혀 있었고 어느 것도 이 캠페인의 값이 아니었다.
+ * 전에는 다섯 결말의 산문과 숫자가 이 파일에 따로 적혀 있었다. 캠페인 통합이
+ * 같은 것을 한 벌 더 만들면 프리뷰에서 본 결말과 실제로 보는 결말이 갈라진다.
+ * 산문은 어댑터로 옮겼고, 여기 남은 것은 어떤 캠페인을 보여 줄지의 선택뿐이다.
  */
-const completedStats = endingStatistics(completedCampaign.campaign);
-const denouncedStats = endingStatistics(denouncedCampaign.campaign);
-const exhaustedStats = endingStatistics(exhaustedCampaign.campaign);
-const unemployedStats = endingStatistics(unemployedCampaign.campaign);
-const distrustStats = endingStatistics(distrustCampaign.campaign);
-
 const ENDINGS: Readonly<Record<EndingKind, U6EndingView>> = {
-  completed: ending(completedCampaign, {
-    subtitle: "당신은 길을 안내했을 뿐이다. 걸어간 것은 그들이었다.",
-    narrative: [
-      `열다섯 번의 원정에서 ${completedStats.diedCount}명을 묻고 ${completedStats.survivedCount}명과 함께 돌아왔습니다.`,
-      "길드는 당신의 이름을 기록에 남겼고, 아무도 그 대가를 세지 않았습니다.",
-    ],
-    report: [
-      "던전 15곳 정복",
-      `최종 등급 ${completedStats.finalRank}`,
-      `전멸한 원정 ${completedStats.wipedExpeditions}회`,
-      `누적 골드 ${completedStats.cumulativeGold}`,
-    ],
-    consequences: [
-      { label: "완주", detail: "던전 15곳을 남김없이 지나왔다." },
-      { label: "생환", detail: `${completedStats.survivedCount}명이 마지막까지 살아남았다.` },
-      { label: "대가", detail: `${completedStats.diedCount}명이 돌아오지 못했다.` },
-      { label: "등급", detail: `길잡이 등급 ${completedStats.finalRank} 에 이르렀다.` },
-    ],
-    chronicleSummary:
-      "처음에는 아무도 당신의 말을 믿지 않았고, 나중에는 아무도 묻지 않고 따랐습니다. 그 변화가 무엇을 뜻하는지는 마지막 던전을 나선 뒤에야 알게 됩니다.",
-  }),
-  distrust: ending(distrustCampaign, {
-    subtitle: "믿음은 한 번에 무너지지 않는다. 조금씩, 조언 하나마다 깎여 나간다.",
-    narrative: [
-      "돌아온 이들은 당신의 말을 더 듣지 않기로 했습니다.",
-      "다음 원정에 그들을 다시 부를 수 없습니다.",
-    ],
-    report: [
-      "원정 생존자 전원 신뢰 0",
-      `신뢰 0 인 생존자 ${distrustStats.zeroTrustCount}명`,
-      `최종 명성 ${distrustStats.finalReputation}`,
-      `전멸한 원정 ${distrustStats.wipedExpeditions}회`,
-    ],
-    consequences: [
-      { label: "불신", detail: "살아 돌아온 이들이 모두 등을 돌렸다." },
-      { label: "고립", detail: "조언을 받아들일 사람이 남지 않았다." },
-      { label: "명성", detail: `명성은 ${distrustStats.finalReputation} 에서 멈췄다.` },
-      { label: "기록", detail: "길드는 원인을 묻지 않고 계약을 정리했다." },
-    ],
-    chronicleSummary:
-      "당신의 조언은 매번 맞았을 수도 있고, 한 번도 맞지 않았을 수도 있습니다. 그들이 아는 것은 몇 명이 돌아오지 못했다는 사실뿐이었습니다.",
-  }),
-  denounced: ending(denouncedCampaign, {
-    subtitle: "한 사람의 침묵은 견딜 수 있다. 다섯 사람의 증언은 그렇지 않다.",
-    narrative: [
-      `${triggerNames(denouncedCampaign)} 가 길드에 같은 말을 했습니다.`,
-      "길드는 그 말을 기록으로 남겼고, 당신의 이름을 명부에서 지웠습니다.",
-    ],
-    report: [
-      `불신을 증언한 용사 ${denouncedStats.zeroTrustCount}명`,
-      `살아 있는 용사 ${denouncedStats.survivedCount}명`,
-      `사망한 용사 ${denouncedStats.diedCount}명`,
-      `최종 명성 ${denouncedStats.finalReputation}`,
-    ],
-    consequences: [
-      { label: "고발", detail: `${denouncedStats.zeroTrustCount}명이 같은 증언을 남겼다.` },
-      { label: "박탈", detail: "길잡이 자격이 회수되었다." },
-      { label: "명성", detail: `쌓아 둔 명성 ${denouncedStats.finalReputation} 은 소용이 없었다.` },
-      { label: "이후", detail: "그들은 다른 길잡이와 다시 원정을 나선다." },
-    ],
-    chronicleSummary:
-      "고발은 한 번에 오지 않았습니다. 돌아온 이들이 하나씩 말을 옮겼고, 다섯 번째 증언에서 길드가 움직였습니다.",
-  }),
-  exhausted: ending(exhaustedCampaign, {
-    subtitle: "던전은 그대로 있다. 들어갈 사람이 없을 뿐이다.",
-    narrative: [
-      `${exhaustedStats.diedCount}명을 잃고 나니 서로 다른 직업 셋을 채울 수 없습니다.`,
-      "공고는 그대로 걸려 있지만 계약할 수 없습니다.",
-    ],
-    report: [
-      "서로 다른 직업 3명을 편성할 수 없음",
-      `사망한 용사 ${exhaustedStats.diedCount}명`,
-      `남은 용사 ${exhaustedStats.survivedCount}명`,
-      `전멸한 원정 ${exhaustedStats.wipedExpeditions}회`,
-    ],
-    consequences: [
-      { label: "소진", detail: `${exhaustedStats.diedCount}명이 돌아오지 못했다.` },
-      { label: "정지", detail: "편성할 파티가 없어 원정이 멈췄다." },
-      { label: "잔고", detail: `골드 ${exhaustedStats.cumulativeGold} 은 쓸 곳이 없다.` },
-      { label: "이후", detail: "길드는 다른 길잡이에게 남은 던전을 넘긴다." },
-    ],
-    chronicleSummary:
-      "전멸은 매번 다른 이유로 일어났지만 결과는 같았습니다. 마지막에 남은 것은 채울 수 없는 세 자리였습니다.",
-  }),
-  unemployed: ending(unemployedCampaign, {
-    subtitle: "게시판은 매일 채워진다. 당신이 읽을 수 있는 줄이 없을 뿐이다.",
-    narrative: [
-      `등급 ${unemployedStats.finalRank} 로는 남은 공고를 하나도 계약할 수 없습니다.`,
-      "명성을 더 쌓을 원정이 없으므로 등급도 오르지 않습니다.",
-    ],
-    report: [
-      "남은 공고가 전부 등급 미달",
-      `길잡이 등급 ${unemployedStats.finalRank}`,
-      `최종 명성 ${unemployedStats.finalReputation}`,
-      `누적 골드 ${unemployedStats.cumulativeGold}`,
-    ],
-    consequences: [
-      { label: "정체", detail: `등급 ${unemployedStats.finalRank} 에서 더 나아가지 못했다.` },
-      { label: "봉쇄", detail: "계약할 수 있는 공고가 남지 않았다." },
-      { label: "명성", detail: `명성 ${unemployedStats.finalReputation} 은 승급에 모자랐다.` },
-      { label: "이후", detail: "길드는 조용히 당신의 자리를 비웠다." },
-    ],
-    chronicleSummary:
-      "실패한 원정마다 던전의 위험도가 올랐습니다. 어느 날 게시판을 보니 읽을 수 있는 공고가 한 줄도 남아 있지 않았습니다.",
-  }),
+  completed: createU6EndingView(completedCampaign.campaign, completedCampaign.verdict),
+  distrust: createU6EndingView(distrustCampaign.campaign, distrustCampaign.verdict),
+  denounced: createU6EndingView(denouncedCampaign.campaign, denouncedCampaign.verdict),
+  exhausted: createU6EndingView(exhaustedCampaign.campaign, exhaustedCampaign.verdict),
+  unemployed: createU6EndingView(unemployedCampaign.campaign, unemployedCampaign.verdict),
 };
+
 
 export interface U6PreviewEntry {
   id: U6PreviewId;

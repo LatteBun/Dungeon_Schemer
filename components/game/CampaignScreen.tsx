@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 import type { NodeId, PromotionMethod } from "@/lib/domain";
-import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
+import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { screenForPhase } from "@/lib/store/campaign-store";
 import { useCampaignStore } from "./CampaignStoreProvider";
 import { IntroScreen } from "./IntroScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
+import { U5BattleScene } from "./U5BattleScene";
 import { U5ProgressScreen } from "./U5ProgressScreen";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import {
   adviceIdForSlotIn,
+  bossReplayFor,
   ecologyViewFor,
   progressViewFor,
   publicKindByNodeId,
@@ -23,6 +25,7 @@ import { createU3PromotionView } from "./u3-promotion-model";
 import { createU4MapNodeViews, createU4PartyMemberViews } from "./u4-dungeon-map-model";
 import { createU4DungeonMapLayout } from "./u4-dungeon-map-layout";
 import { createU6SettlementView } from "./u6-settlement-model";
+import { createU6EndingView } from "./u6-ending-adapter";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 
 /**
@@ -79,12 +82,22 @@ export function CampaignScreen() {
       <U6SettlementScreen
         status={status}
         settlement={createU6SettlementView(last.settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider")}
+        onContinue={() => {
+          /*
+           * 정산을 확인하면 세상이 한 턴 돈다.
+           *
+           * 월드턴은 두 걸음이다 - 시작하고, 끝낸다. 그 사이에 규칙이 던전 위험도와
+           * 인력 보충을 처리한다. 화면은 한 번의 확인으로 둘 다 보낸다.
+           */
+          dispatch({ type: "START_WORLD_TURN" });
+          dispatch({ type: "COMPLETE_WORLD_TURN" });
+        }}
       />
     );
   }
 
   if (screen === "ending" && campaign.ending !== null) {
-    return <EndingUnavailable reason="엔딩 View 어댑터가 아직 없다" />;
+    return <U6EndingScreen ending={createU6EndingView(campaign, campaign.ending)} />;
   }
 
   return <EndingUnavailable reason={`이 단계를 그릴 수 없다: ${campaign.phase}`} />;
@@ -105,6 +118,23 @@ function ExpeditionScreens() {
   const active = context.activeExpedition!;
   const status = statusFor(campaign, active);
   const dungeon = campaign.dungeons.find((one) => one.id === active.expedition.dungeonId);
+
+  /*
+   * 원정이 끝났다. 정산으로 넘긴다.
+   *
+   * 보스전을 치렀거나 도중에 전멸했으면 더 걸을 곳이 없다. 정산 입력은 규칙이
+   * 만든다 - 화면이 무엇이 최종 파티인지 판단하지 않는다.
+   */
+  const finished = active.expedition.bossResult !== null || active.expedition.result !== null;
+  if (finished) {
+    const replay = bossReplayFor(campaign, active);
+    return (
+      <ExpeditionEnd
+        replay={replay}
+        onSettle={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
+      />
+    );
+  }
 
   if (active.pendingEvent !== null) {
     return (
@@ -147,6 +177,29 @@ function ExpeditionScreens() {
         setSelected(null);
       }}
     />
+  );
+}
+
+/**
+ * 보스전을 보여 주고 정산으로 넘긴다.
+ *
+ * 전멸로 끝난 원정에는 보스전이 없다. 그때는 재생할 것이 없으므로 넘어가는 길만
+ * 남는다.
+ */
+function ExpeditionEnd({
+  replay,
+  onSettle,
+}: {
+  readonly replay: ReturnType<typeof bossReplayFor>;
+  readonly onSettle: () => void;
+}) {
+  return (
+    <div className="u5-battle-host">
+      {replay !== null && <U5BattleScene replay={replay} />}
+      <button type="button" className="u5-battle-settle" onClick={onSettle}>
+        정산으로
+      </button>
+    </div>
   );
 }
 
