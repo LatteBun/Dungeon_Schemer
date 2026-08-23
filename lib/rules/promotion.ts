@@ -74,11 +74,10 @@ export function cancelGuidePromotion(campaign: CampaignState): CampaignState {
   return { ...campaign, phase: "board" };
 }
 
-export function promoteGuide(
+export function executeGuidePromotion(
   campaign: CampaignState,
   method: PromotionMethod,
 ): PromotionExecution {
-  requirePhase(campaign, "promotion");
   const eligibility = getGuidePromotionEligibility(campaign);
   if (eligibility === null) return invalidPromotion(campaign, { method });
 
@@ -116,11 +115,25 @@ export function promoteGuide(
   return {
     campaign: {
       ...campaign,
-      phase: "board",
       rank: eligibility.toRank,
       gold: goldAfter,
-      offers: [],
     },
     result,
+  };
+}
+
+export function promoteGuide(
+  campaign: CampaignState,
+  method: PromotionMethod,
+): PromotionExecution {
+  requirePhase(campaign, "promotion");
+  const execution = executeGuidePromotion(campaign, method);
+  return {
+    ...execution,
+    campaign: {
+      ...execution.campaign,
+      phase: "board",
+      offers: [],
+    },
   };
 }

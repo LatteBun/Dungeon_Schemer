@@ -11,6 +11,7 @@ import {
 } from "@/lib/domain";
 import {
   cancelGuidePromotion,
+  executeGuidePromotion,
   getGuidePromotionEligibility,
   openGuidePromotion,
   promoteGuide,
@@ -62,6 +63,35 @@ describe("길잡이 승급 조회", () => {
 });
 
 describe("길잡이 승급 상태 전이", () => {
+  it("phase-free 승급 계산은 phase와 현재 공고를 바꾸지 않는다", () => {
+    const base = boardState({ reputation: PROMOTION_REPUTATION.B });
+    const campaign = {
+      ...base,
+      phase: "promotion" as const,
+      offers: createBoardOffers(base),
+    };
+    const before = structuredClone(campaign);
+
+    const execution = executeGuidePromotion(campaign, "reputation");
+
+    expect(execution.campaign).toMatchObject({
+      phase: "promotion",
+      rank: "B",
+      offers: campaign.offers,
+      reputation: PROMOTION_REPUTATION.B,
+      gold: campaign.gold,
+      cumulativeGold: campaign.cumulativeGold,
+    });
+    expect(campaign).toEqual(before);
+  });
+
+  it("phase-free 승급 계산은 어떤 phase도 직접 바꾸지 않는다", () => {
+    for (const phase of ["board", "expedition", "ended"] as const) {
+      const campaign = boardState({ phase, reputation: PROMOTION_REPUTATION.B });
+      expect(executeGuidePromotion(campaign, "reputation").campaign.phase).toBe(phase);
+    }
+  });
+
   it("게시판에서 승급 선택 화면을 열고 취소하면 상태를 되돌린다", () => {
     const board = boardState({ reputation: PROMOTION_REPUTATION.B });
     const opened = openGuidePromotion(board);
