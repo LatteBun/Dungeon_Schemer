@@ -2,6 +2,7 @@ import type { CampaignDungeon, RiskLevel } from "./dungeon";
 import type { CharacterPool, ExpeditionParty } from "./pool";
 import type { CharacterId, DungeonId, OfferId } from "./ids";
 import type { CampaignStatistics } from "./statistics";
+import type { CampaignHistory } from "./history";
 
 /**
  * 길잡이 등급이다. 어느 위험도까지 들어갈 수 있는지만 정한다.
@@ -165,4 +166,6 @@ export interface CampaignState {
   settledExpeditionIds: readonly string[];
   /** C8이 규칙 결과를 누적하는 통계다. */
   statistics: CampaignStatistics;
+  /** C8-B가 확정 사실을 순서 있게 보관하는 persistent 이력이다. */
+  history: CampaignHistory;
 }

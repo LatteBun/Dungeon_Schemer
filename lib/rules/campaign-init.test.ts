@@ -4,6 +4,7 @@ import { THEMES, selectThemeBoss } from "@/lib/content/themes";
 import {
   CAMPAIGN_DUNGEON_COUNT,
   CAMPAIGN_DUNGEON_ORDERS,
+  createCampaignHistory,
   createCampaignStatistics,
   GOLD_START,
   REPUTATION_START,
@@ -33,6 +34,9 @@ describe("initializeCampaign", () => {
     expect(state.dungeons).toHaveLength(CAMPAIGN_DUNGEON_COUNT);
     expect(state.dungeons.map((dungeon) => dungeon.campaignOrder)).toEqual(CAMPAIGN_DUNGEON_ORDERS);
     expect(state.statistics).toEqual(createCampaignStatistics());
+    expect(state.history).toEqual(createCampaignHistory());
+    expect(state.history.events).toEqual([]);
+    expect(state.history.turningPoints).toEqual([]);
   });
 
   it("고정 슬롯마다 패키지와 보스를 테마·위험도에 맞춰 연결한다", () => {
@@ -68,6 +72,9 @@ describe("initializeCampaign", () => {
     expect(second).toEqual(first);
     expect(second).not.toBe(first);
     expect(second.pool).not.toBe(first.pool);
+    expect(second.history).not.toBe(first.history);
+    expect(second.history.events).not.toBe(first.history.events);
+    expect(second.history.turningPoints).not.toBe(first.history.turningPoints);
     expect(second.dungeons).not.toBe(first.dungeons);
     expect(second.dungeons[0]).not.toBe(first.dungeons[0]);
     expect(second.dungeons[0].activeRuleIds).not.toBe(first.dungeons[0].activeRuleIds);

@@ -4,6 +4,8 @@ export type {
   BossRuleId,
   CardId,
   CharacterId,
+  CampaignEventId,
+  CampaignEventSourceKey,
   ChoiceId,
   ClaimId,
   ClueId,
@@ -83,6 +85,22 @@ export type {
 } from "./settlement";
 export { createCampaignStatistics } from "./statistics";
 export type { CampaignStatistics, SettlementSummary } from "./statistics";
+export { createCampaignHistory } from "./history";
+export type {
+  AdviceResolvedEvent,
+  BossBattleResolvedEvent,
+  CampaignEndedEvent,
+  CampaignEvent,
+  CampaignEventDraft,
+  CampaignEventIdentity,
+  CampaignEventSource,
+  CampaignHistory,
+  ExpeditionSettledEvent,
+  GuidePromotedEvent,
+  TrustCollapsedEvent,
+  TurningPoint,
+  TurningPointKind,
+} from "./history";
 export type {
   ActiveExpeditionContext,
   CampaignTransition,
