@@ -1,0 +1,272 @@
+/* U5-2 전투 표현은 기존 고정 캔버스와 장면 슬롯의 크기를 그대로 사용한다. */
+
+.u5-battle-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.u5-battle-preview > .u5-progress-screen {
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * container-type 을 두지 않는다.
+ *
+ * 여기에 size 컨테이너를 만들면 안쪽 cqh 가 1080px 캔버스가 아니라 362px 짜리
+ * 장면 슬롯을 기준으로 잡는다. 1cqh 가 10.8px 에서 3.62px 로 줄어드는 바람에
+ * 이 파일에 쓴 cqh 18곳이 전부 clamp 하한에 박혀 있었다. 스프라이트는 123px,
+ * 이름은 8.96px, HP 숫자는 7.68px 로 나와 적이 보이지도 글자가 읽히지도
+ * 않았다. @container 질의는 어디에도 없으므로 컨테이너 자체가 필요 없다.
+ */
+.u5-battle-host {
+  position: relative;
+  overflow: hidden;
+}
+
+.u5-battle-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgb(3 3 4 / 12%), rgb(3 2 2 / 48%));
+}
+
+.u5-battle-overlay {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: end;
+  justify-content: space-between;
+  gap: clamp(0.4rem, 1.2cqw, 1.2rem);
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(1.7rem, 7cqh, 3.6rem) clamp(0.5rem, 1.5cqw, 1.4rem) clamp(0.35rem, 1.2cqh, 0.8rem);
+}
+
+.u5-battle-group {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: clamp(0.2rem, 0.7cqw, 0.65rem);
+  min-width: 0;
+  min-height: 0;
+}
+
+.u5-battle-group[data-side="party"] {
+  width: 58%;
+}
+
+.u5-battle-group[data-side="enemy"] {
+  width: 38%;
+}
+
+.u5-battle-participant {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  min-width: 0;
+  min-height: 0;
+  max-width: 32%;
+  overflow: visible;
+  text-align: center;
+}
+
+.u5-battle-group[data-side="enemy"] .u5-battle-participant {
+  max-width: 48%;
+}
+
+.u5-battle-orientation {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  place-items: end center;
+  overflow: visible;
+}
+
+.u5-battle-orientation.is-enemy {
+  transform: scaleX(-1);
+}
+
+.u5-battle-motion {
+  display: grid;
+  width: 100%;
+  height: clamp(6rem, 36cqh, 12rem);
+  place-items: end center;
+  transform-origin: center bottom;
+}
+
+.u5-battle-sprite-frame {
+  position: relative;
+  width: min(100%, 10rem);
+  height: min(100%, 34cqh);
+  place-self: end center;
+}
+
+.u5-battle-sprite {
+  object-fit: contain;
+  object-position: center bottom;
+  filter: brightness(1.18) drop-shadow(0 0.32rem 0.4rem rgb(0 0 0 / 72%));
+}
+
+.u5-battle-name {
+  max-width: 100%;
+  margin-top: clamp(0.08rem, 0.35cqh, 0.22rem);
+  overflow: hidden;
+  color: #fff1c9;
+  font-size: clamp(0.56rem, 1.7cqh, 0.88rem);
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  text-shadow: 0 0.08rem 0.18rem #000;
+  white-space: nowrap;
+}
+
+.u5-battle-hp {
+  width: min(100%, 7rem);
+  height: clamp(0.25rem, 0.9cqh, 0.44rem);
+  margin-top: clamp(0.08rem, 0.3cqh, 0.18rem);
+  overflow: hidden;
+  border: 0.0625rem solid rgb(255 234 185 / 72%);
+  border-radius: 0.2rem;
+  background: rgb(15 7 6 / 88%);
+}
+
+.u5-battle-hp__fill {
+  display: block;
+  width: var(--u5-battle-hp-percent);
+  height: 100%;
+  background: linear-gradient(90deg, #783126, #d4623e);
+  transition: width 0.28s ease;
+}
+
+.u5-battle-hp__numbers {
+  color: #f5e8c9;
+  font-size: clamp(0.48rem, 1.35cqh, 0.7rem);
+  line-height: 1.2;
+  text-shadow: 0 0.08rem 0.18rem #000;
+}
+
+.u5-battle-damage-anchor {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+}
+
+.u5-battle-damage {
+  display: block;
+  color: #ffdf6f;
+  font-size: clamp(0.9rem, 3cqh, 1.55rem);
+  font-weight: 800;
+  text-shadow: 0 0.1rem 0.22rem #300, 0 0 0.5rem #f33;
+}
+
+.u5-battle-defeated {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  z-index: 4;
+  padding: 0.1rem 0.3rem;
+  border: 0.0625rem solid #d7b16a;
+  background: rgb(10 5 4 / 88%);
+  color: #f2d7ad;
+  font-size: clamp(0.52rem, 1.5cqh, 0.78rem);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.u5-battle-live {
+  flex: 0 0 auto;
+  max-width: 74%;
+  margin: 0 auto clamp(0.2rem, 0.7cqh, 0.45rem);
+  padding: clamp(0.14rem, 0.45cqh, 0.28rem) clamp(0.5rem, 1.2cqw, 0.9rem);
+  border: 0.0625rem solid rgb(215 177 106 / 52%);
+  border-radius: 0.2rem;
+  background: rgb(8 6 5 / 82%);
+  color: #f3e3bf;
+  font-size: clamp(0.56rem, 1.7cqh, 0.9rem);
+  line-height: 1.25;
+  text-align: center;
+}
+
+/* 읽어 주기만 하는 자리다. 화면 문장은 .u5-battle-live 가 이미 보여 준다. */
+.u5-battle-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.u5-battle-controls {
+  position: absolute;
+  top: clamp(0.3rem, 1cqh, 0.65rem);
+  right: clamp(0.3rem, 0.8cqw, 0.7rem);
+  z-index: 6;
+}
+
+.u5-battle-controls button,
+.u5-battle-preview__selector button {
+  border: 0.0625rem solid #a98243;
+  border-radius: 0.2rem;
+  background: rgb(18 13 8 / 92%);
+  color: #f2dfb6;
+  cursor: pointer;
+}
+
+.u5-battle-controls button {
+  padding: clamp(0.16rem, 0.45cqh, 0.3rem) clamp(0.4rem, 0.9cqw, 0.75rem);
+  font-size: clamp(0.5rem, 1.5cqh, 0.78rem);
+}
+
+.u5-battle-controls button:focus-visible,
+.u5-battle-preview__selector button:focus-visible {
+  outline: 0.125rem solid #fff0c1;
+  outline-offset: 0.125rem;
+}
+
+.u5-battle-preview__selector {
+  position: absolute;
+  top: clamp(8.6rem, 13.4cqh, 9rem);
+  left: clamp(0.8rem, 1.3cqw, 1.3rem);
+  z-index: 20;
+  display: flex;
+  gap: clamp(0.25rem, 0.45cqw, 0.5rem);
+  max-width: 56%;
+}
+
+.u5-battle-preview__selector button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: clamp(0.18rem, 0.4cqh, 0.3rem) clamp(0.35rem, 0.65cqw, 0.65rem);
+  text-align: left;
+}
+
+.u5-battle-preview__selector button[aria-pressed="true"] {
+  border-color: #f4c96a;
+  background: #493112;
+}
+
+.u5-battle-preview__selector strong {
+  font-size: clamp(0.48rem, 0.7cqw, 0.72rem);
+  line-height: 1.2;
+}
+
+.u5-battle-preview__selector span {
+  color: #c9b994;
+  font-size: clamp(0.38rem, 0.54cqw, 0.58rem);
+  line-height: 1.2;
+}

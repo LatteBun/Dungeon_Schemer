@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { U5ProgressScreen } from "./U5ProgressScreen";
+import { createU5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import type { U5ProgressView } from "./u5-progress-model";
 import type { TopStatusView } from "./TopStatusBar";
@@ -42,6 +43,23 @@ const base: U5ProgressView = {
   ],
 };
 
+const battleReplay = createU5BattleReplay({
+  resolution: {
+    status: "victory",
+    termination: "defeatedEnemies",
+    rounds: 1,
+    actions: [
+      { round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 5, targetHpBefore: 5, targetHpAfter: 0, defeated: true },
+    ],
+    party: [{ id: "party-1", classId: "rogue", hp: 32, maxHp: 32, attack: 5, hitWeight: 2 }],
+    enemies: [{ id: "enemy-1", monsterId: "spider-hatchling", hp: 0, maxHp: 5, baseDamage: 2 }],
+  },
+  presentations: [
+    { id: "party-1", name: "코르빈", imageSrc: "/assets/characters/live/rogue/rogue_a.png" },
+    { id: "enemy-1", name: "새끼거미", imageSrc: "/assets/monsters/spider/monster-spider-hatchling.png" },
+  ],
+});
+
 const render = (over: Partial<U5ProgressView> = {}, props: Record<string, unknown> = {}) =>
   renderToStaticMarkup(
     createElement(U5ProgressScreen, {
@@ -54,12 +72,32 @@ const render = (over: Partial<U5ProgressView> = {}, props: Record<string, unknow
   );
 
 describe("U5ProgressScreen", () => {
-  it("장면 슬롯과 콘솔을 함께 둔다", () => {
+  it("전투 replay가 없으면 기존 장면 슬롯과 배경을 장식 이미지로 유지한다", () => {
     const html = render();
 
     expect(html).toContain('data-testid="u5-scene"');
     expect(html).toContain('data-testid="u5-console"');
     expect(html).toContain("/assets/u5/dungeon-progress-scenes/spider/monster.png");
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).not.toContain('data-testid="u5-battle-scene"');
+    expect(html).not.toContain("u5-battle-host");
+  });
+
+  it("전투 replay가 있으면 같은 장면 슬롯을 전투 overlay의 host로 만든다", () => {
+    const html = render({}, { battleReplay });
+    const scene = (html.match(/<div class="[^"]*\bu5-scene\b[^"]*"[\s\S]*?<div class="u5-console"/) ?? [""])[0];
+    const sceneOpeningTag = (scene.match(/^<div[^>]+>/) ?? [""])[0];
+
+    expect(scene).toContain('data-testid="u5-battle-scene"');
+    expect(sceneOpeningTag).toContain('class="u5-scene u5-battle-host"');
+    expect(sceneOpeningTag).not.toContain('aria-hidden="true"');
+  });
+
+  it("전투 replay를 표시해도 오른쪽 파티 ViewModel 마크업을 바꾸지 않는다", () => {
+    const partyMarkup = (html: string) =>
+      (html.match(/<div class="u5-party" data-testid="u5-party">[\s\S]*?<\/div><\/aside>/) ?? [""])[0];
+
+    expect(partyMarkup(render({}, { battleReplay }))).toBe(partyMarkup(render()));
   });
 
   it("상황 묘사가 조언보다 먼저 온다", () => {

@@ -13,6 +13,8 @@ import {
   type U5LogFilter,
 } from "./u5-log";
 import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
+import { U5BattleScene } from "./U5BattleScene";
+import type { U5BattleReplay } from "./u5-battle-replay";
 
 export type U5ConsoleMode = "advice" | "log";
 
@@ -25,6 +27,7 @@ export interface U5ProgressScreenProps {
   onSelectAdvice?: (slot: number) => void;
   initialMode?: U5ConsoleMode;
   initialFilter?: U5LogFilter;
+  readonly battleReplay?: U5BattleReplay;
 }
 
 const REACTION_LABEL = {
@@ -158,6 +161,7 @@ export function U5ProgressScreen({
   onSelectAdvice,
   initialMode,
   initialFilter = "all",
+  battleReplay,
 }: U5ProgressScreenProps) {
   /*
    * 행동 / 조언을 전면에 둔다. 선택 뒤 결과(반응 → 결과 → 변화)도 이 모드에
@@ -175,12 +179,14 @@ export function U5ProgressScreen({
         main={
           <div className="u5-main">
             <div
-              className="u5-scene"
+              className={battleReplay === undefined ? "u5-scene" : "u5-scene u5-battle-host"}
               data-testid="u5-scene"
               data-scene-kind={progress.sceneKind}
               style={{ backgroundImage: `url("${sceneSrc(progress.theme, progress.sceneKind)}")` }}
-              aria-hidden="true"
-            />
+              aria-hidden={battleReplay === undefined ? "true" : undefined}
+            >
+              {battleReplay === undefined ? null : <U5BattleScene replay={battleReplay} />}
+            </div>
 
             <div className="u5-console" data-testid="u5-console">
               <nav className="u5-console__tabs" aria-label="콘솔 모드">
