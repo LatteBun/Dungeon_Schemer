@@ -23,6 +23,7 @@ import {
   THEME_IDS,
   canDeploy,
   canDeployEmergency,
+  createCampaignTransitionContext,
   rewardForSurvivors,
 } from "@/lib/domain";
 import type {
@@ -39,6 +40,7 @@ import type {
   EncounterModifier,
   ImmediateEventEffect,
   MonsterId,
+  CampaignTransition,
 } from "@/lib/domain";
 
 function character(overrides: Partial<Character> = {}): Character {
@@ -58,6 +60,24 @@ function character(overrides: Partial<Character> = {}): Character {
 }
 
 describe("도메인 상수", () => {
+  it("새 캠페인 전이 컨텍스트는 선택 공고와 활성 원정이 없다", () => {
+    expect(createCampaignTransitionContext()).toEqual({
+      selectedOffer: null,
+      activeExpedition: null,
+    });
+  });
+
+  it("캠페인 전이는 판별 가능한 action union을 공개한다", () => {
+    const actions: CampaignTransition[] = [
+      { type: "OPEN_BOARD" },
+      { type: "SELECT_CONTRACT", offerId: "offer-1" as OfferId },
+      { type: "PROMOTE_GUIDE", method: "gold" },
+    ];
+    expect(actions.map((action) => action.type)).toEqual([
+      "OPEN_BOARD", "SELECT_CONTRACT", "PROMOTE_GUIDE",
+    ]);
+  });
+
   it("풀 30명이 5직업·5성격으로 균등하게 나뉜다", () => {
     expect(CHARACTER_POOL_SIZE).toBe(30);
     expect(PERSONALITIES.length * CHARACTERS_PER_PERSONALITY).toBe(CHARACTER_POOL_SIZE);
