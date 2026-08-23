@@ -47,13 +47,6 @@ const CUE_AXIS_WORD: Readonly<Record<U5BattleCueView["axis"], string>> = {
   outgoingDamage: "주는 피해",
 };
 
-function cueSentence(cue: U5BattleCueView, name: string): string {
-  const word = CUE_AXIS_WORD[cue.axis];
-  return cue.direction === "beneficial"
-    ? `${withSubjectParticle(name)} 믿은 정보가 ${word}에 도움이 됐습니다.`
-    : `${withSubjectParticle(name)} 믿은 정보가 ${word}를 나쁘게 만들었습니다.`;
-}
-
 /** 전투 뒤 신뢰 검증. 인과 사슬의 마지막 칸이다. */
 const VERIFICATION_WORD: Readonly<Record<U5BattleReplay["verifications"][number]["action"], string>> = {
   adviceHelped: "믿은 정보가 옳았습니다",
@@ -150,6 +143,8 @@ function Participant({ participant, frame, reducedMotion }: {
   readonly frame: U5BattleReplayFrame;
   readonly reducedMotion: boolean;
 }) {
+  /* 믿음은 그것을 들고 간 사람의 것이다. 피해 숫자가 대상 위에 뜨듯 여기 붙인다. */
+  const cue = frame.cues.find((one) => one.characterId === participant.id);
   const hp = frame.hpByParticipantId[participant.id] ?? participant.finalHp;
   const hpPercent = Math.max(0, Math.min(100, hp / participant.maxHp * 100));
   const defeated = frame.defeatedParticipantIds.includes(participant.id);
@@ -206,6 +201,19 @@ function Participant({ participant, frame, reducedMotion }: {
           </span>
         ) : null}
       </AnimatePresence>
+      <AnimatePresence>
+        {cue === undefined ? null : (
+          <motion.span
+            className={`u5-battle-cue is-${cue.direction}`}
+            initial={{ opacity: 0, y: reducedMotion ? 0 : "24%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <b>{CUE_AXIS_WORD[cue.axis]}</b>
+            {cue.direction === "beneficial" ? "믿음이 통했다" : "믿음이 어긋났다"}
+          </motion.span>
+        )}
+      </AnimatePresence>
       {defeated ? <span className="u5-battle-defeated">쓰러짐</span> : null}
     </article>
   );
@@ -255,15 +263,6 @@ export function U5BattleScene({ replay }: U5BattleSceneProps) {
         </div>
       </div>
       <p className="u5-battle-live">{frameDescription(replay, frame)}</p>
-      {frame.cues.length === 0 ? null : (
-        <ul className="u5-battle-cues" data-testid="u5-battle-cues">
-          {frame.cues.map((cue) => (
-            <li key={`${cue.characterId}-${cue.presentationKey}`}>
-              {cueSentence(cue, participantById(replay, cue.characterId)?.name ?? cue.characterId)}
-            </li>
-          ))}
-        </ul>
-      )}
       {!complete || replay.verifications.length === 0 ? null : (
         <ul className="u5-battle-verifications" data-testid="u5-battle-verifications">
           {replay.verifications.map((one) => (
