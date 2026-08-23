@@ -45,6 +45,14 @@ describe("U3 승급 모델", () => {
     });
   });
 
+  it("결과를 닫으면 board phase의 갱신 게시판을 유지한다", () => {
+    const withResult = createU3PromotionView(eligibility, "board", result);
+    const afterDismiss = createU3PromotionView(eligibility, "board", null);
+
+    expect(withResult).toEqual({ eligibility, isOpen: false, result });
+    expect(afterDismiss).toEqual({ eligibility, isOpen: false, result: null });
+  });
+
   it("S급 null eligibility는 승급 overlay를 열지 않는다", () => {
     expect(createU3PromotionView(null, "board", null)).toEqual({
       eligibility: null,

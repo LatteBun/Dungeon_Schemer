@@ -79,8 +79,11 @@ View 타입도 규칙이 정한 모양에 따라 바뀔 수 있다. 그때는 �
 | `isOpen` | 게시판에서 승급 선택 오버레이가 열렸는지 | C5 phase |
 | `result` | 확정한 한 단계 승급의 전후 등급·사용 경로·골드 변화·새 위험도 | C5 `promoteGuide` |
 
-U3은 `eligibility`의 요구치와 가능 여부를 다시 계산하지 않는다. 상단 등급
-버튼은 가능한 경우에만 활성화하고, 명성·골드 중 가능한 경로를 각각 보여준다.
+U3은 `eligibility`의 요구치와 가능 여부를 다시 계산하지 않는다. C·B·A의 상단
+등급 버튼은 조건 미달이어도 선택 화면을 열며, `canPromoteByReputation`과
+`canPromoteByGold`는 상단 버튼의 강조와 각 경로 버튼 활성화에만 사용한다. 명성·
+골드의 현재값·요구값·부족 사유는 각각 보여준다. S에서는 eligibility가 `null`이므로
+승급 진입을 제공하지 않는다.
 확정 결과를 확인하면 C2의 `createBoardOffers`를 같은 `seed`·`worldTurn`으로
 호출해 새 등급의 공고를 만든다. 승급은 게시판 안에서만 열고 취소·확정 뒤에도
 `board` phase로 돌아온다.

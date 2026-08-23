@@ -135,6 +135,7 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "전체 점유",
     "data-canvas-layout",
     "색만으로",
+    "조건 미달이어도",
   ],
   "experience/ONBOARDING_AND_INTERFACE.md": [
     "인트로",
