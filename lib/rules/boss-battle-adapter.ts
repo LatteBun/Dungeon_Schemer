@@ -1,6 +1,6 @@
 import { createRng } from "@/lib/rng";
 import { consumePendingMerchantEffect } from "@/lib/rules/merchant";
-import { evaluateTrust, type TrustAction } from "@/lib/rules/trust";
+import { evaluateTrust } from "@/lib/rules/trust";
 import { resolveBattle } from "@/lib/rules/battle-engine";
 import {
   bossTraitForRule,
