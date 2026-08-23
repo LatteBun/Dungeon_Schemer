@@ -1,0 +1,228 @@
+.party-card,
+.party-list {
+  --party-portrait-height: clamp(5.5rem, 8.6cqw, 11.5rem);
+}
+
+/* 파티원 카드 — 파티 상태를 보여주는 모든 화면이 함께 쓴다.
+ *
+ * 화면마다 카드를 따로 그리면 같은 파티원이 다르게 보이고 플레이어가 자리를
+ * 다시 배운다. 정의를 한 곳에 두고 화면은 배치만 정한다.
+ *
+ * 크기는 rem 과 cqw 로만 쓴다. vw·vh 와 미디어 쿼리를 넣지 않는다.
+ */
+
+.party-card {
+  /* 초상을 위에 크게, 정보를 아래에. 카드 폭이 좁아도 초상이 온전히 커진다.
+   *
+   * 두 행 모두 auto 다. 컨테이너 높이에 기대면 화면마다 카드가 달라진다.
+   * U3 처럼 늘려주지 않는 자리에서는 초상이 0 이 되고, U4 처럼 늘려주는
+   * 자리에서는 이름 줄이 밀려 잘렸다. 카드가 스스로 크기를 정하게 둔다. */
+  display: grid;
+  grid-template-rows: auto auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 42%, var(--color-edge));
+  border-radius: 0.24rem;
+  background: linear-gradient(180deg, rgb(26 19 13 / 92%), rgb(14 11 8 / 95%));
+  box-shadow: inset 0 1px 0 rgb(244 214 145 / 6%);
+}
+
+.party-card.is-dead {
+  border-color: color-mix(in srgb, var(--color-shell-danger) 46%, var(--color-edge));
+  filter: grayscale(0.7);
+}
+
+.party-card__portrait {
+  position: relative;
+  display: grid;
+  /*
+   * 높이만 정하고 폭은 카드를 그대로 채운다.
+   *
+   * 전에는 aspect-ratio 1 로 정사각을 만들고 max-height 로 눌렀는데, 상한에
+   * 걸리는 순간 폭도 같이 줄어서 초상이 카드 왼쪽에 붙고 오른쪽에 빈 칸이
+   * 남았다. 높이를 컨테이너에서 직접 얻으면 그 일이 없고, 카드 높이가 화면과
+   * 무관하게 같아진다는 성질도 그대로다.
+   */
+  height: var(--party-portrait-height);
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-shell-metal) 50%, transparent);
+  background: radial-gradient(circle at 50% 30%, #241a11, #0b0806);
+}
+
+.party-card__portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 가로로 넓은 창이라 위를 딱 맞추면 턱에서 잘린다. 조금 내려 얼굴을 담는다. */
+  object-position: 50% 8%;
+  filter: sepia(0.08) saturate(0.9) contrast(1.04);
+}
+
+/* 초상 자산이 없어도 자리를 남긴다. 화면마다 카드 높이가 달라지지 않는다. */
+.party-card__portrait-empty {
+  width: 44%;
+  height: 44%;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 35%, rgb(120 96 58 / 26%), transparent 70%);
+}
+
+/* 순번은 초상 위에 얹는다. 열을 따로 쓰면 그만큼 초상이 좁아진다. */
+.party-card__number {
+  position: absolute;
+  top: 0.28rem;
+  left: 0.36rem;
+  color: var(--color-shell-gold);
+  font-size: clamp(0.62rem, 0.68cqw, 0.92rem);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+}
+
+.party-card__death {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  background: rgb(120 40 32 / 88%);
+  color: #ffe0d6;
+  font-size: clamp(0.58rem, 0.64cqw, 0.86rem);
+  text-align: center;
+}
+
+.party-card__content {
+  display: grid;
+  align-content: start;
+  gap: clamp(0.2rem, 0.28cqw, 0.44rem);
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(0.34rem, 0.46cqw, 0.72rem);
+}
+
+.party-card__identity {
+  display: grid;
+  gap: 0.04rem;
+  min-width: 0;
+}
+
+.party-card__identity > span,
+.party-card__identity > small {
+  display: inline;
+}
+
+.party-card__identity strong {
+  color: var(--color-parchment);
+  font-size: clamp(0.84rem, 0.9cqw, 1.25rem);
+  overflow-wrap: anywhere;
+}
+
+.party-card__identity span,
+.party-card__identity small {
+  color: var(--color-muted);
+  font-size: clamp(0.7rem, 0.75cqw, 1rem);
+}
+
+/* HP 와 신뢰를 세로로 쌓는다. 나란히 두면 막대가 절반 폭이라 눈금이 안 읽힌다. */
+.party-card__stats {
+  display: grid;
+  gap: clamp(0.18rem, 0.24cqw, 0.4rem);
+  margin: 0;
+  min-width: 0;
+}
+
+.party-card__stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.1rem 0.45rem;
+  min-width: 0;
+}
+
+.party-card__stat dt {
+  color: var(--color-muted);
+  font-size: clamp(0.68rem, 0.72cqw, 0.96rem);
+  font-weight: 700;
+}
+
+.party-card__stat dd {
+  justify-self: end;
+  margin: 0;
+  color: #e0cda6;
+  font-size: clamp(0.72rem, 0.78cqw, 1.05rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.party-meter {
+  grid-column: 1 / -1;
+  display: block;
+  height: clamp(0.2rem, 0.24cqw, 0.34rem);
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+}
+
+.party-meter > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #7a3f34, #c0664f);
+}
+
+.party-meter--trust > i {
+  background: linear-gradient(90deg, #4d6b3f, #8db56b);
+}
+
+/* 라벨 문구 없이 아이콘과 금액을 붙인다. */
+.party-card__gold {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  margin-top: clamp(0.1rem, 0.14cqw, 0.24rem);
+  padding-top: clamp(0.18rem, 0.24cqw, 0.4rem);
+  border-top: 1px solid color-mix(in srgb, var(--color-shell-metal) 26%, transparent);
+}
+
+.party-card__gold dt {
+  display: inline-flex;
+  align-items: center;
+}
+
+.party-card__gold img {
+  width: clamp(0.8rem, 0.86cqw, 1.15rem);
+  height: clamp(0.8rem, 0.86cqw, 1.15rem);
+}
+
+.party-card__gold dd {
+  margin: 0;
+  color: var(--color-shell-gold);
+  font-size: clamp(0.76rem, 0.82cqw, 1.1rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 파티 목록 ──
+ *
+ * 카드만 같게 만들어서는 같아 보이지 않는다. 담는 자리가 화면마다 다르면
+ * 카드가 늘어나거나 눌려 결국 다르게 읽힌다. 목록 배치도 여기서 정한다.
+ *
+ * 파티는 정확히 3명이라(EXPEDITION_PARTY_SIZE) 3열이 넘치거나 모자라지 않는다.
+ */
+.party-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* 카드가 스스로 높이를 정하므로 늘리지 않는다. 늘리면 화면마다 달라진다. */
+  align-content: start;
+  align-items: start;
+  gap: clamp(0.32rem, 0.44cqw, 0.7rem);
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  list-style: none;
+}
+
+.party-list > li {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}

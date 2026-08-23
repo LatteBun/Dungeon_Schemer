@@ -8,7 +8,6 @@ const extractedPngAssets = [
   "risk-star.png",
   "notice-parchment-clean.png",
   "board-wood-tile.png",
-  "screen-texture-tile.png",
   "contract-emblem.png",
   "arrow-right.png",
   "section-divider.png",
@@ -20,6 +19,16 @@ function extractedPath(name: string): string {
   return join(process.cwd(), "public", "assets", "u3", "extracted", name);
 }
 
+
+/* 화면 바탕 질감은 U3 전용이 아니게 됐다. 원정 화면 셋이 함께 쓴다. */
+describe("공용 화면 질감", () => {
+  it("shared 로 옮긴 자리에 실제 PNG 로 있다", () => {
+    const content = readFileSync(join(process.cwd(), "public", "assets", "shared", "screen-texture-tile.png"));
+    expect(content.subarray(0, 8)).toEqual(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+  });
+});
 
 describe("U3 extracted asset-board assets", () => {
   it.each(extractedPngAssets)("%s 는 실제 PNG 파일이다", (asset) => {
@@ -105,8 +114,6 @@ describe("U3 extracted asset-board assets", () => {
 
     expect(css).toContain(".u3-notice__heading strong");
     expect(css).toContain(".u3-notice__heading small");
-    expect(css).toContain(".u3-party-card__identity strong");
-    expect(css).toContain(".u3-party-card__stats > div");
     expect(css).toContain(".u3-contract-outcomes__rows > div");
   });
 
@@ -117,15 +124,6 @@ describe("U3 extracted asset-board assets", () => {
     expect(css).toContain(".u3-notice__theme-visual");
     expect(css).toContain("max-height: 100%");
     expect(css).toContain("font-size: clamp(0.78rem, 0.68cqw, 1rem);");
-  });
-
-  it("탐험대 카드도 대화면에서 내용과 함께 커진다", () => {
-    const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
-
-    expect(css).toContain(".u3-party-card {");
-    expect(css).toContain("min-height: clamp(7.5rem, 8.5cqw, 12rem)");
-    expect(css).toContain(".u3-party-card__portrait");
-    expect(css).toContain("clamp(3.4rem, 3.3cqw, 5.5rem)");
   });
 
   it("계약 조건 보상은 명성과 골드를 항상 한 줄에 유지한다", () => {
@@ -147,26 +145,19 @@ describe("U3 extracted asset-board assets", () => {
     const layout = readFileSync(join(process.cwd(), "app", "layout.tsx"), "utf8");
 
     expect(layout).toContain('import "./u3-responsive-layout.css"');
-    expect(css).toContain("grid-template-rows: auto minmax(0, 1fr) auto auto");
+    // 파티 · 계약 카드 · 버튼 세 행이다. 던전 정보를 계약 카드에 합치며 한 행이 줄었다.
+    expect(css).toContain("grid-template-rows: auto minmax(0, 1fr) auto");
     expect(css).toContain("min-height: 0");
   });
 
   it("크기 계산은 캔버스 가로·세로를 함께 쓰고 명성·골드 라벨을 크게 유지한다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
 
-    expect(css).toContain("calc(0.68rem + 0.18cqw + 0.12cqh)");
     expect(css).toContain(".u3-board-screen .u3-reward__label");
     expect(css).toContain("clamp(0.72rem");
     expect(css).not.toContain(".u3-notice__environment strong");
     expect(css).toContain(".u3-contract-outcomes__rows > div");
   });
 
-  it("탐험대 골드 행은 아이콘과 소지 골드 라벨을 같은 줄에 고정한다", () => {
-    const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
-
-    expect(css).toContain(".u3-party-card__gold-row");
-    expect(css).toContain(".u3-party-card__gold-label");
-    expect(css).toContain("white-space: nowrap");
-    expect(css).toContain("align-items: center");
-  });
+  /* 탐험대 카드의 골드 표시는 party-card.css 로 옮겼다. 계약은 PartyMemberCard.test.tsx 가 지킨다. */
 });

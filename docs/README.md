@@ -60,12 +60,13 @@
 ### 시각 자료
 
 - [diagram/README.md](diagram/README.md): 캠페인·탐험 시퀀스, 상태 전이, 대표 화면 6개의 Markdown 원본과 이미지 인덱스
-- [대표 화면 전체 모음](diagram/svg/screen-overview.svg): 인트로부터 캠페인 엔딩까지의 화면 와이어프레임
+- [대표 화면 전체 모음](diagram/png/screen-overview.png): 인트로부터 캠페인 엔딩까지 화면 일곱 장의 실제 캡처
 
 ### 기술
 
 - [DEVELOPMENT_ENVIRONMENT.md](technical/DEVELOPMENT_ENVIRONMENT.md): GitHub Codespaces, Next.js, React, TypeScript, Tailwind CSS, Framer Motion, Zustand, Supabase, Vercel의 책임
 - [CAMPAIGN_REWORK_WORK_ASSIGNMENT.md](technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md): 캠페인 개편의 유일한 작업 기준. 계층, 의존성 그래프, 담당과 상태
+- [SCREEN_ADAPTER_CONTRACT.md](technical/SCREEN_ADAPTER_CONTRACT.md): 화면이 아직 없는 규칙 자리를 어떤 fixture로 메우고 있는지. 우선권은 로직에 있다
 - [TEAM_DEVELOPMENT_WORKFLOW.md](technical/TEAM_DEVELOPMENT_WORKFLOW.md): 브랜치, 리뷰, 병합 규약
 
 ## 회의 기록

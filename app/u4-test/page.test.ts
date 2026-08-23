@@ -19,7 +19,7 @@ describe("U4TestPage", () => {
     });
     const html = renderToStaticMarkup(page);
 
-    expect((html.match(/class=\"u4-party-card is-dead\"/g) ?? [])).toHaveLength(1);
+    expect((html.match(/class=\"party-card is-dead\"/g) ?? [])).toHaveLength(1);
     expect(html).toContain("/assets/characters/dead/");
     expect(html).toContain("사망");
   });

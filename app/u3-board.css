@@ -12,47 +12,19 @@
   grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
   min-height: 0;
-  overflow: hidden;
-  background: #090705;
-}
+  overflow: hidden;}
 
 .u3-board-screen .game-shell__body {
   height: auto;
   min-height: 0;
   overflow: hidden;
-  background: #0b0806;
 }
 
-.u3-board-screen .game-shell__main,
-.u3-board-screen .game-shell__right-panel {
-  min-height: 0;
-  overflow: hidden;
-  padding: clamp(0.55rem, 1cqw, 0.8rem);
-}
 
 .u3-board-screen .game-shell__main {
   display: flex;
   flex-direction: column;
-  border-right-color: #7b5a2e;
-  background:
-    radial-gradient(circle at 12% 96%, rgb(178 108 37 / 10%), transparent 18rem),
-    #120c08;
-}
-
-.u3-board-screen .game-shell__right-panel {
-  background:
-    linear-gradient(90deg, rgb(187 136 63 / 3%), transparent 12%),
-    #0d0a07;
-}
-
-.u3-board-screen .game-shell__main > h1 {
-  flex: 0 0 auto;
-  margin: 0 0 0.45rem;
-  color: #e5c77f;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1rem, 1.3cqw, 1.25rem);
-  letter-spacing: 0.03em;
-}
+  border-right-color: #7b5a2e;}
 
 .u3-guild-board {
   position: relative;
@@ -258,9 +230,9 @@
 
 .u3-contract-detail {
   display: grid;
-  grid-template-rows: auto auto auto auto;
-  gap: clamp(0.42rem, 0.7cqh, 0.58rem);
-  height: 100%;
+  /* 파티는 내용만큼, 계약 카드가 남는 높이를 쓴다. 버튼은 늘 아래에 붙는다. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(0.4rem, 0.55cqw, 0.85rem);
   min-height: 0;
 }
 
@@ -352,92 +324,26 @@
   font-size: clamp(0.6rem, 0.78cqw, 0.7rem);
 }
 
-.u3-party__grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.35rem;
-}
-
-.u3-party-card {
-  position: relative;
+/*
+ * 계약 조건은 장면 위에 놓인 유리판이다.
+ *
+ * 불투명한 판으로 덮으면 배경을 깐 뜻이 사라지고, 그냥 얹으면 숫자가 그림에
+ * 묻힌다. 뒤를 흐리고 살짝 어둡게만 하면 장면의 형태와 색은 남고 글자는 선다.
+ */
+.u3-contract-outcomes {
   min-width: 0;
-  border: 1px solid #4d3a22;
-  background: #0c0a08;
-  padding: 0.45rem;
+  border: 1px solid rgb(214 174 91 / 22%);
+  border-radius: 0.2rem;
+  background: linear-gradient(180deg, rgb(9 7 5 / 34%), rgb(9 7 5 / 54%));
+  padding: clamp(0.45rem, 0.6cqw, 0.95rem) clamp(0.55rem, 0.7cqw, 1.1rem);
+  backdrop-filter: blur(3px) saturate(0.85) brightness(0.8);
 }
 
-.u3-party-card__number {
-  position: absolute;
-  top: 0.25rem;
-  left: 0.28rem;
-  color: #b58f49;
-  font-size: 0.56rem;
-}
-
-.u3-party-card__portrait {
-  display: grid;
-  width: clamp(2.6rem, 4cqw, 3.5rem);
-  aspect-ratio: 1;
-  margin: 0 auto 0.3rem;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid #876834;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 36%, #37322a 0 18%, #1f1b17 19% 35%, #0d0b09 36% 100%);
-}
-
-.u3-party-card__portrait span {
-  width: 58%;
-  height: 58%;
-  border-radius: 50% 50% 42% 42%;
-  background: #0a0908;
-  box-shadow: 0 1.45rem 0 0 #0a0908;
-}
-
-.u3-party-card__identity {
-  display: grid;
-  min-width: 0;
-  text-align: center;
-}
-
-.u3-party-card__identity strong {
-  overflow: hidden;
-  color: #e1cfaa;
-  font-size: clamp(0.66rem, 0.9cqw, 0.78rem);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.u3-party-card__identity span,
-.u3-party-card__identity small {
-  color: #a38c66;
-  font-size: clamp(0.54rem, 0.7cqw, 0.63rem);
-}
-
-.u3-party-card__stats {
-  display: grid;
-  gap: 0.12rem;
-  margin: 0.35rem 0 0;
-  border-top: 1px solid #302519;
-  padding-top: 0.28rem;
-}
-
-.u3-party-card__stats > div {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.25rem;
-  color: #9a8564;
-  font-size: clamp(0.53rem, 0.68cqw, 0.61rem);
-}
-
-.u3-party-card__stats dt,
-.u3-party-card__stats dd {
-  margin: 0;
-}
-
-.u3-party-card__stats dd {
-  color: #cdb991;
-  text-align: right;
+.u3-contract-outcomes > h3 {
+  margin: 0 0 clamp(0.3rem, 0.35cqw, 0.55rem);
+  color: #e3c072;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(0.95rem, 0.92cqw, 1.35rem);
 }
 
 .u3-contract-outcomes__rows {
@@ -451,9 +357,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.55rem;
-  border-bottom: 1px solid #2e2419;
+  border-bottom: 1px solid rgb(214 174 91 / 16%);
   padding: 0.2rem 0.12rem;
-  color: #cbb892;
+  color: #e2d3b4;
   font-size: clamp(0.59rem, 0.76cqw, 0.69rem);
 }
 
@@ -464,16 +370,16 @@
 .u3-contract-outcomes__rows > div > span {
   display: grid;
   justify-items: end;
-  color: #c8a95f;
+  color: #edc775;
 }
 
 .u3-contract-outcomes__rows small {
-  color: #8c7658;
+  color: #b09a76;
   font-size: 0.55rem;
 }
 
 .u3-contract-outcomes__rows .is-death > span {
-  color: #cb6354;
+  color: #e5776a;
 }
 
 .u3-contract-button {
@@ -553,4 +459,107 @@
 
 .u3-preview__feedback:empty {
   display: none;
+}
+
+/* ── 계약 카드 ──
+ *
+ * 던전 정보와 계약 조건을 한 덩어리로 묶는다. 어느 던전에 어떤 조건으로
+ * 들어가는지가 하나의 판단이라 따로 두면 눈이 두 번 움직인다.
+ *
+ * 바탕에 그 던전의 장면을 깔되 글씨가 묻히면 안 된다. 장면은 어둡게 덮고
+ * 글자에는 그림자를 준다. 색만으로 읽히게 하지 않는다.
+ */
+.u3-contract-card {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  /* 배경 장면은 u3-card-theme.css 에서 정한다. 그 파일이 뒤에 실려 공통
+   * 질감이 여기 규칙을 덮기 때문이다. */
+}
+
+/*
+ * 장면을 덮는 막.
+ *
+ * 위쪽은 옅게 두어 던전 그림이 보이게 하고, 계약 조건이 앉는 아래쪽만 짙게
+ * 덮는다. 전체를 고르게 덮으면 그림이 사라져 배경을 깐 뜻이 없어지고,
+ * 얇게 덮으면 숫자가 그림에 묻힌다.
+ */
+.u3-contract-card__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    /* 표제가 앉는 왼쪽 위만 한 번 더 덮는다. 사막 장면이 밝아 글자가 묻힌다. */
+    linear-gradient(105deg, rgb(8 6 4 / 58%) 0%, rgb(8 6 4 / 14%) 38%, transparent 58%),
+    /*
+     * 가장자리를 카드 바탕색으로 되돌린다.
+     *
+     * 장면을 원래 크기 가까이 줄여 놓았으므로 카드 안에 직사각형으로 앉는다.
+     * 그 테두리를 그대로 두면 그림을 붙여 놓은 것처럼 보이고, 옆 칸의 장면도
+     * 조금 비쳐 든다. 장면이 끝나는 지점(가로 10%·세로 10%)까지는 완전히
+     * 덮고, 거기서부터 장면 안쪽으로 더 들어가며 걷어 내야 경계가 사라진다.
+     */
+    linear-gradient(90deg,
+      #0b0806 0%,
+      #0b0806 4%,
+      rgb(11 8 6 / 0%) 15%,
+      rgb(11 8 6 / 0%) 85%,
+      #0b0806 96%,
+      #0b0806 100%),
+    /* 아래는 계약 조건이 앉으므로 조금 더 남긴다. */
+    linear-gradient(180deg,
+      #0b0806 0%,
+      #0b0806 4%,
+      rgb(11 8 6 / 0%) 14%,
+      rgb(11 8 6 / 0%) 62%,
+      rgb(9 7 5 / 34%) 82%,
+      rgb(8 6 5 / 66%) 100%);
+}
+
+.u3-contract-card__body {
+  position: relative;
+  display: grid;
+  /* 계약 조건이 남는 높이를 쓰고, 모자라면 그 안에서 줄어든다. 카드가 커져서
+   * 계약 버튼을 패널 밖으로 밀어내면 안 된다. */
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  gap: clamp(0.35rem, 0.48cqw, 0.75rem);
+  min-height: 0;
+  padding: clamp(0.55rem, 0.75cqw, 1.15rem);
+}
+
+/* 색만으로 읽히게 하지 않는다. 어느 장면 위에서도 글자가 서게 그림자를 준다. */
+.u3-contract-card__body > *,
+.u3-contract-card__head * {
+  text-shadow: 0 1px 2px rgb(0 0 0 / 95%), 0 0 8px rgb(0 0 0 / 70%);
+}
+
+.u3-contract-card__head {
+  display: grid;
+  justify-items: start;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.u3-contract-card__theme {
+  color: var(--color-muted);
+  font-size: clamp(0.72rem, 0.78cqw, 1.05rem);
+}
+
+.u3-contract-card__head h2 {
+  margin: 0;
+  color: #f2e2ba;
+  font-size: clamp(1.15rem, 1.25cqw, 1.85rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.u3-contract-card__reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  color: var(--color-muted);
+  font-size: clamp(0.76rem, 0.82cqw, 1.12rem);
 }
