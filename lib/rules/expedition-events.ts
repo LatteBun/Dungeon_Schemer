@@ -111,6 +111,64 @@ function eventMatchesProfile(event: SituationEvent, activeRuleIds: ReadonlySet<R
   return true;
 }
 
+/*
+ * 강한 연계가 쓸 노드의 분류를 확보한다.
+ *
+ * 짝이 성립하려면 선행이 후속보다 앞선 층에 있고 후속이 선행에서 도달
+ * 가능해야 한다. 그 조건을 만족하는 자유 노드 둘을 골라, 분류를 그 단서의
+ * 사건이 요구하는 종류로 바꾼다. 지도 순서로 훑으므로 결정적이다.
+ *
+ * hiddenRole 은 건드리지 않는다. 그것은 뒤에서 findSelection 이 정한다.
+ */
+function reserveStrongLinkCategories(input: {
+  readonly plans: Map<NodeId, PreparedNodePlan>;
+  readonly map: GeneratedMap;
+  readonly layerByNode: ReadonlyMap<NodeId, number>;
+  readonly reservedNodes: ReadonlySet<NodeId>;
+  readonly strongClues: readonly ClueId[];
+  readonly eligibleEvents: readonly SituationEvent[];
+  readonly desired: number;
+}): void {
+  const taken = new Set<NodeId>(input.reservedNodes);
+  let placed = 0;
+
+  for (const clueId of input.strongClues) {
+    if (placed >= input.desired) return;
+    const predecessorKinds = new Set(input.eligibleEvents.filter((event) => event.revealsClue === clueId).map((event) => event.kind));
+    const followerKinds = new Set(input.eligibleEvents.filter((event) => event.requiresClue === clueId).map((event) => event.kind));
+    if (predecessorKinds.size === 0 || followerKinds.size === 0) continue;
+
+    const free = input.map.nodes
+      .filter((node) => node.kind === "normal" && !taken.has(node.id) && input.plans.has(node.id))
+      .map((node) => node.id);
+
+    let pair: readonly [NodeId, NodeId] | undefined;
+    for (const predecessorId of free) {
+      const predecessorLayer = input.layerByNode.get(predecessorId) ?? -1;
+      const reachable = reachableNodes(input.map, predecessorId);
+      const followerId = free.find((candidate) => candidate !== predecessorId
+        && (input.layerByNode.get(candidate) ?? -1) > predecessorLayer
+        && reachable.has(candidate));
+      if (followerId !== undefined) { pair = [predecessorId, followerId]; break; }
+    }
+    if (pair === undefined) continue;
+
+    const [predecessorId, followerId] = pair;
+    const predecessorPlan = input.plans.get(predecessorId)!;
+    const followerPlan = input.plans.get(followerId)!;
+    /* 이미 맞는 분류면 그대로 둔다. 바꿀 때는 정렬해 첫 종류를 쓴다. */
+    if (!predecessorKinds.has(predecessorPlan.category)) {
+      input.plans.set(predecessorId, { ...predecessorPlan, category: [...predecessorKinds].sort()[0]! });
+    }
+    if (!followerKinds.has(followerPlan.category)) {
+      input.plans.set(followerId, { ...followerPlan, category: [...followerKinds].sort()[0]! });
+    }
+    taken.add(predecessorId);
+    taken.add(followerId);
+    placed += 1;
+  }
+}
+
 export function prepareExpeditionEvents(input: {
   readonly campaignSeed: string;
   readonly dungeonId: DungeonId | string;
@@ -146,6 +204,7 @@ export function prepareExpeditionEvents(input: {
   const desiredStrongLinkCount = input.initialRiskLevel >= 5 ? 2 : input.initialRiskLevel >= 3 ? 1 : 0;
   const layerByNode = new Map(input.map.layers.flatMap((layer, index) => layer.nodeIds.map((nodeId) => [nodeId, index] as const)));
   const reservedNodes = new Set([...plans.values()].filter((plan) => plan.hiddenRole !== "normal").map((plan) => plan.nodeId));
+  const buildOptions = (): Map<ClueId, readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[]> => {
   const optionsByClue = new Map<ClueId, readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[]>();
   for (const clueId of strongClues) {
     const predecessorEvents = eligibleEvents.filter((event) => event.revealsClue === clueId);
@@ -163,6 +222,9 @@ export function prepareExpeditionEvents(input: {
       }));
     optionsByClue.set(clueId, pairs.map((pair) => ({ clueId, predecessorNodeId: pair.predecessorNode.nodeId, followerNodeId: pair.followerNode.nodeId })));
   }
+  return optionsByClue;
+  };
+  let optionsByClue = buildOptions();
   const findSelection = (clueIndex: number, selected: readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[], usedNodes: ReadonlySet<NodeId>): readonly { readonly clueId: ClueId; readonly predecessorNodeId: NodeId; readonly followerNodeId: NodeId }[] | undefined => {
     if (selected.length === desiredStrongLinkCount) return selected;
     if (strongClues.length - clueIndex < desiredStrongLinkCount - selected.length) return undefined;
@@ -179,7 +241,26 @@ export function prepareExpeditionEvents(input: {
     }
     return undefined;
   };
-  const selectedLinks = findSelection(0, [], reservedNodes);
+  let selectedLinks = findSelection(0, [], reservedNodes);
+  if (selectedLinks === undefined && desiredStrongLinkCount > 0) {
+    /*
+     * 분류를 필요한 만큼만 확보하고 다시 찾는다.
+     *
+     * 노드 분류는 하한 없는 균등 추첨이고, 보스 정보 cut 층은 통째로 special
+     * 로 먼저 빠진다. 그래서 ★3 이상 던전의 9% 가 강한 연계에 쓸 분류의 노드를
+     * 요구 수만큼 갖지 못한 채 나온다. 실제로 노드 21개 중 monster 가 1개인
+     * 던전이 나왔고, 그때 원정이 시작조차 되지 않았다.
+     *
+     * 추첨 결과로 이미 되는 던전은 건드리지 않는다. 안 되는 던전에서만 짝을
+     * 이룰 노드의 분류를 그 단서의 사건이 요구하는 종류로 바꾼다.
+     */
+    reserveStrongLinkCategories({
+      plans, map: input.map, layerByNode, reservedNodes,
+      strongClues, eligibleEvents, desired: desiredStrongLinkCount,
+    });
+    optionsByClue = buildOptions();
+    selectedLinks = findSelection(0, [], reservedNodes);
+  }
   if (selectedLinks === undefined) invalid("요구된 strong link 수를 만족하는 전역 후보 조합이 없다", { desiredStrongLinkCount });
   for (const link of selectedLinks) {
     const predecessorPlan = plans.get(link.predecessorNodeId);

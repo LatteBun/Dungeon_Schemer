@@ -18,6 +18,64 @@ import { THEMES } from "@/lib/content/themes";
 
 const SEEDS = ["u5-dungeon-progress-preview", "s1", "s2"] as const;
 
+describe("강한 연계 노드 확보", () => {
+  /*
+   * 노드 분류는 하한 없는 균등 추첨이고 보스 정보 cut 층은 통째로 special 로
+   * 먼저 빠진다. 그래서 ★3 이상 던전의 9% 가 강한 연계에 쓸 분류의 노드를
+   * 요구 수만큼 갖지 못한 채 나왔고, 그때 원정이 시작조차 되지 않았다.
+   * 노드 21개 중 monster 가 1개인 던전이 실제로 있었다.
+   */
+  it("★3 이상 던전이 모두 원정을 시작할 수 있다", () => {
+    const blocked: string[] = [];
+
+    for (const seed of ["a", "b", "c", "d", "e", "f", "g", "h"]) {
+      const campaign = initializeCampaign(seed);
+      for (const dungeon of campaign.dungeons) {
+        const theme = THEMES.find((candidate) => candidate.id === dungeon.theme)!;
+        for (const attempt of [0, 1]) {
+          const map = generateDungeonMap({
+            campaignSeed: seed, dungeonId: dungeon.id,
+            initialRiskLevel: dungeon.initialRiskLevel, attempt,
+          });
+          try {
+            prepareExpeditionEvents({
+              campaignSeed: seed, dungeonId: dungeon.id,
+              initialRiskLevel: dungeon.initialRiskLevel, riskLevel: dungeon.riskLevel,
+              attempt, map, theme,
+              activeRuleIds: dungeon.activeRuleIds,
+              activeMonsterIds: dungeon.activeMonsterIds,
+            });
+          } catch (error) {
+            blocked.push(`${seed}/${dungeon.id} ★${dungeon.initialRiskLevel} a${attempt}: ${(error as Error).message}`);
+          }
+        }
+      }
+    }
+
+    expect(blocked).toEqual([]);
+  });
+
+  /* 되는 던전은 건드리지 않는다. 같은 입력이 같은 계획을 낸다. */
+  it("같은 입력은 같은 계획을 낸다", () => {
+    const campaign = initializeCampaign("a");
+    for (const dungeon of campaign.dungeons.slice(0, 5)) {
+      const theme = THEMES.find((candidate) => candidate.id === dungeon.theme)!;
+      const map = generateDungeonMap({
+        campaignSeed: "a", dungeonId: dungeon.id,
+        initialRiskLevel: dungeon.initialRiskLevel, attempt: 0,
+      });
+      const call = () => prepareExpeditionEvents({
+        campaignSeed: "a", dungeonId: dungeon.id,
+        initialRiskLevel: dungeon.initialRiskLevel, riskLevel: dungeon.riskLevel,
+        attempt: 0, map, theme,
+        activeRuleIds: dungeon.activeRuleIds,
+        activeMonsterIds: dungeon.activeMonsterIds,
+      });
+      expect([...call().nodePlans.values()]).toEqual([...call().nodePlans.values()]);
+    }
+  });
+});
+
 describe("사건 조우 종", () => {
   it("모든 생태 패키지가 monster 사건을 받는다", () => {
     const empty: string[] = [];
