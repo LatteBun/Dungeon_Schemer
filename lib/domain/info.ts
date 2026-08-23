@@ -67,10 +67,11 @@ export interface AdviceFeedback {
 }
 
 /**
- * 지연형 조언을 한 파티원이 수용한 기록이다.
+ * 보스전 뒤 검증해야 하는 지연형 조언에 대한 한 파티원의 반응 기록이다.
  *
- * 즉시형은 그 자리에서 끝나므로 남기지 않는다. 지연형만 보스전까지 들고
- * 가야 하고, 보스전과 사후 검증이 `누가 무엇을 믿었는지`를 알아야 한다.
+ * accepted는 전투 modifier와 사후 검증을, suspected는 사후 검증만 남긴다.
+ * neutral·exposed는 E2에서 기록하지 않는다. 즉시형 조언은 그 자리에서
+ * 끝나므로 이 목록에 들어오지 않는다.
  * docs/systems/INFORMATION_AND_DECEPTION.md
  */
 export interface InfoRecord {
@@ -82,6 +83,6 @@ export interface InfoRecord {
   readonly reaction: InfoReaction;
   /** 보스 특성과 전투 축을 연결하는 유일한 콘텐츠 식별자다. */
   readonly bossRuleId: BossRuleId;
-  /** 수용된 방해라 보스전 뒤 검증할 대상이다. */
+  /** accepted 또는 suspected help/harm을 보스전 뒤 검증할 대상인지 나타낸다. */
   readonly pendingVerification: boolean;
 }

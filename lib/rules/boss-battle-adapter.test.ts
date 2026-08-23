@@ -91,6 +91,7 @@ function firstPartyAction(result: ReturnType<typeof resolveBossBattle>) {
 }
 
 const morkanCocoonHelp = info({ bossRuleId: "boss-morkan-cocoon-side" as BossRuleId });
+const morkanCocoonHarm = info({ outcome: "harm", bossRuleId: "boss-morkan-cocoon-side" as BossRuleId });
 const morkanSpinHelp = info({ adviceId: "spin" as ChoiceId, bossRuleId: "boss-morkan-spin-pause" as BossRuleId });
 const ragnaTurningHelp = info({ bossRuleId: "boss-ragna-turning" as BossRuleId });
 const ragnaCrouchHelp = info({ adviceId: "crouch" as ChoiceId, bossRuleId: "boss-ragna-crouch" as BossRuleId });
@@ -209,6 +210,28 @@ describe("E4 보스 BattleEngine adapter", () => {
     });
 
     expect(result.bossResult).toMatchObject({ status: "cleared", survivorIds: [survivor.id] });
+  });
+
+  it("accepted harm은 harmful application과 불리한 outgoing damage를 만든다", () => {
+    const input = {
+      dungeon: dungeon({ bossId: SPIDER_BOSSES[1].id }),
+      classDefs: classesWithWarriorAttack(20),
+    };
+    const result = resolve({ ...input, infoRecords: [morkanCocoonHarm] });
+
+    expect(result.bossResult.applications).toContainEqual(expect.objectContaining({
+      bossRuleId: "boss-morkan-cocoon-side",
+      axis: "outgoingDamage",
+      direction: "harmful",
+    }));
+    expect(firstPartyAction(result).damage).toBeLessThan(firstPartyAction(resolve(input)).damage);
+  });
+
+  it.each([
+    ["다른 보스 rule", [info({ bossRuleId: "boss-zakar-burrow-trace" as BossRuleId })]],
+    ["중복 delayed record", [info(), info()]],
+  ])("%s는 INVALID_GENERATION으로 거부한다", (_label, infoRecords) => {
+    expect(() => resolve({ infoRecords })).toThrowError(RuleError);
   });
 
   it("현재 위험도와 초기 위험도의 차이만 보스 scaling에 반영한다", () => {
