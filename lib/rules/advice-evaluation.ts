@@ -265,15 +265,24 @@ export function resolveBossInfoAdvice(
   }
 
   const decision = decideImmediateAdvice(input);
-  const delayedRecords: InfoRecord[] = decision.reactions.map((reaction) => ({
-    eventId: input.event.id,
-    adviceId: option.id,
-    outcome: option.outcome,
-    characterId: reaction.characterId,
-    reaction: reaction.reaction,
-    modifier: reaction.reaction === "accepted" ? option.bossDamageModifier ?? 0 : 0,
-    pendingVerification: option.outcome !== "neutral" && reaction.reaction !== "exposed",
-  }));
+  const delayedRecords: InfoRecord[] = decision.reactions.flatMap((reaction) => {
+    if (option.outcome === "neutral" || reaction.reaction === "exposed") return [];
+    if (option.source?.kind !== "boss") {
+      throw new RuleError("INVALID_GENERATION", "보스 지연 조언의 특징 근거가 없다", {
+        eventId: input.event.id,
+        adviceId: option.id,
+      });
+    }
+    return [{
+      eventId: input.event.id,
+      adviceId: option.id,
+      outcome: option.outcome,
+      characterId: reaction.characterId,
+      reaction: reaction.reaction,
+      bossRuleId: option.source.bossRuleId,
+      pendingVerification: true,
+    }];
+  });
   const bossDecision = { ...decision, delayedRecords };
   const trustChanges: TrustChange[] = [];
 

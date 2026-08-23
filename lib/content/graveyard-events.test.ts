@@ -40,13 +40,9 @@ describe("GRAVEYARD_EVENTS", () => {
     expect([...counts.values()]).toEqual([2, 2, 2, 2]);
   });
 
-  it("보스 정보 조언은 공통 modifier를 가진다", () => {
+  it("보스 정보 조언은 BossRuleId source를 가진다", () => {
     for (const event of GRAVEYARD_EVENTS.filter((candidate) => candidate.targetBossId !== undefined)) {
-      expect(event.advice.map((option) => option.bossDamageModifier).toSorted((left, right) => (left ?? 0) - (right ?? 0))).toEqual([
-        -0.2,
-        -0.1,
-        0.25,
-      ]);
+      expect(event.advice.filter((option) => option.outcome !== "neutral").every((option) => option.source?.kind === "boss")).toBe(true);
     }
   });
 

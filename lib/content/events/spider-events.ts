@@ -29,7 +29,6 @@ function advice(
   resultText: string,
   effectTags: readonly EventEffectTag[],
   source?: AdviceSource,
-  bossDamageModifier?: number,
 ): AdviceOption {
   return {
     id: id as ChoiceId,
@@ -44,7 +43,6 @@ function advice(
           ? "contradictory"
           : "unrelated",
     effectTags,
-    bossDamageModifier,
     resultText,
   };
 }
@@ -101,7 +99,6 @@ function bossAdvice(
   line: string,
   resultText: string,
 ): AdviceOption {
-  const modifier = outcome === "help" ? -0.2 : outcome === "neutral" ? -0.1 : 0.25;
   return advice(
     id,
     outcome,
@@ -110,7 +107,6 @@ function bossAdvice(
     resultText,
     [outcome === "harm" ? "sabotage" : "information"],
     bossRuleId === undefined ? undefined : boss(bossRuleId),
-    modifier,
   );
 }
 

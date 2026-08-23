@@ -35,9 +35,9 @@ const bossEvent = {
   title: "보스의 습성",
   description: "보스가 공격 직전 몸을 낮춘다.",
   advice: [
-    { id: "boss-help", label: "피하세요", line: "몸을 낮추면 옆으로 피하세요.", outcome: "help", relation: "consistent", source: { kind: "boss", bossRuleId: "boss-rule-a" }, effectTags: ["information"], resultText: "회피법을 기억한다.", bossDamageModifier: -0.2 },
-    { id: "boss-harm", label: "버티세요", line: "몸을 낮추면 정면으로 버티세요.", outcome: "harm", relation: "contradictory", source: { kind: "boss", bossRuleId: "boss-rule-a" }, effectTags: ["sabotage"], resultText: "잘못된 대응을 기억한다.", bossDamageModifier: 0.25 },
-    { id: "boss-neutral", label: "관찰하세요", line: "일단 거리를 두고 보세요.", outcome: "neutral", relation: "unrelated", effectTags: ["information"], resultText: "조심스럽게 관찰한다.", bossDamageModifier: -0.1 },
+    { id: "boss-help", label: "피하세요", line: "몸을 낮추면 옆으로 피하세요.", outcome: "help", relation: "consistent", source: { kind: "boss", bossRuleId: "boss-rule-a" }, effectTags: ["information"], resultText: "회피법을 기억한다." },
+    { id: "boss-harm", label: "버티세요", line: "몸을 낮추면 정면으로 버티세요.", outcome: "harm", relation: "contradictory", source: { kind: "boss", bossRuleId: "boss-rule-a" }, effectTags: ["sabotage"], resultText: "잘못된 대응을 기억한다." },
+    { id: "boss-neutral", label: "관찰하세요", line: "일단 거리를 두고 보세요.", outcome: "neutral", relation: "unrelated", effectTags: ["information"], resultText: "조심스럽게 관찰한다." },
   ],
   defaultResultText: "특별한 정보를 얻지 못한다.",
 } as unknown as SituationEvent;
@@ -209,7 +209,7 @@ describe("보스 정보 지연 검증", () => {
     expect(result.decision.reactions[0]?.reaction).toBe("accepted");
     expect(result.decision.delayedRecords).toHaveLength(1);
     expect(result.decision.delayedRecords[0]?.pendingVerification).toBe(true);
-    expect(result.decision.delayedRecords[0]?.modifier).toBe(-0.2);
+    expect(result.decision.delayedRecords[0]?.bossRuleId).toBe("boss-rule-a");
     expect(result.trustChanges).toEqual([]);
   });
 
@@ -227,8 +227,7 @@ describe("보스 정보 지연 검증", () => {
     } as never);
 
     expect(result.decision.reactions[0]?.reaction).toBe("exposed");
-    expect(result.decision.delayedRecords[0]?.pendingVerification).toBe(false);
-    expect(result.decision.delayedRecords[0]?.modifier).toBe(0);
+    expect(result.decision.delayedRecords).toEqual([]);
     expect(result.trustChanges).toHaveLength(2);
     expect(result.trustChanges.every((change) => change.delta < 0)).toBe(true);
   });

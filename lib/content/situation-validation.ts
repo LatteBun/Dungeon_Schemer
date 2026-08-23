@@ -159,9 +159,6 @@ function validateBossAdvice(
   } else if (source?.kind !== "boss") {
     invalid(`보스 정보 조언이 보스 특징을 참조하지 않는다: ${option.id}`, details);
   }
-  if (option.bossDamageModifier === undefined) {
-    invalid(`보스 정보 조언의 보스 피해 보정이 없다: ${option.id}`, details);
-  }
   if (theme !== undefined && source?.kind === "boss") {
     const targetBoss = theme.bosses.find((boss) => boss.id === event.targetBossId);
     if (targetBoss === undefined) {
@@ -200,13 +197,6 @@ function validateSharedAdvice(option: BaseAdviceOption, eventId: string): void {
     invalid(`공용 조언이 참조 근거를 갖는다: ${option.id}`, {
       ...details,
       source: option.source,
-    });
-  }
-  // 보스는 테마에 속한다. 모든 테마에 나오는 사건이 특정 보스의 피해를 바꿀 수 없다.
-  if (option.bossDamageModifier !== undefined) {
-    invalid(`공용 조언이 보스 피해 보정을 갖는다: ${option.id}`, {
-      ...details,
-      bossDamageModifier: option.bossDamageModifier,
     });
   }
 }
@@ -497,12 +487,6 @@ export function validateSituationEvent(event: SituationEvent, theme?: ThemeConte
       ...details,
       kind: event.kind,
     });
-  }
-  if (
-    event.targetBossId === undefined &&
-    event.advice.some((option) => option.bossDamageModifier !== undefined)
-  ) {
-    invalid(`보스 대상이 없는 사건이 보스 피해 보정을 갖는다: ${event.id}`, details);
   }
   requireText(event.title, `사건 제목이 비어 있다: ${event.id}`, details);
   requireText(event.description, `사건 묘사가 비어 있다: ${event.id}`, details);
