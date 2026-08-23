@@ -428,7 +428,21 @@ status = wiped
 survivorIds = []
 ```
 
-### 12.3 E4가 하지 않는 정산
+### 12.3 `roundLimit` 진단 경계
+
+공통 `BattleEngine`의 50턴 안전장치가 `termination = "roundLimit"`을 반환하면 E4는 이를 `cleared`나 `wiped`로 투영하지 않는다. 생존자가 남아 있더라도 `wiped + survivorIds` 같은 모순된 정산 상태를 만들지 않는다.
+
+E4는 `BossResult`와 C4 정산 입력을 만들기 전에 다음 정보를 담은 `RuleError("INVALID_GENERATION", ...)`로 중단한다.
+
+- `bossId`
+- `termination = "roundLimit"`
+- `rounds = 50`
+- 당시 살아 있던 파티원 ID
+- 당시 살아 있던 적 ID
+
+일반전의 `BattleEngine` round-limit 결과 표현은 변경하지 않는다. 이 경계는 보스 어댑터가 캠페인 정산에 넘기는 결과에만 적용한다.
+
+### 12.4 E4가 하지 않는 정산
 
 E4는 다음 캠페인 경제를 계산하지 않는다.
 

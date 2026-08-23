@@ -184,6 +184,8 @@ merchant 조언은 다음 계약을 따른다.
 
 전투는 파티와 보스가 턴을 주고받으며 진행하고 턴별 행동과 피해를 기록으로 남긴다. 이 기록은 자동 전투 장면 표현이 소비하는 보스전 결과 데이터이며, 화면 연출은 기록을 바꾸거나 다시 계산하지 않는다.
 
+공통 엔진의 50턴 `roundLimit`은 보스 처치도 전멸도 아니다. `boss-battle-adapter`는 이를 `cleared`·`wiped`로 정산하지 않고 보스 ID·라운드·생존자 정보를 담은 `RuleError("INVALID_GENERATION", ...)`로 중단해 C4가 모순된 결과를 소비하지 않게 한다.
+
 보스 조언은 수용한 캐릭터 개인에게만 정적 `targetWeight`·`incomingDamage`·`outgoingDamage` modifier를 만든다. 도움은 해당 축에 유리하게, 방해는 불리하게 작동하며, neutral·suspected·exposed는 전투 modifier를 만들지 않는다. 임시 배율과 `0.70..1.50` 상한은 E4 공용 trait 카탈로그가 소유하고 B1 백테스트에서 조정한다.
 
 accepted/suspected help·harm의 결과 기반 신뢰는 조언 선택 순간이 아니라 전투 뒤 검증한다. `exposed harm`만 보스 정보 선택 순간 즉시 `adviceHarmed`와 `deceptionExposed`를 적용하고 보스전에서 중복 검증하지 않는다.

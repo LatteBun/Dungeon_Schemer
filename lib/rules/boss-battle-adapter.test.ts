@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CLASSES } from "@/lib/content/classes";
 import { SPIDER_BOSSES, THEMES } from "@/lib/content/themes";
+import { RuleError } from "@/lib/domain";
 import { resolveBossBattle, retryBossStats } from "@/lib/rules/boss-battle-adapter";
 import type {
   CampaignDungeon,
@@ -12,6 +13,7 @@ import type {
   ClassId,
   EventId,
   InfoRecord,
+  ThemeContent,
 } from "@/lib/domain";
 
 function member(id: string, overrides: Partial<Character> = {}): Character {
@@ -62,6 +64,24 @@ function info(overrides: Partial<InfoRecord> = {}): InfoRecord {
 
 function classesWithWarriorAttack(attack: number): readonly ClassDef[] {
   return CLASSES.map((classDef) => classDef.id === "warrior" ? { ...classDef, attack } : classDef);
+}
+
+function themeWithBossStats(stats: { readonly maxHp: number; readonly baseDamage: number }): ThemeContent {
+  return {
+    ...THEMES[0],
+    bosses: THEMES[0].bosses.map((boss) => boss.id === SPIDER_BOSSES[0].id ? { ...boss, ...stats } : boss),
+  };
+}
+
+function expectRuleError(run: () => unknown, expected: { code: string; details: Record<string, unknown> }): void {
+  try {
+    run();
+    throw new Error("RuleError가 발생하지 않았다");
+  } catch (error) {
+    expect(error).toBeInstanceOf(RuleError);
+    expect((error as RuleError).code).toBe(expected.code);
+    expect((error as RuleError).details).toMatchObject(expected.details);
+  }
 }
 
 function firstPartyAction(result: ReturnType<typeof resolveBossBattle>) {
@@ -164,6 +184,31 @@ describe("E4 보스 BattleEngine adapter", () => {
       timing: "beforeTarget",
     }));
     expect(result.bossResult.cues.filter((cue) => cue.actionIndex === enemyActionIndex)).toHaveLength(1);
+  });
+
+  it("roundLimit을 생존자가 있는 wiped 결과로 만들지 않고 진단 오류로 중단한다", () => {
+    const input = {
+      members: [member("member-1", { hp: 999, maxHp: 999 })],
+      classDefs: classesWithWarriorAttack(0),
+      theme: themeWithBossStats({ maxHp: 999, baseDamage: 0 }),
+    };
+
+    expectRuleError(() => resolve(input), {
+      code: "INVALID_GENERATION",
+      details: { bossId: SPIDER_BOSSES[0].id, termination: "roundLimit", rounds: 50 },
+    });
+  });
+
+  it("보스를 처치하고 한 명만 살아도 cleared와 해당 survivorIds를 반환한다", () => {
+    const survivor = member("survivor");
+    const deadMember = member("dead", { alive: false, hp: 0 });
+    const result = resolve({
+      members: [survivor, deadMember],
+      classDefs: classesWithWarriorAttack(10),
+      theme: themeWithBossStats({ maxHp: 1, baseDamage: 0 }),
+    });
+
+    expect(result.bossResult).toMatchObject({ status: "cleared", survivorIds: [survivor.id] });
   });
 
   it("현재 위험도와 초기 위험도의 차이만 보스 scaling에 반영한다", () => {

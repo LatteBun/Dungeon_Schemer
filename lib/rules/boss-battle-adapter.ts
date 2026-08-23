@@ -200,6 +200,15 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
     incomingDamageMultiplierByMemberId,
     outgoingDamageMultiplierByMemberId,
   });
+  if (battle.termination === "roundLimit") {
+    invalid("보스전이 50턴 안에 종료되지 않았다", {
+      bossId: boss.id,
+      termination: battle.termination,
+      rounds: battle.rounds,
+      livingPartyIds: battle.party.filter((member) => member.hp > 0).map((member) => member.id),
+      livingEnemyIds: battle.enemies.filter((enemy) => enemy.hp > 0).map((enemy) => enemy.id),
+    });
+  }
 
   const battleMembers = new Map(battle.party.map((member) => [member.id, member]));
   const resolvedMembers = input.members.map((member) => {
@@ -243,10 +252,18 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
   });
   const finalMembers = input.members.map((member) => resolvedById.get(member.id) ?? member);
   const survivorIds = finalMembers.filter((member) => member.alive).map((member) => member.id);
+  const status = battle.termination === "defeatedEnemies" && survivorIds.length > 0
+    ? "cleared"
+    : battle.termination === "partyWipe" && survivorIds.length === 0
+      ? "wiped"
+      : invalid("보스전 결과와 생존자 상태가 모순된다", {
+        termination: battle.termination,
+        survivorIds,
+      });
   const bossResult: BossResult = {
     battle,
     survivorIds,
-    status: survivorIds.length > 0 && battle.status === "victory" ? "cleared" : "wiped",
+    status,
     applications,
     verifications: [...verificationByRecord.values()],
     cues,
