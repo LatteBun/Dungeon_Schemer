@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AdviceDecision, CampaignDungeon, Character, SituationEvent } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
+import { initializeCampaign } from "./campaign-init";
 import {
   decideImmediateAdvice,
   disclosedRuleIds,
@@ -9,6 +10,7 @@ import {
   presentShuffledAdvice,
   resolveBossInfoAdvice,
 } from "./advice-evaluation";
+import { getCampaignTrustModifier } from "./ending";
 
 const DUNGEON_ID = "dungeon-spider-01" as never;
 const ATTEMPT = 1;
@@ -152,6 +154,43 @@ describe("파티원별 반응 확률", () => {
     expect(decideAtRoll("b", righteous, 30).reactions[0]?.reaction).toBe("exposed");
     expect(decideAtRoll("b", righteous, 31).reactions[0]?.reaction).toBe("accepted");
     expect(decideAtRoll("b", righteous, 66).reactions[0]?.reaction).toBe("suspected");
+  });
+
+  it("C6 캠페인 보정은 E2의 조언 반응 판정에 구조적으로 공급된다", () => {
+    const campaign = initializeCampaign("c6-advice-modifier");
+    const byId = { ...campaign.pool.byId };
+    for (const id of campaign.pool.order.slice(0, 3)) {
+      const member = byId[id];
+      if (member === undefined) throw new Error(`missing character ${id}`);
+      byId[id] = { ...member, trust: 0 };
+    }
+    const modifiedCampaign = { ...campaign, pool: { ...campaign.pool, byId } };
+    const modifier = getCampaignTrustModifier(modifiedCampaign);
+    const target = member("righteous", 50, "c6-modifier-target");
+    const seed = seedForRoll(32, event.id, "b", target.id);
+    const base = decideImmediateAdvice({
+      campaignSeed: seed,
+      dungeonId: DUNGEON_ID,
+      attempt: ATTEMPT,
+      depth: DEPTH,
+      event,
+      adviceId: "b" as never,
+      members: [target],
+    });
+    const modified = decideImmediateAdvice({
+      campaignSeed: seed,
+      dungeonId: DUNGEON_ID,
+      attempt: ATTEMPT,
+      depth: DEPTH,
+      event,
+      adviceId: "b" as never,
+      members: [target],
+      campaignModifier: modifier,
+    });
+
+    expect(modifier).toEqual({ accept: -10, expose: 5 });
+    expect(base.reactions[0]?.reaction).toBe("accepted");
+    expect(modified.reactions[0]?.reaction).toBe("exposed");
   });
 
   it("죽은 파티원은 반응 판정에서 제외한다", () => {
