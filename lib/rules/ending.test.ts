@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { CampaignEnding, CampaignState, Character } from "@/lib/domain";
+import type { BoardOffer, CampaignEnding, CampaignState, Character, CharacterId } from "@/lib/domain";
 import { initializeCampaign } from "./campaign-init";
 import {
   countLivingZeroTrust,
+  evaluateCampaignEnding,
   evaluateImmediateDistrustEnding,
   getCampaignTrustModifier,
   isPersonnelExhausted,
@@ -129,5 +130,88 @@ describe("즉시 불신 엔딩", () => {
 
     expect(campaign).toEqual(beforeCampaign);
     expect(party).toEqual(beforeParty);
+  });
+});
+
+describe("정상 경로 엔딩 우선순위", () => {
+  it("누적 고발을 완주보다 먼저 판정한다", () => {
+    const campaign = campaignWithZeroTrust(5);
+    const completed = { ...campaign, dungeons: campaign.dungeons.map((dungeon) => ({ ...dungeon, status: "cleared" as const })) };
+
+    expect(evaluateCampaignEnding(completed)).toMatchObject({
+      kind: "denounced",
+      title: "누적 고발",
+      reason: "살아 있는 용사 5명 이상이 길잡이를 불신합니다.",
+      triggerCharacterIds: completed.pool.order.slice(0, 5),
+    });
+  });
+
+  it("15개 던전이 모두 cleared면 원정 종료를 반환한다", () => {
+    const campaign = campaignWith([
+      { classId: "warrior" },
+      { classId: "rogue" },
+      { classId: "cleric" },
+    ]);
+    const completed = {
+      ...campaign,
+      worldTurn: 2,
+      statistics: { settlements: [] },
+      dungeons: campaign.dungeons.map((dungeon) => ({ ...dungeon, status: "cleared" as const })),
+    };
+
+    expect(evaluateCampaignEnding(completed)).toEqual({
+      kind: "completed",
+      title: "원정 종료",
+      reason: "15개의 던전을 모두 돌파했습니다.",
+      finalRank: completed.rank,
+      triggerCharacterIds: [],
+    });
+  });
+
+  it("응급 편성도 불가능하면 빈 공고와 함께 인력 소진을 반환한다", () => {
+    const campaign = campaignWith([
+      { classId: "warrior" },
+      { classId: "rogue" },
+      { classId: "mage", alive: false },
+      { classId: "cleric", trust: 0 },
+    ]);
+
+    expect(evaluateCampaignEnding({ ...campaign, offers: [] })).toMatchObject({
+      kind: "exhausted",
+      title: "인력 소진",
+      reason: "서로 다른 직업 3명으로 원정을 꾸릴 수 없습니다.",
+      triggerCharacterIds: [],
+    });
+  });
+
+  it("인력이 남고 모든 남은 공고가 rankTooLow면 실직을 반환한다", () => {
+    const campaign = campaignWith([
+      { classId: "warrior" },
+      { classId: "rogue" },
+      { classId: "cleric" },
+    ]);
+    const party = campaign.pool.order.slice(0, 3) as [CharacterId, CharacterId, CharacterId];
+    const offers: BoardOffer[] = campaign.dungeons.slice(0, 2).map((dungeon, index) => ({
+      id: `c6-offer-${index}` as BoardOffer["id"],
+      dungeonId: dungeon.id,
+      riskLevel: dungeon.riskLevel,
+      party: { memberIds: party },
+      lockReason: "rankTooLow",
+    }));
+
+    expect(evaluateCampaignEnding({ ...campaign, offers })).toMatchObject({
+      kind: "unemployed",
+      title: "실직",
+      reason: "남은 모든 공고가 현재 길잡이 등급보다 높습니다.",
+      triggerCharacterIds: [],
+    });
+  });
+
+  it("빈 공고는 실직이 아니며 진행 중 캠페인은 null이다", () => {
+    expect(evaluateCampaignEnding({ ...campaignWith([
+      { classId: "warrior" },
+      { classId: "rogue" },
+      { classId: "cleric" },
+    ]), offers: [] })).toBeNull();
   });
 });

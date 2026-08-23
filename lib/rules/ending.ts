@@ -1,4 +1,4 @@
-import { TRUST_MIN } from "@/lib/domain";
+import { CAMPAIGN_DUNGEON_COUNT, DENOUNCE_THRESHOLD, TRUST_MIN } from "@/lib/domain";
 import type { CampaignEnding, CampaignState, Character } from "@/lib/domain";
 import { canCreateEmergencyParty } from "./board";
 
@@ -50,4 +50,63 @@ export function evaluateImmediateDistrustEnding(
 /** 월드턴 뒤 응급 후보까지 포함해 세 직업을 만들 수 없을 때만 성립한다. */
 export function isPersonnelExhausted(campaign: CampaignState): boolean {
   return !canCreateEmergencyParty(campaign.pool);
+}
+
+function buildEnding(
+  campaign: CampaignState,
+  kind: CampaignEnding["kind"],
+  title: string,
+  reason: string,
+  triggerCharacterIds: readonly CampaignEnding["triggerCharacterIds"][number][] = [],
+): CampaignEnding {
+  return {
+    kind,
+    title,
+    reason,
+    finalRank: campaign.rank,
+    triggerCharacterIds,
+  };
+}
+
+function denouncedEnding(campaign: CampaignState): CampaignEnding {
+  const ids = new Set(
+    campaign.pool.order.filter((id) => {
+      const member = campaign.pool.byId[id];
+      return member?.alive === true && member.trust === TRUST_MIN;
+    }),
+  );
+  return buildEnding(
+    campaign,
+    "denounced",
+    "누적 고발",
+    "살아 있는 용사 5명 이상이 길잡이를 불신합니다.",
+    campaign.pool.order.filter((id) => ids.has(id)),
+  );
+}
+
+function completedEnding(campaign: CampaignState): CampaignEnding {
+  return buildEnding(campaign, "completed", "원정 종료", "15개의 던전을 모두 돌파했습니다.");
+}
+
+function exhaustedEnding(campaign: CampaignState): CampaignEnding {
+  return buildEnding(campaign, "exhausted", "인력 소진", "서로 다른 직업 3명으로 원정을 꾸릴 수 없습니다.");
+}
+
+function unemployedEnding(campaign: CampaignState): CampaignEnding {
+  return buildEnding(campaign, "unemployed", "실직", "남은 모든 공고가 현재 길잡이 등급보다 높습니다.");
+}
+
+/** C3 월드턴 뒤 C7이 호출하는 정상 엔딩 판정이다. */
+export function evaluateCampaignEnding(campaign: CampaignState): CampaignEnding | null {
+  if (countLivingZeroTrust(campaign) >= DENOUNCE_THRESHOLD) return denouncedEnding(campaign);
+  if (
+    campaign.dungeons.length === CAMPAIGN_DUNGEON_COUNT
+    && campaign.dungeons.every((dungeon) => dungeon.status === "cleared")
+  ) return completedEnding(campaign);
+  if (isPersonnelExhausted(campaign)) return exhaustedEnding(campaign);
+  if (
+    campaign.offers.length > 0
+    && campaign.offers.every((offer) => offer.lockReason === "rankTooLow")
+  ) return unemployedEnding(campaign);
+  return null;
 }
