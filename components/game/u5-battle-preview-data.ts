@@ -4,6 +4,7 @@ import { SPIDER_THEME } from "@/lib/content/themes";
 import type { Character, SituationEvent } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import type { BattleResolution } from "@/lib/rules/battle-engine";
+import { resolveBossBattle } from "@/lib/rules/boss-battle-adapter";
 import { resolveMonsterEventBattle } from "@/lib/rules/expedition-events";
 import type { TopStatusView } from "./TopStatusBar";
 import { portraitSrcForCharacter } from "./u4-dungeon-map-model";
@@ -13,7 +14,7 @@ import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import { U5_PREVIEW_ENTRIES } from "./u5-preview-data";
 import type { U5ProgressView } from "./u5-progress-model";
 
-export type U5BattlePreviewId = "e3-monster" | "boss-fixture";
+export type U5BattlePreviewId = "e3-monster" | "e4-boss";
 
 export interface U5BattlePreviewEntry {
   readonly id: U5BattlePreviewId;
@@ -50,34 +51,32 @@ function battleMember(member: Character, hp = member.hp) {
   };
 }
 
-const [bossPartyOne, bossPartyTwo, bossPartyThree] = members;
-const bossEnemyId = "u5-2-boss-fixture-enemy";
-const bossPartyOneFinalHp = Math.max(0, bossPartyOne.hp - 7);
+/*
+ * 보스전은 `E4` 가 계산한다.
+ *
+ * 한때 이 자리에 `resolveBossBattle` 을 부르지 않는 시각 fixture 가 있었다.
+ * `E4` 가 없던 동안의 임시였고 화면에도 그렇게 표시했다. 이제 실제 보스
+ * 던전과 파티를 넣어 규칙이 낸 턴 기록을 그대로 재생한다. 화면은 피해도
+ * 확률도 신뢰도 다시 계산하지 않는다.
+ */
+const bossDungeonCandidate = campaign.dungeons.find(
+  (candidate) => candidate.theme === SPIDER_THEME.id && candidate.bossId === boss.id,
+);
+if (bossDungeonCandidate === undefined) throw new Error(`U5-2 프리뷰에 쓸 ${boss.id} 던전이 캠페인에 없다`);
+const bossDungeon = bossDungeonCandidate;
 
-// E4 미연결 시각 fixture이며 resolveBossBattle을 호출하지 않는다.
-const BOSS_FIXTURE_RESOLUTION = {
-  status: "victory",
-  termination: "defeatedEnemies",
-  rounds: 1,
-  actions: [
-    { round: 1, actorSide: "party", actorId: bossPartyOne.id, targetId: bossEnemyId, damage: 50, targetHpBefore: 150, targetHpAfter: 100, defeated: false },
-    { round: 1, actorSide: "enemy", actorId: bossEnemyId, targetId: bossPartyOne.id, damage: 7, targetHpBefore: bossPartyOne.hp, targetHpAfter: bossPartyOneFinalHp, defeated: bossPartyOneFinalHp === 0 },
-    { round: 1, actorSide: "party", actorId: bossPartyTwo.id, targetId: bossEnemyId, damage: 50, targetHpBefore: 100, targetHpAfter: 50, defeated: false },
-    { round: 1, actorSide: "party", actorId: bossPartyThree.id, targetId: bossEnemyId, damage: 50, targetHpBefore: 50, targetHpAfter: 0, defeated: true },
-  ],
-  party: [
-    battleMember(bossPartyOne, bossPartyOneFinalHp),
-    battleMember(bossPartyTwo),
-    battleMember(bossPartyThree),
-  ],
-  enemies: [{
-    id: bossEnemyId,
-    monsterId: boss.id,
-    hp: 0,
-    maxHp: boss.maxHp,
-    baseDamage: boss.baseDamage,
-  }],
-} as const satisfies BattleResolution;
+function createBossResolution(): BattleResolution {
+  return resolveBossBattle({
+    dungeon: bossDungeon,
+    theme: SPIDER_THEME,
+    members,
+    classDefs: CLASSES,
+    /* 지연형 보스 정보를 아직 수용하지 않은 상태다. 조언 연계는 U5 의 몫이다. */
+    infoRecords: [],
+    seed: "u5-2-boss-preview",
+    pendingMerchantEffect: null,
+  }).bossResult.battle;
+}
 
 function partyPresentations() {
   return members.map((member) => ({
@@ -130,11 +129,17 @@ export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] 
     resolution: e3Resolution,
     presentations: [...partyPresentations(), ...enemyPresentations(e3Resolution)],
   });
+  const bossResolution = createBossResolution();
   const bossReplay = createU5BattleReplay({
-    resolution: BOSS_FIXTURE_RESOLUTION,
+    resolution: bossResolution,
+    /* 보스 ID 는 규칙이 정한다. 화면이 지어낸 이름을 쓰지 않는다. */
     presentations: [
       ...partyPresentations(),
-      { id: bossEnemyId, name: boss.name, imageSrc: enemyBattleAssetSrc(boss.id) },
+      ...bossResolution.enemies.map((enemy) => ({
+        id: enemy.id,
+        name: boss.name,
+        imageSrc: enemyBattleAssetSrc(boss.id),
+      })),
     ],
   });
 
@@ -156,19 +161,19 @@ export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] 
       replay: e3Replay,
     },
     {
-      id: "boss-fixture",
-      label: "보스 전투 fixture",
-      sourceLabel: "E4 미연결 fixture · resolveBossBattle 미호출",
+      id: "e4-boss",
+      label: "E4 실제 보스전",
+      sourceLabel: "resolveBossBattle · 고정 seed",
       status: base.status,
       progress: {
         ...base.progress,
         sceneKind: "boss",
-        nodeLabel: "보스 전투 fixture",
-        situation: "E4 연결 전 공식 보스 자산과 typed action 기록을 검증한다.",
+        nodeLabel: "E4 실제 보스전",
+        situation: `${boss.name} 과의 턴 단위 보스전 기록을 재생한다.`,
       },
       log: base.log,
       ecology: base.ecology,
-      resolution: BOSS_FIXTURE_RESOLUTION,
+      resolution: bossResolution,
       replay: bossReplay,
     },
   ];
