@@ -98,12 +98,39 @@ describe("U5BattleScene", () => {
     expect(battleCss).not.toMatch(/\.u5-battle-damage\s*\{[^}]*transform:/);
   });
 
-  it("현재 행동 한 문장만 polite live region으로 알리고 skip을 실제 button으로 제공한다", () => {
+  /*
+   * 화면 문장은 프레임마다 바뀌지만, 읽어 주는 것은 행동이 끝난 settle 과
+   * complete 뿐이다. 네 프레임을 모두 알리면 행동 하나에 네 번 읽는데,
+   * 프레임 간격이 0.36~0.52초라 합성음이 화면을 따라오지 못한다.
+   */
+  it("화면 문장과 읽어 주는 문장을 나누고 skip을 실제 button으로 제공한다", () => {
     const html = render();
 
     expect(html.match(/aria-live="polite"/g)).toHaveLength(1);
     expect(html).toContain("전투가 시작됩니다.");
+    /* idle 은 행동이 아니다. 읽어 주는 자리는 비어 있어야 한다. */
+    expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite"><\/p>/);
     expect(html).toMatch(/<button[^>]*type="button"[^>]*>전투 건너뛰기<\/button>/);
+  });
+
+  it("행동이 끝난 frame 만 읽어 준다", () => {
+    const settle = replay.frames.find((frame) => frame.phase === "settle");
+    const attack = replay.frames.find((frame) => frame.phase === "attack");
+    if (settle === undefined || attack === undefined) throw new Error("fixture에 settle/attack frame이 없다.");
+
+    const settleHtml = render({ ...replay, frames: [settle] });
+    const attackHtml = render({ ...replay, frames: [attack] });
+
+    expect(settleHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite">.+<\/p>/);
+    expect(attackHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite"><\/p>/);
+  });
+
+  /* "새끼거미이(가)" 처럼 두 형태를 나란히 적지 않는다. */
+  it("받침에 맞는 조사를 골라 쓴다", () => {
+    const html = render();
+
+    expect(html).not.toContain("이(가)");
+    expect(html).not.toContain("을(를)");
   });
 
   it("complete frame으로 시작하면 승리, 쓰러짐, 다시 보기 조작을 함께 보여준다", () => {

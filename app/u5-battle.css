@@ -13,10 +13,18 @@
   height: 100%;
 }
 
+/*
+ * container-type 을 두지 않는다.
+ *
+ * 여기에 size 컨테이너를 만들면 안쪽 cqh 가 1080px 캔버스가 아니라 362px 짜리
+ * 장면 슬롯을 기준으로 잡는다. 1cqh 가 10.8px 에서 3.62px 로 줄어드는 바람에
+ * 이 파일에 쓴 cqh 18곳이 전부 clamp 하한에 박혀 있었다. 스프라이트는 123px,
+ * 이름은 8.96px, HP 숫자는 7.68px 로 나와 적이 보이지도 글자가 읽히지도
+ * 않았다. @container 질의는 어디에도 없으므로 컨테이너 자체가 필요 없다.
+ */
 .u5-battle-host {
   position: relative;
   overflow: hidden;
-  container-type: size;
 }
 
 .u5-battle-scene {
@@ -189,6 +197,17 @@
   font-size: clamp(0.56rem, 1.7cqh, 0.9rem);
   line-height: 1.25;
   text-align: center;
+}
+
+/* 읽어 주기만 하는 자리다. 화면 문장은 .u5-battle-live 가 이미 보여 준다. */
+.u5-battle-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .u5-battle-controls {

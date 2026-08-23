@@ -91,6 +91,8 @@ describe("createU5BattleReplay", () => {
     ["알 수 없는 target", input({ resolution: { ...resolution, actions: [{ ...resolution.actions[0], targetId: "missing" }] } })],
     ["HP chain 불일치", input({ resolution: { ...resolution, actions: [{ ...resolution.actions[0], targetHpBefore: 8 }] } })],
     ["쓰러진 참가자의 후속 행동", input({ resolution: { ...resolution, actions: [...resolution.actions, { ...resolution.actions[2], actorId: "enemy-1", targetId: "party-1", actorSide: "enemy", defeated: false, targetHpBefore: 7, targetHpAfter: 2 }] } })],
+    /* actor 만 보고 target 을 보지 않으면 시체를 다시 때리는 action 이 HP 0 → 0 으로 통과한다. */
+    ["쓰러진 참가자를 다시 노리는 행동", input({ resolution: { ...resolution, actions: [...resolution.actions, { ...resolution.actions[2], actorId: "party-1", targetId: "enemy-1", actorSide: "party", damage: 0, targetHpBefore: 0, targetHpAfter: 0, defeated: true }] } })],
     ["final HP 불일치", input({ resolution: { ...resolution, party: [{ ...resolution.party[0], hp: 8 }] } })],
   ] as const)("%s은 설명 가능한 오류로 거부한다", (_case, invalidInput) => {
     expect(() => createU5BattleReplay(invalidInput)).toThrowError(/U5 전투 replay/);

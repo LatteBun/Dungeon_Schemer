@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState, type CSSProperties } from "react";
+import { withObjectParticle, withSubjectParticle } from "./korean-particle";
 import type {
   U5BattleReplay,
   U5BattleReplayFrame,
@@ -26,6 +27,13 @@ function participantById(replay: U5BattleReplay, id: string | null) {
   return id === null ? undefined : replay.participants.find((participant) => participant.id === id);
 }
 
+/*
+ * 한 프레임을 한 문장으로 옮긴다.
+ *
+ * 참가자는 replay 를 만들 때 이미 검증했지만, 빠졌을 때 문장에 undefined 를
+ * 흘려보내느니 아무 말도 하지 않는다. 숫자 뒤에는 조사를 붙이지 않는다.
+ * 3 은 "삼", 12 는 "십이" 라 읽는 방식에 따라 조사가 갈리기 때문이다.
+ */
 function frameDescription(replay: U5BattleReplay, frame: U5BattleReplayFrame): string {
   const actor = participantById(replay, frame.actorId);
   const target = participantById(replay, frame.targetId);
@@ -34,18 +42,54 @@ function frameDescription(replay: U5BattleReplay, frame: U5BattleReplayFrame): s
     case "idle":
       return "전투가 시작됩니다.";
     case "attack":
-      return `${actor?.name}이(가) ${target?.name}을(를) 공격합니다.`;
+      if (actor === undefined || target === undefined) return "";
+      return `${withSubjectParticle(actor.name)} ${withObjectParticle(target.name)} 공격합니다.`;
     case "impact":
-      return `${target?.name}이(가) ${frame.damage} 피해를 받습니다.`;
-    case "settle":
-      return frame.targetId !== null && frame.defeatedParticipantIds.includes(frame.targetId)
-        ? `${target?.name}이(가) 쓰러졌습니다.`
-        : `${target?.name} HP가 ${frame.targetId === null ? undefined : frame.hpByParticipantId[frame.targetId]}로 감소했습니다.`;
+      if (target === undefined || frame.damage === null) return "";
+      return `${withSubjectParticle(target.name)} ${frame.damage} 피해를 받습니다.`;
+    case "settle": {
+      if (actor === undefined || target === undefined) return "";
+      if (frame.defeatedParticipantIds.includes(target.id)) {
+        return `${withSubjectParticle(actor.name)} ${withObjectParticle(target.name)} 쓰러뜨렸습니다.`;
+      }
+      const hp = frame.hpByParticipantId[target.id];
+      if (hp === undefined) return "";
+      return `${withSubjectParticle(actor.name)} ${withObjectParticle(target.name)} 공격해 HP가 ${hp}까지 떨어졌습니다.`;
+    }
     case "complete":
       return replay.outcome === "victory"
         ? "파티가 전투에서 승리했습니다."
         : "파티가 전투에서 패배했습니다.";
   }
+}
+
+/*
+ * 화면에는 프레임마다 문장을 갈아 끼우지만, 읽어 주는 것은 행동이 끝난
+ * settle 과 complete 뿐이다.
+ *
+ * 네 프레임을 모두 알리면 행동 하나에 네 번, 20 행동 전투면 80 번을 읽는다.
+ * 프레임 간격이 0.36~0.52초라 합성음이 따라오지 못하고, 화면은 여덟 번째
+ * 행동을 그리는데 귀로는 첫 행동을 듣게 된다. settle 문장은 누가 누구를
+ * 어떻게 했는지를 그 안에 다 담고 있으므로 그것만으로 따라갈 수 있다.
+ */
+function announcement(replay: U5BattleReplay, frame: U5BattleReplayFrame): string {
+  return frame.phase === "settle" || frame.phase === "complete" ? frameDescription(replay, frame) : "";
+}
+
+/*
+ * replay 를 내용으로 식별한다.
+ *
+ * 객체 신원으로 보면 호출부가 렌더 안에서 createU5BattleReplay 를 부르는 순간
+ * 매 렌더마다 첫 프레임으로 되돌아가 재생이 영영 진행되지 않는다. 공개 prop
+ * 이라 호출부에 useMemo 를 강제할 방법이 없으므로 이쪽에서 막는다.
+ */
+function replaySignature(replay: U5BattleReplay): string {
+  return [
+    replay.frames.length,
+    replay.outcome,
+    replay.termination,
+    replay.participants.map((participant) => `${participant.id}@${participant.initialHp}/${participant.finalHp}`).join(","),
+  ].join("|");
 }
 
 function motionForParticipant(
@@ -142,13 +186,17 @@ function Participant({ participant, frame, reducedMotion }: {
 export function U5BattleScene({ replay }: U5BattleSceneProps) {
   const [frameIndex, setFrameIndex] = useState(0);
   const reducedMotion = useReducedMotion() ?? false;
-  const frame = replay.frames[Math.min(frameIndex, replay.frames.length - 1)];
 
-  useEffect(() => {
-    // 새 replay 객체는 같은 scene 인스턴스에서 항상 첫 frame부터 다시 재생한다.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 승인된 replay 교체 계약이다.
+  // 다른 replay 로 바뀌면 첫 frame 부터 다시 재생한다. effect 가 아니라 렌더
+  // 중에 맞춰야 낡은 frame 을 한 번 그리고 나서 되감는 일이 없다.
+  const signature = replaySignature(replay);
+  const [renderedSignature, setRenderedSignature] = useState(signature);
+  if (signature !== renderedSignature) {
+    setRenderedSignature(signature);
     setFrameIndex(0);
-  }, [replay]);
+  }
+
+  const frame = replay.frames[Math.min(frameIndex, replay.frames.length - 1)];
 
   useEffect(() => {
     if (frame === undefined || frame.phase === "complete") return;
@@ -178,7 +226,8 @@ export function U5BattleScene({ replay }: U5BattleSceneProps) {
           ))}
         </div>
       </div>
-      <p className="u5-battle-live" aria-live="polite">{frameDescription(replay, frame)}</p>
+      <p className="u5-battle-live">{frameDescription(replay, frame)}</p>
+      <p className="u5-battle-announcement" aria-live="polite">{announcement(replay, frame)}</p>
       <div className="u5-battle-controls">
         {complete ? (
           <button type="button" onClick={() => setFrameIndex(0)}>다시 보기</button>

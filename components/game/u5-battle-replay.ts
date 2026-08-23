@@ -118,6 +118,9 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
     if (target === undefined) invalid(`알 수 없는 target이다: ${action.targetId}`);
     if (sideByParticipantId.get(action.actorId) !== action.actorSide) invalid(`actorSide가 참가자와 맞지 않는다: ${action.actorId}`);
     if (defeatedParticipantIds.has(action.actorId)) invalid(`쓰러진 참가자가 다시 행동한다: ${action.actorId}`);
+    /* actor 만 보고 target 을 보지 않으면, 시체를 다시 때리는 action 이 HP 0 → 0
+     * 으로 조용히 통과한다. 재생은 아무 일도 일어나지 않는 프레임 세 장을 낳는다. */
+    if (defeatedParticipantIds.has(action.targetId)) invalid(`쓰러진 참가자를 다시 노린다: ${action.targetId}`);
     if (currentHpByParticipantId[action.targetId] !== action.targetHpBefore) invalid(`target HP chain이 맞지 않는다: ${action.targetId}`);
     if (action.defeated !== (action.targetHpAfter === 0)) invalid(`defeated와 targetHpAfter가 맞지 않는다: ${action.targetId}`);
 
