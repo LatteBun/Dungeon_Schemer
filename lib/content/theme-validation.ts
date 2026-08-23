@@ -115,6 +115,15 @@ function validateBosses(bosses: readonly BossDef[], theme: string): void {
   }
 
   for (const boss of bosses) {
+    if (boss.rules.length !== 2) {
+      invalid(`보스 특징이 정확히 2개가 아니다: ${boss.id}`, {
+        contentType: "bossRule",
+        theme,
+        bossId: boss.id,
+        expected: 2,
+        actual: boss.rules.length,
+      });
+    }
     requireText(boss.name, `보스 이름이 비어 있다: ${boss.id}`, {
       contentType: "boss",
       theme,
