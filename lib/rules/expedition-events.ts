@@ -40,6 +40,55 @@ function reachableNodes(map: GeneratedMap, start: NodeId): ReadonlySet<NodeId> {
   return visited;
 }
 
+/*
+ * 조우 종을 그 던전에 사는 몹으로 갈아끼운다.
+ *
+ * `event-registry` 는 조우를 선언하지 않은 monster 사건에 `theme.monsters[0]`
+ * 을 넣는다. 54개 사건 전부가 그렇다. 저자가 고른 종이 아니라 자리표시자다.
+ * 그 종이 그 던전에 살지 않으면 사건이 통째로 걸러져, `monster` 노드를 계획해
+ * 놓고도 물질화하지 못한다. 생태 패키지 15개 중 9개가 그랬다.
+ *
+ * 어느 몹이 나오는지는 사건이 아니라 던전의 생태가 정한다. 그러니 살지 않는
+ * 종만 갈아끼우고, 이미 사는 종이면 그대로 둔다. 고르는 일은 노드마다 결정적
+ * 이어서 같은 시드가 같은 결과를 낸다.
+ */
+function withLocalSpecies(event: SituationEvent, activeMonsterIds: readonly MonsterId[], rng: ReturnType<typeof createRng>): SituationEvent {
+  if (event.kind !== "monster" || activeMonsterIds.length === 0) return event;
+
+  const active = new Set<MonsterId>(activeMonsterIds);
+  let local: MonsterId | undefined;
+  const swap = (monsterId: MonsterId): MonsterId => {
+    if (active.has(monsterId)) return monsterId;
+    local ??= rng.pick([...activeMonsterIds]);
+    return local;
+  };
+  const swapGroups = <T extends { readonly monsterId: MonsterId }>(groups: readonly T[] | undefined): readonly T[] | undefined =>
+    groups?.map((group) => ({ ...group, monsterId: swap(group.monsterId) }));
+
+  return {
+    ...event,
+    encounter: event.encounter === undefined ? undefined : { ...event.encounter, enemies: swapGroups(event.encounter.enemies) ?? [] },
+    encounterModifier: event.encounterModifier === undefined ? undefined : {
+      ...event.encounterModifier,
+      addEnemies: swapGroups(event.encounterModifier.addEnemies),
+      removeEnemies: swapGroups(event.encounterModifier.removeEnemies),
+    },
+    defaultEncounterModifier: event.defaultEncounterModifier === undefined ? undefined : {
+      ...event.defaultEncounterModifier,
+      addEnemies: swapGroups(event.defaultEncounterModifier.addEnemies),
+      removeEnemies: swapGroups(event.defaultEncounterModifier.removeEnemies),
+    },
+    advice: event.advice.map((option) => option.encounterModifier === undefined ? option : {
+      ...option,
+      encounterModifier: {
+        ...option.encounterModifier,
+        addEnemies: swapGroups(option.encounterModifier.addEnemies),
+        removeEnemies: swapGroups(option.encounterModifier.removeEnemies),
+      },
+    }),
+  };
+}
+
 function eventMatchesProfile(event: SituationEvent, activeRuleIds: ReadonlySet<RuleId>, activeMonsterIds: ReadonlySet<MonsterId>): boolean {
   const referencedRules = event.advice.flatMap((option) => option.source?.kind === "ecology" ? [option.source.ruleId] : []);
   const encounterGroups = event.kind === "merchant" ? [] : [
@@ -55,7 +104,10 @@ function eventMatchesProfile(event: SituationEvent, activeRuleIds: ReadonlySet<R
   ];
   if (event.kind !== "merchant" && event.satisfiedConditionalRuleIds?.some((ruleId) => !activeRuleIds.has(ruleId))) return false;
   if (referencedRules.some((ruleId) => !activeRuleIds.has(ruleId))) return false;
-  if (encounterGroups.some((enemy) => !activeMonsterIds.has(enemy.monsterId))) return false;
+  /* 몹 종은 여기서 거르지 않는다. withLocalSpecies 가 그 던전에 사는 몹으로
+   * 갈아끼우므로, 종 때문에 사건을 버리면 후보만 비고 얻는 것이 없다. */
+  void encounterGroups;
+  void activeMonsterIds;
   return true;
 }
 
@@ -177,7 +229,9 @@ export function materializeNodeEvent(input: {
   const candidates = normalCandidates(eligibleEvents.filter((event) => event.kind === plan.category), plan.hiddenRole, plan.plannedClueId, input.targetBossId, strongClues);
   const available = candidates.filter((event) => !input.prepared.usedEventIds.has(event.id));
   if (available.length === 0) invalid("방문 노드의 사용 가능한 사건이 없다", { nodeId: input.nodeId, category: plan.category, role: plan.hiddenRole });
-  const event = createRng(`${input.campaignSeed}/${input.dungeonId}/${input.attempt}/${input.nodeId}/${plan.hiddenRole}`).derive("event").pick([...available]);
+  const nodeRng = createRng(`${input.campaignSeed}/${input.dungeonId}/${input.attempt}/${input.nodeId}/${plan.hiddenRole}`).derive("event");
+  const picked = nodeRng.pick([...available]);
+  const event = withLocalSpecies(picked, input.activeMonsterIds, nodeRng);
   const usedEventIds = new Set(input.prepared.usedEventIds);
   usedEventIds.add(event.id);
   const heldClueIds = new Set(input.prepared.heldClueIds);
