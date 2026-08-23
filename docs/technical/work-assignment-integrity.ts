@@ -26,6 +26,7 @@ const STATUSES = ["⬜", "🟡", "✅"] as const;
 type Status = (typeof STATUSES)[number];
 const DONE: Status = "✅";
 const WAITING: Status = "⬜";
+const IN_PROGRESS: Status = "🟡";
 
 interface TaskRow {
   id: string;
@@ -326,14 +327,22 @@ export function describeWorkAssignment(label: string, docPath: string): void {
       expect(selfish, "자기 자신을 가리키는 행").toEqual([]);
     });
 
-    it("남은 작업이 있으면 시작 가능한 작업도 있다", () => {
+    /*
+     * 진행 중인 일도 표가 살아 있다는 증거다.
+     *
+     * 이 검사가 잡으려는 것은 완료 처리하면서 다른 행의 `선행`을 지우지 않아
+     * 표 전체가 막힌 것처럼 보이는 상태다. 실제로 아무도 아무 일도 하고
+     * 있지 않은 교착과, 남은 일이 모두 진행 중인 일을 기다리는 정상 상태는
+     * 다르다. `D8` 이 완료되면서 후자가 됐다. ⬜ 만 세면 그때 거짓 경보가 난다.
+     */
+    it("남은 작업이 있으면 시작 가능하거나 진행 중인 작업이 있다", () => {
       const unfinished = rows.filter((row) => row.status !== DONE);
       if (unfinished.length === 0) return;
 
-      const ready = rows
-        .filter((row) => row.status === WAITING && row.blockedBy.length === 0)
+      const live = rows
+        .filter((row) => row.status === IN_PROGRESS || (row.status === WAITING && row.blockedBy.length === 0))
         .map((row) => row.id);
-      expect(ready.length, "시작 가능한 작업 수").toBeGreaterThan(0);
+      expect(live.length, "시작 가능하거나 진행 중인 작업 수").toBeGreaterThan(0);
     });
   });
 }
