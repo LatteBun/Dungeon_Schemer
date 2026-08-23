@@ -147,10 +147,37 @@ Test:
 
 ## Follow-up Changes
 
-Related systems must update:
-- C2 board party generation
-- C6 ending condition
-- C8 statistics
-- U6 settlement view
+C4 implementation must include related contract updates in the implementation plan. Do not limit the plan to settlement code only.
+
+Required plan scope:
+
+### C2 — Campaign Board / Party Generation
+
+Update party generation rules to support emergency deployment.
+
+Plan must include:
+- separate normal deployment eligibility from emergency deployment eligibility
+- keep gravely wounded members excluded by default
+- allow emergency candidates only when normal candidates cannot create a valid 3-class party
+- minimize wounded member usage
+- preserve seeded deterministic selection
+
+### C6 — Ending Conditions
+
+Update personnel exhaustion rules.
+
+Plan must include:
+- exhaustion check after emergency deployment evaluation
+- alive + trust > 0 candidates are considered
+- gravely wounded members are valid emergency candidates
+- dead or trust 0 members are never candidates
+
+### C8 — Statistics
+
+Use SettlementResult as the source for settlement statistics.
+
+### U6 — Settlement View
+
+Consume SettlementResult directly.
 
 B1 owns final balance tuning.
