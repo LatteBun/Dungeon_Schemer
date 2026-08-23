@@ -38,10 +38,13 @@
 `START_EXPEDITION` 이 완성된 `ExpeditionState` 를 받는다. 지도 생성, 공개 규칙
 결정, 파티 확정이 그 앞에 있어야 한다. **지금 그 일을 하는 곳이 없다.**
 
-`C7` 안에 두는 것이 옳다. `prepareFor` 가 사건 계획을 만들듯 원정 상태도
-규칙이 만들어야 한다. 다만 `C7` 은 남의 영역이므로, 이 작업에서는 **어댑터
-계층에 두고 옮길 자리를 표시**한다. 규칙을 새로 쓰지 않고 `E1`·`E2` 를 부르기만
-하므로 옮기는 비용이 작다.
+**`C7` 에 넣는다.** `prepareFor` 가 사건 계획을 만들듯 원정 상태도 규칙이
+만들어야 한다. 화면이 지도를 생성하고 공개 규칙을 정하면, 그것이 곧 화면 계층이
+규칙 판단을 하는 것이다.
+
+`START_EXPEDITION` 의 payload 는 바꾸지 않는다. 대신 규칙 계층이
+`createExpeditionForOffer(campaign, offer)` 를 내주고 호출부가 그 결과를 넘긴다.
+액션 모양을 바꾸면 기존 검사가 통째로 깨지는데, 얻는 것이 없다.
 
 ### 4.2 `U4MapNodeView` 의 `publicKindByNodeId`
 
@@ -120,9 +123,28 @@
 전투 재생이 끝나야 다음으로 갈 수 있다는 것도 화면의 몫이다. 규칙은 이미
 결과를 다 냈고 재생은 표현이다.
 
-## 10. 정하지 않은 것
+## 10. 원정 로그는 `CampaignHistory` 에 쌓는다
 
-`COMPLETE_EXPEDITION` 이 `SettlementSnapshot` 을 받는다. 그 스냅샷을 누가
-만드는가. `ExpeditionState` 와 파티 최종 상태에서 기계적으로 나오므로 어댑터가
-만들 수 있지만, `causeInputs` 의 세 문장은 원정 중에 쌓아야 한다. **원정 로그를
-어디에 쌓을지**를 구현에서 정한다.
+`COMPLETE_EXPEDITION` 이 받는 `SettlementSnapshot` 의 `causeInputs` — 선택·반응·
+피해 세 문장은 원정 중에 쌓아야 한다.
+
+**새 그릇을 만들지 않는다. `C8-B` 가 이미 만들어 두었다.** `CampaignState.history`
+가 `CampaignEvent[]` 를 담고, `toAdviceResolvedEventDraft` 가 사건·조언·수용
+여부·개인 반응을 담는 draft 를 만들고, `appendCampaignEvent` 가 중복과 무결성을
+검사하며 붙인다.
+
+그런데 **아무도 부르지 않고 있다.** `C8-B` 가 「`I1` Store 적용과 `I2`/`U6` 소비는
+후속 통합 책임」이라 적어 둔 그대로다.
+
+`C7` 의 `CHOOSE_ADVICE`·`ENTER_BOSS` 안에서 붙인다. 전이가 일어날 때 규칙이
+기록하므로 누락이 구조적으로 불가능하다. 스토어에서 `dispatch` 뒤에 붙이면
+기록을 빠뜨릴 수 있고, 캠페인 기록을 화면 계층이 소유하게 된다.
+
+덤으로 `U6` 엔딩의 「가장 큰 전환점」이 지금 `null` 인 것도 함께 채워진다.
+`deriveTurningPoints` 와 `selectHighlightedTurningPoint` 가 이미 있다.
+
+## 11. 선행 — C7 확장
+
+위 둘은 `C7` 을 고쳐야 한다. `I2` 를 시작하기 전에 별도 작업으로 먼저 넣는다.
+`C7` 담당이 다른 작업 중이라 구두 합의 후 `sbh3821` 이 대신 진행한다. 원정 안쪽
+전이(#125)와 같은 이유다.
