@@ -482,10 +482,6 @@ function copyActiveExpedition(
   };
 }
 
-/** 재도전 횟수다. 사건 배치가 재도전마다 달라야 하므로 시드에 들어간다. */
-function attemptOf(campaign: CampaignState, expedition: ExpeditionState): number {
-  return campaign.dungeons.find((candidate) => candidate.id === expedition.dungeonId)?.attempts ?? 0;
-}
 
 function transitionBoard(
   campaign: CampaignState,
