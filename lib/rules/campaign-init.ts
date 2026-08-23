@@ -133,5 +133,7 @@ export function initializeCampaign(seed: string): CampaignState {
     offers: [],
     worldTurn: 0,
     ending: null,
+    settledExpeditionIds: [],
+    statistics: { settlements: [] },
   };
 }

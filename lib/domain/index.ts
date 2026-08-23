@@ -17,7 +17,7 @@ export type {
   RuleId,
 } from "./ids";
 
-export { canDeploy, PERSONALITIES, TRUST_MAX, TRUST_MIN } from "./character";
+export { canDeploy, canDeployEmergency, PERSONALITIES, TRUST_MAX, TRUST_MIN } from "./character";
 export type { Character, ClassDef, Personality, TrustChange } from "./character";
 
 export {
@@ -66,6 +66,20 @@ export {
   REPUTATION_MIN,
   REPUTATION_START,
 } from "./campaign";
+
+export {
+  FULL_SURVIVOR_REWARDS,
+  rewardForSurvivors,
+} from "./settlement";
+export type {
+  Reward,
+  SettlementCauseChain,
+  SettlementCauseInputs,
+  SettlementMemberChange,
+  SettlementResult,
+  SettlementSnapshot,
+} from "./settlement";
+export type { CampaignStatistics } from "./statistics";
 export type {
   BoardOffer,
   CampaignEnding,

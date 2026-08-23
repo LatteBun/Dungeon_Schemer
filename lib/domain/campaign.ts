@@ -1,6 +1,7 @@
 import type { CampaignDungeon, RiskLevel } from "./dungeon";
 import type { CharacterPool, ExpeditionParty } from "./pool";
 import type { DungeonId, OfferId } from "./ids";
+import type { CampaignStatistics } from "./statistics";
 
 /**
  * 길잡이 등급이다. 어느 위험도까지 들어갈 수 있는지만 정한다.
@@ -125,4 +126,8 @@ export interface CampaignState {
   /** 플레이어 원정 1회가 세계의 시간 1단위다. */
   worldTurn: number;
   ending: CampaignEnding | null;
+  /** C7이 중복 정산을 막기 위해 보관하는 안정적인 원정 ID다. */
+  settledExpeditionIds: readonly string[];
+  /** C8이 규칙 결과를 누적하는 통계다. */
+  statistics: CampaignStatistics;
 }

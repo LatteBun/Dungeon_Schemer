@@ -117,10 +117,12 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
         </div>
       </dl>
 
-      <p className="u6-next-reward">
-        다음 계약 보상 <strong>명성 {settlement.nextReward.reputation}</strong>
-        <strong>골드 {settlement.nextReward.gold}</strong>
-      </p>
+      {settlement.nextReward === null ? null : (
+        <p className="u6-next-reward">
+          다음 계약 보상 <strong>명성 {settlement.nextReward.reputation}</strong>
+          <strong>골드 {settlement.nextReward.gold}</strong>
+        </p>
+      )}
     </section>
   );
 }

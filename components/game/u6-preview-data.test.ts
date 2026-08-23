@@ -30,14 +30,23 @@ describe("U6 프리뷰 데이터", () => {
     expect(wipe?.relicGold).toBeGreaterThan(0);
     expect(wipe?.reputationDelta).toBeLessThan(0);
     expect(wipe?.riskAfter).toBe((wipe?.riskBefore ?? 0) + 1);
+    expect(wipe?.nextReward).toEqual({ reputation: 15, gold: 32 });
   });
 
-  it("★5 정산은 위험도가 오르지 않는다", () => {
+  it("클리어 정산에는 다음 계약 보상이 없다", () => {
+    const partial = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-partial")?.settlement;
+    const promotion = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-promotion")?.settlement;
+
+    expect(partial?.nextReward).toBeNull();
+    expect(promotion?.nextReward).toBeNull();
+  });
+
+  it("★5 전멸이 아니면 위험도 상한 표시를 하지 않는다", () => {
     const capped = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-promotion")?.settlement;
 
     expect(capped?.riskBefore).toBe(5);
     expect(capped?.riskAfter).toBe(5);
-    expect(capped?.riskCapped).toBe(true);
+    expect(capped?.riskCapped).toBe(false);
   });
 
   it("승급 가능 정산은 두 경로가 함께 열린다", () => {

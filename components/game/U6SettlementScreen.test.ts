@@ -65,6 +65,11 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("계약 시점");
   });
 
+  it("클리어에서는 다음 계약 보상을 표시하지 않는다", () => {
+    expect(render({ nextReward: null })).not.toContain("다음 계약 보상");
+    expect(render({ survivors: 0 })).toContain("다음 계약 보상");
+  });
+
   it("위험도 변화를 전후로 함께 보여준다", () => {
     const html = render({ survivors: 0, riskBefore: 2, riskAfter: 3 });
 

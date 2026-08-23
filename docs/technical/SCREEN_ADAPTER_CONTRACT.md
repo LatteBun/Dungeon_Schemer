@@ -81,7 +81,7 @@ View 타입도 규칙이 정한 모양에 따라 바뀔 수 있다. 그때는 �
 | `riskBefore` · `riskAfter` · `riskCapped` | ★5 상한에 걸렸는지 구분 | C4 |
 | `reputationDelta` · `goldDelta` | 증감분 | C4 |
 | `relicGold` | 전멸에서만 회수, 그 외 `0` | C4 |
-| `nextReward` | 다음 공고 보상 | C4 |
+| `nextReward` | 전멸 뒤 다음 공고 보상, 클리어면 `null` | C4 |
 | `promotion` | 최고 등급이면 `null` | C5 |
 
 `U6PromotionView`의 `byReputation`과 `byGold`는 **따로 판정한다.** 하나로

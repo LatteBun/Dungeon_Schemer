@@ -83,3 +83,8 @@ export interface TrustChange {
 export function canDeploy(character: Character): boolean {
   return character.alive && character.trust > TRUST_MIN && !character.gravelyWounded;
 }
+
+/** 응급 편성 후보다. 중상은 허용하지만 사망과 신뢰 0은 영구 제외한다. */
+export function canDeployEmergency(character: Character): boolean {
+  return character.alive && character.trust > TRUST_MIN;
+}

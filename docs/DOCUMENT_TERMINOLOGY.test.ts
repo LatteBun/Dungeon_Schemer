@@ -125,6 +125,7 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "월드턴",
     "중상",
     "임시 파티",
+    "응급 편성",
   ],
   "experience/SCREEN_LAYOUT.md": [
     "3:2",
@@ -148,6 +149,7 @@ const REQUIRED_ANCHORS: Readonly<Record<string, readonly string[]>> = {
     "하한 0",
     "인력 소진",
     "누적 고발",
+    "응급 후보",
   ],  "README.md": ["위험도", "테마 3종", "회의 기록"],
   "diagram/README.md": ["엔딩 5종", "화면 일곱 장", "생태 규칙", "REFERENCE_UI_01_CAMPAIGN_BOARD.png"],
   "diagram/campaign-state.md": ["엔딩 5종", "월드턴", "인력 소진"],

@@ -1,12 +1,19 @@
 import { GUIDE_RANKS, PROMOTION_GOLD, PROMOTION_REPUTATION } from "@/lib/domain";
-import type { GuideRank, RiskLevel, ThemeId } from "@/lib/domain";
+import type {
+  CampaignState,
+  GuideRank,
+  RiskLevel,
+  Reward,
+  SettlementResult,
+  ThemeId,
+} from "@/lib/domain";
 
 /**
  * U6 정산 화면의 모델 경계.
  *
- * 화면은 CampaignState 를 직접 읽지 않는다. 정산 계산은 C4, 승급 실행은 C5 의
- * 몫이고 둘 다 아직 없다. 여기는 화면이 받을 모양만 정한다. 규칙이 들어오면
- * 이 타입을 만드는 함수가 생기고 화면 코드는 그대로다.
+ * 화면은 CampaignState 를 직접 읽지 않는다. 정산 계산은 C4가 만들고, 이
+ * 어댑터는 SettlementResult를 화면이 받을 모양으로만 변환한다. 승급 실행은
+ * C5의 몫으로 남겨 둔다.
  *
  * 승급만은 지금도 계산한다. 요구치 상수가 이미 도메인에 있기 때문이다.
  */
@@ -43,15 +50,50 @@ export interface U6SettlementView {
   causeChain: readonly U6CauseStep[];
   riskBefore: RiskLevel;
   riskAfter: RiskLevel;
-  /** ★5 라 더 오르지 않았다. */
+  /** ★5 전멸이라 위험도가 더 오르지 않았다. */
   riskCapped: boolean;
   reputationDelta: number;
   goldDelta: number;
   /** 전멸에서만 회수한다. 그 외에는 0. */
   relicGold: number;
-  nextReward: { reputation: number; gold: number };
+  nextReward: Reward | null;
   /** 최고 등급이면 null. */
   promotion: U6PromotionView | null;
+}
+
+const CAUSE_LABELS = ["선택", "개인 반응", "피해", "보상·손실", "캠페인 변화"] as const;
+
+export function createU6SettlementView(
+  campaign: CampaignState,
+  settlement: SettlementResult,
+  dungeonName: string,
+  themeId: ThemeId,
+): U6SettlementView {
+  const details = [
+    settlement.causeChain.choice,
+    settlement.causeChain.reactions,
+    settlement.causeChain.damage,
+    settlement.causeChain.economy,
+    settlement.causeChain.campaignChange,
+  ] as const;
+  return {
+    dungeonName,
+    themeId,
+    survivors: settlement.survivorCount,
+    causeChain: CAUSE_ORDER.map((order, index) => ({
+      order,
+      label: CAUSE_LABELS[index],
+      detail: details[index],
+    })),
+    riskBefore: settlement.riskBefore,
+    riskAfter: settlement.riskAfter,
+    riskCapped: settlement.riskCapped,
+    reputationDelta: settlement.reputationDelta,
+    goldDelta: settlement.goldDelta,
+    relicGold: settlement.relicGold,
+    nextReward: settlement.nextReward,
+    promotion: createU6PromotionView(campaign.rank, campaign.reputation, campaign.gold),
+  };
 }
 
 const RANK_CREST_ROOT = "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/ranks";

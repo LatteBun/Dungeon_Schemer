@@ -48,6 +48,20 @@ function stateWithClasses(
   };
 }
 
+function woundMember(state: CampaignState, index: number): CampaignState {
+  const id = state.pool.order[index];
+  if (id === undefined) return state;
+  const member = state.pool.byId[id];
+  if (member === undefined) return state;
+  return {
+    ...state,
+    pool: {
+      ...state.pool,
+      byId: { ...state.pool.byId, [id]: { ...member, gravelyWounded: true } },
+    },
+  };
+}
+
 describe("createBoardOffers", () => {
   it("초기 C급에서 위험도 높은 네 ★2와 시드로 정한 ★1을 게시한다", () => {
     const offers = createBoardOffers(initializeCampaign("c2-board"));
@@ -145,6 +159,24 @@ describe("createBoardOffers", () => {
     const state = stateWithClasses(["warrior", "warrior", "rogue", "rogue"]);
 
     expect(createBoardOffers(state)).toEqual([]);
+  });
+
+  it("정상 후보가 세 직업을 만들지 못하면 중상자를 응급 후보로 사용한다", () => {
+    const state = woundMember(stateWithClasses(["warrior", "rogue", "cleric"]), 2);
+    const offers = createBoardOffers(state);
+
+    expect(offers).toHaveLength(1);
+    expect(offers[0]?.party.memberIds).toContain(state.pool.order[2]);
+  });
+
+  it("정상 파티가 하나라도 가능하면 중상자를 써서 공고 수를 늘리지 않는다", () => {
+    const state = woundMember(stateWithClasses([
+      "warrior", "rogue", "cleric", "mage", "warrior", "rogue",
+    ]), 3);
+    const offers = createBoardOffers(state);
+
+    expect(offers).toHaveLength(1);
+    expect(offers[0]?.party.memberIds).not.toContain(state.pool.order[3]);
   });
 
   it("worldTurn이 바뀌면 새 게시판 ID와 편성을 만든다", () => {

@@ -1,4 +1,4 @@
-import type { EndingKind, GuideRank, RiskLevel, ThemeId } from "@/lib/domain";
+import type { EndingKind, RiskLevel, ThemeId } from "@/lib/domain";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U6EndingView } from "./u6-ending-model";
 import { ENDING_TITLE } from "./u6-ending-model";
@@ -7,10 +7,9 @@ import { CAUSE_ORDER, createU6PromotionView, type U6SettlementView } from "./u6-
 /**
  * `/u6-test` 프리뷰 고정 데이터.
  *
- * 정산 계산(C4), 승급 실행(C5), 엔딩 판정(C6), 통계 누적(C8) 이 아직 없다.
- * 화면을 지금 검증할 수 있도록 결정적 상수로 같은 모양을 만든다. 규칙이
- * 들어오면 이 파일 대신 실제 CampaignState 를 읽는 함수가 들어오고 화면
- * 코드는 그대로다.
+ * 실제 캠페인 전이와 화면 연결 전에도 화면을 검증할 수 있도록 결정적 상수로
+ * 같은 모양을 만든다. 실제 정산은 C4의 SettlementResult를 U6 어댑터에 넣고,
+ * 이 파일은 프리뷰 전용으로 남긴다.
  *
  * 값은 docs/systems/PROGRESSION_AND_ENDINGS.md 의 보상표를 손으로 따랐다.
  * 규칙이 검증한 값이 아니므로 여기의 숫자로 밸런스를 논하지 않는다.
@@ -65,7 +64,7 @@ const settlementPartial: U6SettlementView = {
   reputationDelta: 9,
   goldDelta: 19,
   relicGold: 0,
-  nextReward: { reputation: 15, gold: 32 },
+  nextReward: null,
   promotion: createU6PromotionView("C", 74, 186),
 };
 
@@ -105,11 +104,11 @@ const settlementPromotion: U6SettlementView = {
   ]),
   riskBefore: 5 satisfies RiskLevel,
   riskAfter: 5 satisfies RiskLevel,
-  riskCapped: true,
+  riskCapped: false,
   reputationDelta: 28,
   goldDelta: 60,
   relicGold: 0,
-  nextReward: { reputation: 28, gold: 60 },
+  nextReward: null,
   promotion: createU6PromotionView("C", 88, 214),
 };
 
