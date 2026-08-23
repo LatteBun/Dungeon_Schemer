@@ -4,6 +4,7 @@ import { THEMES, selectThemeBoss } from "@/lib/content/themes";
 import { createRng } from "@/lib/rng";
 import {
   CAMPAIGN_DUNGEON_COUNT,
+  createCampaignHistory,
   createCampaignStatistics,
   GOLD_START,
   REPUTATION_START,
@@ -137,5 +138,6 @@ export function initializeCampaign(seed: string): CampaignState {
     ending: null,
     settledExpeditionIds: [],
     statistics: createCampaignStatistics(),
+    history: createCampaignHistory(),
   };
 }
