@@ -29,6 +29,12 @@ export const BOSS_INFO_MULTIPLIER_LIMITS = {
   max: 1.5,
 } as const;
 
+export const BOSS_INFO_CUE_AXIS_PRIORITY = {
+  targetWeight: 0,
+  incomingDamage: 1,
+  outgoingDamage: 2,
+} as const satisfies Readonly<Record<BossTraitAxis, number>>;
+
 export const BOSS_RULE_TRAITS: Readonly<Record<string, BossTrait>> = {
   "boss-ragna-turning": { id: "PURSUIT_LIMIT", axis: "targetWeight" },
   "boss-ragna-crouch": { id: "ATTACK_TELEGRAPH", axis: "incomingDamage" },

@@ -36,6 +36,7 @@ export interface BossInfoVerification {
 }
 
 export interface BossInfoPresentationCue {
+  readonly actionIndex: number;
   readonly bossRuleId: import("./ids").BossRuleId;
   readonly characterId: CharacterId;
   readonly timing: BossInfoTiming;

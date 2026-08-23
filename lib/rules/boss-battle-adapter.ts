@@ -3,6 +3,7 @@ import { consumePendingMerchantEffect } from "@/lib/rules/merchant";
 import { evaluateTrust } from "@/lib/rules/trust";
 import { resolveBattle } from "@/lib/rules/battle-engine";
 import {
+  BOSS_INFO_CUE_AXIS_PRIORITY,
   bossTraitForRule,
   clampBossInfoMultiplier,
   modifierForBossInfo,
@@ -10,6 +11,7 @@ import {
 import { RuleError } from "@/lib/domain";
 import type {
   BossDef,
+  BattleActionRecord,
   BossInfoApplication,
   BossInfoAxis,
   BossInfoDirection,
@@ -87,6 +89,20 @@ function timingFor(axis: BossInfoAxis): BossInfoTiming {
     case "incomingDamage": return "beforeDamage";
     case "outgoingDamage": return "afterDamage";
   }
+}
+
+function appliesToAction(application: BossInfoApplication, action: BattleActionRecord): boolean {
+  return application.axis === "outgoingDamage"
+    ? action.actorSide === "party" && action.actorId === application.characterId
+    : action.actorSide === "enemy" && action.targetId === application.characterId;
+}
+
+function compareApplications(left: BossInfoApplication, right: BossInfoApplication): number {
+  return BOSS_INFO_CUE_AXIS_PRIORITY[left.axis] - BOSS_INFO_CUE_AXIS_PRIORITY[right.axis]
+    || left.characterId.localeCompare(right.characterId)
+    || left.bossRuleId.localeCompare(right.bossRuleId)
+    || left.eventId.localeCompare(right.eventId)
+    || left.adviceId.localeCompare(right.adviceId);
 }
 
 function actionFor(record: InfoRecord): BossInfoVerificationAction {
@@ -210,14 +226,21 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
     trustChanges.push(evaluated.change);
   }
 
-  const cues: BossInfoPresentationCue[] = applications.map((application) => ({
-    bossRuleId: application.bossRuleId,
-    characterId: application.characterId,
-    timing: timingFor(application.axis),
-    axis: application.axis,
-    direction: application.direction,
-    presentationKey: `boss-info.${application.axis}.${application.direction}`,
-  }));
+  const cues: BossInfoPresentationCue[] = battle.actions.flatMap((action, actionIndex) => {
+    const application = applications
+      .filter((candidate) => appliesToAction(candidate, action))
+      .toSorted(compareApplications)[0];
+    if (application === undefined) return [];
+    return [{
+      actionIndex,
+      bossRuleId: application.bossRuleId,
+      characterId: application.characterId,
+      timing: timingFor(application.axis),
+      axis: application.axis,
+      direction: application.direction,
+      presentationKey: `boss-info.${application.axis}.${application.direction}`,
+    }];
+  });
   const finalMembers = input.members.map((member) => resolvedById.get(member.id) ?? member);
   const survivorIds = finalMembers.filter((member) => member.alive).map((member) => member.id);
   const bossResult: BossResult = {

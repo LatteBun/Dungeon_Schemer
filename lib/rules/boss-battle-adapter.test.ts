@@ -70,6 +70,11 @@ function firstPartyAction(result: ReturnType<typeof resolveBossBattle>) {
   return action;
 }
 
+const morkanCocoonHelp = info({ bossRuleId: "boss-morkan-cocoon-side" as BossRuleId });
+const morkanSpinHelp = info({ adviceId: "spin" as ChoiceId, bossRuleId: "boss-morkan-spin-pause" as BossRuleId });
+const ragnaTurningHelp = info({ bossRuleId: "boss-ragna-turning" as BossRuleId });
+const ragnaCrouchHelp = info({ adviceId: "crouch" as ChoiceId, bossRuleId: "boss-ragna-crouch" as BossRuleId });
+
 function resolve(input: Partial<Parameters<typeof resolveBossBattle>[0]> = {}) {
   const members = input.members ?? [member("member-1")];
   return resolveBossBattle({
@@ -123,6 +128,42 @@ describe("E4 보스 BattleEngine adapter", () => {
       "member-1/boss-ragna-crouch/event-a/advice-a",
       "member-1/boss-ragna-turning/event-z/advice-z",
     ]);
+  });
+
+  it("cue는 실제 actionIndex를 가리키고 한 action당 하나만 남긴다", () => {
+    const input = {
+      dungeon: dungeon({ bossId: SPIDER_BOSSES[1].id }),
+      classDefs: classesWithWarriorAttack(20),
+      infoRecords: [morkanCocoonHelp, morkanSpinHelp],
+    };
+    const result = resolve(input);
+    const firstActionIndex = result.bossResult.battle.actions.findIndex((action) => action.actorSide === "party");
+
+    expect(result.bossResult.cues.filter((cue) => cue.actionIndex === firstActionIndex)).toHaveLength(1);
+    expect(result.bossResult.cues).toContainEqual(expect.objectContaining({
+      actionIndex: firstActionIndex,
+      bossRuleId: "boss-morkan-cocoon-side",
+    }));
+    expect(new Set(result.bossResult.cues.map((cue) => cue.actionIndex)).size)
+      .toBe(result.bossResult.cues.length);
+    expect(resolve({ ...input, infoRecords: [...input.infoRecords].reverse() }).bossResult.cues)
+      .toEqual(result.bossResult.cues);
+  });
+
+  it("같은 적 action의 targetWeight가 incomingDamage보다 먼저 선택된다", () => {
+    const result = resolve({
+      classDefs: classesWithWarriorAttack(1),
+      infoRecords: [ragnaTurningHelp, ragnaCrouchHelp],
+    });
+    const enemyActionIndex = result.bossResult.battle.actions.findIndex((action) => action.actorSide === "enemy");
+
+    expect(enemyActionIndex).toBeGreaterThanOrEqual(0);
+    expect(result.bossResult.cues).toContainEqual(expect.objectContaining({
+      actionIndex: enemyActionIndex,
+      axis: "targetWeight",
+      timing: "beforeTarget",
+    }));
+    expect(result.bossResult.cues.filter((cue) => cue.actionIndex === enemyActionIndex)).toHaveLength(1);
   });
 
   it("현재 위험도와 초기 위험도의 차이만 보스 scaling에 반영한다", () => {
