@@ -1,10 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CampaignState, PromotionMethod, PromotionResult } from "@/lib/domain";
-import { getGuidePromotionEligibility, openGuidePromotion, cancelGuidePromotion, promoteGuide } from "@/lib/rules/promotion";
+import {
+  createCampaignTransitionContext,
+  type CampaignState,
+  type CampaignTransition,
+  type CampaignTransitionContext,
+  type PromotionMethod,
+  type PromotionResult,
+} from "@/lib/domain";
+import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createBoardOffers } from "@/lib/rules/board";
+import { transitionCampaign } from "@/lib/rules/campaign-transition";
 import { U3BoardScreen } from "./U3BoardScreen";
 import type { TopStatusView } from "./TopStatusBar";
 import { createU3BoardView } from "./u3-board-model";
@@ -16,13 +24,17 @@ export function applyPreviewPromotion(
   campaign: CampaignState,
   method: PromotionMethod,
 ): { campaign: CampaignState; result: PromotionResult } {
-  const execution = promoteGuide(campaign, method);
+  const transition = transitionCampaign(
+    campaign,
+    createCampaignTransitionContext(),
+    { type: "PROMOTE_GUIDE", method },
+  );
+  if (transition.promotion === null) {
+    throw new Error("승급 결과가 없는 프리뷰 전이");
+  }
   return {
-    campaign: {
-      ...execution.campaign,
-      offers: createBoardOffers(execution.campaign),
-    },
-    result: execution.result,
+    campaign: transition.campaign,
+    result: transition.promotion,
   };
 }
 
@@ -33,6 +45,9 @@ export function U3Preview() {
   }, []);
 
   const [campaign, setCampaign] = useState<CampaignState>(initialCampaign);
+  const [transitionContext, setTransitionContext] = useState<CampaignTransitionContext>(
+    createCampaignTransitionContext,
+  );
 
   const board = useMemo(() => createU3BoardView(campaign, campaign.offers), [campaign]);
   const [selectedOfferId, setSelectedOfferId] = useState(
@@ -41,6 +56,13 @@ export function U3Preview() {
   const [feedback, setFeedback] = useState("");
   const [promotionResult, setPromotionResult] = useState<PromotionResult | null>(null);
   const eligibility = getGuidePromotionEligibility(campaign);
+
+  function applyTransition(action: CampaignTransition) {
+    const transition = transitionCampaign(campaign, transitionContext, action);
+    setCampaign(transition.campaign);
+    setTransitionContext(transition.context);
+    return transition;
+  }
 
   const status: TopStatusView = {
     rank: campaign.rank,
@@ -79,16 +101,17 @@ export function U3Preview() {
         }}
         onOpenPromotion={() => {
           setPromotionResult(null);
-          setCampaign((current) => openGuidePromotion(current));
+          applyTransition({ type: "OPEN_PROMOTION" });
         }}
         onCancelPromotion={() => {
-          setCampaign((current) => cancelGuidePromotion(current));
+          applyTransition({ type: "CANCEL_PROMOTION" });
         }}
         onConfirmPromotion={(method) => {
-          const execution = applyPreviewPromotion(campaign, method);
-          setCampaign(execution.campaign);
-          setPromotionResult(execution.result);
-          setSelectedOfferId(execution.campaign.offers[0]?.id ?? "");
+          const transition = applyTransition({ type: "PROMOTE_GUIDE", method });
+          if (transition.promotion !== null) {
+            setPromotionResult(transition.promotion);
+            setSelectedOfferId(transition.campaign.offers[0]?.id ?? "");
+          }
         }}
         onDismissPromotionResult={() => {
           setPromotionResult(null);

@@ -20,16 +20,6 @@ function nextRank(rank: GuideRank): PromotionEligibility["toRank"] | null {
   return next === undefined || next === "C" ? null : next;
 }
 
-function requirePhase(campaign: CampaignState, phase: CampaignState["phase"]): void {
-  if (campaign.phase !== phase) {
-    throw new RuleError("INVALID_STATE", `승급 단계가 아니다: ${campaign.phase}`, {
-      phase: campaign.phase,
-      expectedPhase: phase,
-      rank: campaign.rank,
-    });
-  }
-}
-
 function invalidPromotion(
   campaign: CampaignState,
   details: Record<string, unknown> = {},
@@ -59,19 +49,6 @@ export function getGuidePromotionEligibility(
     canPromoteByReputation: campaign.reputation >= reputationRequired,
     canPromoteByGold: campaign.gold >= goldRequired,
   };
-}
-
-export function openGuidePromotion(campaign: CampaignState): CampaignState {
-  requirePhase(campaign, "board");
-  if (getGuidePromotionEligibility(campaign) === null) {
-    return invalidPromotion(campaign);
-  }
-  return { ...campaign, phase: "promotion" };
-}
-
-export function cancelGuidePromotion(campaign: CampaignState): CampaignState {
-  requirePhase(campaign, "promotion");
-  return { ...campaign, phase: "board" };
 }
 
 export function executeGuidePromotion(
@@ -119,21 +96,5 @@ export function executeGuidePromotion(
       gold: goldAfter,
     },
     result,
-  };
-}
-
-export function promoteGuide(
-  campaign: CampaignState,
-  method: PromotionMethod,
-): PromotionExecution {
-  requirePhase(campaign, "promotion");
-  const execution = executeGuidePromotion(campaign, method);
-  return {
-    ...execution,
-    campaign: {
-      ...execution.campaign,
-      phase: "board",
-      offers: [],
-    },
   };
 }

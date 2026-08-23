@@ -120,8 +120,10 @@ function validateWorldTurnInput(
     }
     if (
       !Number.isInteger(member.hp) ||
-      member.hp < 1 ||
-      member.hp > member.maxHp
+      member.hp < 0 ||
+      member.hp > member.maxHp ||
+      (member.alive && member.hp === 0) ||
+      (!member.alive && member.hp !== 0)
     ) {
       throw new RuleError("INVALID_STATE", "HP가 유효하지 않다", {
         field: "hp",

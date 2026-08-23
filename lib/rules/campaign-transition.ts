@@ -1,4 +1,9 @@
-import { EXPEDITION_PARTY_SIZE, RuleError } from "@/lib/domain";
+import {
+  EXPEDITION_PARTY_SIZE,
+  RuleError,
+  TRUST_MAX,
+  TRUST_MIN,
+} from "@/lib/domain";
 import type {
   BoardOffer,
   CampaignState,
@@ -10,7 +15,11 @@ import type {
   SettlementSnapshot,
 } from "@/lib/domain";
 import { createBoardOffers } from "./board";
+import { evaluateCampaignEnding, evaluateImmediateDistrustEnding } from "./ending";
+import { executeGuidePromotion, getGuidePromotionEligibility } from "./promotion";
 import { settleExpedition } from "./settlement";
+import { runWorldTurn } from "@/lib/domain";
+import { createRng } from "@/lib/rng";
 
 function invalidTransition(message: string, details: Record<string, unknown> = {}): never {
   throw new RuleError("INVALID_TRANSITION", message, details);
@@ -138,6 +147,43 @@ function validateSnapshot(
   }
 }
 
+function validateTrustBatch(
+  campaign: CampaignState,
+  active: NonNullable<CampaignTransitionContext["activeExpedition"]>,
+  partyMembers: readonly Character[],
+): void {
+  if (partyMembers.length !== EXPEDITION_PARTY_SIZE) {
+    invalidTransition("신뢰 변화 파티는 정확히 3명이어야 한다", {
+      count: partyMembers.length,
+    });
+  }
+  const ids = partyMembers.map((member) => member.id);
+  if (!sameIds(ids, active.offer.party.memberIds)) {
+    invalidTransition("최신 파티가 계약 파티와 다르다", {
+      expectedParty: active.offer.party.memberIds,
+      actualParty: ids,
+    });
+  }
+  for (const member of partyMembers) {
+    const before = memberById(campaign, member.id);
+    if (before.classId !== member.classId || before.maxHp !== member.maxHp) {
+      invalidTransition("고정 캐릭터 정보가 바뀌었다", { characterId: member.id });
+    }
+    if (!Number.isSafeInteger(member.hp) || member.hp < 0 || member.hp > member.maxHp) {
+      invalidTransition("최신 파티 HP가 유효하지 않다", { characterId: member.id });
+    }
+    if (!Number.isSafeInteger(member.trust) || member.trust < TRUST_MIN || member.trust > TRUST_MAX) {
+      invalidTransition("최신 파티 신뢰가 유효하지 않다", { characterId: member.id });
+    }
+    if (!Number.isSafeInteger(member.gold) || member.gold < 0) {
+      invalidTransition("최신 파티 골드가 유효하지 않다", { characterId: member.id });
+    }
+    if (member.alive !== (member.hp > 0)) {
+      invalidTransition("최신 파티 생존 상태와 HP가 모순된다", { characterId: member.id });
+    }
+  }
+}
+
 function copyActiveExpedition(
   action: Extract<CampaignTransition, { type: "START_EXPEDITION" }>,
   offer: BoardOffer,
@@ -188,7 +234,10 @@ function transitionBoard(
   }
 
   if (action.type === "OPEN_PROMOTION") {
-    return invalidTransition("승급 전이는 다음 단계에서 구현한다");
+    if (getGuidePromotionEligibility(campaign) === null) {
+      return invalidTransition("현재 등급은 승급할 수 없다", { rank: campaign.rank });
+    }
+    return emptyResult(campaignWithPhase(campaign, "promotion"), context);
   }
   return invalidTransition("게시판에서 허용되지 않은 전이다", { type: action.type });
 }
@@ -253,6 +302,30 @@ export function transitionCampaign(
   if (campaign.phase === "expedition") {
     requirePhase(campaign, "expedition");
     const active = activeExpedition(context);
+    if (action.type === "APPLY_TRUST_BATCH") {
+      validateTrustBatch(campaign, active, action.partyMembers);
+      const nextById = { ...campaign.pool.byId };
+      for (const member of action.partyMembers) nextById[member.id] = { ...member };
+      const withLatestParty: CampaignState = {
+        ...campaign,
+        pool: { ...campaign.pool, byId: nextById },
+      };
+      const nextActive = {
+        ...active,
+        partyMembers: action.partyMembers.map((member) => ({ ...member })),
+      };
+      const ending = evaluateImmediateDistrustEnding(withLatestParty, action.partyMembers);
+      const nextCampaign = ending === null
+        ? withLatestParty
+        : { ...withLatestParty, phase: "ended" as const, ending };
+      return {
+        ...emptyResult(nextCampaign, {
+          ...context,
+          activeExpedition: nextActive,
+        }),
+        ending,
+      };
+    }
     if (action.type === "COMPLETE_EXPEDITION") {
       if (campaign.settledExpeditionIds.includes(action.snapshot.expeditionId)) {
         return invalidTransition("이미 정산한 원정이다", {
@@ -290,12 +363,62 @@ export function transitionCampaign(
 
   if (campaign.phase === "worldTurn") {
     requirePhase(campaign, "worldTurn");
-    return invalidTransition("월드턴 전이는 다음 단계에서 구현한다", { type: action.type });
+    const active = activeExpedition(context);
+    if (action.type !== "COMPLETE_WORLD_TURN") {
+      return invalidTransition("월드턴에서 허용되지 않은 전이다", { type: action.type });
+    }
+    const worldTurnExecution = runWorldTurn(
+      campaign.pool,
+      active.offer.party,
+      campaign.worldTurn,
+      createRng(`${campaign.seed}/${campaign.worldTurn}`).derive("worldturn"),
+    );
+    const nextTurnCampaign: CampaignState = {
+      ...campaign,
+      pool: worldTurnExecution.pool,
+      worldTurn: worldTurnExecution.result.worldTurn,
+      phase: "board",
+      offers: [],
+    };
+    const withOffers = {
+      ...nextTurnCampaign,
+      offers: createBoardOffers(nextTurnCampaign),
+    };
+    const ending = evaluateCampaignEnding(withOffers);
+    const nextCampaign = ending === null
+      ? withOffers
+      : { ...withOffers, phase: "ended" as const, ending };
+    return {
+      ...emptyResult(nextCampaign, {
+        selectedOffer: null,
+        activeExpedition: null,
+      }),
+      worldTurn: worldTurnExecution.result,
+      ending,
+    };
   }
 
   if (campaign.phase === "promotion") {
     requirePhase(campaign, "promotion");
-    return invalidTransition("승급 전이는 다음 단계에서 구현한다", { type: action.type });
+    if (action.type === "CANCEL_PROMOTION") {
+      return emptyResult(campaignWithPhase(campaign, "board"), context);
+    }
+    if (action.type === "PROMOTE_GUIDE") {
+      const execution = executeGuidePromotion(campaign, action.method);
+      const promoted: CampaignState = {
+        ...execution.campaign,
+        phase: "board",
+        offers: [],
+      };
+      return {
+        ...emptyResult(
+          { ...promoted, offers: createBoardOffers(promoted) },
+          context,
+        ),
+        promotion: execution.result,
+      };
+    }
+    return invalidTransition("승급에서 허용되지 않은 전이다", { type: action.type });
   }
 
   return invalidTransition("알 수 없는 캠페인 전이다", { phase: campaign.phase });

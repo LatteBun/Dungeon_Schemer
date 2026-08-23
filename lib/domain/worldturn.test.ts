@@ -78,6 +78,11 @@ describe("월드턴 입력 검증", () => {
       .toThrowError(expect.objectContaining({ code: "UNKNOWN_ID" }));
   });
 
+  it("사망자는 HP 0으로 월드턴 입력에 포함될 수 있다", () => {
+    const dead = character({ id: "dead" as CharacterId, alive: false, hp: 0 });
+    expect(() => runWorldTurn(makePool([dead]), emptyParty, 0, rng)).not.toThrow();
+  });
+
   it("중복 파티 ID는 DUPLICATE_ID다", () => {
     expect(() => runWorldTurn(pool, { memberIds: [memberId, memberId] }, 0, rng))
       .toThrowError(expect.objectContaining({ code: "DUPLICATE_ID" }));
@@ -96,7 +101,7 @@ describe("월드턴 활동 배정", () => {
     const result = runWorldTurn(
       makePool([
         character({ id: memberId }),
-        character({ id: "dead" as CharacterId, alive: false }),
+        character({ id: "dead" as CharacterId, alive: false, hp: 0 }),
         character({ id: "resting" as CharacterId, hp: 40 }),
       ]),
       { memberIds: [memberId] },

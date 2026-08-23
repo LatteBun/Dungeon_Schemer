@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createCampaignTransitionContext,
+  runWorldTurn,
   type BoardOffer,
   type CampaignState,
   type CampaignTransition,
@@ -10,7 +11,9 @@ import {
   type SettlementSnapshot,
 } from "@/lib/domain";
 import { initializeCampaign } from "./campaign-init";
+import { createBoardOffers } from "./board";
 import { transitionCampaign } from "./campaign-transition";
+import { createRng } from "@/lib/rng";
 
 function membersFor(offer: BoardOffer, campaign: CampaignState): Character[] {
   return offer.party.memberIds.map((id) => campaign.pool.byId[id]).filter(
@@ -58,6 +61,20 @@ function snapshotFor(
 
 function openBoard(campaign = initializeCampaign("c7-transition")) {
   return transitionCampaign(campaign, createCampaignTransitionContext(), { type: "OPEN_BOARD" });
+}
+
+function expeditionFlow(seed = "c7-transition") {
+  const board = openBoard(initializeCampaign(seed));
+  const offer = board.campaign.offers.find((candidate) => candidate.lockReason === null)!;
+  const contract = transitionCampaign(board.campaign, board.context, {
+    type: "SELECT_CONTRACT", offerId: offer.id,
+  });
+  const expedition = transitionCampaign(
+    contract.campaign,
+    contract.context,
+    startAction(contract.campaign, contract.context),
+  );
+  return { board, contract, expedition, offer };
 }
 
 describe("C7 캠페인 전이", () => {
@@ -193,5 +210,166 @@ describe("C7 캠페인 전이", () => {
     )).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
     expect(first.campaign).toEqual(beforeCampaign);
     expect(first.context).toEqual(beforeContext);
+  });
+
+  it("정산 뒤 월드턴을 한 번 실행하고 새 월드턴 공고를 만든다", () => {
+    const flow = expeditionFlow("c7-worldturn");
+    const settled = transitionCampaign(
+      flow.expedition.campaign,
+      flow.expedition.context,
+      { type: "COMPLETE_EXPEDITION", snapshot: snapshotFor(flow.expedition.campaign, flow.expedition.context) },
+    );
+    const worldStart = transitionCampaign(
+      settled.campaign,
+      settled.context,
+      { type: "START_WORLD_TURN" },
+    );
+    const expected = runWorldTurn(
+      settled.campaign.pool,
+      flow.offer.party,
+      settled.campaign.worldTurn,
+      createRng(`${settled.campaign.seed}/${settled.campaign.worldTurn}`).derive("worldturn"),
+    );
+    const worldComplete = transitionCampaign(
+      worldStart.campaign,
+      worldStart.context,
+      { type: "COMPLETE_WORLD_TURN" },
+    );
+
+    expect(worldStart.campaign.phase).toBe("worldTurn");
+    expect(worldComplete.worldTurn).toEqual(expected.result);
+    expect(worldComplete.campaign.pool).toEqual(expected.pool);
+    expect(worldComplete.campaign.worldTurn).toBe(settled.campaign.worldTurn + 1);
+    expect(worldComplete.campaign.offers).toEqual(createBoardOffers(worldComplete.campaign));
+    expect(worldComplete.context.activeExpedition).toBeNull();
+  });
+
+  it("게시판 승급은 C5 계산을 사용하고 C7이 phase와 공고를 적용한다", () => {
+    const initial = initializeCampaign("c7-promotion");
+    const boardCampaign = {
+      ...initial,
+      phase: "board" as const,
+      reputation: 60,
+      offers: createBoardOffers({ ...initial, phase: "board" as const, reputation: 60 }),
+    };
+    const opened = transitionCampaign(
+      boardCampaign,
+      createCampaignTransitionContext(),
+      { type: "OPEN_PROMOTION" },
+    );
+    const promoted = transitionCampaign(
+      opened.campaign,
+      opened.context,
+      { type: "PROMOTE_GUIDE", method: "reputation" },
+    );
+
+    expect(opened.campaign.phase).toBe("promotion");
+    expect(promoted.campaign).toMatchObject({ phase: "board", rank: "B" });
+    expect(promoted.promotion?.toRank).toBe("B");
+    expect(promoted.campaign.offers).toEqual(createBoardOffers(promoted.campaign));
+  });
+
+  it("유효한 최신 파티는 원정에 남기고 전원 trust 0이면 즉시 종료한다", () => {
+    const flow = expeditionFlow("c7-trust");
+    const party = flow.expedition.context.activeExpedition!.partyMembers;
+    const updated = party.map((member) => ({ ...member, trust: 1 }));
+    const staying = transitionCampaign(flow.expedition.campaign, flow.expedition.context, {
+      type: "APPLY_TRUST_BATCH", partyMembers: updated,
+    });
+
+    expect(staying.campaign.phase).toBe("expedition");
+    expect(staying.context.activeExpedition?.partyMembers).toEqual(updated);
+    expect(staying.campaign.pool.byId[updated[0]!.id]).toMatchObject({ trust: 1 });
+
+    const before = structuredClone(flow.expedition.campaign);
+    const distrust = transitionCampaign(flow.expedition.campaign, flow.expedition.context, {
+      type: "APPLY_TRUST_BATCH",
+      partyMembers: party.map((member) => ({ ...member, trust: 0 })),
+    });
+
+    expect(distrust.campaign).toMatchObject({ phase: "ended", ending: { kind: "distrust" } });
+    expect(distrust.ending).toEqual(distrust.campaign.ending);
+    expect(distrust.campaign.dungeons).toEqual(before.dungeons);
+    expect(distrust.campaign.worldTurn).toBe(before.worldTurn);
+    expect(distrust.campaign.offers).toEqual(before.offers);
+    expect(distrust.campaign.statistics).toEqual(before.statistics);
+    expect(distrust.campaign.settledExpeditionIds).toEqual(before.settledExpeditionIds);
+
+    expect(() => transitionCampaign(distrust.campaign, distrust.context, {
+      type: "OPEN_BOARD",
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
+  });
+
+  it("최신 파티의 중복 ID와 고정 정보 불일치는 C6 전에 거부한다", () => {
+    const flow = expeditionFlow("c7-trust-invalid");
+    const party = flow.expedition.context.activeExpedition!.partyMembers;
+    const beforeCampaign = structuredClone(flow.expedition.campaign);
+    const beforeContext = structuredClone(flow.expedition.context);
+
+    expect(() => transitionCampaign(flow.expedition.campaign, flow.expedition.context, {
+      type: "APPLY_TRUST_BATCH",
+      partyMembers: [party[0]!, party[0]!, party[2]!],
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
+    expect(() => transitionCampaign(flow.expedition.campaign, flow.expedition.context, {
+      type: "APPLY_TRUST_BATCH",
+      partyMembers: party.map((member, index) => index === 0
+        ? { ...member, maxHp: member.maxHp + 1 }
+        : member),
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
+    expect(flow.expedition.campaign).toEqual(beforeCampaign);
+    expect(flow.expedition.context).toEqual(beforeContext);
+  });
+
+  it.each([
+    ["completed", (campaign: CampaignState) => ({
+      ...campaign,
+      dungeons: campaign.dungeons.map((dungeon) => ({ ...dungeon, status: "cleared" as const })),
+    })],
+    ["denounced", (campaign: CampaignState) => {
+      const byId = { ...campaign.pool.byId };
+      for (const id of campaign.pool.order.slice(0, 5)) {
+        const member = byId[id]!;
+        byId[id] = { ...member, trust: 0, alive: true, hp: Math.max(1, member.hp) };
+      }
+      return { ...campaign, pool: { ...campaign.pool, byId } };
+    }],
+    ["exhausted", (campaign: CampaignState) => {
+      const byId = { ...campaign.pool.byId };
+      const keep = new Set(campaign.pool.order.slice(0, 2));
+      for (const id of campaign.pool.order) {
+        if (!keep.has(id)) byId[id] = { ...byId[id]!, alive: false, hp: 0 };
+      }
+      return { ...campaign, pool: { ...campaign.pool, byId } };
+    }],
+    ["unemployed", (campaign: CampaignState) => ({
+      ...campaign,
+      dungeons: campaign.dungeons.map((dungeon) => ({
+        ...dungeon,
+        riskLevel: 5 as const,
+        status: "unexplored" as const,
+      })),
+    })],
+  ] as const)("월드턴 뒤 %s 엔딩을 C6 결과로 기록한다", (kind, adjust) => {
+    const flow = expeditionFlow(`c7-ending-${kind}`);
+    const settled = transitionCampaign(
+      flow.expedition.campaign,
+      flow.expedition.context,
+      { type: "COMPLETE_EXPEDITION", snapshot: snapshotFor(flow.expedition.campaign, flow.expedition.context) },
+    );
+    const adjusted = adjust(settled.campaign);
+    const worldStart = transitionCampaign(
+      adjusted,
+      settled.context,
+      { type: "START_WORLD_TURN" },
+    );
+    const completed = transitionCampaign(
+      worldStart.campaign,
+      worldStart.context,
+      { type: "COMPLETE_WORLD_TURN" },
+    );
+
+    expect(completed.campaign.phase).toBe("ended");
+    expect(completed.campaign.ending?.kind).toBe(kind);
+    expect(completed.ending?.kind).toBe(kind);
   });
 });
