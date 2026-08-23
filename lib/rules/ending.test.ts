@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CampaignState, Character } from "@/lib/domain";
+import type { CampaignEnding, CampaignState, Character } from "@/lib/domain";
 import { initializeCampaign } from "./campaign-init";
 import { isPersonnelExhausted } from "./ending";
 
@@ -41,5 +41,23 @@ describe("isPersonnelExhausted", () => {
       { classId: "mage", alive: false },
       { classId: "cleric", trust: 0 },
     ]))).toBe(true);
+  });
+});
+
+describe("CampaignEnding 계약", () => {
+  it("엔딩 제목과 결정적 트리거 캐릭터 ID를 표현한다", () => {
+    const campaign = campaignWith([
+      { classId: "warrior", trust: 0 },
+      { classId: "rogue", trust: 0 },
+    ]);
+    const ending: CampaignEnding = {
+      kind: "denounced",
+      title: "누적 고발",
+      reason: "살아 있는 용사 5명 이상이 길잡이를 불신합니다.",
+      finalRank: "B",
+      triggerCharacterIds: [campaign.pool.order[0]!],
+    };
+
+    expect(ending.triggerCharacterIds).toEqual([campaign.pool.order[0]]);
   });
 });
