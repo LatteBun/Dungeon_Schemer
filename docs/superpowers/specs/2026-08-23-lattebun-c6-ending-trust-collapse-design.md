@@ -4,7 +4,7 @@
 
 - Feature: C6 Campaign Ending and Trust Collapse
 - Scope: Campaign rules only
-- Related: C4 Settlement, C5 Promotion, U6 Settlement/Ending, C7 State Transition
+- Related: C3 World Turn, C4 Settlement, C5 Promotion, C7 State Transition, C8 Statistics, U6 Settlement/Ending, B1 Balance
 
 ## 1. Goal
 
@@ -24,19 +24,13 @@ The goal is not to treat endings as simple success/failure states, but as differ
 
 A character's trust is persistent during the campaign.
 
-```ts
-interface CharacterTrustState {
-  trust: number;
-  hasReachedZeroTrust: boolean;
-}
-```
-
-`trust` and `hasReachedZeroTrust` are separate values.
+`trust` is the only trust-state value. C6 does not add `hasReachedZeroTrust`.
 
 Reason:
 
-- Current trust represents the current relationship state.
-- Zero trust history is required for cumulative ending evaluation.
+- Trust 0 is already permanent: normal trust evaluation cannot restore it.
+- Therefore, for a living character, `trust === 0` is the single source of truth for both permanent distrust and the cumulative-denouncement count.
+- A second history flag would duplicate the same state and introduce a synchronization failure mode without changing an ending result.
 
 ## 4. Trust Collapse
 
@@ -44,7 +38,7 @@ When a character reaches trust 0:
 
 - The character enters permanent distrust state.
 - Trust cannot recover.
-- `hasReachedZeroTrust` becomes true permanently.
+- The character remains excluded from future player-expedition candidates.
 
 Trust flow:
 
@@ -58,7 +52,7 @@ Permanent distrust
 
 ## 5. Immediate Distrust Ending
 
-During an active dungeon, if all surviving party members have trust 0:
+During an active dungeon, C6 applies every trust change produced by one completed advice result or one completed boss-information verification as one batch. After that batch, if one or more party members survive and all surviving party members have trust 0:
 
 ```
 All survivors trust === 0
@@ -68,11 +62,13 @@ the campaign ends immediately.
 
 Result:
 
-- Current expedition fails.
+- The current expedition is aborted and does not enter C4 settlement.
 - The guide is removed by the party.
 - Ending becomes `distrust`.
+- C3 world turn, C4 reward/loss, relic recovery, dungeon risk change, dungeon clear, settlement statistics, and promotion availability are not applied.
+- The trust changes that triggered this result remain applied to the surviving party members.
 
-This check happens before normal campaign ending evaluation.
+This is the only ending evaluated during an expedition. C7 records the result atomically as `phase: "ended"`; a later transition may not settle or end the same expedition again. This prevents the order of party-member processing inside one advice result from changing the result.
 
 ## 6. Ending Evaluation
 
@@ -92,7 +88,7 @@ Evaluation priority:
 
 Condition:
 
-- Active dungeon survivors all reach trust 0.
+- At least one active-dungeon party member survives, and all survivors have `trust === 0` after a completed trust-change batch.
 
 Meaning:
 
@@ -102,19 +98,21 @@ The party no longer accepts the guide's existence.
 
 Condition:
 
-- Five or more surviving characters have reached zero trust during the campaign.
+- Five or more living characters have `trust === 0` after C3 world turn.
 
 Rules:
 
 - Dead characters do not count.
-- Characters only need to have reached zero once.
-- Recovery is impossible because zero trust is permanent.
+- No history field is needed: trust 0 is permanent.
+- This is evaluated only on the normal C4 → C3 → C6 path, not after an immediate `distrust` ending.
 
 ### completed
 
 Condition:
 
-- Complete 15 dungeons.
+- All 15 campaign dungeons have `status === "cleared"`.
+
+Failed attempts are not clears. C6 must not infer completion from world turns, settlement-record length, or the number of expeditions because a dungeon can be retried.
 
 Additional display data:
 
@@ -133,54 +131,79 @@ Example:
 
 Condition:
 
-- Existing rule: cannot form a party with three different jobs.
+- Existing rule: including emergency candidates (living, trust above 0, even if gravely wounded), no party with three different jobs can be formed.
 
 ### unemployed
 
 Condition:
 
-- Existing rule: all board requests become unavailable.
+- Existing rule: after `exhausted` has been ruled out, the board contains one or more remaining-dungeon offers and every offer is unavailable because of `rankTooLow`.
 
-## 8. Ending Result Contract
+An empty offer list is not vacuous unemployment. It is first evaluated as `exhausted`; completion has already taken precedence when no dungeons remain.
+
+## 8. Cumulative Trust-Zero Modifier
+
+Before an advice reaction is decided, C6 counts living characters with `trust === 0` and supplies the matching modifier to E2.
+
+| Living trust-0 count | Acceptance modifier | Harm exposure modifier | Ending |
+| ---: | ---: | ---: | --- |
+| 0–1 | 0 | 0 | none |
+| 2 | −5 | 0 | none |
+| 3 | −10 | +5 | none |
+| 4 | −15 | +15 | none |
+| 5+ | — | — | `denounced` on normal ending evaluation |
+
+The modifier is a C6 campaign-state input; E2 continues to own the individual reaction roll. The values are provisional balance constants. B1 must measure their impact, including the distribution of early endings, and may revise this table with the related official rules documents.
+
+## 9. Ending Result Contract
 
 C6 should provide a deterministic result for U6 and C7.
 
 ```ts
-interface CampaignEndingResult {
+interface CampaignEnding {
   kind: EndingKind;
   title: string;
   reason: string;
   finalRank: GuideRank;
-  triggerCharacterIds: string[];
+  triggerCharacterIds: readonly CharacterId[];
 }
 ```
 
-## 9. Test Cases
+`title` and `reason` are C6-owned Korean display strings so U6 does not reproduce ending logic or labels. `triggerCharacterIds` is always in `campaign.pool.order` order:
+
+- `distrust`: the living members of the aborted expedition.
+- `denounced`: every living character with `trust === 0`.
+- `completed`, `exhausted`, `unemployed`: an empty array.
+
+`finalRank` is the campaign rank at the moment C7 writes the ended state. C6 is pure: it returns the deterministic result and does not mutate campaign state itself.
+
+## 10. Test Cases
 
 ### Case 1: Immediate distrust
 
 ```
-Party:
+Party after one completed trust-change batch:
 A trust 0
 B trust 0
 C trust 0
 
 During dungeon:
 Ending = distrust
+C4 settlement, rewards, relics, risk increase, dungeon clear, C3 world turn = not applied
 ```
 
 ### Case 2: Denounced
 
 ```
-Alive characters:
-A zero trust history
-B zero trust history
-C zero trust history
-D zero trust history
-E zero trust history
+Living characters:
+A trust 0
+B trust 0
+C trust 0
+D trust 0
+E trust 0
 
 Dead character:
-F zero trust history
+F trust 0
 
 Result:
 denounced
@@ -190,16 +213,46 @@ Count = 5
 ### Case 3: Completed
 
 ```
-Dungeon clear count = 15
+All 15 campaign dungeons status = cleared
 
 Result:
 completed
 Display final guide rank
 ```
 
-## 10. Integration Notes
+### Case 4: Cumulative modifier
 
-- C4 provides expedition result data.
+```
+Living trust-0 characters = 3
+
+E2 campaign modifier:
+accept = -10
+expose = +5
+```
+
+### Case 5: Empty board is exhausted, not unemployed
+
+```
+No emergency party with three jobs can be formed
+Board offers = []
+
+Result = exhausted
+```
+
+### Case 6: Deterministic trigger IDs
+
+```
+Pool order = [C, A, B, D, E]
+Living trust-0 = [A, B, D, E, C]
+
+denounced.triggerCharacterIds = [C, A, B, D, E]
+```
+
+## 11. Integration Notes
+
+- C3 runs before normal C6 evaluation. Immediate `distrust` bypasses it.
+- C4 provides normal expedition settlement data. Immediate `distrust` bypasses it.
 - C5 provides promotion/rank data.
-- U6 consumes CampaignEndingResult.
-- C7 handles post-ending campaign state transition.
+- C7 owns phase validation and atomically writes the C6 result as `ended`; it rejects duplicate settlement or ending transitions.
+- C8 records only settlements that actually occur. It records no settlement for an aborted `distrust` expedition.
+- U6 consumes `CampaignEnding` and does not recalculate conditions, title, reason, rank, or trigger characters.
