@@ -63,8 +63,9 @@ interface CampaignState {
 }
 
 interface CampaignHistory {
+  /** 이력의 유일한 source of truth다. */
   readonly events: readonly CampaignEvent[];
-  /** events에서 재생성 가능한 캐시다. 외부 입력으로 직접 수정하지 않는다. */
+  /** events에서 reducer가 재생성하는 cache다. 외부 입력으로 직접 수정하지 않는다. */
   readonly turningPoints: readonly TurningPoint[];
 }
 
@@ -119,7 +120,7 @@ ID가 같다. append 실패·C7 전이 실패·종료 캠페인 재진입은 순
 E2/E4 결과처럼 전이 전 원정 안에서 완료된 사실은, 해당 결과를 I1이 성공적으로
 적용한 시점의 현재 `campaign.worldTurn`을 쓴다.
 
-## 4. 타입 계약
+## 4. 이벤트 타입 계약
 
 이벤트는 공통 `actors: string[]`이나 임의 `payload`를 쓰지 않는다. 각 variant가
 필요한 branded ID와 사실만 가진다. 배열은 모두 읽기 전용이며, 캐릭터 ID 배열은
@@ -212,11 +213,24 @@ function appendCampaignEvent(
 ): CampaignHistory;
 ```
 
-## 5. append와 무결성 규칙
+## 5. append·cache와 무결성 규칙
 
-`appendCampaignEvent`는 순수 함수다. `CampaignState`, `CampaignStatistics`, 원본
-결과 객체, 입력 `CampaignHistory`를 변경하지 않고 새 history를 반환한다. C8-A의
-`recordSettlementStatistics`와 같은 방식으로 기존 이력의 무결성을 먼저 검증한다.
+`appendCampaignEvent`와 `deriveTurningPoints`는 순수 함수다. `CampaignState`,
+`CampaignStatistics`, 원본 결과 객체, 입력 `CampaignHistory`를 변경하지 않고 새
+history를 반환한다. C8-A의 `recordSettlementStatistics`와 같은 방식으로 기존
+이력의 무결성을 먼저 검증한다.
+
+```ts
+function deriveTurningPoints(events: readonly CampaignEvent[]): readonly TurningPoint[];
+function assertCampaignHistoryIntegrity(history: CampaignHistory): void;
+```
+
+`events`만 source of truth다. append는 유효한 기존 `events`에서
+`deriveTurningPoints(events)`를 재계산해 기존 `turningPoints`와 일치하는지 검사하고,
+새 이벤트를 붙인 뒤 다시 계산한 결과를 cache로 넣는다. 저장 데이터를 I1이 load할
+때도 같은 무결성 검사를 수행한다. events와 cache가 다르면 조용히 고치지 않고
+`RuleError("INVALID_STATE")`로 거부한다. 이 규칙은 손상된 저장본이 Chronicle이나
+U6에 서로 다른 전환점을 보이는 일을 막는다.
 
 - 모든 기존 이벤트의 `sequence`는 배열 index와 같고, `id`는 정해진 문자열과
   같아야 한다. `sourceKey`도 이력 전체에서 유일해야 한다. 손상된 기존 이력은
@@ -237,11 +251,24 @@ function appendCampaignEvent(
 입력을 바꾸지 않는다. TypeScript의 union은 컴파일 시 잘못된 variant를 막고, 위
 런타임 검증은 복원 데이터나 우회 호출의 잘못된 payload를 막는다.
 
-## 6. 정확히 한 번 기록하는 통합 경계
+## 6. 정확히 한 번 기록하는 통합·원자성 경계
 
 C8-B는 source rule이 실행됐다는 사실만으로 기록하지 않는다. I1은 source 결과를
 `CampaignTransition`에 성공적으로 적용한 뒤, 같은 동기 Store 갱신에서 draft를
 append한다. 전이가 예외를 던지거나 C7이 거부하면 draft를 버린다.
+
+C7과 C8 reducer는 모두 외부 상태를 바꾸지 않는 순수 함수이므로 rollback action을
+따로 만들지 않는다. I1은 아래 순서를 지킨다.
+
+1. 현재 Store 값을 읽고 `transitionCampaign`의 반환값을 지역 변수로 얻는다.
+2. 필요한 C8-A 통계와 C8-B history를 모두 지역 변수로 계산한다.
+3. 전이·통계·이력 계산이 모두 성공했을 때만 `campaign`, `context`를 한 번의
+   `store(...)` 호출로 교체한다.
+
+어느 단계에서든 예외가 나면 `store(...)`를 호출하지 않는다. 따라서 C7 전이만,
+history만, statistics만 반영된 부분 상태는 생기지 않는다. `COMPLETE_EXPEDITION`은
+아래 예시처럼 C8-A와 C8-B를 함께 계산하고, 조언·보스·승급·엔딩 흐름도 같은
+원칙으로 history draft를 조합한다.
 
 | 성공한 I1 흐름 | source fact | append 순서 | 기록하지 않는 경우 |
 | --- | --- | --- | --- |
