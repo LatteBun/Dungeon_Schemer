@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
-import { activateStrongFollower, applyImmediateEffect, prepareExpeditionEvents, materializeNodeEvent, resolveMonsterEventBattle } from "@/lib/rules/expedition-events";
+import { activateStrongFollower, applyImmediateEffect, findDeterministicCapacityAssignment, prepareExpeditionEvents, materializeNodeEvent, resolveMonsterEventBattle } from "@/lib/rules/expedition-events";
 import { THEMES } from "@/lib/content/themes";
 import { eventsForTheme } from "@/lib/content/event-registry";
 import { CLASSES } from "@/lib/content/classes";
@@ -95,6 +95,26 @@ describe("E3 원정 사건 준비와 물질화", () => {
 
     expect(new Set(materializePath(fixture.upperPath))).toHaveLength(fixture.upperPath.length);
     expect(new Set(materializePath(fixture.lowerPath))).toHaveLength(fixture.lowerPath.length);
+  });
+
+  it("미완성 중립 교환을 유지해 두 번째 category 변경까지 완전 탐색한다", () => {
+    const isCompleteValid = (categories: ReadonlyMap<string, string>) => categories.size === 2
+      && categories.get("upper") === "merchant"
+      && categories.get("lower") === "monster";
+    const assignment = findDeterministicCapacityAssignment({
+      nodeOrder: ["upper", "lower"],
+      categoryChoices: new Map([
+        ["upper", ["monster", "merchant"]],
+        ["lower", ["merchant", "monster"]],
+      ]),
+      hasPotential: (partial) => partial.size < 2 || isCompleteValid(partial),
+      isValid: isCompleteValid,
+    });
+
+    expect(assignment).toEqual(new Map([
+      ["upper", "merchant"],
+      ["lower", "monster"],
+    ]));
   });
 
   it("실제 후보 pool에 어느 normal category 배정도 없으면 INVALID_GENERATION으로 거부한다", () => {
