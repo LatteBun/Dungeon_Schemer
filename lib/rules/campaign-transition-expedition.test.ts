@@ -133,7 +133,13 @@ describe("원정 안쪽 전이", () => {
     })).toThrow(RuleError);
   });
 
-  it("조언을 고르면 사건이 닫히고 다음 지점으로 갈 수 있다", () => {
+  /*
+   * 조언을 고르면 사건이 닫히고 결과가 열린다.
+   *
+   * 결과를 보기 전에는 움직일 수 없다. 곧장 지도로 돌려보내면 자기 조언이 어떻게
+   * 됐는지 모른 채 다음 갈림길에 서게 된다.
+   */
+  it("조언을 고르면 결과가 열리고, 확인해야 움직인다", () => {
     const begun = started();
     const visited = transitionCampaign(begun.campaign, begun.context, {
       type: "VISIT_NODE", nodeId: firstStep(begun),
@@ -144,9 +150,34 @@ describe("원정 안쪽 전이", () => {
     });
 
     expect(chosen.context.activeExpedition!.pendingEvent).toBeNull();
+    expect(chosen.context.activeExpedition!.pendingOutcome).not.toBeNull();
     expect(() => transitionCampaign(chosen.campaign, chosen.context, {
       type: "VISIT_NODE", nodeId: firstStep(chosen),
+    })).toThrow(/확인하지 않은 결과/);
+
+    const seen = transitionCampaign(chosen.campaign, chosen.context, { type: "ACKNOWLEDGE_OUTCOME" });
+
+    expect(seen.context.activeExpedition!.pendingOutcome).toBeNull();
+    expect(() => transitionCampaign(seen.campaign, seen.context, {
+      type: "VISIT_NODE", nodeId: firstStep(seen),
     })).not.toThrow();
+  });
+
+  /* 결과에는 반응과 결과 문장이 실제로 들어 있어야 한다. 빈 화면이면 뜻이 없다. */
+  it("결과가 반응과 결과 문장을 담는다", () => {
+    const begun = started();
+    const visited = transitionCampaign(begun.campaign, begun.context, {
+      type: "VISIT_NODE", nodeId: firstStep(begun),
+    });
+    const event = visited.context.activeExpedition!.pendingEvent!;
+    const chosen = transitionCampaign(visited.campaign, visited.context, {
+      type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
+    });
+    const outcome = chosen.context.activeExpedition!.pendingOutcome!;
+
+    expect(outcome.resultText.length).toBeGreaterThan(0);
+    expect(outcome.reactions.length).toBeGreaterThan(0);
+    expect(outcome.event.id).toBe(event.id);
   });
 
   /*
@@ -174,6 +205,8 @@ describe("원정 안쪽 전이", () => {
       state = transitionCampaign(state.campaign, state.context, {
         type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
       });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      state = transitionCampaign(state.campaign, state.context, { type: "ACKNOWLEDGE_OUTCOME" });
     }
 
     expect(sizes.length).toBeGreaterThan(1);
@@ -199,6 +232,8 @@ describe("원정 안쪽 전이", () => {
       state = transitionCampaign(state.campaign, state.context, {
         type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
       });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      state = transitionCampaign(state.campaign, state.context, { type: "ACKNOWLEDGE_OUTCOME" });
     }
 
     expect(seen.length).toBeGreaterThan(1);
@@ -407,5 +442,70 @@ describe("캠페인 전체 신뢰 보정", () => {
       return;
     }
     throw new Error("사건 앞에 선 시드를 찾지 못했다");
+  });
+});
+
+/**
+ * 전투에서 죽어도 파티 명단에서 사라지지 않는다.
+ *
+ * `resolveMonsterEventBattle` 은 살아 있는 사람만 데려간다. 그 결과를 그대로
+ * 명단으로 삼으면 죽은 사람이 파티에서 사라지고, 정산이 「최종 파티원이 3명이
+ * 아니다」로 거부한다.
+ *
+ * 사라지는 것은 **이미 죽어 있던** 사람이다. 빈사인 사람은 전투에 참가하므로
+ * 결과에 남는다. 앞선 싸움에서 죽은 사람이 다음 싸움에 안 실려 가고, 그때
+ * 명단에서 지워진다. 그래서 한 명을 죽은 채로 두고 싸움을 붙인다.
+ */
+describe("전투 뒤 파티 명단", () => {
+  /** 한 명이 이미 죽은 채로 사건 앞까지 간다. */
+  function atEventWithDeadMember() {
+    /* 이 시드의 첫 사건이 실제로 싸움이 되는 monster 사건이다. */
+    const begun = startedWith("party-roster-1");
+    const active = begun.context.activeExpedition!;
+    const weakened = {
+      ...begun.context,
+      activeExpedition: {
+        ...active,
+        partyMembers: active.partyMembers.map((member, index) =>
+          index === 0 ? { ...member, hp: 0, alive: false } : member),
+      },
+    };
+
+    let state: CampaignTransitionResult = { ...begun, context: weakened };
+    for (let step = 0; step < 10; step += 1) {
+      const current = state.context.activeExpedition!;
+      if (current.pendingEvent !== null) return state;
+      const here = current.expedition.map.nodes.find((node) => node.id === current.expedition.currentNodeId)!;
+      const next = here.nextNodeIds.find((id) => !current.expedition.visitedNodeIds.includes(id));
+      if (next === undefined) break;
+      state = transitionCampaign(state.campaign, state.context, { type: "VISIT_NODE", nodeId: next });
+    }
+    throw new Error("사건이 확정되는 지점에 닿지 못했다");
+  }
+
+  it("이미 죽은 사람이 다음 전투에서 명단에서 사라지지 않는다", () => {
+    const state = atEventWithDeadMember();
+    const event = state.context.activeExpedition!.pendingEvent!;
+    const fallen = state.context.activeExpedition!.partyMembers[0]!;
+    expect(event.kind).toBe("monster");
+
+    let deaths = 0;
+    /* 세 조언 중 어느 것을 골라도 명단은 셋이어야 한다. */
+    for (const option of event.advice) {
+      const chosen = transitionCampaign(state.campaign, state.context, {
+        type: "CHOOSE_ADVICE", adviceId: option.id,
+      });
+      const after = chosen.context.activeExpedition!.partyMembers;
+
+      expect(after).toHaveLength(3);
+      expect(after.map((member) => member.id)).toContain(fallen.id);
+      /* 죽었으면 사라지는 것이 아니라 표시가 꺼진다. */
+      const dead = after.filter((one) => !one.alive);
+      deaths += dead.length;
+      for (const member of dead) expect(member.hp).toBe(0);
+    }
+
+    /* 아무도 안 죽으면 이 검사는 아무것도 보지 않은 것이다. */
+    expect(deaths).toBeGreaterThan(0);
   });
 });

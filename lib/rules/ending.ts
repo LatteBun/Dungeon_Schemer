@@ -1,6 +1,7 @@
 import { CAMPAIGN_DUNGEON_COUNT, DENOUNCE_THRESHOLD, TRUST_MIN } from "@/lib/domain";
 import type { CampaignEnding, CampaignState, Character } from "@/lib/domain";
 import { canCreateEmergencyParty } from "./board";
+import { getGuidePromotionEligibility } from "./promotion";
 
 export interface CampaignTrustModifier {
   accept: number;
@@ -96,6 +97,13 @@ function unemployedEnding(campaign: CampaignState): CampaignEnding {
   return buildEnding(campaign, "unemployed", "실직", "남은 모든 공고가 현재 길잡이 등급보다 높습니다.");
 }
 
+/** 지금 등급을 올릴 수 있는가. 명성이든 골드든 한 쪽이면 된다. */
+function canPromoteNow(campaign: CampaignState): boolean {
+  const eligibility = getGuidePromotionEligibility(campaign);
+  return eligibility !== null
+    && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold);
+}
+
 /** C3 월드턴 뒤 C7이 호출하는 정상 엔딩 판정이다. */
 export function evaluateCampaignEnding(campaign: CampaignState): CampaignEnding | null {
   if (countLivingZeroTrust(campaign) >= DENOUNCE_THRESHOLD) return denouncedEnding(campaign);
@@ -104,9 +112,20 @@ export function evaluateCampaignEnding(campaign: CampaignState): CampaignEnding 
     && campaign.dungeons.every((dungeon) => dungeon.status === "cleared")
   ) return completedEnding(campaign);
   if (isPersonnelExhausted(campaign)) return exhaustedEnding(campaign);
+  /*
+   * 올라갈 수 있으면 실직이 아니다.
+   *
+   * 공고가 전부 등급 미달이어도 지금 승급할 수 있으면 그 공고들이 열린다.
+   * 승급은 길잡이의 선택이라 규칙이 대신 하지 않지만, 할 수 있는 사람을 두고
+   * "남은 공고가 전부 등급 미달" 이라 끝내면 그 선택을 빼앗는 것이다.
+   *
+   * 실제로 명성 60(B 요건)과 골드 153(요건 150)을 둘 다 갖춘 캠페인이 실직으로
+   * 끝났다.
+   */
   if (
     campaign.offers.length > 0
     && campaign.offers.every((offer) => offer.lockReason === "rankTooLow")
+    && !canPromoteNow(campaign)
   ) return unemployedEnding(campaign);
   return null;
 }
