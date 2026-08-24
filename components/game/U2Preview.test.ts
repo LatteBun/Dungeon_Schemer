@@ -12,7 +12,7 @@ describe("U2Preview", () => {
     expect(html).toContain("현재 명성");
     expect(html).toContain("30");
     /* 승급 칸은 남은 거리를 적는다. 현재 명성은 옆 칸에 이미 있다. */
-    expect(html).toContain("B까지 명성 30 더");
+    expect(html).toContain("B · 30 남음");
     expect(html).toContain("남은 던전");
     expect(html).toContain("15");
     expect(html).toContain("href=\"/u3-test\"");

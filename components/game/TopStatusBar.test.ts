@@ -45,9 +45,11 @@ describe("TopStatusBar U2/U3", () => {
         },
       }),
     );
-    expect(html).toContain("B까지 명성 30 더");
+    expect(html).toContain("B · 30 남음");
     /* 옆 칸의 현재 명성을 되풀이하지 않는다. */
+    /* 옆 칸의 현재 명성을 되풀이하지 않고, 한 칸에 담길 만큼 짧다. */
     expect(html).not.toContain("30 / B 60");
+    expect(html).not.toContain("명성 30 더");
   });
 
   it("올릴 수 있으면 그렇게 적는다", () => {
@@ -57,14 +59,14 @@ describe("TopStatusBar U2/U3", () => {
       }),
     );
 
-    expect(html).toContain("B 승급 가능");
+    expect(html).toContain("B 가능");
   });
 
   /* 더 올라갈 곳이 없으면 남은 거리를 말할 수 없다. */
   it("최고 등급이면 그렇게 적는다", () => {
     const html = renderToStaticMarkup(createElement(TopStatusBar, { status: baseStatus }));
 
-    expect(html).toContain("최고 등급");
+    expect(html).toContain("최고");
   });
 
   it("게시판에서만 등급 상태 칩을 승급 진입 버튼으로 바꾼다", () => {

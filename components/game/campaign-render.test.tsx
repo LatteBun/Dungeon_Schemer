@@ -706,3 +706,37 @@ describe("승급 결과를 닫는다", () => {
     expect(after.rank).not.toBe("C");
   });
 });
+
+describe("계약 중에 승급을 연다", () => {
+  /*
+   * 규칙은 `contract` 에서 `OPEN_PROMOTION` 을 받지 않는다.
+   *
+   * 계약을 검토하다 말고 승급 창으로 넘어가면 무엇을 하던 중이었는지 잃기
+   * 때문이다. 물러서는 것은 길잡이의 몫이고, 등급 칸을 누르는 것이 곧 그 뜻이라
+   * 화면이 두 걸음을 대신 밟는다.
+   */
+  it("계약을 고른 채로 승급을 열면 거부된다", () => {
+    const run = driven("contract-promotion");
+    run.act({ type: "OPEN_BOARD" });
+    const offer = run.state().campaign.offers.find((one) => one.lockReason === null)!;
+    run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
+
+    run.store.getState().dispatch({ type: "OPEN_PROMOTION" });
+
+    expect(run.store.getState().rejected?.reason).toContain("계약에서 허용되지 않은");
+  });
+
+  /* 물러선 뒤에는 열린다. 화면이 밟는 두 걸음이 이것이다. */
+  it("물러선 뒤에는 승급이 열린다", () => {
+    const run = driven("contract-promotion-2");
+    run.act({ type: "OPEN_BOARD" });
+    const offer = run.state().campaign.offers.find((one) => one.lockReason === null)!;
+    run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
+
+    run.act({ type: "CANCEL_CONTRACT" });
+    run.act({ type: "OPEN_PROMOTION" });
+
+    expect(run.state().campaign.phase).toBe("promotion");
+    expect(run.state().rejected).toBeNull();
+  });
+});
