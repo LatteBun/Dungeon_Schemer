@@ -1,0 +1,237 @@
+import { ENDING_ORDER } from "@/lib/domain";
+import type { EndingKind, GuideRank } from "@/lib/domain";
+
+export const PLAYER_PROGRESS_VERSION = 1 as const;
+
+export type AchievementId =
+  | "first-record"
+  | "dungeon-conqueror"
+  | "s-rank-guide"
+  | "everyone-returned"
+  | "five-endings"
+  | "hundred-advices"
+  | "seasoned-expedition"
+  | "death-in-the-plan";
+
+export interface CompletedCampaignRecord {
+  readonly runId: string;
+  readonly ending: EndingKind;
+  readonly finalRank: GuideRank;
+  readonly totalExpeditions: number;
+  readonly clearedExpeditions: number;
+  readonly wipedExpeditions: number;
+  readonly deaths: number;
+  readonly advices: number;
+}
+
+export interface PlayerProgressV1 {
+  readonly version: 1;
+  readonly totals: {
+    readonly completedCampaigns: number;
+    readonly expeditions: number;
+    readonly clearedExpeditions: number;
+    readonly wipedExpeditions: number;
+    readonly deaths: number;
+    readonly advices: number;
+  };
+  readonly endingCounts: Readonly<Record<EndingKind, number>>;
+  readonly unlocked: Readonly<Partial<Record<AchievementId, { readonly unlockedAt: string }>>>;
+  readonly recordedRunIds: readonly string[];
+}
+
+export interface AchievementProgress {
+  readonly current: number;
+  readonly target: number;
+}
+
+export interface AchievementDefinition {
+  readonly id: AchievementId;
+  readonly title: string;
+  readonly description: string;
+  readonly category: "result" | "cumulative";
+  readonly hiddenWhenLocked: boolean;
+  readonly imageSrc: string;
+  isUnlocked(progress: PlayerProgressV1, latest: CompletedCampaignRecord): boolean;
+  progress?(progress: PlayerProgressV1): AchievementProgress;
+}
+
+const isNonNegativeSafeInteger = (value: number): boolean =>
+  Number.isSafeInteger(value) && value >= 0;
+
+function validateRecord(record: CompletedCampaignRecord): void {
+  if (record.runId.length === 0) {
+    throw new TypeError("runId must not be empty");
+  }
+
+  const counters = [
+    record.totalExpeditions,
+    record.clearedExpeditions,
+    record.wipedExpeditions,
+    record.deaths,
+    record.advices,
+  ];
+  if (counters.some((value) => !isNonNegativeSafeInteger(value))) {
+    throw new TypeError("campaign counters must be non-negative safe integers");
+  }
+}
+
+export function createEmptyPlayerProgress(): PlayerProgressV1 {
+  return {
+    version: PLAYER_PROGRESS_VERSION,
+    totals: {
+      completedCampaigns: 0,
+      expeditions: 0,
+      clearedExpeditions: 0,
+      wipedExpeditions: 0,
+      deaths: 0,
+      advices: 0,
+    },
+    endingCounts: Object.fromEntries(ENDING_ORDER.map((kind) => [kind, 0])) as Record<EndingKind, number>,
+    unlocked: {},
+    recordedRunIds: [],
+  };
+}
+
+const cumulativeAchievement = (
+  id: AchievementId,
+  title: string,
+  description: string,
+  imageSrc: string,
+  target: number,
+  currentFor: (progress: PlayerProgressV1) => number,
+): AchievementDefinition => ({
+  id,
+  title,
+  description,
+  category: "cumulative",
+  hiddenWhenLocked: false,
+  imageSrc,
+  isUnlocked: (progress) => currentFor(progress) >= target,
+  progress: (progress) => ({ current: currentFor(progress), target }),
+});
+
+export const ACHIEVEMENT_CATALOG: readonly AchievementDefinition[] = [
+  {
+    id: "first-record",
+    title: "첫 기록",
+    description: "캠페인을 한 번 끝까지 기록한다.",
+    category: "result",
+    hiddenWhenLocked: false,
+    imageSrc: "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_guild.png",
+    isUnlocked: (progress) => progress.totals.completedCampaigns >= 1,
+  },
+  {
+    id: "dungeon-conqueror",
+    title: "던전 정복자",
+    description: "모든 원정을 클리어하고 캠페인을 완주한다.",
+    category: "result",
+    hiddenWhenLocked: false,
+    imageSrc: "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_conquest.png",
+    isUnlocked: (_progress, latest) => latest.ending === "completed",
+  },
+  {
+    id: "s-rank-guide",
+    title: "S급 길잡이",
+    description: "S급 길잡이로 캠페인을 완주한다.",
+    category: "result",
+    hiddenWhenLocked: false,
+    imageSrc: "/assets/achievements/achievement_s_rank.png",
+    isUnlocked: (_progress, latest) => latest.ending === "completed" && latest.finalRank === "S",
+  },
+  {
+    id: "everyone-returned",
+    title: "모두 함께 돌아오다",
+    description: "사망자 없이 캠페인을 완주한다.",
+    category: "result",
+    hiddenWhenLocked: false,
+    imageSrc: "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_together.png",
+    isUnlocked: (_progress, latest) => latest.ending === "completed" && latest.deaths === 0,
+  },
+  {
+    id: "five-endings",
+    title: "다섯 갈래의 결말",
+    description: "다섯 종류의 엔딩을 각각 한 번씩 경험한다.",
+    category: "result",
+    hiddenWhenLocked: true,
+    imageSrc: "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_return.png",
+    isUnlocked: (progress) => ENDING_ORDER.every((ending) => progress.endingCounts[ending] >= 1),
+  },
+  cumulativeAchievement(
+    "hundred-advices",
+    "백 번의 조언",
+    "누적 조언 100회를 기록한다.",
+    "/assets/achievements/achievement_advice.png",
+    100,
+    (progress) => progress.totals.advices,
+  ),
+  cumulativeAchievement(
+    "seasoned-expedition",
+    "노련한 원정대",
+    "누적 원정 클리어 30회를 기록한다.",
+    "/assets/achievements/achievement_expedition.png",
+    30,
+    (progress) => progress.totals.clearedExpeditions,
+  ),
+  cumulativeAchievement(
+    "death-in-the-plan",
+    "죽음도 계획의 일부",
+    "누적 전멸 10회를 기록한다.",
+    "/assets/achievements/achievement_wipe.png",
+    10,
+    (progress) => progress.totals.wipedExpeditions,
+  ),
+] as const;
+
+export function recordCompletedCampaign(
+  current: PlayerProgressV1,
+  record: CompletedCampaignRecord,
+  unlockedAt: string,
+): PlayerProgressV1 {
+  validateRecord(record);
+  if (current.recordedRunIds.includes(record.runId)) {
+    return current;
+  }
+
+  const next: PlayerProgressV1 = {
+    version: PLAYER_PROGRESS_VERSION,
+    totals: {
+      completedCampaigns: current.totals.completedCampaigns + 1,
+      expeditions: current.totals.expeditions + record.totalExpeditions,
+      clearedExpeditions: current.totals.clearedExpeditions + record.clearedExpeditions,
+      wipedExpeditions: current.totals.wipedExpeditions + record.wipedExpeditions,
+      deaths: current.totals.deaths + record.deaths,
+      advices: current.totals.advices + record.advices,
+    },
+    endingCounts: {
+      ...current.endingCounts,
+      [record.ending]: current.endingCounts[record.ending] + 1,
+    },
+    unlocked: { ...current.unlocked },
+    recordedRunIds: [...current.recordedRunIds, record.runId],
+  };
+
+  const unlocked = { ...next.unlocked };
+  for (const achievement of ACHIEVEMENT_CATALOG) {
+    if (unlocked[achievement.id] || !achievement.isUnlocked(next, record)) {
+      continue;
+    }
+    unlocked[achievement.id] = { unlockedAt };
+  }
+
+  return { ...next, unlocked };
+}
+
+export function achievementProgressFor(
+  progress: PlayerProgressV1,
+  id: AchievementId,
+): AchievementProgress | null {
+  const achievement = ACHIEVEMENT_CATALOG.find((candidate) => candidate.id === id);
+  return achievement?.progress?.(progress) ?? null;
+}
+
+export function unlockedAchievementCount(progress: PlayerProgressV1): number {
+  return ACHIEVEMENT_CATALOG.reduce(
+    (count, achievement) => count + (progress.unlocked[achievement.id] ? 1 : 0),
+    0,
+  );
+}
