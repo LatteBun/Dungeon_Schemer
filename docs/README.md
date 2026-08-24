@@ -105,6 +105,8 @@
 - [B1 현행 캠페인 백테스트 구현 계획](superpowers/plans/2026-08-24-lattebun-b1-current-campaign-backtest.md): 공개 정보 전략·실제 Store driver·calibration 승인·독립 holdout의 테스트 우선 실행 순서
 - [B1-B 캠페인 생존 밸런스 재설계](superpowers/specs/2026-08-24-lattebun-b1-balance-redesign-design.md): B1-A 전 조합 완주율 0%를 해소하는 재도전·월드턴·보스·조언 누적 규칙과 재측정 기준
 - [B1-B 캠페인 생존 밸런스 구현 계획](superpowers/plans/2026-08-24-lattebun-b1-balance-redesign.md): 공통 설정부터 조언 압력·전투·계측·단계별 calibration·독립 holdout까지의 테스트 우선 실행 순서
+- [B1 위험도별 던전 클리어율 보정 설계](superpowers/specs/2026-08-25-lattebun-b1-risk-clearance-calibration-design.md): 첫 시도·초기 위험도 기준 목표 곡선과 보스 병목 분리, calibration·holdout 판정 기준
+- [B1 위험도별 던전 클리어율 보정 구현 계획](superpowers/plans/2026-08-25-lattebun-b1-risk-clearance-calibration.md): 원정 trace·위험도별 funnel·acceptance gate·단계별 보스 배율 calibration과 승인 뒤 holdout 실행 순서
   - `backtest:structure`(조합당 50시드 구조 검증), `backtest:tune`(100시드 1차 보정), `backtest:quick`(200시드 최종 calibration), `backtest`(승인 뒤 조합당 2,000시드 holdout)을 사용한다.
 - [C4 원정 정산 설계](superpowers/specs/2026-08-23-lattebun-c4-expedition-settlement-design.md): 정산 계약, 유품, 응급 편성, C7·C8·U6 경계
 - [C4 원정 정산 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-expedition-settlement.md): C4와 연계 계약의 테스트 우선 구현 순서
@@ -121,6 +123,8 @@
 - [C1 캠페인 초기화·생태 패키지 구현 계획](superpowers/plans/2026-08-20-sanghwan-yoo-c1-campaign-initialization.md): 도메인 계약, 콘텐츠 검증, 시드 초기화의 구현 순서
 - [U2 인트로 게시판 진입 연결 설계](superpowers/specs/2026-08-20-sanghwan-yoo-u2-intro-board-navigation-design.md): U2 CTA와 기존 U1 게시판 프리뷰의 라우팅 계약
 - [U2 인트로 게시판 진입 연결 구현 계획](superpowers/plans/2026-08-20-sanghwan-yoo-u2-intro-board-navigation.md): 테스트·구현·검증·PR 순서
+- [인트로 본문 글자 크기 개선 설계](superpowers/specs/2026-08-25-lattebun-intro-body-typography-design.md): 실제 캠페인 인트로 본문만 약 15% 확대하는 타이포그래피 경계
+- [인트로 본문 글자 크기 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-intro-body-typography.md): CSS 계약 테스트부터 실제 캠페인 화면 확인까지의 실행 순서
 - [캠페인 개편 작업 배정표](technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md): 무엇을 어떤 순서로 구현하는지
 
 ## 이전 개편 기록
