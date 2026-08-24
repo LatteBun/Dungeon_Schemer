@@ -639,9 +639,11 @@ export function MainMenuScreen({ unlockedCount, loading }: MainMenuScreenProps) 
 
 - [ ] **Step 5: route와 고정 캔버스 검증**
 
-`app/page.test.ts`는 파일을 읽어 옛 `캠페인 개편 진행 중`이 없고 `MainMenu`를
-반환하는지 확인한다. `FixedCanvas.test.ts`는 새 CSS의 `vw`·`vh`·미디어 쿼리를
-자동 검사하므로 별도 허용 목록을 추가하지 않는다.
+`app/page.test.ts`는 실제 `RootLayout`에 `Home()` 결과를 children으로 넣어
+`renderToStaticMarkup`한다. 최종 HTML에 `/campaign`, `/achievements` 링크와
+`달성 — / 8` 로딩 자리가 있고 옛 자리 표시자 문구가 없음을 확인한다. 소스 파일
+문자열을 읽는 change detector를 만들지 않는다. `FixedCanvas.test.ts`는 새 CSS의
+`vw`·`vh`·미디어 쿼리를 자동 검사하므로 별도 허용 목록을 추가하지 않는다.
 
 Run: `pnpm test -- components/game/MainMenuScreen.test.tsx app/page.test.ts components/game/FixedCanvas.test.ts && pnpm typecheck`
 
@@ -785,6 +787,10 @@ UI 문양으로 통일한다.
 사용하고 종횡비를 늘리지 않는다. CSS는 `rem`·`cqw`·`cqh`만 사용한다.
 
 `app/layout.tsx`에서 `./achievements.css`를 import한다.
+
+`app/achievements/page.test.ts`도 실제 `RootLayout`에 `AchievementPage()` 결과를
+넣어 서버 렌더하고 `길잡이 업적 기록`, 메인 메뉴 `/` 링크, 8개의 `미달성` 카드와
+세 개의 접근 가능한 progressbar가 초기 HTML에 있는지 검증한다.
 
 - [ ] **Step 7: 화면·자산·고정 캔버스 검증**
 
