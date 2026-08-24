@@ -23,7 +23,7 @@ export interface CampaignBalance {
 export const CAMPAIGN_BALANCE = {
   revision: "b1b-initial-v1",
   worldTurn: { restRecoveryRatio: 0.20, backgroundLossPercent: { min: 5, max: 10 } },
-  bossBaseStatMultiplierByInitialRisk: { 1: 0.80, 2: 0.80, 3: 0.80, 4: 0.80, 5: 0.80 },
+  bossBaseStatMultiplierByInitialRisk: { 1: 0.80, 2: 0.80, 3: 0.775, 4: 0.80, 5: 0.80 },
   advicePressure: {
     0: { incomingDamageMultiplier: 1.00, outgoingDamageMultiplier: 1.00 },
     1: { incomingDamageMultiplier: 1.05, outgoingDamageMultiplier: 1.00 },
