@@ -1,3 +1,4 @@
+import type { EndingKind } from "@/lib/domain";
 import {
   ENDING_CONSEQUENCE_TITLE,
   ENDING_REPORT_TITLE,
@@ -14,6 +15,29 @@ export interface U6EndingScreenProps {
 }
 
 const ASSET = "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL";
+
+/*
+ * 길잡이의 방을 뒤에 깐다.
+ *
+ * 엔딩은 길잡이의 결말을 말하는 화면이다. 그 이야기가 어디서 끝나는가 하면
+ * 그가 조언을 적던 그 책상이다 — 인트로에서 이미 본 자리다. 처음과 끝이 같은
+ * 방이면 한 판이 닫힌다.
+ */
+const ENDING_BACKDROP = "/assets/u2/intro-background-full.png";
+
+/*
+ * 결말마다 다른 색 깃발.
+ *
+ * 네 색이 만들어져 있는데 하나도 쓰지 않고 있었다. 완주는 초록, 고발은 붉은색,
+ * 불신은 검정, 실직과 소진은 푸른 쪽이다 — 문장을 읽기 전에 색으로 먼저 안다.
+ */
+const ENDING_BANNER: Readonly<Record<EndingKind, string>> = {
+  completed: "green",
+  denounced: "red",
+  distrust: "black",
+  exhausted: "black",
+  unemployed: "blue",
+};
 
 /** 결말 항목 넷은 서로 다른 문양을 쓴다. 같은 그림이면 항목이 구분되지 않는다. */
 const CONSEQUENCE_ICONS = [
@@ -54,12 +78,28 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
       data-testid="u6-ending"
       data-ending={ending.kind}
     >
-      <div className="u6-ending-backdrop" aria-hidden="true" />
+      <div className="u6-ending-backdrop" aria-hidden="true">
+        <img src={ENDING_BACKDROP} alt="" />
+      </div>
+      {/* 네 모서리를 여민다. 문서로 읽히게 하는 것은 테두리다. */}
+      <img className="u6-ending-corner u6-ending-corner--tl" src={`${ASSET}/decorations/corner_deco.png`} alt="" aria-hidden="true" />
+      <img className="u6-ending-corner u6-ending-corner--tr" src={`${ASSET}/decorations/corner_deco.png`} alt="" aria-hidden="true" />
+      <img className="u6-ending-corner u6-ending-corner--bl" src={`${ASSET}/decorations/corner_deco.png`} alt="" aria-hidden="true" />
+      <img className="u6-ending-corner u6-ending-corner--br" src={`${ASSET}/decorations/corner_deco.png`} alt="" aria-hidden="true" />
 
       <header className="u6-ending-head">
         <p className="u6-ending-head__eyebrow">캠페인 종료</p>
         <h1>{ENDING_TITLE[ending.kind]}</h1>
         <p className="u6-ending-head__subtitle">{ending.subtitle}</p>
+        {/* 표제와 본문을 가르는 문양. 여기서부터 읽는 것이 달라진다. */}
+        <img className="u6-ending-rule" src={`${ASSET}/decorations/ornament_arrow.png`} alt="" aria-hidden="true" />
+        {/* 완주에는 큰 별을, 그 밖에는 작은 별을 얹는다. 무게가 다르다. */}
+        <img
+          className="u6-ending-star"
+          src={`${ASSET}/emblems/star_${completed ? "large" : "small"}.png`}
+          alt=""
+          aria-hidden="true"
+        />
       </header>
 
       <div className="u6-ending-stage">
@@ -76,6 +116,13 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
         </section>
 
         <div className="u6-ending-emblem">
+          {/* 문양 뒤에 결말의 색을 깐다. */}
+          <img
+            className="u6-ending-emblem__banner"
+            src={`${ASSET}/emblems/emblem_banner_${ENDING_BANNER[ending.kind]}.png`}
+            alt=""
+            aria-hidden="true"
+          />
           <p className="u6-ending-emblem__label">{completed ? "최종 등급" : "결말의 문양"}</p>
           <img
             className="u6-ending-emblem__crest"
@@ -85,8 +132,11 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
             width={246}
             height={295}
           />
+          {/* 등급 글자를 월계관이 감싼다. 문양 안의 잎과 다른, 바깥의 테두리다. */}
           <p className="u6-ending-emblem__rank">
+            <img className="u6-ending-emblem__laurel" src={`${ASSET}/emblems/laurel_left.png`} alt="" aria-hidden="true" />
             <span>{ending.finalRank}</span>
+            <img className="u6-ending-emblem__laurel" src={`${ASSET}/emblems/laurel_right.png`} alt="" aria-hidden="true" />
             <small>{completed ? "정상 완주" : "조기 종료"}</small>
           </p>
         </div>
@@ -96,7 +146,19 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
           <ul>
             {ending.report.map((item) => (
               <li key={item}>
-                <img src={`${ASSET}/controls/icon_check_on.png`} alt="" aria-hidden="true" width={95} height={81} />
+                {/*
+                  * 완주한 판만 체크가 켜진다.
+                  *
+                  * 실패로 끝난 판의 보고서는 이룬 것의 목록이 아니라 그렇게 된
+                  * 까닭의 목록이다. 거기에 체크를 켜 두면 실직이 업적처럼 읽힌다.
+                  */}
+                <img
+                  src={`${ASSET}/controls/icon_check_${completed ? "on" : "off"}.png`}
+                  alt=""
+                  aria-hidden="true"
+                  width={95}
+                  height={81}
+                />
                 <span>{item}</span>
               </li>
             ))}
@@ -104,6 +166,8 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
           <img className="u6-report__seal" src={`${ASSET}/emblems/wax_seal.png`} alt="" aria-hidden="true" width={173} height={185} />
         </section>
       </div>
+
+      <img className="u6-ending-divider" src={`${ASSET}/decorations/divider_main.png`} alt="" aria-hidden="true" />
 
       <div className="u6-ending-panels">
         <section className="u6-ending-card" aria-labelledby="u6-final-result-title">
@@ -179,7 +243,14 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
         <img src={`${ASSET}/controls/quote_right.png`} alt="" aria-hidden="true" width={86} height={72} />
       </p>
 
+      {/*
+        * 돌아가는 버튼에는 제 판이 있다.
+        *
+        * `button_back` 이 그 용도로 그려져 있는데 쓰지 않고 있었다. 그림을 판으로
+        * 깔고 글자를 그 위에 얹는다.
+        */}
       <button type="button" className="u6-ending-cta" onClick={onReturnToBoard}>
+        <img className="u6-ending-cta__plate" src={`${ASSET}/controls/button_back.png`} alt="" aria-hidden="true" />
         <img src={`${ASSET}/controls/icon_button_handshake.png`} alt="" aria-hidden="true" width={140} height={91} />
         <strong>길드 게시판으로 돌아가기</strong>
         <img className="u6-ending-cta__arrow" src={`${ASSET}/controls/icon_arrow.png`} alt="" aria-hidden="true" width={96} height={59} />
