@@ -107,3 +107,23 @@ Tests  1002 passed (1002)
 Duration  48.71s
 exit 0
 ```
+
+## 재리뷰 후속: production capacity fixture
+
+하드코딩한 helper 조건 검증을 제거했다. 새 fixture는 정식 묘지 registry에서 고른 monster 1개, rest 2개, merchant 1개, 일반 special 1개, bossInfo 1개를 `eventCatalog`으로 전달한다. 결정적 6-layer DAG의 두 경로를 `prepareExpeditionEvents`가 실제로 배정한 뒤 각각 `materializeNodeEvent`로 방문해 EventId가 경로 안에서 모두 유일함을 검증한다. rest 후보를 빼면 어느 normal category 조합도 경로를 채울 수 없으므로 `RuleError.code === "INVALID_GENERATION"`을 단언한다.
+
+```text
+pnpm vitest run lib/rules/expedition-events.test.ts components/game/campaign-render.test.tsx --reporter=verbose
+Test Files  2 passed (2)
+Tests  21 passed (21)
+
+pnpm typecheck
+$ tsc --noEmit
+exit 0
+
+pnpm test
+Test Files  109 passed (109)
+Tests  1003 passed (1003)
+Duration  47.75s
+exit 0
+```
