@@ -44,6 +44,15 @@ const base: U5ProgressView = {
   ],
 };
 
+const threeMemberProgress: U5ProgressView = {
+  ...base,
+  party: [
+    { id: "warrior", name: "오린", classLabel: "전사", personalityLabel: "용감한", hp: 12, maxHp: 12, trust: 40, gold: 20, portraitSrc: "/assets/characters/live/warrior/warrior_a.png" },
+    { id: "rogue", name: "코르빈", classLabel: "도적", personalityLabel: "신중한", hp: 10, maxHp: 10, trust: 42, gold: 16, portraitSrc: "/assets/characters/live/rogue/rogue_a.png" },
+    { id: "cleric", name: "에리카", classLabel: "성직자", personalityLabel: "침착한", hp: 14, maxHp: 14, trust: 35, gold: 18, portraitSrc: "/assets/characters/live/cleric/cleric_a.png" },
+  ],
+};
+
 const battleReplay = createU5BattleReplay({
   resolution: {
     status: "victory",
@@ -92,6 +101,16 @@ describe("U5ProgressScreen", () => {
     expect(scene).toContain('data-testid="u5-battle-scene"');
     expect(sceneOpeningTag).toContain('class="u5-scene u5-battle-host"');
     expect(sceneOpeningTag).not.toContain('aria-hidden="true"');
+  });
+
+  it("비전투 장면에는 파티를, 전투 장면에는 battle scene만 둔다", () => {
+    const calm = render(threeMemberProgress);
+    const battle = render(threeMemberProgress, { battleReplay });
+
+    expect(calm).toContain('data-testid="u5-nonbattle-party"');
+    expect(calm).not.toContain('data-testid="u5-battle-scene"');
+    expect(battle).not.toContain('data-testid="u5-nonbattle-party"');
+    expect(battle).toContain('data-testid="u5-battle-scene"');
   });
 
   it("전투 replay를 표시해도 오른쪽 파티 ViewModel 마크업을 바꾸지 않는다", () => {

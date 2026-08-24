@@ -14,6 +14,7 @@ import {
 } from "./u5-log";
 import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
 import { U5BattleScene } from "./U5BattleScene";
+import { U5NonBattlePartyScene } from "./U5NonBattlePartyScene";
 import type { U5BattleReplay } from "./u5-battle-replay";
 import { useU5BattlePlayback } from "./use-u5-battle-playback";
 
@@ -231,7 +232,9 @@ export function U5ProgressScreen({
               style={{ backgroundImage: `url("${sceneSrc(progress.theme, progress.sceneKind)}")` }}
               aria-hidden={battleReplay === undefined ? "true" : undefined}
             >
-              {battleReplay === undefined || battlePlayback.frame === undefined ? null : (
+              {battleReplay === undefined ? (
+                <U5NonBattlePartyScene party={progress.party} />
+              ) : battlePlayback.frame === undefined ? null : (
                 <U5BattleScene
                   replay={battleReplay}
                   frame={battlePlayback.frame}

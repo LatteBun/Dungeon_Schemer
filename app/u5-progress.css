@@ -40,12 +40,48 @@
 }
 
 .u5-scene {
+  position: relative;
   min-height: 0;
+  overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-shell-metal) 52%, var(--color-edge));
   border-radius: 0.24rem;
   background-position: center 42%;
   background-size: cover;
   box-shadow: inset 0 0 4rem rgb(0 0 0 / 62%);
+}
+
+.u5-scene-party {
+  position: absolute;
+  inset: auto auto 2% 2%;
+  display: flex;
+  align-items: end;
+  width: 48%;
+  height: 92%;
+  pointer-events: none;
+}
+
+.u5-scene-party__slot {
+  position: relative;
+  flex: 0 0 33.333%;
+  height: 84%;
+  filter: drop-shadow(0 0.6rem 0.45rem rgb(0 0 0 / 72%));
+}
+
+.u5-scene-party__slot:nth-child(1) {
+  height: 76%;
+}
+
+.u5-scene-party__slot:nth-child(2) {
+  height: 92%;
+}
+
+.u5-scene-party__slot:nth-child(3) {
+  height: 83%;
+}
+
+.u5-scene-party__image {
+  object-fit: contain;
+  object-position: 50% 100%;
 }
 
 .u5-console {
