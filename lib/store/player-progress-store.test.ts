@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   PLAYER_PROGRESS_STORAGE_KEY,
+  acquirePlayerProgressStorage,
 } from "@/lib/achievements/player-progress-storage";
 import { PlayerProgressProvider } from "@/components/game/PlayerProgressProvider";
 import { createPlayerProgressStore } from "./player-progress-store";
@@ -68,6 +69,31 @@ describe("플레이어 업적 Store", () => {
 
     expect(store.getState().status).toBe("unavailable");
     expect(store.getState().progress.totals.completedCampaigns).toBe(1);
+  });
+
+  it("localStorage getter가 예외를 던져도 unavailable로 전환하고 메모리 기록을 계속 쓴다", () => {
+    const store = createPlayerProgressStore();
+    store.getState().record(completed, "2026-08-24T10:00:00.000Z");
+    const error = new DOMException("storage access blocked", "SecurityError");
+    const browser = Object.defineProperty({}, "localStorage", {
+      get() { throw error; },
+    });
+
+    store.getState().hydrate(acquirePlayerProgressStorage(browser));
+
+    expect(store.getState().status).toBe("unavailable");
+    expect(store.getState().progress.totals.completedCampaigns).toBe(1);
+
+    store.getState().record(
+      { ...completed, runId: "run-after-storage-getter-error" },
+      "2026-08-24T10:01:00.000Z",
+    );
+
+    expect(store.getState().progress.totals.completedCampaigns).toBe(2);
+    expect(store.getState().progress.recordedRunIds).toEqual([
+      "run-1",
+      "run-after-storage-getter-error",
+    ]);
   });
 
   it("미래 버전은 메모리에서만 누적하고 저장값을 덮어쓰지 않는다", () => {

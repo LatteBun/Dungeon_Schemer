@@ -11,6 +11,10 @@ export interface StringStorage {
   removeItem(key: string): void;
 }
 
+interface StorageOwner {
+  readonly localStorage: StringStorage;
+}
+
 export type ProgressLoadResult =
   | { readonly status: "ready" | "empty"; readonly progress: PlayerProgressV1 }
   | { readonly status: "recovered"; readonly progress: PlayerProgressV1; readonly corruptRaw: string }
@@ -34,6 +38,24 @@ const ACHIEVEMENT_IDS = new Set<AchievementId>(ACHIEVEMENT_CATALOG.map(({ id }) 
 
 function reasonFor(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function unavailableStorage(error: unknown): StringStorage {
+  return {
+    getItem() { throw error; },
+    setItem() { throw error; },
+    removeItem() { throw error; },
+  };
+}
+
+export function acquirePlayerProgressStorage(owner: unknown): StringStorage {
+  try {
+    const storage = (owner as StorageOwner).localStorage;
+    if (storage === undefined || storage === null) throw new TypeError("localStorage is unavailable");
+    return storage;
+  } catch (error) {
+    return unavailableStorage(error);
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -78,6 +100,13 @@ function isPlayerProgressV1(value: unknown): value is PlayerProgressV1 {
   return new Set(value.recordedRunIds).size === value.recordedRunIds.length;
 }
 
+function recoveredProgress(corruptRaw: string): ProgressLoadResult {
+  if (process.env.NODE_ENV === "development") {
+    console.warn("손상된 플레이어 업적 기록을 빈 V1 기록으로 복구합니다.");
+  }
+  return { status: "recovered", progress: createEmptyPlayerProgress(), corruptRaw };
+}
+
 export function loadPlayerProgress(storage: StringStorage): ProgressLoadResult {
   let raw: string | null;
   try {
@@ -99,10 +128,10 @@ export function loadPlayerProgress(storage: StringStorage): ProgressLoadResult {
     }
     if (isPlayerProgressV1(parsed)) return { status: "ready", progress: parsed };
   } catch {
-    return { status: "recovered", progress: createEmptyPlayerProgress(), corruptRaw: raw };
+    return recoveredProgress(raw);
   }
 
-  return { status: "recovered", progress: createEmptyPlayerProgress(), corruptRaw: raw };
+  return recoveredProgress(raw);
 }
 
 export function savePlayerProgress(

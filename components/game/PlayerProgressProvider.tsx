@@ -5,6 +5,7 @@ import { useStore } from "zustand";
 import {
   createPlayerProgressStore,
 } from "@/lib/store/player-progress-store";
+import { acquirePlayerProgressStorage } from "@/lib/achievements/player-progress-storage";
 import type {
   PlayerProgressStore,
   PlayerProgressStoreState,
@@ -16,7 +17,7 @@ export function PlayerProgressProvider({ children }: { readonly children: React.
   const [store] = useState(() => createPlayerProgressStore());
 
   useEffect(() => {
-    store.getState().hydrate(window.localStorage);
+    store.getState().hydrate(acquirePlayerProgressStorage(window));
   }, [store]);
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;

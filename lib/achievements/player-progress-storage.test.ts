@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createEmptyPlayerProgress, recordCompletedCampaign } from "./player-progress";
 import {
   PLAYER_PROGRESS_BACKUP_KEY,
@@ -19,6 +19,11 @@ function memoryStorage(initial?: Record<string, string>) {
   };
 }
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
+
 describe("플레이어 업적 저장소", () => {
   it("값이 없으면 빈 프로필을 돌려준다", () => {
     expect(loadPlayerProgress(memoryStorage())).toMatchObject({
@@ -35,6 +40,32 @@ describe("플레이어 업적 저장소", () => {
       corruptRaw: "{broken",
       progress: createEmptyPlayerProgress(),
     });
+  });
+
+  it("개발 환경의 손상 V1 복구는 원문 없이 경고한다", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const corruptRaw = JSON.stringify({ version: 1, privateValue: "sensitive-marker" });
+
+    expect(loadPlayerProgress(memoryStorage({
+      [PLAYER_PROGRESS_STORAGE_KEY]: corruptRaw,
+    })).status).toBe("recovered");
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls.flat().join(" ")).not.toContain(corruptRaw);
+    expect(warn.mock.calls.flat().join(" ")).not.toContain("sensitive-marker");
+  });
+
+  it("production의 손상 V1 복구는 경고하지 않는다", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const corruptRaw = JSON.stringify({ version: 1, privateValue: "sensitive-marker" });
+
+    expect(loadPlayerProgress(memoryStorage({
+      [PLAYER_PROGRESS_STORAGE_KEY]: corruptRaw,
+    })).status).toBe("recovered");
+
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it("미래 버전을 덮어쓸 수 있는 값으로 해석하지 않는다", () => {

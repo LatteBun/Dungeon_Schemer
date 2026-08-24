@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePlayerProgressStore } from "@/components/game/PlayerProgressProvider";
@@ -73,6 +73,28 @@ export interface AchievementScreenProps {
   readonly onClear: () => void;
 }
 
+interface ResetDialogElement {
+  readonly open: boolean;
+  showModal(): void;
+  close(): void;
+}
+
+interface CancelEvent {
+  preventDefault(): void;
+}
+
+export function showResetDialogModal(dialog: ResetDialogElement): () => void {
+  if (!dialog.open) dialog.showModal();
+  return () => {
+    if (dialog.open) dialog.close();
+  };
+}
+
+export function handleResetDialogCancel(event: CancelEvent, onCancelClear?: () => void): void {
+  event.preventDefault();
+  onCancelClear?.();
+}
+
 function AchievementCard({ card }: { readonly card: AchievementCardView }) {
   const stateLabel = card.unlocked ? "달성 완료" : "미달성";
   const imageAlt = card.title === HIDDEN_TITLE ? "숨겨진 업적 문양" : `${card.title} 업적 문양`;
@@ -112,6 +134,39 @@ function AchievementCard({ card }: { readonly card: AchievementCardView }) {
   );
 }
 
+function ResetConfirmationDialog({
+  onCancelClear,
+  onClear,
+}: {
+  readonly onCancelClear?: () => void;
+  readonly onClear: () => void;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog === null) return;
+    return showResetDialogModal(dialog);
+  }, []);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="achievement-screen__dialog"
+      aria-modal="true"
+      aria-labelledby="achievement-clear-title"
+      onCancel={(event) => handleResetDialogCancel(event, onCancelClear)}
+    >
+      <h2 id="achievement-clear-title">업적 기록 초기화</h2>
+      <p>이 브라우저에 보관한 업적 기록을 모두 지웁니다. 이 작업은 되돌릴 수 없습니다.</p>
+      <div>
+        <button type="button" autoFocus onClick={onCancelClear}>취소</button>
+        <button type="button" onClick={onClear}>정말 초기화</button>
+      </div>
+    </dialog>
+  );
+}
+
 export function AchievementScreen({
   cards,
   unlockedCount,
@@ -142,16 +197,7 @@ export function AchievementScreen({
         <button type="button" onClick={onRequestClear}>업적 기록 초기화</button>
       </footer>
 
-      {confirming ? (
-        <dialog className="achievement-screen__dialog" open aria-labelledby="achievement-clear-title">
-          <h2 id="achievement-clear-title">업적 기록 초기화</h2>
-          <p>이 브라우저에 보관한 업적 기록을 모두 지웁니다. 이 작업은 되돌릴 수 없습니다.</p>
-          <div>
-            <button type="button" autoFocus onClick={onCancelClear}>취소</button>
-            <button type="button" onClick={onClear}>정말 초기화</button>
-          </div>
-        </dialog>
-      ) : null}
+      {confirming ? <ResetConfirmationDialog onCancelClear={onCancelClear} onClear={onClear} /> : null}
     </main>
   );
 }

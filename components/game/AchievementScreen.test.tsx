@@ -7,7 +7,12 @@ import {
   unlockedAchievementCount,
 } from "@/lib/achievements/player-progress";
 import type { CompletedCampaignRecord } from "@/lib/achievements/player-progress";
-import { AchievementScreen, achievementCardViewsFor } from "./AchievementScreen";
+import {
+  AchievementScreen,
+  achievementCardViewsFor,
+  handleResetDialogCancel,
+  showResetDialogModal,
+} from "./AchievementScreen";
 
 const completed: CompletedCampaignRecord = {
   runId: "achievement-screen-completed",
@@ -81,7 +86,7 @@ describe("길잡이 업적 기록 화면", () => {
     expect(html).toMatch(/role="progressbar"[^>]*aria-valuemax="100"[^>]*aria-valuenow="100"/);
   });
 
-  it("초기화 확인은 취소부터 자동 초점을 둔다", () => {
+  it("초기화 확인은 모델리스 open 속성 없이 취소부터 자동 초점을 둔다", () => {
     const progress = createEmptyPlayerProgress();
     const html = renderToStaticMarkup(createElement(AchievementScreen, {
       cards: achievementCardViewsFor(progress),
@@ -95,8 +100,47 @@ describe("길잡이 업적 기록 화면", () => {
     }));
 
     expect(html).toContain("업적 기록 초기화");
-    expect(html).toMatch(/<dialog[^>]*open=""/);
+    expect(html).toMatch(/<dialog[^>]*aria-modal="true"/);
+    expect(html).not.toMatch(/<dialog[^>]*\sopen=/);
     expect(html.indexOf("취소")).toBeLessThan(html.indexOf("정말 초기화"));
     expect(html).toContain("autofocus");
+  });
+
+  it("dialog mount는 native modal을 열고 cleanup은 열린 dialog를 닫는다", () => {
+    const calls: string[] = [];
+    const dialog = {
+      open: false,
+      showModal() {
+        calls.push("showModal");
+        this.open = true;
+      },
+      close() {
+        calls.push("close");
+        this.open = false;
+      },
+    };
+
+    const cleanup = showResetDialogModal(dialog);
+
+    expect(dialog.open).toBe(true);
+    expect(calls).toEqual(["showModal"]);
+
+    cleanup();
+
+    expect(dialog.open).toBe(false);
+    expect(calls).toEqual(["showModal", "close"]);
+  });
+
+  it("native cancel은 기본 닫힘 대신 onCancelClear 상태 경로를 사용한다", () => {
+    let prevented = false;
+    let cancelled = false;
+
+    handleResetDialogCancel(
+      { preventDefault: () => { prevented = true; } },
+      () => { cancelled = true; },
+    );
+
+    expect(prevented).toBe(true);
+    expect(cancelled).toBe(true);
   });
 });
