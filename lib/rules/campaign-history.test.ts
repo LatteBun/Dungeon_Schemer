@@ -432,27 +432,36 @@ describe("C7·C8-A·C8-B composition boundary", () => {
     const dungeon = transition.campaign.dungeons.find((candidate) => candidate.id === settlement.dungeonId);
     if (dungeon === undefined) throw new Error("campaign dungeon fixture is missing");
 
+    /*
+     * 이력은 전이가 남긴다. 통계는 소비자가 쌓는다.
+     *
+     * 전에는 둘 다 소비자의 몫으로 적혀 있었다. 그런데 이력을 소비자가 붙이면
+     * 빠뜨릴 수 있고 - 실제로 아무도 붙이지 않아 정산 이력이 한 건도 없었다 -
+     * 캠페인 기록을 화면 계층이 소유하게 된다. 전이 안에서 붙이면 누락이
+     * 구조적으로 불가능하다.
+     *
+     * 통계는 그대로 소비자의 몫이다. `C7` 은 정산 결과를 내주고 통계 소유권은
+     * 넘긴다는 계약이 따로 있다.
+     */
+    const settled = transition.campaign.history.events
+      .filter((event) => event.type === "EXPEDITION_SETTLED");
+
+    expect(settled).toHaveLength(1);
+    expect(transition.campaign.statistics).toEqual(createCampaignStatistics());
+
     const statistics = recordSettlementStatistics(
       transition.campaign.statistics,
       settlement,
       dungeon,
     );
-    const history = appendCampaignEvent(transition.campaign.history, {
-      campaignTurn: transition.campaign.worldTurn,
-      event: toExpeditionSettledEventDraft(settlement),
-    });
-    const committed = { ...transition.campaign, statistics, history };
+    const committed = { ...transition.campaign, statistics };
 
     expect(committed.phase).toBe("settlement");
     expect(committed.settledExpeditionIds).toEqual([settlement.expeditionId]);
-    expect(committed.statistics).not.toEqual(createCampaignStatistics());
     expect(committed.statistics.settlements).toHaveLength(1);
-    expect(committed.history.events).toHaveLength(1);
-    expect(committed.history.events[0]?.type).toBe("EXPEDITION_SETTLED");
-    expect(transition.campaign.statistics).toEqual(createCampaignStatistics());
-    expect(transition.campaign.history).toEqual(createCampaignHistory());
 
-    expect(() => appendCampaignEvent(history, {
+    /* 같은 정산을 두 번 남길 수 없다. 전이가 이미 남겼다. */
+    expect(() => appendCampaignEvent(transition.campaign.history, {
       campaignTurn: transition.campaign.worldTurn,
       event: toExpeditionSettledEventDraft(settlement),
     })).toThrowError(expect.objectContaining({ code: "DUPLICATE_ID" }));

@@ -295,6 +295,20 @@ describe("C7 캠페인 전이", () => {
     expect(() => transitionCampaign(distrust.campaign, distrust.context, {
       type: "OPEN_BOARD",
     })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
+
+    /*
+     * 붕괴와 종료를 둘 다 남긴다.
+     *
+     * `C8-B` 의 전환점은 「신뢰 붕괴」를 가장 높게 치는데, 그 이벤트가 없으면
+     * 그 전환점이 나올 자리가 없다. 오래 아무도 남기지 않아 엔딩의 전환점이
+     * 「보스 돌파」밖에 될 수 없었다.
+     */
+    const types = distrust.campaign.history.events.map((event) => event.type);
+
+    expect(types).toContain("TRUST_COLLAPSED");
+    expect(types).toContain("CAMPAIGN_ENDED");
+    expect(distrust.campaign.history.turningPoints.map((point) => point.kind))
+      .toContain("trustCollapse");
   });
 
   it("최신 파티의 중복 ID와 고정 정보 불일치는 C6 전에 거부한다", () => {
