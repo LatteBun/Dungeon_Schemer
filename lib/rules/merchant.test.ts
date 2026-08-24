@@ -176,7 +176,7 @@ describe("수용된 merchant 조언 적용", () => {
     const members = [
       member("member-one", 20, 40),
       member("member-two", 27, 30),
-      member("member-dead", 32, 40, false),
+      member("member-dead", 0, 40, false),
     ] as const;
     const before = structuredClone(members);
 
@@ -188,7 +188,7 @@ describe("수용된 merchant 조언 적용", () => {
     });
 
     expect(applied.gold).toBe(12);
-    expect(applied.members.map((candidate) => candidate.hp)).toEqual([28, 30, 32]);
+    expect(applied.members.map((candidate) => candidate.hp)).toEqual([28, 30, 0]);
     expect(applied.pendingMerchantEffect).toEqual({
       adviceId: compositeHelp.id,
       nextBattle: { partyDamageMultiplier: 1.3 },
@@ -199,7 +199,7 @@ describe("수용된 merchant 조언 적용", () => {
 
   it("merchant 직접 피해는 살아 있는 구성원의 HP를 1 아래로 내리지 않는다", () => {
     const living = member("living", 3, 40);
-    const dead = member("dead", 3, 40, false);
+    const dead = member("dead", 0, 40, false);
 
     const applied = applyAcceptedMerchantAdvice({
       advice: immediateHarm,
@@ -208,9 +208,9 @@ describe("수용된 merchant 조언 적용", () => {
       pendingMerchantEffect: null,
     });
 
-    expect(applied.members.map((candidate) => candidate.hp)).toEqual([1, 3]);
+    expect(applied.members.map((candidate) => candidate.hp)).toEqual([1, 0]);
     expect(living.hp).toBe(3);
-    expect(dead.hp).toBe(3);
+    expect(dead.hp).toBe(0);
   });
 
   it("즉시 회복은 maxHp를 넘지 않고 기존 pending을 그대로 보존한다", () => {
