@@ -135,6 +135,7 @@
 - [U2 인트로 게시판 진입 연결 구현 계획](superpowers/plans/2026-08-20-sanghwan-yoo-u2-intro-board-navigation.md): 테스트·구현·검증·PR 순서
 - [인트로 본문 글자 크기 개선 설계](superpowers/specs/2026-08-25-lattebun-intro-body-typography-design.md): 실제 캠페인 인트로 본문만 약 15% 확대하는 타이포그래피 경계
 - [인트로 본문 글자 크기 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-intro-body-typography.md): CSS 계약 테스트부터 실제 캠페인 화면 확인까지의 실행 순서
+- [게시판 수배지 UX·던전 명칭 개선 설계](superpowers/specs/2026-08-25-lattebun-board-notice-ux-design.md): 작은 수배지의 불규칙 배치, 보스 전설형 던전 이름, 계약 상세 배경 이미지 제거 기준
 - [캠페인 개편 작업 배정표](technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md): 무엇을 어떤 순서로 구현하는지
 
 ## 이전 개편 기록
