@@ -3,7 +3,8 @@ import type { CampaignState, CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { createU6EndingView } from "@/components/game/u6-ending-adapter";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
-import { createCampaignStore } from "./campaign-store";
+import type { CampaignStoreState } from "./campaign-store";
+import { createCampaignStore, screenForPhase } from "./campaign-store";
 import { firstChoosableAdvice } from "./legal-advice";
 
 /**
@@ -16,7 +17,7 @@ import { firstChoosableAdvice } from "./legal-advice";
  */
 
 /** 지금 상태를 보고 다음 한 걸음을 정한다. 액션 목록을 미리 적지 않는다. */
-function runToEnd(seed: string, limit = 400) {
+function runToEnd(seed: string, limit = 400, onStep: (state: CampaignStoreState) => void = () => {}) {
   const store = createCampaignStore(seed);
   const taken: CampaignTransition["type"][] = [];
   const act = (action: CampaignTransition) => {
@@ -24,6 +25,7 @@ function runToEnd(seed: string, limit = 400) {
     const rejected = store.getState().rejected;
     if (rejected !== null) throw new Error(`거부됨: ${rejected.type} — ${rejected.reason}`);
     taken.push(action.type);
+    onStep(store.getState());
   };
   const campaign = (): CampaignState => store.getState().campaign;
 
@@ -50,6 +52,8 @@ function runToEnd(seed: string, limit = 400) {
       }
       if (active.pendingEvent !== null) {
         act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(campaign(), active) });
+        /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+        act({ type: "ACKNOWLEDGE_OUTCOME" });
         continue;
       }
       const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
@@ -178,5 +182,38 @@ describe("막다른 길이 없다", () => {
     }
 
     expect(stuck).toEqual([]);
+  });
+});
+
+/**
+ * 캠페인이 지나는 모든 단계를 그릴 수 있어야 한다.
+ *
+ * 한 단계라도 그릴 수 없으면 길잡이는 「이 단계를 그릴 수 없다」 앞에 선다.
+ * `worldTurn` 이 그랬다 — 정산 화면으로 오는데 그때는 `last.settlement` 가 이미
+ * 비어 있었다. 두 액션을 한 핸들러에서 연달아 보내 사이에 렌더가 없었던 덕에
+ * 드러나지 않았을 뿐이다.
+ */
+describe("모든 단계를 그릴 수 있다", () => {
+  it("한 판 내내 빈 화면이 없다", () => {
+    const blank = new Set<string>();
+    const seen = new Set<string>();
+
+    const look = (state: CampaignStoreState) => {
+      const screen = screenForPhase(state.campaign.phase);
+      seen.add(`${state.campaign.phase}→${screen}`);
+      /* `CampaignScreen` 이 따지는 조건을 그대로 따져 본다. */
+      const drawable = screen === "intro" || screen === "board"
+        || (screen === "expedition" && state.context.activeExpedition !== null)
+        || (screen === "settlement"
+          && (state.last?.settlement != null || state.campaign.statistics.settlements.length > 0))
+        || (screen === "ending" && state.campaign.ending !== null);
+      if (!drawable) blank.add(`${state.campaign.phase}→${screen}`);
+    };
+
+    runToEnd(SEED, 800, look);
+
+    expect(blank).toEqual(new Set());
+    /* 실제로 여러 단계를 지나야 위 단언에 뜻이 있다. */
+    expect(seen.size).toBeGreaterThan(5);
   });
 });

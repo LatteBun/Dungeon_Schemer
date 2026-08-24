@@ -135,6 +135,8 @@ function settleOnce() {
     }
     if (active.pendingEvent !== null) {
       act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(store.getState().campaign, active) });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      act({ type: "ACKNOWLEDGE_OUTCOME" });
       continue;
     }
     const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);

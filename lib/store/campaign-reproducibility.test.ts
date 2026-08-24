@@ -51,6 +51,8 @@ function playOne(seed: string) {
     const afterVisit = store.getState().context.activeExpedition;
     if (afterVisit?.pendingEvent == null) continue;
     act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(store.getState().campaign, afterVisit) });
+    /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+    act({ type: "ACKNOWLEDGE_OUTCOME" });
   }
 
   /* 원정이 끝났으면 정산하고 세상을 한 턴 돌린다. 한 바퀴가 닫혀야 한다. */
