@@ -47,11 +47,15 @@ export interface CampaignRunTrace {
   readonly steps: number;
 }
 
+export type ExpeditionTraceResult = ExpeditionStatus | "interrupted";
+
 export interface ExpeditionBalanceTrace {
   readonly expeditionId: string;
   readonly dungeonId: DungeonId;
   readonly theme: ThemeId;
   readonly initialRiskLevel: RiskLevel;
+  readonly currentRiskLevel: RiskLevel;
+  readonly attemptNumber: number;
   readonly startAdvicePressure: 0;
   readonly maxAdvicePressure: AdvicePressure;
   readonly bossEntry: null | {
@@ -61,7 +65,7 @@ export interface ExpeditionBalanceTrace {
     readonly maxHp: number;
   };
   readonly endAdvicePressure: AdvicePressure | null;
-  readonly result: ExpeditionStatus | null;
+  readonly result: ExpeditionTraceResult;
 }
 
 export interface CampaignRunSuccess {
@@ -88,8 +92,8 @@ export interface CampaignRunOptions {
 }
 
 type MutableExpeditionBalanceTrace = {
-  -readonly [Key in keyof ExpeditionBalanceTrace]: ExpeditionBalanceTrace[Key];
-};
+  -readonly [Key in keyof Omit<ExpeditionBalanceTrace, "result">]: Omit<ExpeditionBalanceTrace, "result">[Key];
+} & { result: ExpeditionTraceResult | null };
 
 class DriverFailure extends Error {
   constructor(readonly kind: RunErrorKind, message: string) {
@@ -151,7 +155,7 @@ export function merchantTraceDeltaFor(
   };
 }
 
-function freezeTrace(trace: MutableTrace): CampaignRunTrace {
+function freezeTrace(trace: MutableTrace, active: ActiveExpeditionContext | null): CampaignRunTrace {
   return {
     ...trace,
     actionTypes: [...trace.actionTypes],
@@ -163,6 +167,11 @@ function freezeTrace(trace: MutableTrace): CampaignRunTrace {
     reactionCounts: { ...trace.reactionCounts },
     balanceExpeditions: trace.balanceExpeditions.map((expedition) => ({
       ...expedition,
+      endAdvicePressure: expedition.endAdvicePressure
+        ?? (active?.expeditionId === expedition.expeditionId
+          ? active.expedition.advicePressure
+          : null),
+      result: expedition.result ?? "interrupted",
       bossEntry: expedition.bossEntry === null ? null : { ...expedition.bossEntry },
     })),
   };
@@ -238,7 +247,7 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
       const state = store.getState();
       const { campaign, context } = state;
       if (campaign.phase === "ended") {
-        return { ok: true, campaign, trace: freezeTrace(trace) };
+        return { ok: true, campaign, trace: freezeTrace(trace, context.activeExpedition) };
       }
       const currentSignature = signature(campaign, context.activeExpedition);
       if (currentSignature === previousSignature) fail("stall", "같은 캠페인 상태가 반복되었다");
@@ -296,6 +305,8 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
           dungeonId: active.expedition.dungeonId,
           theme: dungeon.theme,
           initialRiskLevel: dungeon.initialRiskLevel,
+          currentRiskLevel: dungeon.riskLevel,
+          attemptNumber: dungeon.attempts + 1,
           startAdvicePressure: 0,
           maxAdvicePressure: active.expedition.advicePressure,
           bossEntry: null,
@@ -388,7 +399,7 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
       errorKind: failure.kind,
       message: failure.message,
       phase: current.campaign.phase,
-      trace: freezeTrace(trace),
+      trace: freezeTrace(trace, current.context.activeExpedition),
     };
   }
 }

@@ -16,7 +16,7 @@ function metric(strategyId: StrategyId, accuracy: Accuracy, completed: boolean, 
     betrayalAttempts: 0, betrayalWipes: 0, betrayalCompletions: 0, merchantGoldSpent: 0, merchantEffectsConsumed: 0,
     adviceHits: 0, adviceTotal: 0, errorKind: null,
     balanceExpeditions: [{
-      expeditionId: seed, dungeonId: `dungeon-${seed}` as never, theme: "spider", initialRiskLevel: 1,
+      expeditionId: seed, dungeonId: `dungeon-${seed}` as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
       startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: null, endAdvicePressure: 0, result: "cleared",
     }],
   } as CampaignRunMetrics;

@@ -20,7 +20,7 @@ function metric(overrides: Partial<CampaignRunMetrics> = {}): CampaignRunMetrics
     merchantGoldSpent: 0, merchantEffectsConsumed: 0, adviceHits: 0, adviceTotal: 0,
     errorKind: null,
     balanceExpeditions: [{
-      expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, theme: "spider", initialRiskLevel: 1,
+      expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
       startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: null, endAdvicePressure: 0, result: "cleared",
     }],
     ...overrides,
@@ -54,21 +54,21 @@ describe("백테스트 통계", () => {
       metric({
         seed: "a", completed: true, ending: "completed", wipedExpeditions: 0,
         balanceExpeditions: [{
-          expeditionId: "a", dungeonId: "dungeon-a" as never, theme: "spider", initialRiskLevel: 1,
+          expeditionId: "a", dungeonId: "dungeon-a" as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
           startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: { advicePressure: 0, aliveCount: 3, hp: 50, maxHp: 100 }, endAdvicePressure: 0, result: "cleared",
         }],
       }),
       metric({
         seed: "b", completed: true, ending: "completed", wipedExpeditions: 5,
         balanceExpeditions: [{
-          expeditionId: "b", dungeonId: "dungeon-b" as never, theme: "spider", initialRiskLevel: 1,
+          expeditionId: "b", dungeonId: "dungeon-b" as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
           startAdvicePressure: 0, maxAdvicePressure: 2, bossEntry: { advicePressure: 2, aliveCount: 2, hp: 50, maxHp: 100 }, endAdvicePressure: 2, result: "wiped",
         }],
       }),
       metric({
         seed: "c", wipedExpeditions: 3,
         balanceExpeditions: [{
-          expeditionId: "c", dungeonId: "dungeon-c" as never, theme: "desert", initialRiskLevel: 2,
+          expeditionId: "c", dungeonId: "dungeon-c" as never, theme: "desert", initialRiskLevel: 2, currentRiskLevel: 2, attemptNumber: 1,
           startAdvicePressure: 0, maxAdvicePressure: 3, bossEntry: null, endAdvicePressure: 3, result: "wiped",
         }],
       }),
@@ -98,7 +98,7 @@ describe("백테스트 통계", () => {
   it.each([Number.NaN, Number.POSITIVE_INFINITY])("유한하지 않은 초기 위험도 %p는 보스 병목 키로 만들지 않고 집계 오류를 낸다", (initialRiskLevel) => {
     expect(() => aggregateRuns([metric({
       balanceExpeditions: [{
-        expeditionId: "invalid-risk", dungeonId: "dungeon-invalid-risk" as never, theme: "spider", initialRiskLevel: initialRiskLevel as never,
+        expeditionId: "invalid-risk", dungeonId: "dungeon-invalid-risk" as never, theme: "spider", initialRiskLevel: initialRiskLevel as never, currentRiskLevel: 1, attemptNumber: 1,
         startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: { advicePressure: 0, aliveCount: 3, hp: 30, maxHp: 60 }, endAdvicePressure: 0, result: "cleared",
       }],
     })])).toThrow("유효하지 않은 초기 위험도");

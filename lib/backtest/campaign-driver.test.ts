@@ -54,6 +54,39 @@ describe("백테스트 캠페인 driver", () => {
       .every((one) => one.bossEntry!.hp <= one.bossEntry!.maxHp)).toBe(true);
   });
 
+  it("원정마다 초기·현재 위험도와 던전별 시도 번호를 기록한다", () => {
+    const result = runCampaign({
+      seed: "driver-balance-trace",
+      strategy: createStrategy("survival"),
+      accuracy: 0.7,
+    });
+    if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
+
+    const attempts = new Map<string, number>();
+    for (const expedition of result.trace.balanceExpeditions) {
+      const expected = (attempts.get(expedition.dungeonId) ?? 0) + 1;
+      expect(expedition.attemptNumber).toBe(expected);
+      expect(expedition.currentRiskLevel).toBeGreaterThanOrEqual(expedition.initialRiskLevel);
+      attempts.set(expedition.dungeonId, expected);
+    }
+  });
+
+  it("step limit로 끝난 시작 원정을 interrupted로 보존한다", () => {
+    const result = runCampaign({
+      seed: "driver-interrupted-trace",
+      strategy: createStrategy("survival"),
+      accuracy: 0.7,
+      stepLimit: 3,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.trace.balanceExpeditions).toHaveLength(1);
+    expect(result.trace.balanceExpeditions[0]).toMatchObject({
+      attemptNumber: 1,
+      result: "interrupted",
+    });
+  });
+
   it("전투 전멸도 결과를 확인한 뒤 정산한다", () => {
     const base = createStrategy("selective-betrayal");
     const harmful = {
