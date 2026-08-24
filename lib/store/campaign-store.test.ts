@@ -3,6 +3,7 @@ import { CAMPAIGN_PHASES } from "@/lib/domain";
 import type { CampaignPhase, CampaignTransition } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { createCampaignStore, screenForPhase } from "./campaign-store";
+import { firstChoosableAdvice } from "./legal-advice";
 
 /**
  * 스토어 계약.
@@ -133,7 +134,9 @@ function settleOnce() {
       break;
     }
     if (active.pendingEvent !== null) {
-      act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+      act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(store.getState().campaign, active) });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      act({ type: "ACKNOWLEDGE_OUTCOME" });
       continue;
     }
     const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);

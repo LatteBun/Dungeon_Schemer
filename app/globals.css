@@ -592,6 +592,7 @@ body {
  * 것이 그것이다.
  */
 .u6-settlement-continue,
+.u5-outcome-continue,
 .u5-battle-settle {
   justify-self: start;
   min-height: clamp(2.6rem, 5cqh, 3.2rem);
@@ -609,6 +610,8 @@ body {
 
 .u6-settlement-continue:hover,
 .u6-settlement-continue:focus-visible,
+.u5-outcome-continue:hover,
+.u5-outcome-continue:focus-visible,
 .u5-battle-settle:hover,
 .u5-battle-settle:focus-visible {
   outline: 2px solid #d9c37c;
