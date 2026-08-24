@@ -170,11 +170,13 @@ export function PartyMemberCard({ member, index, testId, changes }: PartyMemberC
 
       {canFlip && (
         <div className="party-card__back" data-testid="party-member-changes">
-          {/* 뒤집혀도 누구인지는 남는다. 이름이 없으면 어느 카드인지 잃는다. */}
-          <h4>
-            <strong>{member.name}</strong>
-            <span>이 원정에서</span>
-          </h4>
+          {/*
+            * 뒤집혀도 누구인지는 남는다. 이름이 없으면 어느 카드인지 잃는다.
+            *
+            * 「이 원정에서」는 적지 않는다 - 아래 총합과 사슬이 이미 이 원정의
+            * 것이고, 뒤집어 놓고 다시 설명할 자리가 아니다.
+            */}
+          <h4><strong>{member.name}</strong></h4>
 
           {/*
             * 이 원정의 총합을 먼저 크게 보여준다.

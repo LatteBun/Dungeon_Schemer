@@ -426,13 +426,14 @@ function MoveButton({
           alt=""
         />
       </span>
+      {/*
+        * 화살표를 두지 않는다.
+        *
+        * 문구가 이미 "이 지점으로 이동" 이라 어디로 가는지 말하고 있고, 같은
+        * 화살 그림을 고른 지점 위에도 세워 두었다. 한 화면에 두 번 나오면
+        * 그것이 표인지 꾸밈인지 흐려진다.
+        */}
       <strong>이 지점으로 이동</strong>
-      <img
-        className="u4-move-button__arrow"
-        src="/assets/u4/navigation/cta_button_arrow.png"
-        alt=""
-        aria-hidden="true"
-      />
     </button>
   );
 }
@@ -486,12 +487,14 @@ function RightPanel({
             <p className="u4-destination__empty">다음 지점을 선택하세요</p>
           ) : (
             <div className="u4-destination__summary">
+              {/*
+                * 방 밑그림을 두지 않는다.
+                *
+                * 돌문 그림이 칸의 주인공이 되어 정작 무슨 지점인지 말하는 아이콘을
+                * 덮었다. 밑그림을 물려 두는 것으로 넘겼었는데, 애초에 여기서
+                * 필요한 것은 분류 하나다. 지도의 방들은 그대로 그 밑그림을 쓴다.
+                */}
               <div className="u4-destination__thumbnail" aria-hidden="true">
-                <img
-                  className="u4-destination__room"
-                  src={ROOM_BASE[destination.kind]}
-                  alt=""
-                />
                 <img
                   className="u4-destination__icon"
                   src={ROOM_ICON[destination.kind]}
