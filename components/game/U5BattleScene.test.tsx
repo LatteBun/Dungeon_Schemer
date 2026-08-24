@@ -3,33 +3,14 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { BattleResolution } from "@/lib/rules/battle-engine";
 import { U5BattleScene } from "./U5BattleScene";
-import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
-
-const resolution: BattleResolution = {
-  status: "victory",
-  termination: "defeatedEnemies",
-  rounds: 1,
-  actions: [
-    { round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 7, targetHpBefore: 7, targetHpAfter: 0, defeated: true },
-  ],
-  party: [{ id: "party-1", classId: "warrior", hp: 10, maxHp: 10, attack: 7, hitWeight: 3 }],
-  enemies: [{ id: "enemy-1", monsterId: "spider-hatchling", hp: 0, maxHp: 7, baseDamage: 3 }],
-};
-
-const replay = createU5BattleReplay({
-  resolution,
-  presentations: [
-    { id: "party-1", name: "코르빈", imageSrc: "/assets/characters/live/warrior/warrior_a.png" },
-    { id: "enemy-1", name: "새끼거미", imageSrc: "/assets/monsters/spider/monster-spider-hatchling.png" },
-  ],
-});
+import { U5_TEST_BATTLE_REPLAY as replay } from "./u5-battle-test-fixture";
+import type { U5BattleReplay, U5BattleReplayFrame } from "./u5-battle-replay";
 
 const battleCss = readFileSync(join(process.cwd(), "app", "u5-battle.css"), "utf8");
 
-function render(value: U5BattleReplay = replay): string {
-  return renderToStaticMarkup(createElement(U5BattleScene, { replay: value }));
+function render(frame: U5BattleReplayFrame, value: U5BattleReplay = replay): string {
+  return renderToStaticMarkup(createElement(U5BattleScene, { replay: value, frame, onReplayFromStart: () => {} }));
 }
 
 function participantMarkup(html: string, participantId: string): string {
@@ -40,7 +21,7 @@ function participantMarkup(html: string, participantId: string): string {
 
 describe("U5BattleScene", () => {
   it("initial frame에서 양 진영과 모든 참가자의 이름, 이미지, 숫자 HP를 제공한다", () => {
-    const html = render();
+    const html = render(replay.frames[0]!);
 
     expect(html).toContain('data-testid="u5-battle-scene"');
     expect(html).toContain('data-side="party"');
@@ -62,7 +43,7 @@ describe("U5BattleScene", () => {
         ? { ...participant, imageSrc: "/assets/characters/live/warrior/warrior_a.png" }
         : { ...participant, name: "세리나", imageSrc: "/assets/monsters/spider/boss-spider-03-serina.png" }),
     };
-    const html = render(nonUniformAssetReplay);
+    const html = render(replay.frames[0]!, nonUniformAssetReplay);
 
     for (const name of ["코르빈", "세리나"]) {
       const image = html.match(new RegExp(`<img alt="${name}"[^>]*>`))?.[0];
@@ -75,8 +56,7 @@ describe("U5BattleScene", () => {
   });
 
   it("screen-space lunge를 orientation 바깥에 두고 파티는 오른쪽, 적은 왼쪽으로 이동시킨다", () => {
-    const attackReplay: U5BattleReplay = { ...replay, frames: [replay.frames[1]!] };
-    const html = render(attackReplay);
+    const html = render(replay.frames[1]!);
     const party = participantMarkup(html, "party-1");
     const enemy = participantMarkup(html, "enemy-1");
 
@@ -90,8 +70,7 @@ describe("U5BattleScene", () => {
   });
 
   it("피해 숫자의 가로 중앙 정렬과 세로 motion을 서로 다른 요소에 둔다", () => {
-    const impactReplay: U5BattleReplay = { ...replay, frames: [replay.frames[2]!] };
-    const enemy = participantMarkup(render(impactReplay), "enemy-1");
+    const enemy = participantMarkup(render(replay.frames[2]!), "enemy-1");
 
     expect(enemy).toMatch(/<span class="u5-battle-damage-anchor"><span class="u5-battle-damage"/);
     expect(battleCss).toMatch(/\.u5-battle-damage-anchor\s*\{[^}]*transform:\s*translateX\(-50%\)/);
@@ -103,14 +82,13 @@ describe("U5BattleScene", () => {
    * complete 뿐이다. 네 프레임을 모두 알리면 행동 하나에 네 번 읽는데,
    * 프레임 간격이 0.36~0.52초라 합성음이 화면을 따라오지 못한다.
    */
-  it("화면 문장과 읽어 주는 문장을 나누고 skip을 실제 button으로 제공한다", () => {
-    const html = render();
+  it("화면 문장과 읽어 주는 문장을 나눈다", () => {
+    const html = render(replay.frames[0]!);
 
     expect(html.match(/aria-live="polite"/g)).toHaveLength(1);
     expect(html).toContain("전투가 시작됩니다.");
     /* idle 은 행동이 아니다. 읽어 주는 자리는 비어 있어야 한다. */
     expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite"><\/p>/);
-    expect(html).toMatch(/<button[^>]*type="button"[^>]*>전투 건너뛰기<\/button>/);
   });
 
   it("행동이 끝난 frame 만 읽어 준다", () => {
@@ -118,8 +96,8 @@ describe("U5BattleScene", () => {
     const attack = replay.frames.find((frame) => frame.phase === "attack");
     if (settle === undefined || attack === undefined) throw new Error("fixture에 settle/attack frame이 없다.");
 
-    const settleHtml = render({ ...replay, frames: [settle] });
-    const attackHtml = render({ ...replay, frames: [attack] });
+    const settleHtml = render(settle);
+    const attackHtml = render(attack);
 
     expect(settleHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite">.+<\/p>/);
     expect(attackHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite"><\/p>/);
@@ -127,18 +105,28 @@ describe("U5BattleScene", () => {
 
   /* "새끼거미이(가)" 처럼 두 형태를 나란히 적지 않는다. */
   it("받침에 맞는 조사를 골라 쓴다", () => {
-    const html = render();
+    const html = render(replay.frames[0]!);
 
     expect(html).not.toContain("이(가)");
     expect(html).not.toContain("을(를)");
   });
 
   it("complete frame으로 시작하면 승리, 쓰러짐, 다시 보기 조작을 함께 보여준다", () => {
-    const completeReplay: U5BattleReplay = { ...replay, frames: [replay.frames.at(-1)!] };
-    const html = render(completeReplay);
+    const html = render(replay.frames.at(-1)!);
 
     expect(html).toContain("파티가 전투에서 승리했습니다.");
     expect(html).toContain("쓰러짐");
     expect(html).toMatch(/<button[^>]*type="button"[^>]*>다시 보기<\/button>/);
+  });
+
+  it("재생 중 장면 안에는 건너뛰기 버튼을 두지 않는다", () => {
+    const html = render(replay.frames[0]!);
+    expect(html).not.toContain("전투 건너뛰기");
+    expect(html).not.toContain("다시 보기");
+  });
+
+  it("complete frame에서만 다시 보기 버튼을 제공한다", () => {
+    const html = render(replay.frames.at(-1)!);
+    expect(html).toMatch(/<button[^>]*>다시 보기<\/button>/);
   });
 });

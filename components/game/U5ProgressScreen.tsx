@@ -15,6 +15,7 @@ import {
 import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
 import { U5BattleScene } from "./U5BattleScene";
 import type { U5BattleReplay } from "./u5-battle-replay";
+import { useU5BattlePlayback } from "./use-u5-battle-playback";
 
 export type U5ConsoleMode = "advice" | "log";
 
@@ -202,6 +203,7 @@ export function U5ProgressScreen({
    */
   const [mode, setMode] = useState<U5ConsoleMode>(initialMode ?? "advice");
   const [filter, setFilter] = useState<U5LogFilter>(initialFilter);
+  const battlePlayback = useU5BattlePlayback(battleReplay);
 
   return (
     <div className="expedition-screen u5-progress-screen" data-testid="u5-progress">
@@ -217,7 +219,13 @@ export function U5ProgressScreen({
               style={{ backgroundImage: `url("${sceneSrc(progress.theme, progress.sceneKind)}")` }}
               aria-hidden={battleReplay === undefined ? "true" : undefined}
             >
-              {battleReplay === undefined ? null : <U5BattleScene replay={battleReplay} />}
+              {battleReplay === undefined || battlePlayback.frame === undefined ? null : (
+                <U5BattleScene
+                  replay={battleReplay}
+                  frame={battlePlayback.frame}
+                  onReplayFromStart={battlePlayback.replayFromStart}
+                />
+              )}
             </div>
 
             <div className="u5-console" data-testid="u5-console">
