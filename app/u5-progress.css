@@ -400,3 +400,34 @@
   color: #a68f6d;
   font-size: clamp(0.85rem, 0.9cqw, 1.1rem);
 }
+
+/*
+ * 오른쪽 패널은 파티가 위, 넘어가는 길이 아래다.
+ *
+ * 전에는 넘어가는 버튼이 왼쪽 콘솔 안 결과 문장 바로 밑에 붙어 읽는 자리를
+ * 좁혔고, 오른쪽 아래는 비어 있었다.
+ */
+.u5-right-panel {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  row-gap: clamp(0.6rem, 0.8cqh, 1rem);
+  min-height: 0;
+  height: 100%;
+}
+
+.u5-right-panel > .u5-party {
+  min-height: 0;
+}
+
+.u5-party__hint {
+  margin: clamp(0.4rem, 0.5cqh, 0.7rem) 0 0;
+  color: #96805f;
+  font-size: clamp(0.75rem, 0.78cqw, 0.92rem);
+}
+
+/* 버튼은 패널 폭을 온전히 쓴다. 화면 끝에 있는 편이 찾기 쉽다. */
+.u5-right-panel .u5-outcome-continue {
+  grid-row: 3;
+  justify-self: stretch;
+  text-align: center;
+}

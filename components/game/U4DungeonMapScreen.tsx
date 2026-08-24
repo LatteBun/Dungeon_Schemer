@@ -7,7 +7,7 @@ import {
 } from "react";
 import type { NodeId } from "@/lib/domain";
 import { GameShell } from "./GameShell";
-import { PartyMemberCard } from "./PartyMemberCard";
+import { PartyMemberCard, type PartyMemberChangeEntry } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
 import { roomVariationFor } from "./u4-dungeon-map-layout";
 import type { U4MapLayout } from "./u4-dungeon-map-layout";
@@ -16,6 +16,19 @@ import type {
   U4PartyMemberView,
   U4RoomKind,
 } from "./u4-dungeon-map-model";
+
+export interface U4SurveyView {
+  /** 지나온 지점 수와 이 던전의 지점 수. */
+  readonly visited: number;
+  readonly total: number;
+  /*
+   * 답사로 알아낸 생태 규칙.
+   *
+   * `E2` 가 위험도에 따라 공개한 것이다. 지도에서 다음 지점을 고를 때 쓰라고
+   * 알려 준 사실인데, 그동안 진행 화면의 기록 탭에만 있었다.
+   */
+  readonly disclosedRules: readonly string[];
+}
 
 export interface U4DungeonMapScreenProps {
   status: TopStatusView;
@@ -27,6 +40,10 @@ export interface U4DungeonMapScreenProps {
   selectedNextNodeId: NodeId | null;
   onSelectNextNode: (nodeId: NodeId) => void;
   onMove: (nodeId: NodeId) => void;
+  /** 이 원정에서 알아낸 것. 프리뷰에는 원정이 없어 주지 않는다. */
+  survey?: U4SurveyView;
+  /** 파티원별 이 원정의 변화. 주면 카드를 뒤집을 수 있다. */
+  changesByMemberId?: Readonly<Record<string, readonly PartyMemberChangeEntry[]>>;
 }
 
 type Direction = "left" | "right";
@@ -324,7 +341,11 @@ function DungeonMap({
   );
 }
 
-function U4PartyMember({ member, index }: { member: U4PartyMemberView; index: number }) {
+function U4PartyMember({ member, index, changes }: {
+  member: U4PartyMemberView;
+  index: number;
+  changes?: readonly PartyMemberChangeEntry[];
+}) {
   /* 표시는 공용 카드가 맡는다. 여기서는 U4 의 뷰를 카드 뷰로 옮기기만 한다. */
   return (
     <PartyMemberCard
@@ -342,6 +363,7 @@ function U4PartyMember({ member, index }: { member: U4PartyMemberView; index: nu
       }}
       index={index}
       testId="u4-party-member"
+      changes={changes}
     />
   );
 }
@@ -394,9 +416,11 @@ function RightPanel({
   party,
   selectedNextNodeId,
   onMove,
+  survey,
+  changesByMemberId,
 }: Pick<
   U4DungeonMapScreenProps,
-  "nodes" | "party" | "selectedNextNodeId" | "onMove"
+  "nodes" | "party" | "selectedNextNodeId" | "onMove" | "survey" | "changesByMemberId"
 >) {
   const destination =
     selectedNextNodeId === null
@@ -413,10 +437,17 @@ function RightPanel({
         <ul className="party-list">
           {party.map((member, index) => (
             <li key={member.id}>
-              <U4PartyMember member={member} index={index} />
+              <U4PartyMember
+                member={member}
+                index={index}
+                changes={changesByMemberId?.[String(member.id)]}
+              />
             </li>
           ))}
         </ul>
+        {changesByMemberId !== undefined && (
+          <p className="u4-party__hint">카드를 누르면 이 원정에서 있었던 일을 봅니다.</p>
+        )}
       </section>
 
       <section
@@ -476,6 +507,29 @@ function RightPanel({
           }}
         />
       </section>
+
+      {/*
+        * 아래를 비워 두지 않는다.
+        *
+        * 답사로 알아낸 생태 규칙은 다음 지점을 고를 때 쓰라고 준 사실인데,
+        * 그동안 진행 화면의 기록 탭에만 있어 지도에서는 볼 수 없었다. 정작
+        * 고르는 자리가 여기다.
+        */}
+      {survey === undefined ? null : (
+        <section className="panel-section u4-survey" aria-labelledby="u4-survey-title">
+          <h3 id="u4-survey-title">답사 기록</h3>
+          <p className="u4-survey__progress">
+            지나온 지점 <strong>{survey.visited}</strong> / {survey.total}
+          </p>
+          {survey.disclosedRules.length === 0 ? (
+            <p className="u4-survey__empty">이 던전에서 알아낸 규칙이 아직 없다.</p>
+          ) : (
+            <ul className="u4-survey__rules">
+              {survey.disclosedRules.map((rule) => <li key={rule}>{rule}</li>)}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   );
 }
@@ -490,6 +544,8 @@ export function U4DungeonMapScreen({
   selectedNextNodeId,
   onSelectNextNode,
   onMove,
+  survey,
+  changesByMemberId,
 }: U4DungeonMapScreenProps) {
   return (
     <div className="expedition-screen u4-dungeon-map-screen">
@@ -512,6 +568,8 @@ export function U4DungeonMapScreen({
             party={party}
             selectedNextNodeId={selectedNextNodeId}
             onMove={onMove}
+            survey={survey}
+            changesByMemberId={changesByMemberId}
           />
         }
         rightPanelLabel="파티 상태와 다음 지점"

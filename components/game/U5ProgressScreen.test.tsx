@@ -216,3 +216,35 @@ describe("반응이 없을 때", () => {
     expect(html).toContain("오린");
   });
 });
+
+describe("넘어가는 버튼", () => {
+  const outcome = {
+    reactions: [],
+    resultText: "지나갔다.",
+    changes: [{ label: "변화", detail: "그대로다." }],
+  };
+
+  /*
+   * 버튼은 하나다.
+   *
+   * 오른쪽 아래로 옮기면서 왼쪽 콘솔의 것을 지웠는데, 병합 과정에서 되살아나
+   * 화면에 둘이 서 있었다. 문구가 서로 달라 어느 쪽이 진짜인지도 갈렸다.
+   */
+  it("결과 화면에 넘어가는 버튼이 하나만 있다", () => {
+    const html = render({ outcome }, { onAcknowledge: () => undefined });
+    const count = html.split("u5-outcome-continue").length - 1;
+
+    expect(count).toBe(1);
+  });
+
+  it("문구를 주면 그대로 쓴다", () => {
+    const html = render({ outcome }, { onAcknowledge: () => undefined, acknowledgeLabel: "정산으로" });
+
+    expect(html).toContain("정산으로");
+    expect(html).not.toContain("지도로 돌아간다");
+  });
+
+  it("주지 않으면 버튼이 없다", () => {
+    expect(render({ outcome })).not.toContain("u5-outcome-continue");
+  });
+});
