@@ -282,6 +282,15 @@ export function prepareExpeditionEvents(input: {
     plans.set(link.predecessorNodeId, { ...predecessorPlan, hiddenRole: "strongPredecessor", plannedClueId: link.clueId });
     strongLinks.push(link);
   }
+  repairNormalCategoryCapacity({
+    plans,
+    map: input.map,
+    strongLinks,
+    eligibleEvents,
+    strongClues: new Set(strongClues),
+    rng,
+    categories,
+  });
   return {
     nodePlans: plans,
     bossInfoCuts,
@@ -297,6 +306,109 @@ function normalCandidates(events: readonly SituationEvent[], role: PreparedNodeP
   if (role === "strongPredecessor") return events.filter((event) => event.revealsClue === clueId);
   if (role === "strongFollower") return events.filter((event) => event.requiresClue === clueId);
   return events.filter((event) => event.requiresClue === undefined && (event.revealsClue === undefined || !strongClues.has(event.revealsClue)) && event.targetBossId === undefined);
+}
+
+function plannedRoleForCapacity(input: {
+  readonly nodeId: NodeId;
+  readonly plan: PreparedNodePlan;
+  readonly strongLinks: readonly StrongLinkPlan[];
+}): { readonly role: PreparedNodePlan["hiddenRole"]; readonly clueId: ClueId | undefined } {
+  const follower = input.strongLinks.find((link) => link.followerNodeId === input.nodeId);
+  if (follower !== undefined) return { role: "strongFollower", clueId: follower.clueId };
+  return { role: input.plan.hiddenRole, clueId: input.plan.plannedClueId };
+}
+
+function minimumBossInfoCandidateCount(events: readonly SituationEvent[]): number {
+  const countsByBoss = new Map<string, number>();
+  for (const event of events) {
+    if (event.targetBossId === undefined) continue;
+    countsByBoss.set(event.targetBossId, (countsByBoss.get(event.targetBossId) ?? 0) + 1);
+  }
+  return countsByBoss.size === 0 ? 0 : Math.min(...countsByBoss.values());
+}
+
+/**
+ * 공개 계획이 실제 방문 순서에서 소비할 수 있는 서로 다른 사건 수를 넘는지 잰다.
+ *
+ * target boss가 prepare 입력에 없으므로 bossInfo는 테마의 모든 보스 후보 중 가장
+ * 작은 풀로 보수적으로 검사한다. normal과 strong predecessor/follower도 active
+ * profile 뒤의 후보 풀을 경로마다 검사한다.
+ * strong follower는 아직 방문 전에는 normal로 보이지만, 선행이 실제 경로에서 먼저
+ * 열어야 하므로 이 단계에서는 미리 follower 후보 풀로 계산한다.
+ */
+function categoryCapacityDeficit(input: {
+  readonly plans: ReadonlyMap<NodeId, PreparedNodePlan>;
+  readonly map: GeneratedMap;
+  readonly strongLinks: readonly StrongLinkPlan[];
+  readonly eligibleEvents: readonly SituationEvent[];
+  readonly strongClues: ReadonlySet<ClueId>;
+}): number {
+  const nodes = new Map(input.map.nodes.map((node) => [node.id, node]));
+  const visit = (nodeId: NodeId, usedByPool: ReadonlyMap<string, number>): number => {
+    if (nodeId === input.map.bossNodeId) return 0;
+    const node = nodes.get(nodeId);
+    if (node === undefined) invalid("용량 검사 중 지도 node가 없다", { nodeId });
+    const plan = input.plans.get(nodeId);
+    if (plan === undefined) return node.nextNodeIds.reduce((sum, nextNodeId) => sum + visit(nextNodeId, usedByPool), 0);
+
+    const { role, clueId } = plannedRoleForCapacity({ nodeId, plan, strongLinks: input.strongLinks });
+    const eventsForCategory = input.eligibleEvents.filter((event) => event.kind === plan.category);
+    const candidateCount = role === "bossInfo"
+      ? minimumBossInfoCandidateCount(eventsForCategory)
+      : new Set(normalCandidates(eventsForCategory, role, clueId, undefined, input.strongClues).map((event) => event.id)).size;
+    const poolKey = `${plan.category}/${role}/${clueId ?? ""}`;
+    const count = (usedByPool.get(poolKey) ?? 0) + 1;
+    const nextUsedByPool = new Map(usedByPool);
+    nextUsedByPool.set(poolKey, count);
+    const deficit = Math.max(0, count - candidateCount);
+    return deficit + node.nextNodeIds.reduce((sum, nextNodeId) => sum + visit(nextNodeId, nextUsedByPool), 0);
+  };
+
+  return visit(input.map.entryNodeId, new Map());
+}
+
+/**
+ * 후보 풀이 모자라는 공개 분류만, 이미 소비한 event RNG의 결정적 순서로 고친다.
+ * EventId를 예약하거나 방문 시점에 분류를 바꾸지 않고, strong-link와 bossInfo
+ * 예약 노드는 고정한다.
+ */
+function repairNormalCategoryCapacity(input: {
+  readonly plans: Map<NodeId, PreparedNodePlan>;
+  readonly map: GeneratedMap;
+  readonly strongLinks: readonly StrongLinkPlan[];
+  readonly eligibleEvents: readonly SituationEvent[];
+  readonly strongClues: ReadonlySet<ClueId>;
+  readonly rng: ReturnType<typeof createRng>;
+  readonly categories: readonly EventKind[];
+}): void {
+  const linkedNodeIds = new Set(input.strongLinks.flatMap((link) => [link.predecessorNodeId, link.followerNodeId]));
+  const mutableNodeIds = input.map.nodes
+    .filter((node) => node.kind === "normal" && !linkedNodeIds.has(node.id) && input.plans.get(node.id)?.hiddenRole === "normal")
+    .map((node) => node.id);
+  const score = () => categoryCapacityDeficit(input);
+  let deficit = score();
+
+  while (deficit > 0) {
+    let repaired = false;
+    for (const nodeId of input.rng.shuffle(mutableNodeIds)) {
+      const plan = input.plans.get(nodeId);
+      if (plan === undefined) invalid("용량 보정할 node plan이 없다", { nodeId });
+      for (const category of input.rng.shuffle(input.categories.filter((candidate) => candidate !== plan.category))) {
+        input.plans.set(nodeId, { ...plan, category });
+        const nextDeficit = score();
+        if (nextDeficit < deficit) {
+          deficit = nextDeficit;
+          repaired = true;
+          break;
+        }
+      }
+      if (repaired) break;
+      input.plans.set(nodeId, plan);
+    }
+    if (!repaired) {
+      invalid("경로별 사건 후보 용량을 만족하는 정상 분류를 만들 수 없다", { deficit });
+    }
+  }
 }
 
 export function materializeNodeEvent(input: {
