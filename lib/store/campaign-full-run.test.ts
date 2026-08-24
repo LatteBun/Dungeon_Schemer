@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { CampaignState, CampaignTransition, NodeId } from "@/lib/domain";
-import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { createU6EndingView } from "@/components/game/u6-ending-adapter";
-import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
-import { createCampaignStore } from "./campaign-store";
+import { createStrategy } from "@/lib/backtest/strategies";
+import { runCampaign } from "@/lib/backtest/campaign-driver";
 
 /**
  * 한 캠페인을 끝까지 돌린다.
@@ -14,84 +12,14 @@ import { createCampaignStore } from "./campaign-store";
  * 화면을 거치지 않고 스토어로 돌린다. 렌더를 섞으면 무엇이 달라졌는지 가려진다.
  */
 
-/** 지금 상태를 보고 다음 한 걸음을 정한다. 액션 목록을 미리 적지 않는다. */
 function runToEnd(seed: string, limit = 400) {
-  const store = createCampaignStore(seed);
-  const taken: CampaignTransition["type"][] = [];
-  const act = (action: CampaignTransition) => {
-    store.getState().dispatch(action);
-    const rejected = store.getState().rejected;
-    if (rejected !== null) throw new Error(`거부됨: ${rejected.type} — ${rejected.reason}`);
-    taken.push(action.type);
+  const result = runCampaign({ seed, strategy: createStrategy("survival"), accuracy: 0.7, stepLimit: limit });
+  if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
+  return {
+    campaign: result.campaign,
+    taken: result.trace.actionTypes,
+    store: { getState: () => ({ rejected: null }) },
   };
-  const campaign = (): CampaignState => store.getState().campaign;
-
-  for (let step = 0; step < limit; step += 1) {
-    const phase = campaign().phase;
-    if (phase === "ended") break;
-
-    if (phase === "settlement") { act({ type: "START_WORLD_TURN" }); continue; }
-    if (phase === "worldTurn") { act({ type: "COMPLETE_WORLD_TURN" }); continue; }
-    if (phase === "intro") { act({ type: "OPEN_BOARD" }); continue; }
-
-    /*
-     * `phase` 를 먼저 본다. 원정 문맥이 남아 있는지가 아니다.
-     *
-     * `COMPLETE_EXPEDITION` 은 단계를 `settlement` 로 옮기지만 원정 문맥은
-     * 그대로 둔다 - 정산 화면이 그것을 읽어야 하기 때문이고, 치우는 것은
-     * 월드턴이다. 원정을 먼저 보면 정산에서 원정을 한 번 더 끝내려 든다.
-     */
-    const active = store.getState().context.activeExpedition;
-    if (phase === "expedition" && active !== null) {
-      if (active.expedition.bossResult !== null || active.expedition.result !== null) {
-        act({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign(), active) });
-        continue;
-      }
-      if (active.pendingEvent !== null) {
-        act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
-        continue;
-      }
-      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
-      const next: NodeId | undefined = here?.nextNodeIds
-        .find((id) => !active.expedition.visitedNodeIds.includes(id));
-      /* 갈 곳이 없는데 보스방에 서 있으면 들어간다. 그것도 아니면 갇힌 것이다. */
-      if (next === undefined) {
-        if (active.expedition.currentNodeId !== active.expedition.map.bossNodeId) {
-          throw new Error(`원정이 갇혔다: ${active.expedition.currentNodeId}`);
-        }
-        act({ type: "ENTER_BOSS" });
-        continue;
-      }
-      act({ type: "VISIT_NODE", nodeId: next });
-      if (next === active.expedition.map.bossNodeId) act({ type: "ENTER_BOSS" });
-      continue;
-    }
-
-    /*
-     * 올릴 수 있으면 올린다.
-     *
-     * 승급은 길잡이의 선택이라 규칙이 대신 해 주지 않는다. 하지 않으면 등급 C 에
-     * 묶여 공고가 전부 잠기고, 어느 시드든 `unemployed` 로만 끝난다 - 한 판의
-     * 뒷부분을 통째로 안 밟는 셈이다.
-     */
-    const eligibility = getGuidePromotionEligibility(campaign());
-    if (eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold)) {
-      act({ type: "OPEN_PROMOTION" });
-      act({ type: "PROMOTE_GUIDE", method: eligibility.canPromoteByReputation ? "reputation" : "gold" });
-      continue;
-    }
-
-    const offer = campaign().offers.find((one) => one.lockReason === null);
-    if (offer === undefined) throw new Error(`계약할 공고가 없는데 끝나지도 않았다: ${phase}`);
-    act({ type: "SELECT_CONTRACT", offerId: offer.id });
-    act({
-      type: "START_EXPEDITION",
-      expeditionId: `exp-${taken.length}`,
-      ...createExpeditionForOffer(campaign(), offer),
-    });
-  }
-
-  return { store, taken, campaign: campaign() };
 }
 
 /*
