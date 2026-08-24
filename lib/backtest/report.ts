@@ -112,6 +112,12 @@ function nullableInterval(interval: { readonly low: number; readonly high: numbe
   return interval === null ? "—" : `${interval.low.toFixed(4)}–${interval.high.toFixed(4)}`;
 }
 
+function calibrationMultiplier(multiplier: number): string {
+  return Math.abs(multiplier * 100 - Math.round(multiplier * 100)) < 1e-9
+    ? multiplier.toFixed(2)
+    : multiplier.toFixed(3);
+}
+
 function resolveSeedsPerCombination(input: BacktestReportInput): 2 | 50 | 100 | 200 | 2000 {
   const { seedsPerCombination } = input;
   if (seedsPerCombination !== 2
@@ -205,7 +211,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
       pairedRows.push(`| ${strategy} | ${difference.mean.toFixed(3)} | ${difference.low95.toFixed(3)} | ${difference.high95.toFixed(3)} |`);
     }
   }
-  const bossMultipliers = Object.entries(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk).map(([risk, multiplier]) => `★${risk}: ${multiplier.toFixed(2)}`).join(", ");
+  const bossMultipliers = Object.entries(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk).map(([risk, multiplier]) => `★${risk}: ${calibrationMultiplier(multiplier)}`).join(", ");
   const pressureRows = Object.entries(CAMPAIGN_BALANCE.advicePressure).map(([pressure, values]) =>
     `| ${pressure} | ${values.incomingDamageMultiplier.toFixed(2)} | ${values.outgoingDamageMultiplier.toFixed(2)} |`,
   );

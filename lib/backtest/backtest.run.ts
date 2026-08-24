@@ -73,6 +73,18 @@ export function shouldFailBacktest(
     || acceptanceGates.some((gate) => gate.enforced && !gate.passed);
 }
 
+export function assertBacktestPasses(
+  fixedGates: readonly FixedGateResult[],
+  acceptanceGates: readonly B1BAcceptanceGate[],
+): void {
+  const failedGates = [
+    ...fixedGates.filter((gate) => !gate.passed),
+    ...acceptanceGates.filter((gate) => gate.enforced && !gate.passed),
+  ];
+  if (failedGates.length === 0) return;
+  throw new Error(`B1 backtest 강제 gate 실패: ${failedGates.map((gate) => `${gate.id} (${gate.evidence})`).join("; ")}`);
+}
+
 function runCli(): void {
   const options = optionsFromEnvironment();
   const aggregate = runBacktestSuite(options);
@@ -90,7 +102,7 @@ function runCli(): void {
     mode: options.mode,
     seedsPerCombination: options.seedsPerCombination,
   });
-  if (shouldFailBacktest(gates, acceptanceGates)) process.exitCode = 1;
+  assertBacktestPasses(gates, acceptanceGates);
 }
 
 if (process.env.B1_BACKTEST_MODE !== undefined) {

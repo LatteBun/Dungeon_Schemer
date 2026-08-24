@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { campaignSeed, optionsFromEnvironment, shouldFailBacktest } from "./backtest.run";
+import { assertBacktestPasses, campaignSeed, optionsFromEnvironment, shouldFailBacktest } from "./backtest.run";
 
 describe("B1 backtest seed 계약", () => {
   it("B1-B calibration namespace와 번호를 고정 폭으로 조합한다", () => {
@@ -57,5 +57,12 @@ describe("B1-B backtest 실행 종료 판정", () => {
       enforced: true,
       evidence: "기준 이탈",
     }])).toBe(true);
+  });
+
+  it("강제 gate 실패를 Vitest 실행 실패로 전파한다", () => {
+    expect(() => assertBacktestPasses(
+      [{ id: "accuracy-interval", passed: false, evidence: "survival@0.7 이탈" }],
+      [],
+    )).toThrow("B1 backtest 강제 gate 실패: accuracy-interval (survival@0.7 이탈)");
   });
 });

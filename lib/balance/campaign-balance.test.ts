@@ -56,15 +56,15 @@ describe("CAMPAIGN_BALANCE", () => {
     })).toThrow();
   });
 
-  it("B1-B 초기 월드턴, 보스, 조언 압력 설정을 제공한다", () => {
-    expect(CAMPAIGN_BALANCE.revision).toBe("b1b-risk-curve-v1");
+  it("B1-C 보스 손실 보정 설정과 보존 축을 제공한다", () => {
+    expect(CAMPAIGN_BALANCE.revision).toBe("b1c-boss-depletion-v1");
     expect(CAMPAIGN_BALANCE.generalMonsterBaseStatMultiplier).toBe(1.00);
     expect(CAMPAIGN_BALANCE.worldTurn).toEqual({
       restRecoveryRatio: 0.2,
       backgroundLossPercent: { min: 5, max: 10 },
     });
     expect(Object.keys(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk)).toEqual(["1", "2", "3", "4", "5"]);
-    expect(Object.values(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk)).toEqual([1.125, 0.85, 0.675, 0.575, 0.625]);
+    expect(Object.values(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk)).toEqual([1.10, 0.825, 0.65, 0.55, 0.60]);
     expect(CAMPAIGN_BALANCE.advicePressure).toEqual({
       0: { incomingDamageMultiplier: 1, outgoingDamageMultiplier: 1 },
       1: { incomingDamageMultiplier: 1.05, outgoingDamageMultiplier: 1 },
