@@ -386,3 +386,38 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
     expect(view.nodeLabel).toBe(active.pendingOutcome!.event.title);
   });
 });
+
+describe("게시판에서 공고를 다시 고른다", () => {
+  /*
+   * 규칙은 `contract` 에서 `SELECT_CONTRACT` 를 받지 않는다. 물러서는 것이 먼저다.
+   * 그 두 걸음을 화면이 대신 밟지 않으면 두 번째 공고가 눌리지 않는다.
+   */
+  it("다른 공고를 누르면 그것이 선택된다", () => {
+    const run = driven("board-reselect");
+    run.act({ type: "OPEN_BOARD" });
+    const free = run.state().campaign.offers.filter((one) => one.lockReason === null);
+    expect(free.length).toBeGreaterThan(1);
+
+    run.act({ type: "SELECT_CONTRACT", offerId: free[0]!.id });
+    expect(run.state().context.selectedOffer?.id).toBe(free[0]!.id);
+
+    /* 화면이 하는 것과 같은 두 걸음. */
+    run.act({ type: "CANCEL_CONTRACT" });
+    run.act({ type: "SELECT_CONTRACT", offerId: free[1]!.id });
+
+    expect(run.state().context.selectedOffer?.id).toBe(free[1]!.id);
+    expect(run.state().rejected).toBeNull();
+  });
+
+  /* 물러서지 않고 바로 고르면 규칙이 거부한다. 화면이 이 길로 가면 안 된다. */
+  it("물러서지 않고 고르면 거부된다", () => {
+    const store = createCampaignStore("board-reject");
+    store.getState().dispatch({ type: "OPEN_BOARD" });
+    const free = store.getState().campaign.offers.filter((one) => one.lockReason === null);
+    store.getState().dispatch({ type: "SELECT_CONTRACT", offerId: free[0]!.id });
+    store.getState().dispatch({ type: "SELECT_CONTRACT", offerId: free[1]!.id });
+
+    expect(store.getState().rejected).not.toBeNull();
+    expect(store.getState().context.selectedOffer?.id).toBe(free[0]!.id);
+  });
+});

@@ -58,7 +58,23 @@ export function CampaignScreen() {
         board={createU3BoardView(campaign, campaign.offers)}
         selectedOfferId={context.selectedOffer?.id ?? ""}
         promotion={createU3PromotionView(getGuidePromotionEligibility(campaign), campaign.phase, last?.promotion ?? null)}
-        onSelectOffer={(offerId) => dispatch({ type: "SELECT_CONTRACT", offerId: offerId as never })}
+        onSelectOffer={(offerId) => {
+          /*
+           * 이미 고른 것이 있으면 물러선 뒤에 고른다.
+           *
+           * 규칙은 `contract` 에서 `SELECT_CONTRACT` 를 받지 않는다 - 계약을
+           * 검토하던 중에 대상이 소리 없이 바뀌면 무엇에 서명하는지 알 수 없기
+           * 때문이다. 물러서는 것은 길잡이의 몫이고, 공고를 다시 누르는 것이
+           * 곧 그 뜻이다. 화면이 그 두 걸음을 대신 밟는다.
+           *
+           * 이것이 없어서 게시판에서 두 번째 공고가 눌리지 않았다.
+           */
+          if (context.selectedOffer !== null) {
+            if (String(context.selectedOffer.id) === offerId) return;
+            dispatch({ type: "CANCEL_CONTRACT" });
+          }
+          dispatch({ type: "SELECT_CONTRACT", offerId: offerId as never });
+        }}
         onContract={(offerId) => {
           const offer = campaign.offers.find((one) => String(one.id) === offerId);
           if (offer === undefined) return;
