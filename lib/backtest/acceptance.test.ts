@@ -128,10 +128,13 @@ describe("B1-B 승인 gate", () => {
     expect(inverted.find((gate) => gate.id.endsWith("monotonic"))).toMatchObject({ enforced: true, passed: false });
   });
 
-  it("50과 100시드 calibration에서는 위험도 gate를 관찰로 남긴다", () => {
-    const gates = evaluateB1BAcceptance(aggregateAtRiskRates([0.79, 0.65, 0.50, 0.35, 0.20]), { mode: "calibration", seedsPerCombination: 100 });
-    expect(gates.filter(isRiskGate).every((gate) => gate.enforced === false)).toBe(true);
-    expect(gates.find((gate) => gate.id.endsWith("risk-1"))).toMatchObject({ passed: false });
+  it("기본값과 50, 100시드 calibration에서는 위험도 gate를 관찰로 남긴다", () => {
+    const aggregate = aggregateAtRiskRates([0.79, 0.65, 0.50, 0.35, 0.20]);
+    for (const context of [undefined, { mode: "calibration", seedsPerCombination: 50 }, { mode: "calibration", seedsPerCombination: 100 }] as const) {
+      const gates = context === undefined ? evaluateB1BAcceptance(aggregate) : evaluateB1BAcceptance(aggregate, context);
+      expect(gates.filter(isRiskGate).every((gate) => gate.enforced === false)).toBe(true);
+      expect(gates.find((gate) => gate.id.endsWith("risk-1"))).toMatchObject({ passed: false });
+    }
   });
 
   it("최종 calibration은 위험도별 최소 30개 표본을 요구한다", () => {
@@ -146,7 +149,18 @@ describe("B1-B 승인 gate", () => {
 
   it("holdout은 위험도별 최소 300개 표본을 요구한다", () => {
     const targetRates = [0.80, 0.65, 0.50, 0.35, 0.20] as const;
-    const insufficient = evaluateB1BAcceptance(aggregateAtRiskRates(targetRates, 299), { mode: "holdout", seedsPerCombination: 2000 });
+    const withinBandsAt299 = [250 / 299, 210 / 299, 165 / 299, 120 / 299, 75 / 299] as const;
+    const aggregateAt299 = aggregateAtRiskRates(withinBandsAt299, 299);
+    const observedAt299 = RISK_LEVELS.map((risk) => aggregateAt299.combinations["opportunist@0.7"]!.firstAttemptByInitialRisk[risk].clearRate);
+    expect(observedAt299).toEqual(withinBandsAt299);
+    for (const risk of RISK_LEVELS) {
+      const rate = aggregateAt299.combinations["opportunist@0.7"]!.firstAttemptByInitialRisk[risk].clearRate;
+      const [minimum, maximum] = B1B_RISK_CLEARANCE_TARGETS[risk];
+      expect(rate).toBeGreaterThan(minimum);
+      expect(rate).toBeLessThan(maximum);
+    }
+
+    const insufficient = evaluateB1BAcceptance(aggregateAt299, { mode: "holdout", seedsPerCombination: 2000 });
     expect(insufficient.find((gate) => gate.id.endsWith("risk-1"))).toMatchObject({
       enforced: true,
       passed: false,
