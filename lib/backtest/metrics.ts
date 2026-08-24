@@ -1,5 +1,5 @@
 import type { AdviceOutcome, CampaignState, EndingKind, GuideRank, InfoReaction } from "@/lib/domain";
-import type { CampaignRun, RunErrorKind } from "./campaign-driver";
+import type { CampaignRun, ExpeditionBalanceTrace, RunErrorKind } from "./campaign-driver";
 import type { Accuracy, PublicNodeCategory, StrategyId } from "./public-state";
 
 export type CombinationId = `${StrategyId}@${Accuracy}`;
@@ -44,6 +44,7 @@ export interface CampaignRunMetrics {
   readonly adviceHits: number;
   readonly adviceTotal: number;
   readonly errorKind: RunErrorKind | null;
+  readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
 }
 
 export interface WilsonInterval {
@@ -62,6 +63,18 @@ export interface CombinationAggregate {
   readonly id: CombinationId;
   readonly count: number;
   readonly completedCount: number;
+  readonly completionRate: number;
+  readonly completedWipeMean: number | null;
+  readonly fivePlusWipeCount: number;
+  readonly fivePlusWipeRate: number | null;
+  readonly meanMaxAdvicePressure: number;
+  readonly meanBossEntryHpRatio: number | null;
+  readonly bossByThemeRisk: Readonly<Record<string, {
+    readonly entries: number;
+    readonly clears: number;
+    readonly wipes: number;
+    readonly meanEntryHpRatio: number;
+  }>>;
   readonly rankSCount: number;
   readonly endingCounts: Readonly<Record<EndingKind | "run-error", number>>;
   readonly adviceHits: number;
@@ -121,6 +134,7 @@ function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetri
     merchantGoldSpent: run.trace.merchantGoldSpent, merchantEffectsConsumed: run.trace.merchantEffectsConsumed,
     adviceHits: run.trace.adviceSelections.filter((selection) => selection.hit).length,
     adviceTotal: run.trace.adviceSelections.length, errorKind: run.errorKind,
+    balanceExpeditions: run.trace.balanceExpeditions,
   };
 }
 
@@ -173,6 +187,7 @@ function successfulMetrics(campaign: CampaignState, run: Extract<CampaignRun, { 
     adviceHits: run.trace.adviceSelections.filter((selection) => selection.hit).length,
     adviceTotal: run.trace.adviceSelections.length,
     errorKind: null,
+    balanceExpeditions: run.trace.balanceExpeditions,
   };
 }
 
@@ -203,11 +218,52 @@ export function pairedMeanDifference(left: readonly number[], right: readonly nu
 
 function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetrics[]): CombinationAggregate {
   if (runs.length === 0) throw new AggregationError(`조합 표본이 없다: ${id}`);
+  const completed = runs.filter((run) => run.completed);
+  const completedWipes = completed.map((run) => run.wipedExpeditions);
+  if (completedWipes.some((wipes) => !Number.isFinite(wipes) || wipes < 0)) {
+    throw new AggregationError(`유효하지 않은 완료 전멸 수: ${id}`);
+  }
+  const expeditionPressures = runs.flatMap((run) => {
+    if (!Array.isArray(run.balanceExpeditions)) throw new AggregationError(`원정 밸런스 지표가 없다: ${id}`);
+    return run.balanceExpeditions.map((expedition) => expedition.maxAdvicePressure);
+  });
+  if (expeditionPressures.length === 0) throw new AggregationError(`원정 밸런스 지표가 없다: ${id}`);
+  if (expeditionPressures.some((pressure) => !Number.isFinite(pressure))) throw new AggregationError(`유효하지 않은 조언 압력: ${id}`);
+  const bossEntries = runs.flatMap((run) => run.balanceExpeditions.flatMap((expedition) => expedition.bossEntry === null ? [] : [{ expedition, entry: expedition.bossEntry }]));
+  const bossEntryRatios = bossEntries.map(({ entry }) => {
+    if (!Number.isFinite(entry.hp) || !Number.isFinite(entry.maxHp) || entry.maxHp <= 0) {
+      throw new AggregationError(`유효하지 않은 보스 진입 HP: ${id}`);
+    }
+    return entry.hp / entry.maxHp;
+  });
+  const bossGroups = new Map<string, { entries: number; clears: number; wipes: number; hpRatios: number[] }>();
+  for (const { expedition, entry } of bossEntries) {
+    const groupId = `${expedition.initialRiskLevel}/${expedition.theme}`;
+    const group = bossGroups.get(groupId) ?? { entries: 0, clears: 0, wipes: 0, hpRatios: [] };
+    group.entries += 1;
+    group.clears += expedition.result === "cleared" ? 1 : 0;
+    group.wipes += expedition.result === "wiped" ? 1 : 0;
+    group.hpRatios.push(entry.hp / entry.maxHp);
+    bossGroups.set(groupId, group);
+  }
+  const bossByThemeRisk = Object.fromEntries([...bossGroups.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([groupId, group]) => [groupId, {
+    entries: group.entries,
+    clears: group.clears,
+    wipes: group.wipes,
+    meanEntryHpRatio: group.hpRatios.reduce((total, ratio) => total + ratio, 0) / group.hpRatios.length,
+  }])) as CombinationAggregate["bossByThemeRisk"];
   const endingCounts = emptyCounts(ENDINGS);
   for (const run of runs) endingCounts[run.ending] += 1;
   const sum = (selector: (run: CampaignRunMetrics) => number) => runs.reduce((total, run) => total + selector(run), 0) / runs.length;
   return {
-    id, count: runs.length, completedCount: runs.filter((run) => run.completed).length,
+    id, count: runs.length, completedCount: completed.length,
+    completionRate: completed.length / runs.length,
+    completedWipeMean: completed.length === 0 ? null : completedWipes.reduce((total, wipes) => total + wipes, 0) / completed.length,
+    fivePlusWipeCount: completedWipes.filter((wipes) => wipes >= 5).length,
+    fivePlusWipeRate: completed.length === 0 ? null : completedWipes.filter((wipes) => wipes >= 5).length / completed.length,
+    meanMaxAdvicePressure: expeditionPressures.reduce((total, pressure) => total + pressure, 0) / expeditionPressures.length,
+    meanBossEntryHpRatio: bossEntryRatios.length === 0 ? null : bossEntryRatios.reduce((total, ratio) => total + ratio, 0) / bossEntryRatios.length,
+    bossByThemeRisk,
     rankSCount: runs.filter((run) => run.reachedRankS).length, endingCounts,
     adviceHits: runs.reduce((total, run) => total + run.adviceHits, 0),
     adviceTotal: runs.reduce((total, run) => total + run.adviceTotal, 0),

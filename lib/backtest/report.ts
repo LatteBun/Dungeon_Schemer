@@ -1,4 +1,6 @@
-import type { AdviceOutcome, EndingKind } from "@/lib/domain";
+import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
+import type { EndingKind } from "@/lib/domain";
+import { evaluateB1BAcceptance, type B1BAcceptanceGate } from "./acceptance";
 import {
   aggregateRuns,
   pairedMeanDifference,
@@ -10,7 +12,7 @@ import {
 import type { Accuracy, StrategyId } from "./public-state";
 
 export interface FixedGateResult {
-  readonly id: "no-run-errors" | "accuracy-interval" | "not-all-rank-s" | "betrayal-can-complete" | "accuracy-has-effect";
+  readonly id: "no-run-errors" | "accuracy-interval" | "not-all-rank-s" | "betrayal-can-complete";
   readonly passed: boolean;
   readonly evidence: string;
 }
@@ -29,6 +31,7 @@ export interface BacktestReportInput {
   readonly sourceRevision: string;
   readonly aggregate: BacktestAggregate;
   readonly fixedGates: readonly FixedGateResult[];
+  /** @deprecated B1-B 보고서는 승인 대기 기준을 렌더링하지 않는다. */
   readonly adjustableCriteria: AdjustableAcceptanceCriteria | null;
 }
 
@@ -56,7 +59,7 @@ function pairedCompleted(aggregate: BacktestAggregate, strategy: StrategyId): Pa
   return pairedLeft.length < 2 ? null : pairedMeanDifference(pairedRight, pairedLeft);
 }
 
-export function evaluateFixedGates(aggregate: BacktestAggregate, criteria: AdjustableAcceptanceCriteria | null = null): readonly FixedGateResult[] {
+export function evaluateFixedGates(aggregate: BacktestAggregate, _criteria: AdjustableAcceptanceCriteria | null = null): readonly FixedGateResult[] {
   const noErrors: FixedGateResult = {
     id: "no-run-errors", passed: aggregate.errorCount === 0,
     evidence: `실행 오류 ${aggregate.errorCount}건`,
@@ -83,15 +86,11 @@ export function evaluateFixedGates(aggregate: BacktestAggregate, criteria: Adjus
   }));
   const betrayal = aggregate.combinations["selective-betrayal@0.7"];
   const betrayalCanComplete = betrayal !== undefined && betrayal.betrayalCompletions > 0;
-  const effects = STRATEGIES.map((strategy) => pairedCompleted(aggregate, strategy)).filter((value): value is PairedDifference => value !== null);
-  const statisticalEffect = effects.some((effect) => effect.low95 > 0 || effect.high95 < 0);
-  const practicalEffect = criteria === null ? false : effects.some((effect) => Math.abs(effect.mean) >= criteria.minimumAccuracyEffect);
   return [
     noErrors,
     { id: "accuracy-interval", passed: accuracyPassed, evidence: accuracyEvidence.join("; ") },
     { id: "not-all-rank-s", passed: notAllS, evidence: "각 조합 S 도달률 100% 미만" },
     { id: "betrayal-can-complete", passed: betrayalCanComplete, evidence: `배신 완주 ${betrayal?.betrayalCompletions ?? 0}건` },
-    { id: "accuracy-has-effect", passed: statisticalEffect && practicalEffect, evidence: `paired 통계 ${statisticalEffect ? "차이 있음" : "차이 없음"}; 실질 기준 ${criteria === null ? "승인 대기" : practicalEffect ? "충족" : "미충족"}` },
   ];
 }
 
@@ -103,15 +102,37 @@ function lineForGate(gate: FixedGateResult): string {
   return `| ${gate.id} | ${gate.passed ? "PASS" : "FAIL"} | ${gate.evidence} |`;
 }
 
+function lineForB1BGate(gate: B1BAcceptanceGate): string {
+  return `| ${gate.id} | ${gate.passed ? "PASS" : "FAIL"} | ${gate.evidence} |`;
+}
+
+function nullable(value: number | null, digits = 4): string {
+  return value === null ? "—" : value.toFixed(digits);
+}
+
 export function renderBacktestReport(input: BacktestReportInput): string {
   const aggregate = aggregateRuns([...input.aggregate.runs].sort((left, right) => `${left.strategyId}@${left.accuracy}/${left.seed}`.localeCompare(`${right.strategyId}@${right.accuracy}/${right.seed}`)));
   const gates = [...input.fixedGates].sort((left, right) => left.id.localeCompare(right.id));
+  const b1bGates = [...evaluateB1BAcceptance(aggregate)].sort((left, right) => left.id.localeCompare(right.id));
   const rows: string[] = [];
   for (const strategy of STRATEGIES) {
     for (const accuracy of ACCURACIES) {
       const combination = aggregate.combinations[combinationId(strategy, accuracy)];
       if (combination === undefined) continue;
-      rows.push(`| ${strategy} | ${accuracy} | ${combination.count} | ${rate(combination.completedCount, combination.count)} | ${rate(combination.rankSCount, combination.count)} | ${rate(combination.adviceHits, combination.adviceTotal)} | ${combination.betrayalAttempts} | ${combination.betrayalCompletions} |`);
+      rows.push(`| ${strategy} | ${accuracy} | ${combination.count} | ${combination.completionRate.toFixed(4)} | ${nullable(combination.completedWipeMean)} | ${nullable(combination.fivePlusWipeRate)} | ${combination.meanMaxAdvicePressure.toFixed(4)} | ${nullable(combination.meanBossEntryHpRatio)} |`);
+    }
+  }
+  const bossRows: string[] = [];
+  const endingRows: string[] = [];
+  for (const strategy of STRATEGIES) {
+    for (const accuracy of ACCURACIES) {
+      const combination = aggregate.combinations[combinationId(strategy, accuracy)];
+      if (combination === undefined) continue;
+      for (const [themeRisk, risk] of Object.entries(combination.bossByThemeRisk).sort(([left], [right]) => left.localeCompare(right))) {
+        const [initialRisk, theme] = themeRisk.split("/");
+        bossRows.push(`| ${strategy} | ${accuracy} | ${initialRisk} | ${theme} | ${risk.entries} | ${risk.clears} | ${risk.wipes} | ${risk.meanEntryHpRatio.toFixed(4)} |`);
+      }
+      endingRows.push(`| ${strategy} | ${accuracy} | ${combination.endingCounts.completed} | ${combination.endingCounts.exhausted} | ${combination.endingCounts.unemployed} | ${combination.endingCounts.denounced} | ${combination.endingCounts.distrust} | ${combination.endingCounts["run-error"]} | ${rate(combination.rankSCount, combination.count)} |`);
     }
   }
   const pairedRows: string[] = [];
@@ -123,9 +144,10 @@ export function renderBacktestReport(input: BacktestReportInput): string {
       pairedRows.push(`| ${strategy} | ${difference.mean.toFixed(3)} | ${difference.low95.toFixed(3)} | ${difference.high95.toFixed(3)} |`);
     }
   }
-  const criteriaText = input.adjustableCriteria === null
-    ? "calibration 결과 검토 및 사용자 승인 대기"
-    : "승인된 calibration 기준을 적용함";
+  const bossMultipliers = Object.entries(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk).map(([risk, multiplier]) => `★${risk}: ${multiplier.toFixed(2)}`).join(", ");
+  const pressureRows = Object.entries(CAMPAIGN_BALANCE.advicePressure).map(([pressure, values]) =>
+    `| ${pressure} | ${values.incomingDamageMultiplier.toFixed(2)} | ${values.outgoingDamageMultiplier.toFixed(2)} |`,
+  );
   return [
     "# B1 현행 캠페인 백테스트 보고서",
     "",
@@ -136,23 +158,48 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "- 정확도: 0.4, 0.7",
     `- 조합당 표본: ${input.aggregate.runs.length / 6}`,
     "",
-    "## 고정 gate",
+    "## 설정 revision과 현재 수치",
+    "",
+    `- revision: ${CAMPAIGN_BALANCE.revision}`,
+    `- 휴식 회복: ${CAMPAIGN_BALANCE.worldTurn.restRecoveryRatio.toFixed(2)}`,
+    `- 비출전 HP 손실: ${CAMPAIGN_BALANCE.worldTurn.backgroundLossPercent.min}–${CAMPAIGN_BALANCE.worldTurn.backgroundLossPercent.max}%`,
+    `- 초기 위험도별 보스 배율: ${bossMultipliers}`,
+    "",
+    "| 조언 압력 | 받는 피해 배율 | 주는 피해 배율 |",
+    "| ---: | ---: | ---: |",
+    ...pressureRows,
+    "",
+    "## 고정 무결성 gate",
     "",
     "| Gate | 결과 | 근거 |",
     "| --- | --- | --- |",
     ...gates.map(lineForGate),
     "",
-    "## 조정 가능한 기준",
+    "## B1-B 완주율·완주 전멸 gate",
     "",
-    `- ${criteriaText}`,
+    "| Gate | 결과 | 근거 |",
+    "| --- | --- | --- |",
+    ...b1bGates.map(lineForB1BGate),
     "",
-    "## 조합별 결과",
+    "## 조합별 완주율·완주 전멸 평균·5+ 비율·압력·보스 진입 HP",
     "",
-    "| 전략 | 정확도 | 표본 | 정상 완주율 | S 도달률 | 조언 적중률 | 배신 시도 | 배신 완주 |",
+    "| 전략 | 정확도 | 표본 | 완주율 | 완주 전멸 평균 | 5+ 전멸 비율 | 평균 최대 압력 | 보스 진입 HP 비율 |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...rows,
     "",
-    "## paired 비교",
+    "## 위험도·테마별 보스 진입/클리어/전멸",
+    "",
+    "| 전략 | 정확도 | 초기 위험도 | 테마 | 진입 | 클리어 | 전멸 | 평균 진입 HP 비율 |",
+    "| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |",
+    ...(bossRows.length === 0 ? ["| — | — | — | — | 0 | 0 | 0 | — |"] : bossRows),
+    "",
+    "## 엔딩·최종 등급 분포",
+    "",
+    "| 전략 | 정확도 | 정상 완주 | 소진 | 실업 | 고발 | 불신 | 실행 오류 | S 도달률 |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...endingRows,
+    "",
+    "## paired 정확도 비교",
     "",
     "| 전략 | 0.7−0.4 평균 | 95% CI 하한 | 95% CI 상한 |",
     "| --- | ---: | ---: | ---: |",
@@ -163,11 +210,6 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     `- 총 오류: ${aggregate.errorCount}`,
     ...Object.entries(aggregate.errorCounts).filter(([, count]) => count > 0).sort(([left], [right]) => left.localeCompare(right)).map(([kind, count]) => `- ${kind}: ${count}`),
     `- 대표 실패 seed: ${aggregate.runs.filter((run) => run.errorKind !== null).map((run) => run.seed).sort().slice(0, 20).join(", ") || "없음"}`,
-    "",
-    "## B1 판정",
-    "",
-    `- holdout 승인 기준 판정: ${input.mode === "holdout" && gates.every((gate) => gate.passed) ? "검토 필요" : "calibration/실패 근거 검토 필요"}`,
-    `- B1-B 필요 여부: ${input.mode === "holdout" && gates.every((gate) => gate.passed) ? "없음" : "holdout 결과에 따라 결정"}`,
     "",
   ].join("\n");
 }
