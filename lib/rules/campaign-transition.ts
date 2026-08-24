@@ -492,6 +492,7 @@ function transitionEnterBoss(
     infoRecords: expedition.infoRecords,
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/boss`,
     pendingMerchantEffect: expedition.pendingMerchantEffect,
+    advicePressure: expedition.advicePressure,
   });
 
   const withTrust = resolved.members.map((member) => {

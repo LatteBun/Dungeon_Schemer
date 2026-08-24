@@ -1,4 +1,6 @@
 import { createRng } from "@/lib/rng";
+import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
+import { combatMultipliersForAdvicePressure } from "@/lib/rules/advice-pressure";
 import { consumePendingMerchantEffect } from "@/lib/rules/merchant";
 import { evaluateTrust } from "@/lib/rules/trust";
 import { resolveBattle } from "@/lib/rules/battle-engine";
@@ -23,8 +25,10 @@ import type {
   CampaignDungeon,
   Character,
   ClassDef,
+  AdvicePressure,
   InfoRecord,
   PendingMerchantEffect,
+  RiskLevel,
   ThemeContent,
   TrustChange,
 } from "@/lib/domain";
@@ -37,6 +41,7 @@ export interface BossBattleInput {
   readonly infoRecords: readonly InfoRecord[];
   readonly seed: string;
   readonly pendingMerchantEffect: PendingMerchantEffect | null;
+  readonly advicePressure: AdvicePressure;
 }
 
 export interface BossBattleResolution {
@@ -50,18 +55,11 @@ function invalid(message: string, details: Record<string, unknown> = {}): never 
   throw new RuleError("INVALID_GENERATION", message, details);
 }
 
-export function retryBossStats(
+export function balancedBossStats(
   boss: BossDef,
-  dungeon: Pick<CampaignDungeon, "initialRiskLevel" | "riskLevel">,
+  initialRiskLevel: RiskLevel,
 ): { readonly maxHp: number; readonly baseDamage: number } {
-  const riskIncrease = dungeon.riskLevel - dungeon.initialRiskLevel;
-  if (!Number.isInteger(riskIncrease) || riskIncrease < 0 || riskIncrease > 4) {
-    invalid("보스 scaling 위험도 차이가 유효하지 않다", {
-      initialRiskLevel: dungeon.initialRiskLevel,
-      riskLevel: dungeon.riskLevel,
-    });
-  }
-  const multiplier = 1 + riskIncrease * 0.1;
+  const multiplier = CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk[initialRiskLevel];
   return {
     maxHp: Math.max(1, Math.round(boss.maxHp * multiplier)),
     baseDamage: Math.max(1, Math.round(boss.baseDamage * multiplier)),
@@ -191,13 +189,16 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
   });
   if (party.length === 0) invalid("보스전에 살아 있는 파티원이 없다");
 
-  const stats = retryBossStats(boss, input.dungeon);
+  const stats = balancedBossStats(boss, input.dungeon.initialRiskLevel);
   const targetWeightMultiplierByMemberId: Record<string, number> = {};
   const incomingDamageMultiplierByMemberId: Record<string, number> = {};
   const outgoingDamageMultiplierByMemberId: Record<string, number> = {};
   const merchantIncoming = consumed.nextBattle?.incomingDamageMultiplier;
   const merchantOutgoing = consumed.nextBattle?.partyDamageMultiplier;
+  const pressure = combatMultipliersForAdvicePressure(input.advicePressure);
   for (const member of aliveMembers) {
+    multiplyRawAxis(axisMultipliers, member.id, "incomingDamage", pressure.incomingDamageMultiplier);
+    multiplyRawAxis(axisMultipliers, member.id, "outgoingDamage", pressure.outgoingDamageMultiplier);
     if (merchantIncoming !== undefined) multiplyRawAxis(axisMultipliers, member.id, "incomingDamage", merchantIncoming);
     if (merchantOutgoing !== undefined) multiplyRawAxis(axisMultipliers, member.id, "outgoingDamage", merchantOutgoing);
     targetWeightMultiplierByMemberId[member.id] = finalAxisValue(axisMultipliers, member.id, "targetWeight");

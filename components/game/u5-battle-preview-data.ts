@@ -108,6 +108,7 @@ function resolveBoss() {
     infoRecords: bossInfo,
     seed: "u5-2-boss-preview",
     pendingMerchantEffect: null,
+    advicePressure: 0,
   });
 }
 
