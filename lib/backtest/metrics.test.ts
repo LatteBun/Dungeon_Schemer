@@ -121,6 +121,21 @@ describe("백테스트 통계", () => {
     expect(combination.depletionVerdict).toMatchObject({ kind: "dominant", source: "expedition-boss" });
   });
 
+  it("첫 시도 위험도·테마별 손실과 최종 풀 상태 평균을 집계한다", () => {
+    const combination = aggregateRuns([metric({
+      deployableCount: 3,
+      aliveCount: 7,
+      zeroTrustCount: 3,
+      gravelyWoundedCount: 2,
+    })]).combinations["survival@0.7"]!;
+
+    expect(combination.firstAttemptDepletionByThemeRisk["spider/1"]!["expedition-general"])
+      .toEqual({ hpLost: 30, hpRecovered: 0, deaths: 2, seriousInjuriesStarted: 1, seriousInjuriesCleared: 0, trustZeroed: 1 });
+    expect(combination.firstAttemptDepletionByThemeRisk["spider/1"]!["expedition-boss"])
+      .toEqual({ hpLost: 70, hpRecovered: 0, deaths: 4, seriousInjuriesStarted: 2, seriousInjuriesCleared: 0, trustZeroed: 2 });
+    expect(combination.means).toMatchObject({ totalDeaths: 6, aliveCount: 7, deployableCount: 3, zeroTrustCount: 3, gravelyWoundedCount: 2 });
+  });
+
   it("사망 비중이 정확히 60%이면 dominant로 판정한다", () => {
     const aggregate = aggregateRuns([metric({
       depletion: [

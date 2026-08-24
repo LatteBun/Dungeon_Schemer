@@ -125,6 +125,7 @@ export interface CombinationAggregate {
   readonly allAttemptsByCurrentRisk: Readonly<Record<RiskLevel, ExpeditionFunnel>>;
   readonly eventualDungeonByInitialRisk: Readonly<Record<RiskLevel, EventualDungeonRate>>;
   readonly firstAttemptByThemeRisk: Readonly<Record<string, ExpeditionFunnel>>;
+  readonly firstAttemptDepletionByThemeRisk: Readonly<Record<string, Readonly<Record<DepletionSource, DepletionTotals>>>>;
   readonly rankSCount: number;
   readonly endingCounts: Readonly<Record<EndingKind | "run-error", number>>;
   readonly terminationCounts: Readonly<Record<CampaignTerminationReason, number>>;
@@ -434,6 +435,33 @@ function sumDepletion(runs: readonly CampaignRunMetrics[]): Readonly<Record<Depl
   return totals;
 }
 
+function firstAttemptDepletionByThemeRisk(runs: readonly CampaignRunMetrics[]): Readonly<Record<string, Readonly<Record<DepletionSource, DepletionTotals>>>> {
+  const totalsByThemeRisk = new Map<string, Record<DepletionSource, DepletionTotals>>();
+  for (const run of runs) {
+    const firstAttemptsByExpeditionId = new Map(run.balanceExpeditions
+      .filter((expedition) => expedition.attemptNumber === 1)
+      .map((expedition) => [expedition.expeditionId, expedition]));
+    for (const entry of run.depletion) {
+      if (entry.expeditionId === null) continue;
+      const expedition = firstAttemptsByExpeditionId.get(entry.expeditionId);
+      if (expedition === undefined) continue;
+      const key = `${expedition.theme}/${expedition.initialRiskLevel}`;
+      const totals = totalsByThemeRisk.get(key) ?? Object.fromEntries(DEPLETION_SOURCES.map((source) => [source, emptyDepletionTotals()])) as Record<DepletionSource, DepletionTotals>;
+      const sourceTotals = totals[entry.source];
+      totals[entry.source] = {
+        hpLost: sourceTotals.hpLost + entry.hpLost,
+        hpRecovered: sourceTotals.hpRecovered + entry.hpRecovered,
+        deaths: sourceTotals.deaths + entry.deaths,
+        seriousInjuriesStarted: sourceTotals.seriousInjuriesStarted + entry.seriousInjuriesStarted,
+        seriousInjuriesCleared: sourceTotals.seriousInjuriesCleared + entry.seriousInjuriesCleared,
+        trustZeroed: sourceTotals.trustZeroed + entry.trustZeroed,
+      };
+      totalsByThemeRisk.set(key, totals);
+    }
+  }
+  return Object.fromEntries([...totalsByThemeRisk.entries()].sort(([left], [right]) => left.localeCompare(right)));
+}
+
 function dominantTerminationFor(terminationCounts: Readonly<Record<CampaignTerminationReason, number>>): CampaignTerminationReason | null {
   const maximum = Math.max(...TERMINATION_REASONS.map((reason) => terminationCounts[reason]));
   const dominant = TERMINATION_REASONS.filter((reason) => terminationCounts[reason] === maximum);
@@ -564,7 +592,7 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
     firstAttemptByInitialRisk: funnelsByRisk(firstAttempts, (expedition) => expedition.initialRiskLevel),
     allAttemptsByCurrentRisk: funnelsByRisk(allExpeditions, (expedition) => expedition.currentRiskLevel),
     eventualDungeonByInitialRisk: eventualDungeonRates(runs),
-    firstAttemptByThemeRisk,
+    firstAttemptByThemeRisk, firstAttemptDepletionByThemeRisk: firstAttemptDepletionByThemeRisk(runs),
     rankSCount: runs.filter((run) => run.reachedRankS).length, endingCounts,
     terminationCounts, depletionBySource, depletionVerdict,
     adviceHits: runs.reduce((total, run) => total + run.adviceHits, 0),
@@ -574,7 +602,9 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
     betrayalWipes: runs.reduce((total, run) => total + run.betrayalWipes, 0),
     means: {
       totalExpeditions: sum((run) => run.totalExpeditions), totalDeaths: sum((run) => run.totalDeaths),
-      aliveCount: sum((run) => run.aliveCount), relicGold: sum((run) => run.relicGold),
+      aliveCount: sum((run) => run.aliveCount), deployableCount: sum((run) => run.deployableCount),
+      zeroTrustCount: sum((run) => run.zeroTrustCount), gravelyWoundedCount: sum((run) => run.gravelyWoundedCount),
+      relicGold: sum((run) => run.relicGold),
       cumulativeGold: sum((run) => run.cumulativeGold), betrayalAttempts: sum((run) => run.betrayalAttempts),
     },
     runs: [...runs],

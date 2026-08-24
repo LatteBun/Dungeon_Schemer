@@ -147,6 +147,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
   const endingRows: string[] = [];
   const depletionRows: string[] = [];
   const terminationRows: string[] = [];
+  const opportunistFirstAttemptDepletionRows: string[] = [];
   for (const strategy of STRATEGIES) {
     for (const accuracy of ACCURACIES) {
       const combination = aggregate.combinations[combinationId(strategy, accuracy)];
@@ -156,7 +157,21 @@ export function renderBacktestReport(input: BacktestReportInput): string {
         const verdict = combination.depletionVerdict;
         depletionRows.push(`| ${strategy} | ${accuracy} | ${source} | ${totals.hpLost} | ${totals.hpRecovered} | ${totals.deaths} | ${totals.seriousInjuriesStarted} | ${totals.seriousInjuriesCleared} | ${totals.trustZeroed} | ${verdict.kind}${verdict.kind === "dominant" ? ` (${verdict.source})` : ""} | ${verdict.evidence} |`);
       }
-      terminationRows.push(`| ${strategy} | ${accuracy} | ${TERMINATION_REASONS.map((reason) => combination.terminationCounts[reason]).join(" | ")} | ${combination.means.totalDeaths.toFixed(4)} | ${combination.means.aliveCount.toFixed(4)} |`);
+      terminationRows.push(`| ${strategy} | ${accuracy} | ${TERMINATION_REASONS.map((reason) => combination.terminationCounts[reason]).join(" | ")} | ${combination.means.totalDeaths.toFixed(4)} | ${combination.means.aliveCount.toFixed(4)} | ${combination.means.deployableCount.toFixed(4)} | ${combination.means.zeroTrustCount.toFixed(4)} | ${combination.means.gravelyWoundedCount.toFixed(4)} |`);
+      if (strategy === "opportunist" && accuracy === 0.7) {
+        for (const { theme, initialRisk, sourceTotals } of Object.entries(combination.firstAttemptDepletionByThemeRisk)
+          .map(([themeRisk, sourceTotals]) => {
+            const [theme, initialRisk] = themeRisk.split("/");
+            return { theme: theme!, initialRisk: Number(initialRisk), sourceTotals };
+          })
+          .sort((left, right) => left.initialRisk - right.initialRisk || left.theme.localeCompare(right.theme))) {
+          for (const source of DEPLETION_SOURCES) {
+            const totals = sourceTotals[source];
+            if (totals.hpLost === 0 && totals.hpRecovered === 0 && totals.deaths === 0 && totals.seriousInjuriesStarted === 0 && totals.seriousInjuriesCleared === 0 && totals.trustZeroed === 0) continue;
+            opportunistFirstAttemptDepletionRows.push(`| ${initialRisk} | ${theme} | ${source} | ${totals.hpLost} | ${totals.hpRecovered} | ${totals.deaths} | ${totals.seriousInjuriesStarted} | ${totals.seriousInjuriesCleared} | ${totals.trustZeroed} |`);
+          }
+        }
+      }
       for (const risk of [1, 2, 3, 4, 5] as const) {
         const funnel = combination.firstAttemptByInitialRisk[risk];
         firstAttemptFunnelRows.push(`| ${strategy} | ${accuracy} | ${risk} | ${funnel.starts} | ${funnel.bossEntries} | ${funnel.clears} | ${funnel.wipes} | ${funnel.interrupted} | ${funnel.preBossFailures} | ${funnel.bossFailures} | ${nullable(funnel.clearRate)} | ${nullable(funnel.bossReachRate)} | ${nullable(funnel.bossConversionRate)} | ${nullable(funnel.meanBossEntryHpRatio)} | ${nullable(funnel.meanBossEntryAliveCount)} | ${nullableInterval(funnel.clearRateWilson95)} |`);
@@ -241,9 +256,15 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "",
     "## 종료 사유와 최종 풀 상태",
     "",
-    "| 전략 | 정확도 | 완료 | 풀 소진 | 출전 불가 | 불신 | 고발 | 실행 오류 | 평균 사망 | 평균 생존 |",
-    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    "| 전략 | 정확도 | 완료 | 풀 소진 | 출전 불가 | 불신 | 고발 | 실행 오류 | 평균 사망 | 평균 생존 | 평균 출전 가능 | 평균 신뢰 0 | 평균 중상 |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...terminationRows,
+    "",
+    "## opportunist@0.7 초기 위험도·테마별 첫 시도 손실",
+    "",
+    "| 초기 위험도 | 테마 | source | HP 손실 | HP 회복 | 사망 | 중상 시작 | 중상 해제 | 신뢰 0 |",
+    "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...(opportunistFirstAttemptDepletionRows.length === 0 ? ["| — | — | — | 0 | 0 | 0 | 0 | 0 | 0 |"] : opportunistFirstAttemptDepletionRows),
     "",
     "## 초기 위험도별 첫 시도 던전 funnel",
     "",
