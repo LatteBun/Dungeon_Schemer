@@ -33,6 +33,7 @@ describe("U6 고정 캔버스 계약", () => {
       /\.u6-settlement-side \.u6-settlement-continue\s*\{([^}]*)\}/,
     )?.[1] ?? "";
 
+    expect(rule).toMatch(/grid-row:\s*4/);
     expect(rule).toMatch(/justify-self:\s*end/);
     expect(rule).not.toMatch(/justify-self:\s*stretch/);
     expect(rule).not.toMatch(/width:\s*100%/);

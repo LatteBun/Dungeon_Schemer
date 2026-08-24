@@ -4,7 +4,7 @@
 
 **Goal:** 던전 결과 정산 화면의 `길드로 돌아간다` CTA를 공통 다음 단계 버튼과 같은 크기 체계의 내용 폭 버튼으로 줄이고 우측 하단에 유지한다.
 
-**Architecture:** React 구조와 공통 CTA 선언은 바꾸지 않는다. `app/u6-result.css`의 정산 화면 전용 배치 규칙만 `stretch`에서 `end`로 바꾸며, `components/game/U6FixedCanvas.test.ts`가 그 화면별 CSS 계약을 고정한다.
+**Architecture:** React 구조와 공통 CTA 선언은 바꾸지 않는다. `app/u6-result.css`의 정산 화면 전용 배치 규칙을 최하단 자동 행(`grid-row: 4`)에 배치하고 `justify-self: end`로 우측 정렬하며, `components/game/U6FixedCanvas.test.ts`가 그 화면별 CSS 계약을 고정한다.
 
 **Tech Stack:** Next.js 16.3.0 App Router, React 19.2.8, TypeScript 5.9, CSS Grid, Vitest 4.1.10, Playwright 1.62.1
 
@@ -50,7 +50,7 @@ Expected: 최신 main과 설계·계획 문서가 함께 남고 전체 단위 �
 
 **Interfaces:**
 - Consumes: `app/globals.css`의 `.u6-settlement-continue` 공통 최소 높이, padding, 글자 크기와 상태 스타일
-- Produces: `.u6-settlement-side .u6-settlement-continue { grid-row: 3; justify-self: end; text-align: center; }`
+- Produces: `.u6-settlement-side .u6-settlement-continue { grid-row: 4; justify-self: end; text-align: center; }`
 
 - [ ] **Step 1: 현재 Next.js CSS 공식 문서를 읽는다**
 
@@ -96,7 +96,7 @@ Expected: 새 테스트만 FAIL하며, `.u6-settlement-side .u6-settlement-conti
 
 ```css
 .u6-settlement-side .u6-settlement-continue {
-  grid-row: 3;
+  grid-row: 4;
   justify-self: end;
   text-align: center;
 }
