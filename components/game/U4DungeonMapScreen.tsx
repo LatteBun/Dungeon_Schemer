@@ -500,11 +500,13 @@ function RightPanel({
                   src={ROOM_ICON[destination.kind]}
                   alt=""
                 />
-                <img
-                  className="u4-destination__frame"
-                  src="/assets/u4/navigation/destination_thumbnail_frame.png"
-                  alt=""
-                />
+                {/*
+                  * 액자 그림을 쓰지 않는다.
+                  *
+                  * 자산이 244x119 라 정사각 칸에 넣으면 늘어나고, 제 비율로 두면
+                  * 좌우로 길어 아이콘이 작아 보인다. 여기서 필요한 것은 분류
+                  * 하나이므로 네모난 테두리만 두르고 아이콘을 크게 세운다.
+                  */}
               </div>
               <div>
                 <strong>{ROOM_LABEL[destination.kind]}</strong>
