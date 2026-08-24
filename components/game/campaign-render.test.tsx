@@ -622,3 +622,43 @@ describe("원정 중에 되짚어 볼 수 있다", () => {
     expect(fought.size).toBeGreaterThan(0);
   });
 });
+
+describe("승급 결과를 닫는다", () => {
+  /*
+   * 승급하면 이미 게시판이다.
+   *
+   * `PROMOTE_GUIDE` 가 단계를 `board` 로 돌려놓으므로, 결과창을 닫으려고
+   * `CANCEL_PROMOTION` 을 또 보내면 규칙이 거부한다. 그러면 승급하고도 넘어가지지
+   * 않는다.
+   */
+  it("승급 뒤에는 취소를 보낼 수 없다", () => {
+    const run = driven("promotion-dismiss");
+    run.act({ type: "OPEN_BOARD" });
+    run.store.setState({ campaign: { ...run.state().campaign, gold: 500, reputation: 100 } });
+    run.act({ type: "OPEN_PROMOTION" });
+    run.act({ type: "PROMOTE_GUIDE", method: "gold" });
+
+    /* 승급 자체는 게시판으로 돌려놓는다. */
+    expect(run.state().campaign.phase).toBe("board");
+    expect(run.state().last?.promotion).not.toBeNull();
+
+    /* 여기서 취소를 보내면 거부된다. 화면이 이 길로 가면 안 된다. */
+    run.store.getState().dispatch({ type: "CANCEL_PROMOTION" });
+
+    expect(run.store.getState().rejected?.reason).toContain("허용되지 않은");
+  });
+
+  /* 닫는 것은 규칙의 일이 아니다. 무엇을 이미 봤는지는 화면의 것이다. */
+  it("결과를 닫아도 규칙을 건드리지 않는다", () => {
+    const run = driven("promotion-dismiss-2");
+    run.act({ type: "OPEN_BOARD" });
+    run.store.setState({ campaign: { ...run.state().campaign, gold: 500, reputation: 100 } });
+    run.act({ type: "OPEN_PROMOTION" });
+    run.act({ type: "PROMOTE_GUIDE", method: "gold" });
+    const after = run.state().campaign;
+
+    /* 화면이 하는 일은 "봤다" 를 기억하는 것뿐이다. */
+    expect(run.state().rejected).toBeNull();
+    expect(after.rank).not.toBe("C");
+  });
+});

@@ -387,9 +387,15 @@ button.u4-room {
   grid-template-rows: auto auto auto;
 }
 
+/*
+ * 칸을 내용에 맞춘다.
+ *
+ * 최소 높이를 크게 잡아 두어, 두 줄짜리 내용 옆으로 빈 판이 넓게 남았다. 여기서
+ * 할 말은 "무슨 지점을 골랐는가" 하나뿐이다.
+ */
 .u4-destination__panel {
   position: relative;
-  min-height: clamp(5.2rem, 7.2cqh, 6.4rem);
+  min-height: clamp(4.1rem, 5.6cqh, 5rem);
   overflow: hidden;
   background: #0b0806;
 }
@@ -421,7 +427,6 @@ button.u4-room {
   aspect-ratio: 1;
 }
 
-.u4-destination__room,
 .u4-destination__frame {
   position: absolute;
   inset: 0;
@@ -430,11 +435,7 @@ button.u4-room {
   object-fit: contain;
 }
 
-/* 방 밑그림은 바탕으로 물린다. 앞에 서는 것은 아이콘이다. */
-.u4-destination__room {
-  opacity: 0.5;
-  filter: saturate(0.7) brightness(0.85);
-}
+
 
 /*
  * 무슨 지점인지 말하는 것은 아이콘이다.

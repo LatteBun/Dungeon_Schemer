@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ActiveExpeditionContext, NodeId, PromotionMethod } from "@/lib/domain";
+import type { ActiveExpeditionContext, NodeId, PromotionMethod, PromotionResult } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { screenForPhase } from "@/lib/store/campaign-store";
 import { useCampaignStore } from "./CampaignStoreProvider";
@@ -59,6 +59,16 @@ export function CampaignScreen() {
 }
 
 function CurrentScreen() {
+  /*
+   * 승급 결과를 덮었는지는 화면이 기억한다.
+   *
+   * `PROMOTE_GUIDE` 는 이미 게시판으로 돌려놓으므로, 결과창을 닫으려고
+   * `CANCEL_PROMOTION` 을 또 보내면 규칙이 「게시판에서 허용되지 않은 전이다」로
+   * 거부한다. 그러면 승급하고도 넘어가지지 않는다 - 실제로 그랬다.
+   *
+   * 닫는 것은 규칙의 일이 아니다. 무엇을 이미 봤는지는 화면의 것이다.
+   */
+  const [seenPromotion, setSeenPromotion] = useState<string | null>(null);
   const campaign = useCampaignStore((state) => state.campaign);
   const context = useCampaignStore((state) => state.context);
   const last = useCampaignStore((state) => state.last);
@@ -78,7 +88,11 @@ function CurrentScreen() {
         status={status}
         board={createU3BoardView(campaign, campaign.offers)}
         selectedOfferId={context.selectedOffer?.id ?? ""}
-        promotion={createU3PromotionView(getGuidePromotionEligibility(campaign), campaign.phase, last?.promotion ?? null)}
+        promotion={createU3PromotionView(
+          getGuidePromotionEligibility(campaign),
+          campaign.phase,
+          promotionKey(last?.promotion ?? null) === seenPromotion ? null : last?.promotion ?? null,
+        )}
         onSelectOffer={(offerId) => {
           /*
            * 이미 고른 것이 있으면 물러선 뒤에 고른다.
@@ -106,7 +120,7 @@ function CurrentScreen() {
         onOpenPromotion={() => dispatch({ type: "OPEN_PROMOTION" })}
         onCancelPromotion={() => dispatch({ type: "CANCEL_PROMOTION" })}
         onConfirmPromotion={(method: PromotionMethod) => dispatch({ type: "PROMOTE_GUIDE", method })}
-        onDismissPromotionResult={() => dispatch({ type: "CANCEL_PROMOTION" })}
+        onDismissPromotionResult={() => setSeenPromotion(promotionKey(last?.promotion ?? null))}
       />
     );
   }
@@ -260,6 +274,11 @@ function ExpeditionScreens() {
  * 카드를 뒤집으면 보인다. 지금 수치만 보고는 무엇 때문에 그렇게 됐는지 알 수
  * 없는데, 신뢰가 왜 깎였는지가 곧 다음 조언이 먹힐지를 가른다.
  */
+/** 어느 승급의 결과인지. 같은 등급 이동은 한 번뿐이라 이것으로 갈린다. */
+function promotionKey(result: PromotionResult | null): string | null {
+  return result === null ? null : `${result.fromRank}->${result.toRank}`;
+}
+
 function changesByMemberId(active: ActiveExpeditionContext) {
   const byId: Record<string, ReturnType<typeof memberChangesFor>> = {};
   for (const member of active.partyMembers) {
