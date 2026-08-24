@@ -192,6 +192,8 @@ export function prepareExpeditionEvents(input: {
   readonly theme: ThemeContent;
   readonly activeRuleIds: readonly RuleId[];
   readonly activeMonsterIds: readonly MonsterId[];
+  /** 콘텐츠 검증·생성 fixture용 후보 catalog. 생략하면 테마 정식 catalog를 쓴다. */
+  readonly eventCatalog?: readonly SituationEvent[];
 }): PreparedExpeditionEvents {
   if (input.attempt < 0 || !Number.isInteger(input.attempt)) invalid("attempt가 유효하지 않다", { attempt: input.attempt });
   const rng = createRng(`${input.campaignSeed}/${input.dungeonId}/${input.attempt}`).derive("event");
@@ -208,7 +210,7 @@ export function prepareExpeditionEvents(input: {
     });
   }
   const bossInfoCuts = cuts.map((depth) => ({ nodeIds: input.map.layers[depth]?.nodeIds ?? [] }));
-  const allEvents = eventsForTheme(input.theme.id);
+  const allEvents = input.eventCatalog ?? eventsForTheme(input.theme.id);
   const activeRuleIds = new Set(input.activeRuleIds);
   const activeMonsterIds = new Set(input.activeMonsterIds);
   const eligibleEvents = allEvents.filter((event) => eventMatchesProfile(event, activeRuleIds, activeMonsterIds));
@@ -473,6 +475,8 @@ export function materializeNodeEvent(input: {
   readonly targetBossId?: string;
   readonly activeRuleIds: readonly RuleId[];
   readonly activeMonsterIds: readonly MonsterId[];
+  /** prepare 단계와 같은 fixture catalog를 써 물질화 경계를 검증한다. */
+  readonly eventCatalog?: readonly SituationEvent[];
 }): MaterializedNodeEvent {
   const plan = input.prepared.nodePlans.get(input.nodeId as NodeId);
   if (plan === undefined) invalid("방문할 node plan이 없다", { nodeId: input.nodeId });
@@ -483,7 +487,7 @@ export function materializeNodeEvent(input: {
   if (plan.hiddenRole === "strongFollower" && plan.plannedClueId !== undefined && !input.prepared.heldClueIds.has(plan.plannedClueId)) {
     invalid("strong follower의 선행 단서가 아직 없다", { nodeId: input.nodeId, clueId: plan.plannedClueId });
   }
-  const eligibleEvents = eventsForTheme(input.theme.id).filter((event) => eventMatchesProfile(event, new Set(input.activeRuleIds), new Set(input.activeMonsterIds)));
+  const eligibleEvents = (input.eventCatalog ?? eventsForTheme(input.theme.id)).filter((event) => eventMatchesProfile(event, new Set(input.activeRuleIds), new Set(input.activeMonsterIds)));
   const strongClues = new Set(eligibleEvents.flatMap((event) => event.requiresClue ? [event.requiresClue] : []));
   const candidates = normalCandidates(eligibleEvents.filter((event) => event.kind === plan.category), plan.hiddenRole, plan.plannedClueId, input.targetBossId, strongClues);
   const available = candidates.filter((event) => !input.prepared.usedEventIds.has(event.id));
