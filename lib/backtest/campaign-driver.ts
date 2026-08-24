@@ -10,6 +10,7 @@ import type {
   BaseAdviceOption,
   CampaignState,
   CampaignTransition,
+  CharacterId,
   DungeonId,
   EndingKind,
   ExpeditionStatus,
@@ -29,6 +30,27 @@ export type RunErrorKind =
   | "step-limit"
   | "nondeterminism";
 
+export type DepletionSource =
+  | "expedition-general"
+  | "expedition-boss"
+  | "world-turn-background"
+  | "world-turn-rest";
+
+export interface DepletionTraceEntry {
+  readonly source: DepletionSource;
+  readonly worldTurn: number;
+  readonly expeditionId: string | null;
+  readonly dungeonId: DungeonId | null;
+  readonly initialRiskLevel: RiskLevel | null;
+  readonly attemptNumber: number | null;
+  readonly hpLost: number;
+  readonly hpRecovered: number;
+  readonly deaths: number;
+  readonly seriousInjuriesStarted: number;
+  readonly seriousInjuriesCleared: number;
+  readonly trustZeroed: number;
+}
+
 export interface CampaignRunTrace {
   readonly seed: string;
   readonly strategyId: StrategyPolicy["id"];
@@ -44,6 +66,7 @@ export interface CampaignRunTrace {
   readonly merchantGoldSpent: number;
   readonly merchantEffectsConsumed: number;
   readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
+  readonly depletion: readonly DepletionTraceEntry[];
   readonly steps: number;
 }
 
@@ -116,6 +139,7 @@ type MutableTrace = {
   merchantGoldSpent: number;
   merchantEffectsConsumed: number;
   balanceExpeditions: MutableExpeditionBalanceTrace[];
+  depletion: DepletionTraceEntry[];
   steps: number;
 };
 
@@ -135,6 +159,7 @@ function initialTrace(options: CampaignRunOptions): MutableTrace {
     merchantGoldSpent: 0,
     merchantEffectsConsumed: 0,
     balanceExpeditions: [],
+    depletion: [],
     steps: 0,
   };
 }
@@ -174,6 +199,7 @@ function freezeTrace(trace: MutableTrace, active: ActiveExpeditionContext | null
       result: expedition.result ?? "interrupted",
       bossEntry: expedition.bossEntry === null ? null : { ...expedition.bossEntry },
     })),
+    depletion: trace.depletion.map((entry) => ({ ...entry })),
   };
 }
 
@@ -181,6 +207,103 @@ function balanceTraceFor(trace: MutableTrace, expeditionId: string): MutableExpe
   const expedition = trace.balanceExpeditions.find((candidate) => candidate.expeditionId === expeditionId);
   if (expedition === undefined) throw new DriverFailure("stall", `원정 밸런스 trace가 없다: ${expeditionId}`);
   return expedition;
+}
+
+type PoolDelta = Pick<DepletionTraceEntry,
+  "hpLost" | "hpRecovered" | "deaths" | "seriousInjuriesStarted" | "seriousInjuriesCleared" | "trustZeroed">;
+
+function poolDelta(
+  before: CampaignStoreState,
+  after: CampaignStoreState,
+  characterIds: readonly CharacterId[] = before.campaign.pool.order,
+): PoolDelta {
+  return characterIds.reduce<PoolDelta>((delta, characterId) => {
+    const beforeMember = before.campaign.pool.byId[characterId];
+    const afterMember = after.campaign.pool.byId[characterId];
+    if (beforeMember === undefined || afterMember === undefined) return delta;
+    return {
+      hpLost: delta.hpLost + Math.max(0, beforeMember.hp - afterMember.hp),
+      hpRecovered: delta.hpRecovered + Math.max(0, afterMember.hp - beforeMember.hp),
+      deaths: delta.deaths + Number(beforeMember.alive && !afterMember.alive),
+      seriousInjuriesStarted: delta.seriousInjuriesStarted + Number(!beforeMember.gravelyWounded && afterMember.gravelyWounded),
+      seriousInjuriesCleared: delta.seriousInjuriesCleared + Number(beforeMember.gravelyWounded && !afterMember.gravelyWounded),
+      trustZeroed: delta.trustZeroed + Number(beforeMember.trust > 0 && afterMember.trust === 0),
+    };
+  }, {
+    hpLost: 0,
+    hpRecovered: 0,
+    deaths: 0,
+    seriousInjuriesStarted: 0,
+    seriousInjuriesCleared: 0,
+    trustZeroed: 0,
+  });
+}
+
+function expeditionLocator(
+  trace: MutableTrace,
+  expeditionId: string,
+): Pick<DepletionTraceEntry, "expeditionId" | "dungeonId" | "initialRiskLevel" | "attemptNumber"> {
+  const expedition = balanceTraceFor(trace, expeditionId);
+  return {
+    expeditionId,
+    dungeonId: expedition.dungeonId,
+    initialRiskLevel: expedition.initialRiskLevel,
+    attemptNumber: expedition.attemptNumber,
+  };
+}
+
+function appendDepletionFor(
+  action: CampaignTransition,
+  before: CampaignStoreState,
+  after: CampaignStoreState,
+  trace: MutableTrace,
+): void {
+  const appendExpedition = (source: Extract<DepletionSource, "expedition-general" | "expedition-boss">): void => {
+    const active = before.context.activeExpedition;
+    if (active === null) throw new DriverFailure("stall", "원정 손실을 기록할 활성 원정이 없다");
+    trace.depletion.push({
+      source,
+      worldTurn: after.campaign.worldTurn,
+      ...expeditionLocator(trace, active.expeditionId),
+      ...poolDelta(before, after),
+    });
+  };
+
+  if (action.type === "CHOOSE_ADVICE" && before.context.activeExpedition?.pendingEvent?.kind === "monster") {
+    appendExpedition("expedition-general");
+    return;
+  }
+  if (action.type === "ENTER_BOSS") {
+    appendExpedition("expedition-boss");
+    return;
+  }
+  if (action.type !== "COMPLETE_WORLD_TURN") return;
+
+  const worldTurn = after.last?.worldTurn;
+  if (worldTurn === null || worldTurn === undefined) {
+    throw new DriverFailure("stall", "월드턴 완료 뒤 결과가 없다");
+  }
+  const appendWorldTurn = (source: Extract<DepletionSource, "world-turn-background" | "world-turn-rest">, characterIds: readonly CharacterId[]): void => {
+    if (characterIds.length === 0) return;
+    trace.depletion.push({
+      source,
+      worldTurn: worldTurn.worldTurn,
+      expeditionId: null,
+      dungeonId: null,
+      initialRiskLevel: null,
+      attemptNumber: null,
+      ...poolDelta(before, after, characterIds),
+    });
+  };
+  appendWorldTurn(
+    "world-turn-background",
+    worldTurn.outcomes.filter((outcome) => outcome.activity === "background").map((outcome) => outcome.characterId),
+  );
+  appendWorldTurn(
+    "world-turn-rest",
+    worldTurn.outcomes.filter((outcome) => outcome.activity === "rest" || outcome.activity === "forcedRest")
+      .map((outcome) => outcome.characterId),
+  );
 }
 
 function signature(campaign: CampaignState, active: ReturnType<ReturnType<typeof createCampaignStore>["getState"]>["context"]["activeExpedition"]): string {
@@ -236,6 +359,7 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
     const merchantDelta = merchantTraceDeltaFor(action, before, after);
     trace.merchantGoldSpent += merchantDelta.goldSpent;
     trace.merchantEffectsConsumed += merchantDelta.effectsConsumed;
+    appendDepletionFor(action, before, after, trace);
     const event = after.campaign.history.events.at(-1);
     if (event?.type === "ADVICE_RESOLVED") {
       for (const reaction of event.reactions) trace.reactionCounts[reaction.reaction] += 1;

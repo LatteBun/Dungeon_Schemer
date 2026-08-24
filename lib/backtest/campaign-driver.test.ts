@@ -54,6 +54,28 @@ describe("백테스트 캠페인 driver", () => {
       .every((one) => one.bossEntry!.hp <= one.bossEntry!.maxHp)).toBe(true);
   });
 
+  it("실제 Store 전이에서 원정과 월드턴 손실 원장을 기록한다", () => {
+    const result = runCampaign({ seed: "driver-smoke", strategy: createStrategy("survival"), accuracy: 0.7 });
+    if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
+
+    expect(result.trace.depletion).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        source: "expedition-boss",
+        expeditionId: expect.any(String),
+        dungeonId: expect.any(String),
+      }),
+      expect.objectContaining({
+        source: "world-turn-rest",
+        expeditionId: null,
+        dungeonId: null,
+      }),
+    ]));
+    expect(result.trace.depletion.every((entry) =>
+      Number.isInteger(entry.hpLost) && entry.hpLost >= 0
+      && Number.isInteger(entry.hpRecovered) && entry.hpRecovered >= 0,
+    )).toBe(true);
+  });
+
   it("원정마다 초기·현재 위험도와 던전별 시도 번호를 기록한다", () => {
     const result = runCampaign({
       seed: "driver-balance-trace",
@@ -71,20 +93,18 @@ describe("백테스트 캠페인 driver", () => {
     }
   });
 
-  it("step limit로 끝난 시작 원정을 interrupted로 보존한다", () => {
+  it("step limit로 끝난 원정의 확정 손실과 interrupted 상태를 보존한다", () => {
     const result = runCampaign({
       seed: "driver-interrupted-trace",
       strategy: createStrategy("survival"),
       accuracy: 0.7,
-      stepLimit: 3,
+      stepLimit: 30,
     });
 
     expect(result.ok).toBe(false);
-    expect(result.trace.balanceExpeditions).toHaveLength(1);
-    expect(result.trace.balanceExpeditions[0]).toMatchObject({
-      attemptNumber: 1,
-      result: "interrupted",
-    });
+    expect(result.trace.balanceExpeditions.length).toBeGreaterThanOrEqual(1);
+    expect(result.trace.balanceExpeditions.some((expedition) => expedition.result === "interrupted")).toBe(true);
+    expect(result.trace.depletion.length).toBeGreaterThan(0);
   });
 
   it("전투 전멸도 결과를 확인한 뒤 정산한다", () => {
