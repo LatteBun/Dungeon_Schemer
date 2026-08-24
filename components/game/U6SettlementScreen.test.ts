@@ -149,3 +149,39 @@ describe("정산 인주", () => {
     expect(seal(render({ survivors: 0 }))).toBe("lost");
   });
 });
+
+describe("끝난 던전", () => {
+  /*
+   * 클리어한 던전에는 위험도를 적지 않는다.
+   *
+   * 그 던전은 끝났고 다시 들어갈 수 없다. 「위험도가 그대로다」는 다시 갈 수
+   * 있을 때만 뜻이 있는 말이다.
+   */
+  it("클리어하면 위험도 대신 끝났다고 적는다", () => {
+    const html = render({ survivors: 2, riskBefore: 2, riskAfter: 2 });
+
+    expect(html).toContain("정복");
+    expect(html).toContain("다시 들어갈 일이 없다");
+    expect(html).not.toContain("위험도가 그대로다");
+  });
+
+  it("전멸하면 위험도 변화를 적는다", () => {
+    const html = render({ survivors: 0, riskBefore: 2, riskAfter: 3 });
+
+    expect(html).toContain("실패로 위험도가 올랐다");
+    expect(html).not.toContain("다시 들어갈 일이 없다");
+  });
+});
+
+describe("피해 칸의 색", () => {
+  /* 인주와 같은 색이라 한 화면에서 두 표시가 같은 말을 한다. */
+  it("피해 문양이 인주와 같은 색을 탄다", () => {
+    const tone = (html: string, klass: string) =>
+      html.match(new RegExp(`${klass} is-(\\w+)`))?.[1];
+
+    for (const survivors of [3, 2, 0] as const) {
+      const html = render({ survivors });
+      expect(tone(html, "u6-cause__order")).toBe(tone(html, "u6-changes__seal"));
+    }
+  });
+});

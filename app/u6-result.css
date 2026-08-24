@@ -958,14 +958,40 @@
  * 붉은 인주 한 장뿐이라 색을 돌린다. 다 돌아왔으면 초록, 누군가를 잃었으면
  * 호박색, 전멸이면 그대로 붉은색이다.
  */
-.u6-changes__seal.is-whole {
+/* 인주와 피해 문양이 같은 색으로 같은 말을 한다. */
+.u6-changes__seal.is-whole,
+.u6-cause__order.is-whole img {
   filter: hue-rotate(88deg) saturate(0.85) brightness(1.05);
 }
 
-.u6-changes__seal.is-costly {
+.u6-changes__seal.is-costly,
+.u6-cause__order.is-costly img {
   filter: hue-rotate(28deg) saturate(1.05) brightness(1.08);
 }
 
-.u6-changes__seal.is-lost {
+.u6-changes__seal.is-lost,
+.u6-cause__order.is-lost img {
   filter: saturate(1.1);
 }
+
+/* 테두리도 같은 색을 탄다. 문양만 물들면 칸이 겉돈다. */
+.u6-cause__order.is-whole { border-color: #7fa86a; }
+.u6-cause__order.is-costly { border-color: #c79a54; }
+.u6-cause__order.is-lost { border-color: #b5624a; }
+
+/*
+ * 끝난 판에 남는 것은 길드가 찍은 판결이다.
+ *
+ * 실패한 결말에 업적 훈장을 걸어 두었더니 상을 받은 것처럼 읽혔다. 인주 하나를
+ * 쓰고 결말마다 색을 달리한다 - 깃발과 같은 색을 탄다.
+ */
+.u6-ending-emblem__crest.is-seal {
+  width: clamp(6rem, 8.5cqw, 12rem);
+  height: auto;
+  filter: drop-shadow(0 0.3rem 0.9rem rgb(0 0 0 / 65%));
+}
+
+.u6-ending-emblem__crest.is-seal.is-green { filter: hue-rotate(88deg) saturate(0.8) brightness(1.05) drop-shadow(0 0.3rem 0.9rem rgb(0 0 0 / 65%)); }
+.u6-ending-emblem__crest.is-seal.is-blue { filter: hue-rotate(190deg) saturate(0.7) brightness(0.95) drop-shadow(0 0.3rem 0.9rem rgb(0 0 0 / 65%)); }
+.u6-ending-emblem__crest.is-seal.is-ash { filter: grayscale(0.72) brightness(0.85) drop-shadow(0 0.3rem 0.9rem rgb(0 0 0 / 65%)); }
+.u6-ending-emblem__crest.is-seal.is-red { filter: saturate(1.15) drop-shadow(0 0.3rem 0.9rem rgb(0 0 0 / 65%)); }

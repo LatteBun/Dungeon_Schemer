@@ -17,13 +17,24 @@ export const ENDING_TITLE: Readonly<Record<EndingKind, string>> = {
 
 const ACHIEVEMENT_ROOT = "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements";
 
-/** 자산 넷을 엔딩 다섯에 나눠 쓴다. 배신으로 끝난 둘은 같은 문양을 쓴다. */
-const ENDING_CREST: Readonly<Record<EndingKind, string>> = {
-  completed: "achievement_conquest",
-  distrust: "achievement_together",
-  denounced: "achievement_together",
-  exhausted: "achievement_return",
-  unemployed: "achievement_guild",
+/*
+ * 실패한 판에 훈장을 주지 않는다.
+ *
+ * 다섯 결말에 업적 문양 넷을 나눠 쓰고 있었다. 그러면 실직에 길드 훈장이, 인력
+ * 소진에 귀환 훈장이 걸린다 - 상을 받은 것처럼 읽힌다. 업적 문양은 완주한 판의
+ * 「주요 업적」 칸이 쓰는 것이고, 결말의 문양이 아니다.
+ *
+ * 끝난 판에 남는 것은 길드가 찍은 판결이다. 인주 하나를 쓰고 색으로 가른다.
+ */
+const ENDING_SEAL = "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/emblems/wax_seal.png";
+
+/** 결말마다 인주 색이 다르다. 깃발과 같은 색을 탄다. */
+export const ENDING_SEAL_TONE: Readonly<Record<EndingKind, string>> = {
+  completed: "green",
+  denounced: "red",
+  distrust: "ash",
+  exhausted: "ash",
+  unemployed: "blue",
 };
 
 /*
@@ -47,8 +58,8 @@ export const ENDING_CONSEQUENCE_TITLE: Readonly<Record<EndingKind, string>> = {
   unemployed: "닫힌 게시판",
 };
 
-export function endingCrestSrc(kind: EndingKind): string {
-  return `${ACHIEVEMENT_ROOT}/${ENDING_CREST[kind]}.png`;
+export function endingCrestSrc(_kind: EndingKind): string {
+  return ENDING_SEAL;
 }
 
 /** 던전 15개를 모두 클리어했는가. 등급이 아니라 엔딩 종류가 정한다. */

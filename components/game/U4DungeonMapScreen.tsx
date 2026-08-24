@@ -521,12 +521,13 @@ function RightPanel({
               </div>
             </div>
           )}
-          <img
-            className="u4-destination__panel-frame"
-            src="/assets/u4/navigation/destination_panel_frame.png"
-            alt=""
-            aria-hidden="true"
-          />
+          {/*
+            * 액자를 이미지로 덮지 않는다.
+            *
+            * 241x129 짜리를 700x70 판에 늘려 씌우고 있었다. 가로로 세 배 늘고
+            * 세로로 눌려 문양이 찌그러졌다. 같은 그림을 `border-image` 로 주면
+            * 네 귀퉁이는 그대로 두고 변만 늘어난다.
+            */}
         </div>
         <MoveButton
           disabled={destination === undefined}

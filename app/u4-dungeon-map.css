@@ -393,38 +393,58 @@ button.u4-room {
  * 최소 높이를 크게 잡아 두어, 두 줄짜리 내용 옆으로 빈 판이 넓게 남았다. 여기서
  * 할 말은 "무슨 지점을 골랐는가" 하나뿐이다.
  */
+/*
+ * 액자는 잘라 쓴다.
+ *
+ * 이미지를 판 전체에 늘려 씌우면 네 귀퉁이 문양까지 함께 늘어난다. `border-image`
+ * 는 귀퉁이를 그대로 두고 변만 늘리므로 폭이 달라져도 문양이 상하지 않는다.
+ */
 .u4-destination__panel {
+  --u4-destination-thumb: clamp(4.4rem, 6cqw, 7.5rem);
+
   position: relative;
   min-height: clamp(4.1rem, 5.6cqh, 5rem);
-  overflow: hidden;
+  border: clamp(0.7rem, 1cqw, 1.3rem) solid transparent;
+  border-image: url("/assets/u4/navigation/destination_panel_frame.png") 42 fill / clamp(0.7rem, 1cqw, 1.3rem) / 0 stretch;
   background: #0b0806;
 }
 
-.u4-destination__panel-frame {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  pointer-events: none;
-}
 
+
+/*
+ * 썸네일 자리를 그림 폭에 맞춘다.
+ *
+ * 액자를 제 비율로 되돌리면서 썸네일이 넓어졌는데 열 너비는 그대로여서 글자
+ * 위로 넘어왔다 - "특수 사건" 이 "수 사건" 으로 잘렸다. 두 값을 한 곳에서
+ * 정해 다시 갈라지지 않게 한다.
+ */
 .u4-destination__summary {
   position: relative;
   z-index: 3;
   display: grid;
-  grid-template-columns: clamp(4.4rem, 5.2cqw, 5.5rem) minmax(0, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: var(--u4-destination-thumb) minmax(0, 1fr);
+  gap: clamp(0.55rem, 0.8cqw, 1.1rem);
   align-items: center;
   height: 100%;
-  min-height: clamp(5.2rem, 7.2cqh, 6.4rem);
-  padding: 0.52rem 0.75rem;
+  padding: 0.3rem 0.2rem;
 }
 
+/*
+ * 자산의 제 비율로 둔다.
+ *
+ * 244x119 짜리 액자를 정사각 칸에 넣어 두어, 늘리면 찌그러지고 맞추면 위아래가
+ * 비었다. 칸을 그림에 맞추면 둘 다 없다.
+ */
+/*
+ * 폭은 열이 정하고 그림이 따른다.
+ *
+ * 같은 변수를 열과 그림에 각각 주었더니 둘이 17px 어긋나, 액자가 첫 글자를
+ * 덮었다("특수 사건" 이 "수 사건" 으로). 정하는 곳을 하나로 둔다.
+ */
 .u4-destination__thumbnail {
   position: relative;
-  aspect-ratio: 1;
+  width: 100%;
+  aspect-ratio: 244 / 119;
 }
 
 .u4-destination__frame {
@@ -432,7 +452,8 @@ button.u4-room {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  /* 칸이 그림과 같은 비율이라 채워도 늘어나지 않는다. */
+  object-fit: fill;
 }
 
 
