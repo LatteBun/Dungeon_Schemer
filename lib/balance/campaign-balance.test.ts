@@ -43,13 +43,13 @@ describe("CAMPAIGN_BALANCE", () => {
   });
 
   it("B1-B 초기 월드턴, 보스, 조언 압력 설정을 제공한다", () => {
-    expect(CAMPAIGN_BALANCE.revision).toBe("b1b-initial-v1");
+    expect(CAMPAIGN_BALANCE.revision).toBe("b1b-risk-curve-v1");
     expect(CAMPAIGN_BALANCE.worldTurn).toEqual({
       restRecoveryRatio: 0.2,
       backgroundLossPercent: { min: 5, max: 10 },
     });
     expect(Object.keys(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk)).toEqual(["1", "2", "3", "4", "5"]);
-    expect(Object.values(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk)).toEqual([0.8, 0.8, 0.775, 0.775, 0.8]);
+    expect(Object.values(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk)).toEqual([1.125, 0.85, 0.675, 0.575, 0.625]);
     expect(CAMPAIGN_BALANCE.advicePressure).toEqual({
       0: { incomingDamageMultiplier: 1, outgoingDamageMultiplier: 1 },
       1: { incomingDamageMultiplier: 1.05, outgoingDamageMultiplier: 1 },
