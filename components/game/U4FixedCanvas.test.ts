@@ -223,3 +223,32 @@ describe("액자를 늘리지 않는다", () => {
     expect(thumb).toMatch(/aspect-ratio:\s*1/);
   });
 });
+
+/*
+ * 같은 규칙을 두 파일이 정하면, 뒤에 실리는 쪽만 살고 앞의 값은 죽는다.
+ *
+ * 선택한 지점의 아이콘이 그랬다. u4-dungeon-map.css 의 크기를
+ * u4-dungeon-map-fixes.css 가 42%로 덮어써서, 앞 파일을 아무리 고쳐도 화면은
+ * 그대로였다. 고쳤다고 믿은 채로 배포까지 나갔다.
+ */
+describe("U4 지도 스타일 단일 출처", () => {
+  const map = readFileSync("app/u4-dungeon-map.css", "utf8");
+  const fixes = readFileSync("app/u4-dungeon-map-fixes.css", "utf8");
+
+  function definesSize(css: string, selector: string): boolean {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return [...css.matchAll(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`, "g"))]
+      .some((match) => /(^|[;{\s])width\s*:/.test(match[1] ?? ""));
+  }
+
+  it("선택한 지점 아이콘의 크기를 두 파일이 함께 정하지 않는다", () => {
+    expect(definesSize(map, ".u4-destination__icon")).toBe(true);
+    expect(definesSize(fixes, ".u4-destination__icon")).toBe(false);
+  });
+
+  it("아이콘이 칸을 채울 만큼 크다", () => {
+    // 42%일 때는 어두운 칸 한가운데 작게 떠 있어 무슨 지점인지 읽기 어려웠다.
+    expect(numericDeclaration(map, ".u4-destination__icon", "width"))
+      .toBeGreaterThanOrEqual(80);
+  });
+});

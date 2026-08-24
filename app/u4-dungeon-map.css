@@ -125,10 +125,27 @@
   opacity: 0.94;
 }
 
+/*
+ * 테마 배경은 그 던전의 실제 장면이다.
+ *
+ * 장면 자체는 방과 통로보다 훨씬 복잡해서, 그대로 깔면 지도를 읽을 수 없다.
+ * 어디에 들어와 있는지는 알아볼 만큼 남기고, 눈길은 방이 가져가도록 어둡게
+ * 눌러 뒤로 물린다.
+ */
+.u4-map-surface__background.is-themed {
+  opacity: 0.66;
+  filter: brightness(0.58) saturate(1.1) blur(0.05rem);
+}
+
 .u4-map-surface__atmosphere {
   z-index: 1;
   object-fit: cover;
   opacity: 0.72;
+}
+
+/* 장면 배경 위에는 폐허 소품이 한 겹 더 얹혀 지저분해진다. 덜어낸다. */
+.u4-map-surface__background.is-themed ~ .u4-map-surface__atmosphere {
+  opacity: 0.3;
 }
 
 .u4-map-surface__vignette {
@@ -467,8 +484,15 @@ button.u4-room {
   top: 50%;
   left: 50%;
   z-index: 4;
-  width: 76%;
-  height: 76%;
+
+  /*
+   * 크기는 여기서만 정한다.
+   *
+   * 한동안 u4-dungeon-map-fixes.css 가 같은 규칙을 42%로 덮어써서, 여기 적힌
+   * 값이 무엇이든 화면에는 닿지 않았다. 아이콘을 키워도 그대로였던 까닭이다.
+   */
+  width: 82%;
+  height: 82%;
   object-fit: contain;
   filter: drop-shadow(0 0 0.28rem rgb(0 0 0 / 85%)) drop-shadow(0 0 0.6rem rgb(0 0 0 / 55%));
   transform: translate(-50%, -50%);

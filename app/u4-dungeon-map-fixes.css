@@ -103,11 +103,6 @@
   padding: 0.52rem 0.94rem;
 }
 
-.u4-destination__icon {
-  width: 42%;
-  height: 42%;
-}
-
 .u4-destination__summary span,
 .u4-destination__summary small {
   font-size: clamp(0.62rem, 0.76cqw, 0.72rem);
