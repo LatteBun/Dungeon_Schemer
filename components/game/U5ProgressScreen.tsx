@@ -42,6 +42,8 @@ export interface U5ProgressScreenProps {
   initialFilter?: U5LogFilter;
   readonly battleReplay?: U5BattleReplay;
   readonly battleExitPolicy?: U5BattleExitPolicy;
+  /** 독립 전투 프리뷰에서만 재생 중 건너뛰기 조작을 보여준다. */
+  readonly previewPlaybackControls?: boolean;
 }
 
 const REACTION_LABEL = {
@@ -207,6 +209,7 @@ export function U5ProgressScreen({
   initialFilter = "all",
   battleReplay,
   battleExitPolicy,
+  previewPlaybackControls = false,
 }: U5ProgressScreenProps) {
   /*
    * 행동 / 조언을 전면에 둔다. 선택 뒤 결과(반응 → 결과 → 변화)도 이 모드에
@@ -216,11 +219,12 @@ export function U5ProgressScreen({
   const [mode, setMode] = useState<U5ConsoleMode>(initialMode ?? "advice");
   const [filter, setFilter] = useState<U5LogFilter>(initialFilter);
   const battlePlayback = useU5BattlePlayback(battleReplay);
-  const gateMapExit = battleExitPolicy === "after-playback"
-    && battleReplay !== undefined
+  const replayingBattle = battleReplay !== undefined
     && battlePlayback.frame !== undefined
     && !battlePlayback.isComplete;
-  const rightAction = gateMapExit
+  const gateMapExit = battleExitPolicy === "after-playback" && replayingBattle;
+  const showPreviewSkip = previewPlaybackControls && replayingBattle;
+  const rightAction = gateMapExit || showPreviewSkip
     ? { label: "전투 건너뛰기", onClick: battlePlayback.skipToComplete }
     : onAcknowledge === undefined
       ? null
