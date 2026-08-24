@@ -190,3 +190,33 @@ describe("선택한 지점 썸네일", () => {
   });
 });
 
+
+describe("액자를 늘리지 않는다", () => {
+  /*
+   * 241x129 짜리를 700x70 판에 늘려 씌우고 있었다.
+   *
+   * 가로로 세 배 늘고 세로로 눌려 네 귀퉁이 문양이 찌그러졌다. `border-image` 는
+   * 귀퉁이를 그대로 두고 변만 늘린다.
+   */
+  it("선택한 지점 액자는 border-image 로 잘라 쓴다", () => {
+    const sheet = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const panel = sheet.match(/\.u4-destination__panel\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(panel).toMatch(/border-image:\s*url\("\/assets\/u4\/navigation\/destination_panel_frame\.png"\)/);
+    /* 늘려 씌우던 그림 요소는 남아 있지 않아야 한다. */
+    expect(sheet).not.toContain("u4-destination__panel-frame");
+  });
+
+  /*
+   * 폭은 열이 정하고 그림이 따른다.
+   *
+   * 같은 변수를 열과 그림에 각각 주었더니 둘이 어긋나 액자가 첫 글자를 덮었다.
+   */
+  it("썸네일 폭을 두 곳에서 정하지 않는다", () => {
+    const sheet = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const thumb = sheet.match(/\.u4-destination__thumbnail\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(thumb).toMatch(/width:\s*100%/);
+    expect(thumb).toMatch(/aspect-ratio:\s*244 \/ 119/);
+  });
+});

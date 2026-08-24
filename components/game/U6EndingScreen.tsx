@@ -3,6 +3,7 @@ import {
   ENDING_CONSEQUENCE_TITLE,
   ENDING_REPORT_TITLE,
   ENDING_TITLE,
+  ENDING_SEAL_TONE,
   endingCrestSrc,
   isNormalCompletion,
   type U6EndingView,
@@ -134,7 +135,9 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
             aria-hidden="true"
           />
           <img
-            className="u6-ending-emblem__crest"
+            className={completed
+              ? "u6-ending-emblem__crest"
+              : `u6-ending-emblem__crest is-seal is-${ENDING_SEAL_TONE[ending.kind]}`}
             src={completed ? rankCrestSrc(ending.finalRank) : endingCrestSrc(ending.kind)}
             alt=""
             aria-hidden="true"

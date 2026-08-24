@@ -50,7 +50,16 @@ function CauseChain({ settlement }: { settlement: U6SettlementView }) {
     <ol className="u6-cause-chain" data-testid="u6-cause-chain">
       {settlement.causeChain.map((step) => (
         <li className="u6-cause" key={step.order}>
-          <span className="u6-cause__order" aria-hidden="true">
+          {/*
+            * 피해 칸의 문양은 결과 색을 따른다.
+            *
+            * 인주와 같은 색이라 한 화면 안에서 두 표시가 같은 말을 한다 - 다
+            * 돌아왔는지, 누군가를 잃었는지.
+            */}
+          <span
+            className={`u6-cause__order${step.order === 3 ? ` is-${outcomeTone(settlement.survivors)}` : ""}`}
+            aria-hidden="true"
+          >
             <img src={CAUSE_ICON[step.order] ?? CAUSE_ICON[1]!} alt="" />
             <b>{step.order}</b>
           </span>
@@ -75,21 +84,36 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
       <h3 id="u6-changes-title">캠페인 변화</h3>
       <img className="u6-changes__divider" src={`${ASSET}/decorations/divider_small.png`} alt="" aria-hidden="true" />
 
-      <div className="u6-risk-change" data-testid="u6-risk-change">
-        <span>던전 위험도</span>
-        <strong>
-          {riskStars(settlement.riskBefore)}
-          <span aria-hidden="true"> → </span>
-          {riskStars(settlement.riskAfter)}
-        </strong>
-        <small>
-          {settlement.riskCapped
-            ? "★5 가 상한이라 더 오르지 않는다"
-            : settlement.riskAfter > settlement.riskBefore
-              ? "실패로 위험도가 올랐다"
-              : "위험도가 그대로다"}
-        </small>
-      </div>
+      {/*
+        * 클리어한 던전에는 위험도를 적지 않는다.
+        *
+        * 그 던전은 끝났고 다시 들어갈 수 없다. 「위험도가 그대로다」는 다시 갈
+        * 수 있을 때만 뜻이 있는 말이라, 끝난 던전 옆에 두면 읽는 사람이 무엇을
+        * 해야 하는지 헷갈린다.
+        */}
+      {settlement.survivors === 0 ? (
+        <div className="u6-risk-change" data-testid="u6-risk-change">
+          <span>던전 위험도</span>
+          <strong>
+            {riskStars(settlement.riskBefore)}
+            <span aria-hidden="true"> → </span>
+            {riskStars(settlement.riskAfter)}
+          </strong>
+          <small>
+            {settlement.riskCapped
+              ? "★5 가 상한이라 더 오르지 않는다"
+              : settlement.riskAfter > settlement.riskBefore
+                ? "실패로 위험도가 올랐다"
+                : "위험도가 그대로다"}
+          </small>
+        </div>
+      ) : (
+        <div className="u6-risk-change" data-testid="u6-risk-change">
+          <span>이 던전</span>
+          <strong>정복</strong>
+          <small>다시 들어갈 일이 없다</small>
+        </div>
+      )}
 
       {/* 문양을 붙인다. 명성과 골드는 캠페인 내내 같은 그림으로 읽힌다. */}
       <dl className="u6-deltas">
@@ -129,7 +153,7 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
         * 먼저 안다.
         */}
       <img
-        className={`u6-changes__seal is-${settlement.survivors === 3 ? "whole" : settlement.survivors === 0 ? "lost" : "costly"}`}
+        className={`u6-changes__seal is-${outcomeTone(settlement.survivors)}`}
         src={`${ASSET}/emblems/wax_seal.png`}
         alt=""
         aria-hidden="true"
@@ -167,6 +191,11 @@ function Returned({ settlement }: { settlement: U6SettlementView }) {
       </ul>
     </section>
   );
+}
+
+/** 다 돌아왔으면 초록, 누군가를 잃었으면 호박색, 전멸이면 붉은색. */
+function outcomeTone(survivors: number): "whole" | "costly" | "lost" {
+  return survivors === 3 ? "whole" : survivors === 0 ? "lost" : "costly";
 }
 
 export function U6SettlementScreen({ status, settlement, onContinue }: U6SettlementScreenProps) {

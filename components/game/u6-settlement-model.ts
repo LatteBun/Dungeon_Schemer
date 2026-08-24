@@ -66,7 +66,13 @@ export function rankCrestSrc(rank: GuideRank): string {
   return `${RANK_CREST_ROOT}/rank_${rank.toLowerCase()}.png`;
 }
 
-const CAUSE_LABELS = ["선택", "개인 반응", "피해", "보상·손실", "캠페인 변화"] as const;
+/*
+ * 무엇에 대한 칸인지가 이름에 있어야 한다.
+ *
+ * 「선택」 아래에 "다른 길을 찾아보라고 하세요" 만 놓여 있으면 그것이 누가 한
+ * 말인지, 무엇을 고른 것인지가 떠 있다. 길잡이가 마지막으로 건넨 조언이다.
+ */
+const CAUSE_LABELS = ["마지막 조언", "파티의 반응", "피해", "보상·손실", "캠페인 변화"] as const;
 
 export function createU6SettlementView(
   settlement: SettlementResult,
