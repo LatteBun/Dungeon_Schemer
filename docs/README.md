@@ -53,14 +53,15 @@
 ### 사용자 경험
 
 - [SCREEN_LAYOUT.md](experience/SCREEN_LAYOUT.md): 3:2 게임 셸(좌 60%·우 40%), 기준 해상도, 화면별 좌·우 구조와 색 외 단서 원칙
-- [ONBOARDING_AND_INTERFACE.md](experience/ONBOARDING_AND_INTERFACE.md): 인트로부터 엔딩까지 화면 정보 구조, 30초 온보딩과 결과 피드백
+- [ONBOARDING_AND_INTERFACE.md](experience/ONBOARDING_AND_INTERFACE.md): 메인 메뉴에서 캠페인·업적 기록으로 갈리는 진입과 인트로부터 엔딩까지의 화면 정보 구조
 - [UI_IMPLEMENTATION_GUIDE.md](experience/UI_IMPLEMENTATION_GUIDE.md): UI·파티원·지도·배경·이미지 에셋 구현 시 재사용, 반응형, 가독성, 레퍼런스 스타일·시점 계승과 벡터/아이콘화 금지 기준
 - [UI_TASK_TEMPLATE.md](experience/UI_TASK_TEMPLATE.md): 화면별 UI와 이미지 에셋 작업에서 필수 정보, 시각 계약, 슬롯 비율, viewport 검증 조건을 전달하기 위한 작업 지시서 템플릿
 
 ### 시각 자료
 
-- [diagram/README.md](diagram/README.md): 캠페인·탐험 시퀀스, 상태 전이, 대표 화면 6개의 Markdown 원본과 이미지 인덱스
-- [대표 화면 전체 모음](diagram/png/screen-overview.png): 인트로부터 캠페인 엔딩까지 화면 일곱 장의 실제 캡처
+- [diagram/README.md](diagram/README.md): 캠페인·탐험 시퀀스, 상태 전이, 캠페인 화면 일곱 장과 메타 화면 두 장의 이미지 인덱스
+- [캠페인 대표 화면 전체 모음](diagram/png/screen-overview.png): 인트로부터 캠페인 엔딩까지 화면 일곱 장의 실제 캡처
+- [메인 메뉴](diagram/png/screen-main-menu.png) · [길잡이 업적 기록](diagram/png/screen-achievements.png): 두 메타 화면의 실제 1920×1080 캡처
 
 ### 기술
 
