@@ -24,19 +24,18 @@
 }
 
 .u3-guild-board__notices {
-  gap: clamp(0.9rem, 1cqw, 1.7rem);
   padding: clamp(0.2rem, 0.25cqw, 0.45rem);
 }
 
 .u3-notice {
-  grid-template-rows: auto auto minmax(8rem, 1fr) auto auto auto;
-  padding: clamp(0.85rem, 0.8cqw, 1.35rem) clamp(0.75rem, 0.8cqw, 1.3rem) clamp(0.75rem, 0.7cqw, 1.1rem);
-  background-size: 100% 100%, clamp(9rem, 10cqw, 18rem) auto;
+  grid-template-rows: auto auto minmax(5.8rem, 1fr) auto auto auto;
+  padding: clamp(0.62rem, 0.64cqw, 1rem) clamp(0.58rem, 0.62cqw, 0.98rem) clamp(0.55rem, 0.56cqw, 0.88rem);
+  background-size: 100% 100%, clamp(7.2rem, 8cqw, 14.4rem) auto;
 }
 
 .u3-notice__pin {
-  top: -0.62rem;
-  width: clamp(1.8rem, 1.4cqw, 2.8rem);
+  top: -0.5rem;
+  width: clamp(1.5rem, 1.15cqw, 2.15rem);
   height: auto;
 }
 
@@ -45,17 +44,12 @@
 }
 
 .u3-notice__heading strong {
-  overflow: visible;
-  font-size: clamp(1.08rem, 1.12cqw, 1.7rem);
-  line-height: 1.14;
-  text-overflow: clip;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  font-size: clamp(0.92rem, 0.9cqw, 1.35rem);
 }
 
 .u3-notice__heading small,
 .u3-notice__label {
-  font-size: clamp(0.72rem, 0.68cqw, 1.05rem);
+  font-size: clamp(0.62rem, 0.56cqw, 0.84rem);
 }
 
 .u3-risk-stars {
@@ -64,26 +58,26 @@
 }
 
 .u3-risk-stars img {
-  width: clamp(1rem, 0.95cqw, 1.55rem);
-  height: clamp(1rem, 0.95cqw, 1.55rem);
+  width: clamp(0.84rem, 0.76cqw, 1.25rem);
+  height: clamp(0.84rem, 0.76cqw, 1.25rem);
 }
 
 .u3-notice__theme-visual {
   margin: clamp(0.22rem, 0.25cqw, 0.42rem) 0 clamp(0.35rem, 0.35cqw, 0.6rem);
 }
 
-.u3-theme-scene {
-  width: min(100%, clamp(13rem, 15cqw, 24rem));
+.u3-notice .u3-theme-scene {
+  width: min(100%, clamp(10rem, 12cqw, 19rem));
 }
 
 .u3-notice .u3-reward,
 .u3-notice__state {
-  font-size: clamp(0.88rem, 0.78cqw, 1.2rem);
+  font-size: clamp(0.72rem, 0.62cqw, 0.96rem);
 }
 
-.u3-reward img {
-  width: clamp(1.05rem, 0.95cqw, 1.5rem);
-  height: clamp(1.05rem, 0.95cqw, 1.5rem);
+.u3-notice .u3-reward img {
+  width: clamp(0.84rem, 0.76cqw, 1.25rem);
+  height: clamp(0.84rem, 0.76cqw, 1.25rem);
 }
 
 .u3-contract-detail {
@@ -191,13 +185,4 @@
 .u3-contract-button .u3-contract-button__arrow {
   width: auto;
   height: clamp(1.5rem, 1.6cqw, 2.4rem);
-}
-
-/* 1920×1080 캔버스에서 항상 적용되던 대화면 고밀도 규칙. 고정 비율이 되면서 기본값이 되었다. */
-.u3-guild-board__notices {
-  gap: clamp(1.1rem, 1.2cqw, 2rem);
-}
-
-.u3-notice {
-  padding-inline: clamp(1rem, 1cqw, 1.6rem);
 }

@@ -175,13 +175,13 @@
 
 .u3-guild-board__notices {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.58rem, 1cqw, 0.85rem);
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+  grid-template-rows: repeat(12, minmax(0, 1fr));
+  gap: 0;
   width: 100%;
   height: 100%;
   min-height: 0;
-  padding: 0.15rem 0.2rem 0.2rem;
+  padding: clamp(0.35rem, 0.45cqw, 0.7rem);
 }
 
 .u3-notice {
@@ -209,11 +209,35 @@
 }
 
 /* Same dimensions; only position/rotation differ. */
-.u3-notice--0 { transform: translate(0.12rem, 0.18rem) rotate(-0.65deg); }
-.u3-notice--1 { transform: translate(-0.08rem, -0.06rem) rotate(0.45deg); }
-.u3-notice--2 { transform: translate(0.04rem, 0.22rem) rotate(-0.25deg); }
-.u3-notice--3 { transform: translate(0.38rem, -0.08rem) rotate(0.55deg); }
-.u3-notice--4 { transform: translate(-0.22rem, 0.06rem) rotate(-0.5deg); }
+.u3-notice--0 {
+  grid-column: 1 / span 4;
+  grid-row: 1 / span 5;
+  transform: translate(0.25rem, 0.35rem) rotate(-2.1deg);
+}
+
+.u3-notice--1 {
+  grid-column: 6 / span 4;
+  grid-row: 2 / span 5;
+  transform: translate(-0.15rem, 0.1rem) rotate(1.4deg);
+}
+
+.u3-notice--2 {
+  grid-column: 11 / span 4;
+  grid-row: 1 / span 5;
+  transform: translate(0.12rem, 0.45rem) rotate(-1.2deg);
+}
+
+.u3-notice--3 {
+  grid-column: 3 / span 4;
+  grid-row: 7 / span 5;
+  transform: translate(0.45rem, -0.18rem) rotate(2.2deg);
+}
+
+.u3-notice--4 {
+  grid-column: 10 / span 4;
+  grid-row: 7 / span 5;
+  transform: translate(-0.35rem, 0.18rem) rotate(-1.8deg);
+}
 
 .u3-notice:hover,
 .u3-notice:focus-visible {
