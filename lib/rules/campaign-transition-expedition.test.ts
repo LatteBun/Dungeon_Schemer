@@ -13,7 +13,7 @@ import type {
 import { eventsForTheme } from "@/lib/content/event-registry";
 import { initializeCampaign } from "./campaign-init";
 import { generateDungeonMap } from "./dungeon-map";
-import { createExpeditionForOffer, transitionCampaign } from "./campaign-transition";
+import { createExpeditionForOffer, createSettlementSnapshotFor, transitionCampaign } from "./campaign-transition";
 
 /**
  * 원정 안쪽 전이.
@@ -553,5 +553,49 @@ describe("전투 뒤 파티 명단", () => {
 
     /* 아무도 안 죽으면 이 검사는 아무것도 보지 않은 것이다. */
     expect(deaths).toBeGreaterThan(0);
+  });
+
+  it("전투 전멸 결과는 확인하기 전에는 정산할 수 없다", () => {
+    const state = atEventWithDeadMember();
+    const active = state.context.activeExpedition!;
+    const fragile = {
+      ...state.context,
+      activeExpedition: {
+        ...active,
+        partyMembers: active.partyMembers.map((member, index) => index === 0
+          ? { ...member, hp: 0, alive: false }
+          : { ...member, hp: 1, alive: true }),
+      },
+    };
+    const event = fragile.activeExpedition!.pendingEvent!;
+    if (event.kind !== "monster") throw new Error("monster 사건 fixture가 아니다");
+    const dungeon = state.campaign.dungeons.find((candidate) => candidate.id === active.expedition.dungeonId)!;
+    const lethalEvent = {
+      ...event,
+      encounter: { enemies: [{ monsterId: dungeon.activeMonsterIds[0]!, count: 50 }] },
+      advice: event.advice.map((option) => ({ ...option, encounterModifier: {} })),
+      defaultEncounterModifier: {},
+    };
+    const context = {
+      ...fragile,
+      activeExpedition: { ...fragile.activeExpedition!, pendingEvent: lethalEvent },
+    };
+    const wiped = transitionCampaign(state.campaign, context, {
+      type: "CHOOSE_ADVICE", adviceId: lethalEvent.advice.find((option) => option.outcome === "harm")!.id,
+    });
+    expect(wiped.context.activeExpedition!.expedition.result).toMatchObject({ status: "wiped" });
+    const after = wiped.context.activeExpedition!;
+
+    expect(after.pendingOutcome).not.toBeNull();
+    expect(() => transitionCampaign(wiped.campaign, wiped.context, {
+      type: "COMPLETE_EXPEDITION",
+      snapshot: createSettlementSnapshotFor(wiped.campaign, after),
+    })).toThrow("아직 확인하지 않은 결과가 있다");
+
+    const acknowledged = transitionCampaign(wiped.campaign, wiped.context, { type: "ACKNOWLEDGE_OUTCOME" });
+    expect(() => transitionCampaign(acknowledged.campaign, acknowledged.context, {
+      type: "COMPLETE_EXPEDITION",
+      snapshot: createSettlementSnapshotFor(acknowledged.campaign, acknowledged.context.activeExpedition!),
+    })).not.toThrow();
   });
 });

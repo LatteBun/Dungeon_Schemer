@@ -154,7 +154,8 @@ function ExpeditionScreens() {
    * 보스전을 치렀거나 도중에 전멸했으면 더 걸을 곳이 없다. 정산 입력은 규칙이
    * 만든다 - 화면이 무엇이 최종 파티인지 판단하지 않는다.
    */
-  const finished = active.expedition.bossResult !== null || active.expedition.result !== null;
+  const finished = active.pendingOutcome === null
+    && (active.expedition.bossResult !== null || active.expedition.result !== null);
   if (finished) {
     const replay = bossReplayFor(campaign, active);
     return (

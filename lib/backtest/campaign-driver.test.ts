@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createStrategy } from "./strategies";
-import { runCampaign } from "./campaign-driver";
+import { merchantTraceDeltaFor, runCampaign } from "./campaign-driver";
+import { createCampaignStore } from "@/lib/store/campaign-store";
+import type { Accuracy } from "./public-state";
 
 describe("백테스트 캠페인 driver", () => {
   it("실제 Store 액션으로 캠페인을 엔딩까지 진행한다", () => {
@@ -26,6 +28,59 @@ describe("백테스트 캠페인 driver", () => {
     expect(result.trace.balanceExpeditions.every((one) => one.maxAdvicePressure >= 0 && one.maxAdvicePressure <= 3)).toBe(true);
     expect(result.trace.balanceExpeditions.filter((one) => one.bossEntry !== null)
       .every((one) => one.bossEntry!.hp <= one.bossEntry!.maxHp)).toBe(true);
+  });
+
+  it("전투 전멸도 결과를 확인한 뒤 정산한다", () => {
+    const base = createStrategy("selective-betrayal");
+    const harmful = {
+      ...base,
+      chooseOffer: (view: Parameters<typeof base.chooseOffer>[0]) => ({ ...base.chooseOffer(view), betrayal: true }),
+      chooseAdviceIntent: () => "harm" as const,
+    };
+    let found = false;
+    for (let index = 0; index < 40; index += 1) {
+      const result = runCampaign({ seed: `driver-wipe-ack-${index}`, strategy: harmful, accuracy: 1 as unknown as Accuracy });
+      const actions = result.trace.actionTypes;
+      if (actions.some((action, actionIndex) => action === "COMPLETE_EXPEDITION"
+        && actions[actionIndex - 1] === "ACKNOWLEDGE_OUTCOME"
+        && actions[actionIndex - 2] === "CHOOSE_ADVICE")) {
+        found = true;
+        break;
+      }
+    }
+    expect(found).toBe(true);
+  }, 15_000);
+
+  it("원정을 시작해도 상인 효과를 소비한 것으로 세지 않는다", () => {
+    const result = runCampaign({
+      seed: "driver-merchant-start",
+      strategy: createStrategy("survival"),
+      accuracy: 0.7,
+      stepLimit: 3,
+    });
+
+    expect(result.trace.actionTypes).toEqual(["OPEN_BOARD", "SELECT_CONTRACT", "START_EXPEDITION"]);
+    expect(result.trace.merchantEffectsConsumed).toBe(0);
+  });
+
+  it("골드 승급 비용을 상인 지출로 합산하지 않는다", () => {
+    const before = createCampaignStore("driver-gold-promotion").getState();
+    const after = {
+      ...before,
+      campaign: { ...before.campaign, gold: before.campaign.gold - 10 },
+    };
+
+    expect(merchantTraceDeltaFor({ type: "PROMOTE_GUIDE", method: "gold" }, before, after)).toEqual({
+      goldSpent: 0,
+      effectsConsumed: 0,
+    });
+  });
+
+  it("실제 상인 조언의 골드와 효과 소비를 모두 기록한다", () => {
+    const result = runCampaign({ seed: "driver-smoke", strategy: createStrategy("survival"), accuracy: 0.7 });
+
+    expect(result.trace.merchantGoldSpent).toBeGreaterThan(0);
+    expect(result.trace.merchantEffectsConsumed).toBeGreaterThan(0);
   });
 
   it("같은 seed·전략·정확도는 같은 trace와 결과를 만든다", () => {

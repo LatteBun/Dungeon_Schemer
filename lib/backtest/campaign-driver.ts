@@ -1,7 +1,7 @@
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
-import { createCampaignStore } from "@/lib/store/campaign-store";
+import { createCampaignStore, type CampaignStoreState } from "@/lib/store/campaign-store";
 import { RuleError } from "@/lib/domain";
 import type {
   ActiveExpeditionContext,
@@ -135,6 +135,22 @@ function initialTrace(options: CampaignRunOptions): MutableTrace {
   };
 }
 
+/** 드라이버가 상인 조언에서 생긴 비용과 효과 소비만 분리해 기록한다. */
+export function merchantTraceDeltaFor(
+  action: CampaignTransition,
+  before: CampaignStoreState,
+  after: CampaignStoreState,
+): { readonly goldSpent: number; readonly effectsConsumed: number } {
+  const merchantAdvice = action.type === "CHOOSE_ADVICE"
+    && before.context.activeExpedition?.pendingEvent?.kind === "merchant";
+  const beforeEffect = before.context.activeExpedition?.expedition.pendingMerchantEffect ?? null;
+  const afterEffect = after.context.activeExpedition?.expedition.pendingMerchantEffect ?? null;
+  return {
+    goldSpent: merchantAdvice ? Math.max(0, before.campaign.gold - after.campaign.gold) : 0,
+    effectsConsumed: beforeEffect !== null && afterEffect === null ? 1 : 0,
+  };
+}
+
 function freezeTrace(trace: MutableTrace): CampaignRunTrace {
   return {
     ...trace,
@@ -203,16 +219,14 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
   const act = (action: CampaignTransition): void => {
     if (trace.steps >= limit) fail("step-limit", `800 action 안에 엔딩에 도달하지 못했다`);
     const before = store.getState();
-    const beforeGold = before.campaign.gold;
-    const beforeMerchant = before.context.activeExpedition?.expedition.pendingMerchantEffect !== null;
     before.dispatch(action);
     trace.steps += 1;
     trace.actionTypes.push(action.type);
     const after = store.getState();
     if (after.rejected !== null) fail("rejected-transition", `${after.rejected.type}: ${after.rejected.reason}`);
-    trace.merchantGoldSpent += Math.max(0, beforeGold - after.campaign.gold);
-    const afterMerchant = after.context.activeExpedition?.expedition.pendingMerchantEffect !== null;
-    if (beforeMerchant && !afterMerchant) trace.merchantEffectsConsumed += 1;
+    const merchantDelta = merchantTraceDeltaFor(action, before, after);
+    trace.merchantGoldSpent += merchantDelta.goldSpent;
+    trace.merchantEffectsConsumed += merchantDelta.effectsConsumed;
     const event = after.campaign.history.events.at(-1);
     if (event?.type === "ADVICE_RESOLVED") {
       for (const reaction of event.reactions) trace.reactionCounts[reaction.reaction] += 1;
@@ -294,15 +308,15 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
       const active = context.activeExpedition;
       if (active === null) throw new DriverFailure("stall", "expedition phase에 활성 원정이 없다");
       const betrayed = trace.betrayalExpeditionIds.includes(active.expeditionId);
+      if (active.pendingOutcome !== null) {
+        act({ type: "ACKNOWLEDGE_OUTCOME" });
+        continue;
+      }
       if (active.expedition.result !== null || active.expedition.bossResult !== null) {
         const entry = balanceTraceFor(trace, active.expeditionId);
         entry.endAdvicePressure = active.expedition.advicePressure;
         entry.result = active.expedition.result?.status ?? active.expedition.bossResult?.status ?? null;
         act({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) });
-        continue;
-      }
-      if (active.pendingOutcome !== null) {
-        act({ type: "ACKNOWLEDGE_OUTCOME" });
         continue;
       }
       if (active.pendingEvent !== null) {

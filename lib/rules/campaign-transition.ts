@@ -962,6 +962,11 @@ export function transitionCampaign(
           expeditionId: action.snapshot.expeditionId,
         });
       }
+      if (active.pendingOutcome !== null) {
+        return invalidTransition("아직 확인하지 않은 결과가 있다", {
+          expeditionId: active.expeditionId,
+        });
+      }
       validateSnapshot(active, action.snapshot);
       const execution = settleExpedition(campaign, action.snapshot);
 
