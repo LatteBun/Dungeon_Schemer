@@ -36,6 +36,22 @@ describe("백테스트 정확도 선택기", () => {
     expect(selectAdviceByAccuracy(input)).toEqual(first);
   });
 
+  it("miss가 뽑혀도 유일한 실행 가능 결과를 선택하고 실제 적중으로 기록한다", () => {
+    // Break caught: an empty miss candidate set used to throw instead of selecting the sole executable option.
+    const result = selectAdviceByAccuracy({
+      campaignSeed: "sole-miss",
+      strategyId: "opportunist",
+      accuracy: 0.4,
+      expeditionId: "exp-1",
+      decisionIndex: 2,
+      intendedOutcome: "neutral",
+      options: [OPTIONS[2]!],
+    });
+
+    expect(result.selectedOutcome).toBe("neutral");
+    expect(result.hit).toBe(true);
+  });
+
   it("10,000회 관측 적중률의 99.9% 구간이 목표 정확도를 포함한다", () => {
     for (const accuracy of [0.4, 0.7] as const) {
       let hits = 0;

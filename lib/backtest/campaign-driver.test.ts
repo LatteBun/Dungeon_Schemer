@@ -15,6 +15,18 @@ describe("백테스트 캠페인 driver", () => {
     expect(result.trace.steps).toBeLessThanOrEqual(800);
   });
 
+  it("단일 실행 가능 상인 조언의 정확도 miss도 캠페인을 중단시키지 않는다", () => {
+    // Break caught: a sampled miss used to reject the sole neutral executable merchant option.
+    const result = runCampaign({
+      seed: "b1b-calibration-v1/000000",
+      strategy: createStrategy("opportunist"),
+      accuracy: 0.4,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.campaign.phase).toBe("ended");
+  });
+
   it("실제 원정의 조언 압력과 보스 진입 상태를 추적한다", () => {
     const result = runCampaign({ seed: "driver-balance-trace", strategy: createStrategy("survival"), accuracy: 0.7 });
 

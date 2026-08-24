@@ -105,6 +105,20 @@ function emptyResult(
   };
 }
 
+function boardResult(
+  campaign: CampaignState,
+  context: CampaignTransitionContext,
+): CampaignTransitionResult {
+  const ending = evaluateCampaignEnding(campaign);
+  const nextCampaign = ending === null
+    ? campaign
+    : { ...campaign, phase: "ended" as const, ending };
+  return {
+    ...emptyResult(nextCampaign, context),
+    ending,
+  };
+}
+
 function sameIds(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length
     && new Set(left).size === left.length
@@ -827,10 +841,8 @@ function transitionBoard(
 ): CampaignTransitionResult {
   if (action.type === "OPEN_BOARD") {
     requirePhase(campaign, "intro");
-    return emptyResult(
-      { ...campaign, phase: "board", offers: createBoardOffers(campaign) },
-      context,
-    );
+    const board = { ...campaign, phase: "board" as const, offers: createBoardOffers(campaign) };
+    return boardResult(board, context);
   }
 
   requirePhase(campaign, "board");
@@ -1044,7 +1056,7 @@ export function transitionCampaign(
   if (campaign.phase === "promotion") {
     requirePhase(campaign, "promotion");
     if (action.type === "CANCEL_PROMOTION") {
-      return emptyResult(campaignWithPhase(campaign, "board"), context);
+      return boardResult(campaignWithPhase(campaign, "board"), context);
     }
     if (action.type === "PROMOTE_GUIDE") {
       const execution = executeGuidePromotion(campaign, action.method);
@@ -1053,11 +1065,9 @@ export function transitionCampaign(
         phase: "board",
         offers: [],
       };
+      const board = { ...promoted, offers: createBoardOffers(promoted) };
       return {
-        ...emptyResult(
-          { ...promoted, offers: createBoardOffers(promoted) },
-          context,
-        ),
+        ...boardResult(board, context),
         promotion: execution.result,
       };
     }

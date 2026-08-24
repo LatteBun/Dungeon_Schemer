@@ -40,10 +40,11 @@ export function selectAdviceByAccuracy(input: AccuracySelectionInput): AccuracyS
   const candidates = input.options.filter((option) => hit
     ? option.outcome === input.intendedOutcome
     : option.outcome !== input.intendedOutcome);
-  if (candidates.length === 0) {
+  if (input.options.length === 0) {
     throw new InvalidStrategyDecisionError("선택 가능한 조언 결과가 없다");
   }
-  const selected = candidates[rng.int(0, candidates.length - 1)]!;
+  const selectable = candidates.length > 0 ? candidates : input.options;
+  const selected = selectable[rng.int(0, selectable.length - 1)]!;
   return {
     adviceId: selected.id,
     intendedOutcome: input.intendedOutcome,
