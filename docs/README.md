@@ -101,6 +101,7 @@
 ## 이번 개편 설계
 
 - [진행 화면 UX 개선 설계](superpowers/specs/2026-08-25-lattebun-progress-screen-ux-design.md): 낮은 금속 명패형 조언 카드, 비전투 파티 장면, 일반전 재생 상태에 따른 우측 하단 CTA 전환 계약
+- [진행 화면 UX 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-progress-screen-ux.md): 전투 재생 제어 분리, 일반전 CTA 게이트, 비전투 파티와 A1 카드의 테스트 우선 구현 순서
 - [U4 지도 우측 패널 순서 개선 설계](superpowers/specs/2026-08-25-lattebun-u4-map-right-panel-order-design.md): 계약 전 답사를 선택 지점 위로 옮기고 이동 CTA를 우측 최하단에 고정하는 배치 기준
 - [U4 지도 우측 패널 순서 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u4-map-right-panel-order.md): DOM 읽기 순서와 3행 CSS 계약을 테스트 우선으로 변경하고 실제 캠페인 지도에서 확인하는 순서
 - [브라우저 안정성 스모크 테스트 설계](superpowers/specs/2026-08-25-lattebun-browser-stability-smoke-design.md): 공개 경로·첫 사건 클릭 흐름·공식 viewport의 Chromium 회귀 계약
