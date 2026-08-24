@@ -95,6 +95,17 @@ describe("U3 extracted asset-board assets", () => {
     expect(css).toContain(".u3-theme-scene--graveyard");
   });
 
+  it("계약 상세는 장면 배경과 전용 scrim 스타일을 사용하지 않는다", () => {
+    const boardCss = readFileSync(join(process.cwd(), "app", "u3-board.css"), "utf8");
+    const themeCss = readFileSync(join(process.cwd(), "app", "u3-card-theme.css"), "utf8");
+
+    expect(boardCss).not.toContain(".u3-contract-card__scrim");
+    expect(themeCss).not.toContain(".u3-detail-section.u3-contract-card");
+    expect(themeCss).not.toContain(".u3-contract-card--desert");
+    expect(themeCss).not.toContain(".u3-contract-card--spider");
+    expect(themeCss).not.toContain(".u3-contract-card--graveyard");
+  });
+
   it("던전 장면과 계약 CTA 크기를 캔버스 기준으로 고정한다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
 
