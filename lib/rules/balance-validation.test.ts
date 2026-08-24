@@ -26,6 +26,51 @@ describe("validateCampaignBalance", () => {
     });
   });
 
+  it("중첩 설정 객체가 없거나 객체가 아니어도 생성 오류로 거부한다", () => {
+    const malformedProfiles: readonly unknown[] = [
+      { ...CAMPAIGN_BALANCE, worldTurn: undefined },
+      { ...CAMPAIGN_BALANCE, worldTurn: { ...CAMPAIGN_BALANCE.worldTurn, backgroundLossPercent: undefined } },
+      { ...CAMPAIGN_BALANCE, bossInfo: undefined },
+      { ...CAMPAIGN_BALANCE, bossInfo: { ...CAMPAIGN_BALANCE.bossInfo, multipliers: undefined } },
+      { ...CAMPAIGN_BALANCE, bossInfo: { ...CAMPAIGN_BALANCE.bossInfo, limits: undefined } },
+    ];
+
+    for (const profile of malformedProfiles) {
+      expectInvalid(profile as CampaignBalance);
+    }
+  });
+
+  it("월드턴과 보스 정보의 중첩 키가 계약과 다르면 생성 오류로 거부한다", () => {
+    const invalidProfiles: readonly CampaignBalance[] = [
+      {
+        ...CAMPAIGN_BALANCE,
+        worldTurn: { ...CAMPAIGN_BALANCE.worldTurn, unexpected: true } as CampaignBalance["worldTurn"],
+      },
+      {
+        ...CAMPAIGN_BALANCE,
+        worldTurn: {
+          ...CAMPAIGN_BALANCE.worldTurn,
+          backgroundLossPercent: { ...CAMPAIGN_BALANCE.worldTurn.backgroundLossPercent, unexpected: true },
+        } as CampaignBalance["worldTurn"],
+      },
+      {
+        ...CAMPAIGN_BALANCE,
+        bossInfo: { ...CAMPAIGN_BALANCE.bossInfo, unexpected: true } as CampaignBalance["bossInfo"],
+      },
+      {
+        ...CAMPAIGN_BALANCE,
+        bossInfo: {
+          ...CAMPAIGN_BALANCE.bossInfo,
+          limits: { ...CAMPAIGN_BALANCE.bossInfo.limits, unexpected: true },
+        } as CampaignBalance["bossInfo"],
+      },
+    ];
+
+    for (const profile of invalidProfiles) {
+      expectInvalid(profile);
+    }
+  });
+
   it("승인 범위를 벗어난 회복·손실·보스 단계를 생성 오류로 거부한다", () => {
     expectInvalid({
       ...CAMPAIGN_BALANCE,

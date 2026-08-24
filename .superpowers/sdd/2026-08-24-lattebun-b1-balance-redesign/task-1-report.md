@@ -71,3 +71,30 @@ $ tsc --noEmit
 ## 우려 사항
 
 - 전체 테스트 실행은 종료 코드 0이었지만, 실행 도구의 30.2초 출력 제한 때문에 Vitest 최종 집계 행을 확보하지 못했다. focused 16개 테스트와 타입 검사의 성공 출력은 확보했다.
+
+## 리뷰 수정 — 중첩 설정 구조 검증
+
+리뷰에서 `worldTurn`, `bossInfo`, `multipliers`, `limits`가 `undefined`인 런타임 입력은 속성 접근 시 native `TypeError`를 내고, `worldTurn`·`backgroundLossPercent`·`bossInfo`·`limits`의 추가 키는 허용한다는 문제가 확인됐다.
+
+`requireRecord` 경계를 추가해 모든 중첩 객체를 읽기 전에 일반 객체인지 확인하고, 각 객체의 정확한 키 집합을 확인하도록 수정했다. 숫자 검증 헬퍼는 검증한 숫자를 반환하게 해 구조 검증 뒤의 범위·단조성 비교도 타입 안전하게 유지했다. 잘못된 구조는 모두 `RuleError`의 `INVALID_GENERATION` 코드로 귀결된다.
+
+실패 테스트를 먼저 실행했다.
+
+```text
+pnpm vitest run lib/rules/balance-validation.test.ts
+
+Test Files  1 failed (1)
+Tests  2 failed | 6 passed (8)
+```
+
+실패 내용은 `worldTurn: undefined`에서 `Cannot read properties of undefined (reading 'restRecoveryRatio')`라는 native `TypeError`와, 추가 중첩 키를 허용한 동작이었다.
+
+수정 후 다음 검증을 실행했다.
+
+```text
+pnpm vitest run lib/balance/campaign-balance.test.ts lib/rules/balance-validation.test.ts lib/content/boss-traits.test.ts lib/rules/campaign-init.test.ts && pnpm typecheck
+
+Test Files  4 passed (4)
+Tests  18 passed (18)
+$ tsc --noEmit
+```

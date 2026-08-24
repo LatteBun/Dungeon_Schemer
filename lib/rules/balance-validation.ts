@@ -11,24 +11,33 @@ function invalidBalance(message: string, details: Record<string, unknown>): neve
 }
 
 function requireFiniteInRange(
-  value: number,
+  value: unknown,
   min: number,
   max: number,
   field: string,
-): void {
-  if (!Number.isFinite(value) || value < min || value > max) {
+): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max) {
     invalidBalance("캠페인 밸런스 값이 승인 범위를 벗어난다", { field, value, min, max });
   }
+  return value;
 }
 
-function requireFinitePositive(value: number, field: string): void {
-  if (!Number.isFinite(value) || value <= 0) {
+function requireFinitePositive(value: unknown, field: string): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     invalidBalance("캠페인 밸런스 multiplier는 유한한 양수여야 한다", { field, value });
   }
+  return value;
+}
+
+function requireRecord(value: unknown, field: string): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return invalidBalance("캠페인 밸런스 객체가 유효하지 않다", { field, value });
+  }
+  return value as Record<string, unknown>;
 }
 
 function validateExactKeys(
-  value: object,
+  value: Record<string, unknown>,
   expected: readonly string[],
   field: string,
 ): void {
@@ -40,55 +49,67 @@ function validateExactKeys(
 }
 
 export function validateCampaignBalance(profile: CampaignBalance = CAMPAIGN_BALANCE): void {
-  requireFiniteInRange(profile.worldTurn.restRecoveryRatio, 0.20, 0.25, "worldTurn.restRecoveryRatio");
-  const backgroundLoss = profile.worldTurn.backgroundLossPercent;
-  requireFiniteInRange(backgroundLoss.min, 5, 10, "worldTurn.backgroundLossPercent.min");
-  requireFiniteInRange(backgroundLoss.max, 5, 10, "worldTurn.backgroundLossPercent.max");
-  if (backgroundLoss.min > backgroundLoss.max) {
-    invalidBalance("캠페인 밸런스 백그라운드 손실 범위가 뒤집혔다", { min: backgroundLoss.min, max: backgroundLoss.max });
+  const root = requireRecord(profile, "profile");
+  const worldTurn = requireRecord(root.worldTurn, "worldTurn");
+  validateExactKeys(worldTurn, ["restRecoveryRatio", "backgroundLossPercent"], "worldTurn");
+  requireFiniteInRange(worldTurn.restRecoveryRatio, 0.20, 0.25, "worldTurn.restRecoveryRatio");
+  const backgroundLoss = requireRecord(worldTurn.backgroundLossPercent, "worldTurn.backgroundLossPercent");
+  validateExactKeys(backgroundLoss, ["min", "max"], "worldTurn.backgroundLossPercent");
+  const backgroundLossMin = requireFiniteInRange(backgroundLoss.min, 5, 10, "worldTurn.backgroundLossPercent.min");
+  const backgroundLossMax = requireFiniteInRange(backgroundLoss.max, 5, 10, "worldTurn.backgroundLossPercent.max");
+  if (backgroundLossMin > backgroundLossMax) {
+    invalidBalance("캠페인 밸런스 백그라운드 손실 범위가 뒤집혔다", { min: backgroundLossMin, max: backgroundLossMax });
   }
 
-  const bossMultipliers = profile.bossBaseStatMultiplierByInitialRisk;
+  const bossMultipliers = requireRecord(root.bossBaseStatMultiplierByInitialRisk, "bossBaseStatMultiplierByInitialRisk");
   validateExactKeys(bossMultipliers, INITIAL_RISK_LEVELS.map(String), "bossBaseStatMultiplierByInitialRisk");
   for (const riskLevel of INITIAL_RISK_LEVELS) {
     requireFiniteInRange(
-      bossMultipliers[riskLevel],
+      bossMultipliers[String(riskLevel)],
       0.75,
       0.85,
       `bossBaseStatMultiplierByInitialRisk.${riskLevel}`,
     );
   }
 
-  const pressure = profile.advicePressure;
+  const pressure = requireRecord(root.advicePressure, "advicePressure");
   validateExactKeys(pressure, ADVICE_PRESSURES.map(String), "advicePressure");
   for (const [index, pressureLevel] of ADVICE_PRESSURES.entries()) {
-    const current = pressure[pressureLevel];
-    requireFinitePositive(current.incomingDamageMultiplier, `advicePressure.${pressureLevel}.incomingDamageMultiplier`);
-    requireFinitePositive(current.outgoingDamageMultiplier, `advicePressure.${pressureLevel}.outgoingDamageMultiplier`);
+    const current = requireRecord(pressure[String(pressureLevel)], `advicePressure.${pressureLevel}`);
+    validateExactKeys(current, ["incomingDamageMultiplier", "outgoingDamageMultiplier"], `advicePressure.${pressureLevel}`);
+    const currentIncoming = requireFinitePositive(current.incomingDamageMultiplier, `advicePressure.${pressureLevel}.incomingDamageMultiplier`);
+    const currentOutgoing = requireFinitePositive(current.outgoingDamageMultiplier, `advicePressure.${pressureLevel}.outgoingDamageMultiplier`);
     if (index === 0) continue;
 
-    const previous = pressure[ADVICE_PRESSURES[index - 1]];
-    if (current.incomingDamageMultiplier < previous.incomingDamageMultiplier) {
+    const previousPressureLevel = ADVICE_PRESSURES[index - 1];
+    const previous = requireRecord(pressure[String(previousPressureLevel)], `advicePressure.${previousPressureLevel}`);
+    const previousIncoming = requireFinitePositive(previous.incomingDamageMultiplier, `advicePressure.${previousPressureLevel}.incomingDamageMultiplier`);
+    const previousOutgoing = requireFinitePositive(previous.outgoingDamageMultiplier, `advicePressure.${previousPressureLevel}.outgoingDamageMultiplier`);
+    if (currentIncoming < previousIncoming) {
       invalidBalance("캠페인 밸런스 조언 압력 incoming multiplier가 감소한다", { pressureLevel });
     }
-    if (current.outgoingDamageMultiplier > previous.outgoingDamageMultiplier) {
+    if (currentOutgoing > previousOutgoing) {
       invalidBalance("캠페인 밸런스 조언 압력 outgoing multiplier가 증가한다", { pressureLevel });
     }
   }
 
-  const bossInfo = profile.bossInfo;
-  validateExactKeys(bossInfo.multipliers, BOSS_INFO_AXES, "bossInfo.multipliers");
+  const bossInfo = requireRecord(root.bossInfo, "bossInfo");
+  validateExactKeys(bossInfo, ["multipliers", "limits"], "bossInfo");
+  const bossInfoMultipliers = requireRecord(bossInfo.multipliers, "bossInfo.multipliers");
+  validateExactKeys(bossInfoMultipliers, BOSS_INFO_AXES, "bossInfo.multipliers");
   for (const axis of BOSS_INFO_AXES) {
-    const multipliers = bossInfo.multipliers[axis];
+    const multipliers = requireRecord(bossInfoMultipliers[axis], `bossInfo.multipliers.${axis}`);
     validateExactKeys(multipliers, BOSS_INFO_OUTCOMES, `bossInfo.multipliers.${axis}`);
     for (const outcome of BOSS_INFO_OUTCOMES) {
       requireFinitePositive(multipliers[outcome], `bossInfo.multipliers.${axis}.${outcome}`);
     }
   }
 
-  requireFinitePositive(bossInfo.limits.min, "bossInfo.limits.min");
-  requireFinitePositive(bossInfo.limits.max, "bossInfo.limits.max");
-  if (bossInfo.limits.min > bossInfo.limits.max) {
-    invalidBalance("캠페인 밸런스 보스 정보 clamp 범위가 뒤집혔다", bossInfo.limits);
+  const bossInfoLimits = requireRecord(bossInfo.limits, "bossInfo.limits");
+  validateExactKeys(bossInfoLimits, ["min", "max"], "bossInfo.limits");
+  requireFinitePositive(bossInfoLimits.min, "bossInfo.limits.min");
+  requireFinitePositive(bossInfoLimits.max, "bossInfo.limits.max");
+  if (typeof bossInfoLimits.min === "number" && typeof bossInfoLimits.max === "number" && bossInfoLimits.min > bossInfoLimits.max) {
+    invalidBalance("캠페인 밸런스 보스 정보 clamp 범위가 뒤집혔다", bossInfoLimits);
   }
 }
