@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import { THEMES } from "@/lib/content/themes";
 import {
   BOSS_INFO_MULTIPLIER_LIMITS,
+  BOSS_INFO_MULTIPLIERS,
   BOSS_RULE_TRAITS,
   clampBossInfoMultiplier,
   modifierForBossInfo,
   validateBossTraitMappings,
 } from "@/lib/content/boss-traits";
+import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
 import { RuleError, type ThemeContent } from "@/lib/domain";
 
 describe("BossTrait 카탈로그", () => {
@@ -26,6 +28,8 @@ describe("BossTrait 카탈로그", () => {
   });
 
   it("도움·방해는 축별 방향을 갖고 최종 multiplier를 clamp한다", () => {
+    expect(BOSS_INFO_MULTIPLIERS).toBe(CAMPAIGN_BALANCE.bossInfo.multipliers);
+    expect(BOSS_INFO_MULTIPLIER_LIMITS).toBe(CAMPAIGN_BALANCE.bossInfo.limits);
     expect(modifierForBossInfo("incomingDamage", "help")).toBe(0.8);
     expect(modifierForBossInfo("outgoingDamage", "harm")).toBe(0.8);
     expect(clampBossInfoMultiplier(0.1)).toBe(BOSS_INFO_MULTIPLIER_LIMITS.min);
