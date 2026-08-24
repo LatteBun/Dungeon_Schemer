@@ -4,6 +4,7 @@ import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rul
 import { createU6EndingView } from "@/components/game/u6-ending-adapter";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "./campaign-store";
+import { firstChoosableAdvice } from "./legal-advice";
 
 /**
  * 한 캠페인을 끝까지 돌린다.
@@ -48,7 +49,7 @@ function runToEnd(seed: string, limit = 400) {
         continue;
       }
       if (active.pendingEvent !== null) {
-        act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+        act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(campaign(), active) });
         continue;
       }
       const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);

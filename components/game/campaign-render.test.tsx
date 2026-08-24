@@ -5,6 +5,7 @@ import type { CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
+import { firstChoosableAdvice } from "@/lib/store/legal-advice";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
@@ -86,7 +87,7 @@ function settled() {
       return run;
     }
     if (active.pendingEvent !== null) {
-      run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+      run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
       continue;
     }
     const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
@@ -115,7 +116,7 @@ function ended(seed: string) {
         continue;
       }
       if (active.pendingEvent !== null) {
-        run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+        run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
         continue;
       }
       const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);

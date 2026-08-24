@@ -3,6 +3,7 @@ import type {
   ActiveExpeditionContext,
   CampaignState,
   Character,
+  ChoiceId,
   EventKind,
   NodeId,
   SituationEvent,
@@ -15,6 +16,7 @@ import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
+import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
 import { toAdviceViews, type U5ProgressView, type U5SceneKind } from "./u5-progress-model";
 
 /**
@@ -91,6 +93,41 @@ function sceneKindOf(kind: SituationEvent["kind"]): U5SceneKind {
  * 조언 순서는 `E2` 가 정한다. 화면이 다시 섞지 않는다. `ChoiceId` 도 넘기지
  * 않는다 — ID 가 `-help`·`-harm` 으로 끝나 정답이 새기 때문이다.
  */
+/*
+ * 지금 고를 수 없는 조언과 그 이유.
+ *
+ * 상인 사건만 해당한다. 값을 보여주면서 살 수 있는지는 안 알려 주면 길잡이는
+ * 눌러 보고서야 안 된다는 것을 안다. 판단은 `C4` 가 하고 화면은 옮겨 적는다.
+ */
+const UNAVAILABLE_TEXT: Readonly<Record<string, string>> = {
+  insufficientGold: "골드가 모자란다",
+  pendingEffect: "이미 사 둔 것이 남아 있다",
+};
+
+function unavailableAdviceSlots(
+  campaign: CampaignState,
+  active: ActiveExpeditionContext,
+  presented: readonly { readonly id: ChoiceId }[],
+): Readonly<Record<number, string>> {
+  const event = active.pendingEvent;
+  if (event === null || event.kind !== "merchant") return {};
+
+  const byId = new Map(event.advice.map((option) => [option.id, option]));
+  const blocked: Record<number, string> = {};
+  presented.forEach((option, slot) => {
+    const advice = byId.get(option.id);
+    if (advice === undefined) return;
+    const availability = getMerchantAdviceAvailability(
+      advice,
+      campaign.gold,
+      active.expedition.pendingMerchantEffect,
+    );
+    if (availability.executable) return;
+    blocked[slot] = UNAVAILABLE_TEXT[availability.reason] ?? "지금은 고를 수 없다";
+  });
+  return blocked;
+}
+
 export function progressViewFor(
   campaign: CampaignState,
   active: ActiveExpeditionContext,
@@ -117,7 +154,7 @@ export function progressViewFor(
     sceneKind: sceneKindOf(event.kind),
     nodeLabel: event.title,
     situation: event.description,
-    advice: toAdviceViews(presented),
+    advice: toAdviceViews(presented, unavailableAdviceSlots(campaign, active, presented)),
     outcome: null,
     party: partyViewsFor(active.partyMembers),
   };

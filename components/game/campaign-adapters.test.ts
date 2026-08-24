@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createCampaignStore } from "@/lib/store/campaign-store";
+import { firstChoosableAdvice } from "@/lib/store/legal-advice";
 import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
 import {
   adviceIdForSlotIn,
@@ -163,7 +164,7 @@ function walkOneEvent() {
   const store = atEvent();
   const active = store.getState().context.activeExpedition!;
   if (active.pendingEvent === null) throw new Error("사건이 확정되지 않았다");
-  store.getState().dispatch({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+  store.getState().dispatch({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(store.getState().campaign, active) });
   const state = store.getState();
   return { campaign: state.campaign, active: state.context.activeExpedition! };
 }

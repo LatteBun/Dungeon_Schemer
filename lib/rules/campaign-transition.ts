@@ -16,6 +16,8 @@ import type {
   Character,
   ExpeditionRecord,
   ExpeditionState,
+  MaterializedNodeEvent,
+  PendingMerchantEffect,
   SettlementSnapshot,
 } from "@/lib/domain";
 import { THEMES } from "@/lib/content/themes";
@@ -43,9 +45,36 @@ import {
   prepareExpeditionEvents,
   resolveMonsterEventBattle,
 } from "./expedition-events";
+import { applyAcceptedMerchantAdvice } from "./merchant";
 import { settleExpedition } from "./settlement";
 import { runWorldTurn } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
+
+/**
+ * 상인에게 산 것을 치른다.
+ *
+ * 살 수 없는 것은 사지지 않는다. 골드가 모자라거나 이미 예약한 효과가 있으면
+ * `C4` 가 던지고, 그 거부는 화면까지 올라가 왜 안 되는지 말해 준다.
+ *
+ * 골드는 캠페인의 것이고 HP 와 예약 효과는 원정의 것이라 셋을 함께 돌려준다.
+ */
+function buyFromMerchant(
+  campaign: CampaignState,
+  active: NonNullable<CampaignTransitionContext["activeExpedition"]>,
+  event: MaterializedNodeEvent["event"] & { readonly kind: "merchant" },
+  adviceId: ChoiceId,
+  members: readonly Character[],
+): { readonly gold: number; readonly members: readonly Character[]; readonly pendingMerchantEffect: PendingMerchantEffect | null } {
+  const advice = event.advice.find((candidate) => candidate.id === adviceId);
+  if (advice === undefined) invalidTransition("상인 사건에 없는 조언이다", { adviceId });
+
+  return applyAcceptedMerchantAdvice({
+    advice,
+    gold: campaign.gold,
+    members,
+    pendingMerchantEffect: active.expedition.pendingMerchantEffect,
+  });
+}
 
 function invalidTransition(message: string, details: Record<string, unknown> = {}): never {
   throw new RuleError("INVALID_TRANSITION", message, details);
@@ -366,6 +395,22 @@ function transitionChooseAdvice(
     })();
 
   const applied = applyEventChoice({ event, decision: resolution.decision, members: active.partyMembers });
+
+  /*
+   * 상인에게 산 것을 실제로 치른다.
+   *
+   * `C4` 가 골드 차감과 효과 적용을 `applyAcceptedMerchantAdvice` 에 담아 두었는데
+   * 아무도 부르지 않았다. 그래서 8 골드짜리를 사도 골드가 그대로였고, "전투에서
+   * 받는 피해를 줄인다" 는 결과 문장만 나오고 아무 일도 일어나지 않았다. 노드
+   * 분류 넷 중 하나가 통째로 장식이었다.
+   *
+   * 아무도 수용하지 않았으면 사지 않은 것이다 - 파티가 제 방식대로 지나간다.
+   */
+  const isMerchant = (candidate: typeof event): candidate is typeof event & { readonly kind: "merchant" } =>
+    candidate.kind === "merchant";
+  const purchased = isMerchant(event) && resolution.decision.executed
+    ? buyFromMerchant(campaign, active, event, resolution.decision.adviceId, applied.members)
+    : null;
   /* kind 가 유니온인 한 덩어리라 조건문으로 좁혀지지 않는다. 술어로 확인한다. */
   const isMonster = (candidate: typeof event): candidate is typeof event & { readonly kind: "monster" } =>
     candidate.kind === "monster";
@@ -374,15 +419,15 @@ function transitionChooseAdvice(
     modifier: applied.encounterModifier ?? {},
     activeMonsterIds: dungeon.activeMonsterIds,
     monsterDefs: theme.monsters,
-    members: applied.members,
+    members: purchased?.members ?? applied.members,
     classDefs: CLASSES,
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/${active.expedition.currentNodeId}`,
-    pendingMerchantEffect: active.expedition.pendingMerchantEffect,
+    pendingMerchantEffect: purchased?.pendingMerchantEffect ?? active.expedition.pendingMerchantEffect,
     retrySteps: dungeon.attempts,
   });
 
   const afterBattle = battle?.battle === null || battle === null
-    ? applied.members
+    ? (purchased?.members ?? applied.members)
     : battle.battle.party.map((member) => {
       const before = applied.members.find((candidate) => String(candidate.id) === String(member.id));
       return before === undefined ? before : { ...before, hp: member.hp, alive: member.hp > 0 };
@@ -398,7 +443,9 @@ function transitionChooseAdvice(
   const nextExpedition: ExpeditionState = {
     ...active.expedition,
     infoRecords: [...active.expedition.infoRecords, ...resolution.decision.delayedRecords],
-    pendingMerchantEffect: battle?.pendingMerchantEffect ?? active.expedition.pendingMerchantEffect,
+    pendingMerchantEffect: battle?.pendingMerchantEffect
+      ?? purchased?.pendingMerchantEffect
+      ?? active.expedition.pendingMerchantEffect,
     /* 전멸하면 남은 경로와 보스전을 건너뛴다. 문서가 그렇게 정한다. */
     result: wiped
       ? { status: "wiped" as const, survivorIds: [] }
@@ -414,6 +461,8 @@ function transitionChooseAdvice(
    */
   const withHistory: CampaignState = {
     ...campaign,
+    /* 산 값을 치른다. 사지 않았으면 그대로다. */
+    gold: purchased?.gold ?? campaign.gold,
     history: appendCampaignEvent(campaign.history, {
       campaignTurn: campaign.worldTurn,
       event: toAdviceResolvedEventDraft({

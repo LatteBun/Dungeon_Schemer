@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CampaignTransition, NodeId, SettlementResult } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { createCampaignStore } from "./campaign-store";
+import { firstChoosableAdvice } from "./legal-advice";
 
 /**
  * 같은 시드에 같은 조작을 넣으면 같은 캠페인이 나온다.
@@ -47,9 +48,9 @@ function playOne(seed: string) {
     act({ type: "VISIT_NODE", nodeId: next });
     if (next === active.expedition.map.bossNodeId) { act({ type: "ENTER_BOSS" }); break; }
 
-    const pending = store.getState().context.activeExpedition?.pendingEvent;
-    if (pending == null) continue;
-    act({ type: "CHOOSE_ADVICE", adviceId: pending.advice[0]!.id });
+    const afterVisit = store.getState().context.activeExpedition;
+    if (afterVisit?.pendingEvent == null) continue;
+    act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(store.getState().campaign, afterVisit) });
   }
 
   /* 원정이 끝났으면 정산하고 세상을 한 턴 돌린다. 한 바퀴가 닫혀야 한다. */
