@@ -99,7 +99,7 @@ function AchievementCard({ card }: { readonly card: AchievementCardView }) {
               aria-label={`${card.title} 진행도`}
               aria-valuemin={0}
               aria-valuemax={card.progress.target}
-              aria-valuenow={card.progress.current}
+              aria-valuenow={Math.min(card.progress.current, card.progress.target)}
               className="achievement-card__progress-track"
             >
               <span style={{ width: `${Math.min(100, (card.progress.current / card.progress.target) * 100)}%` }} />

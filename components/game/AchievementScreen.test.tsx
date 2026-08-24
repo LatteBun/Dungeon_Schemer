@@ -63,6 +63,24 @@ describe("길잡이 업적 기록 화면", () => {
     expect(html).toContain("0 / 100");
   });
 
+  it("문턱을 넘긴 누적 기록은 실제 수치를 보이되 접근 가능한 진행도는 목표에서 멈춘다", () => {
+    const progress = recordCompletedCampaign(createEmptyPlayerProgress(), {
+      ...completed,
+      runId: "achievement-screen-over-target",
+      advices: 101,
+    }, "2026-08-24T10:00:00.000Z");
+    const html = renderToStaticMarkup(createElement(AchievementScreen, {
+      cards: achievementCardViewsFor(progress),
+      unlockedCount: unlockedAchievementCount(progress),
+      status: "ready",
+      message: null,
+      onClear: () => {},
+    }));
+
+    expect(html).toContain("101 / 100");
+    expect(html).toMatch(/role="progressbar"[^>]*aria-valuemax="100"[^>]*aria-valuenow="100"/);
+  });
+
   it("초기화 확인은 취소부터 자동 초점을 둔다", () => {
     const progress = createEmptyPlayerProgress();
     const html = renderToStaticMarkup(createElement(AchievementScreen, {

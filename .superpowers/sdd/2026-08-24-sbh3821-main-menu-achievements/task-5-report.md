@@ -116,3 +116,20 @@ Constraints: no text, no letters, no numbers, no logo, no watermark, no flat-vec
 
 - built-in image generation은 프롬프트의 1024×1024 요청에도 1254×1254 PNG를 반환했다. 규격은 정사각이며 승인된 자산 테스트의 최소 512px 조건을 충족한다. 이미지 조작 금지 지침에 따라 셸 리사이즈는 하지 않았다.
 - 실행 환경 Node는 `v24.13.1`이고 프로젝트 기준은 `24.19.0`이라 pnpm 실행마다 기존 engine warning이 나타난다.
+
+## 리뷰 후속 수정: 누적 progressbar ARIA 범위
+
+### RED
+
+- `AchievementScreen.test.tsx`에 101회 조언을 렌더하는 회귀 테스트를 추가했다. 화면 문구는 `101 / 100`을 유지하면서 `aria-valuemax="100"`과 `aria-valuenow="100"`을 요구한다.
+- `pnpm test -- components/game/AchievementScreen.test.tsx`는 예상대로 실패했다. 실제 마크업이 `aria-valuemax="100" aria-valuenow="101"`을 출력해 progressbar 범위가 유효하지 않았다.
+
+### GREEN
+
+- `AchievementCard`가 progressbar의 `aria-valuenow`에만 `Math.min(current, target)`을 적용한다. 원본 누계와 보이는 `101 / 100` 텍스트는 그대로 보존한다.
+
+### 검증
+
+- `pnpm test -- components/game/AchievementScreen.test.tsx`: 108 test files, 1,051 tests 통과.
+- `pnpm typecheck`: 통과.
+- `git diff --check`: 통과.
