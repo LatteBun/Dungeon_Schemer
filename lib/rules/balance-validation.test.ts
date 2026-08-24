@@ -86,6 +86,26 @@ describe("validateCampaignBalance", () => {
     });
   });
 
+  it("보스 배율 calibration 범위와 0.025 grid를 적용한다", () => {
+    expect(() => validateCampaignBalance({
+      ...CAMPAIGN_BALANCE,
+      bossBaseStatMultiplierByInitialRisk: {
+        ...CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk,
+        3: 0.90,
+      },
+    })).not.toThrow();
+
+    for (const multiplier of [0.199, 1.201, 0.81]) {
+      expectInvalid({
+        ...CAMPAIGN_BALANCE,
+        bossBaseStatMultiplierByInitialRisk: {
+          ...CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk,
+          3: multiplier,
+        },
+      });
+    }
+  });
+
   it("유한한 양수가 아닌 multiplier와 뒤집힌 clamp 범위를 생성 오류로 거부한다", () => {
     expectInvalid({
       ...CAMPAIGN_BALANCE,

@@ -1,4 +1,9 @@
-import { CAMPAIGN_BALANCE, type AdvicePressure, type CampaignBalance } from "@/lib/balance/campaign-balance";
+import {
+  BOSS_MULTIPLIER_CALIBRATION,
+  CAMPAIGN_BALANCE,
+  type AdvicePressure,
+  type CampaignBalance,
+} from "@/lib/balance/campaign-balance";
 import { RuleError } from "@/lib/domain/errors";
 
 const INITIAL_RISK_LEVELS = [1, 2, 3, 4, 5] as const;
@@ -27,6 +32,16 @@ function requireFinitePositive(value: unknown, field: string): number {
     invalidBalance("캠페인 밸런스 multiplier는 유한한 양수여야 한다", { field, value });
   }
   return value;
+}
+
+function requireBossMultiplierCalibration(value: unknown, field: string): number {
+  const multiplier = requireFinitePositive(value, field);
+  const { min, max, step } = BOSS_MULTIPLIER_CALIBRATION;
+  const steps = (multiplier - min) / step;
+  if (multiplier < min || multiplier > max || Math.abs(steps - Math.round(steps)) >= 1e-9) {
+    invalidBalance("캠페인 밸런스 값이 승인 범위를 벗어난다", { field, value, min, max, step });
+  }
+  return multiplier;
 }
 
 function requireRecord(value: unknown, field: string): Record<string, unknown> {
@@ -64,10 +79,8 @@ export function validateCampaignBalance(profile: CampaignBalance = CAMPAIGN_BALA
   const bossMultipliers = requireRecord(root.bossBaseStatMultiplierByInitialRisk, "bossBaseStatMultiplierByInitialRisk");
   validateExactKeys(bossMultipliers, INITIAL_RISK_LEVELS.map(String), "bossBaseStatMultiplierByInitialRisk");
   for (const riskLevel of INITIAL_RISK_LEVELS) {
-    requireFiniteInRange(
+    requireBossMultiplierCalibration(
       bossMultipliers[String(riskLevel)],
-      0.75,
-      0.85,
       `bossBaseStatMultiplierByInitialRisk.${riskLevel}`,
     );
   }
