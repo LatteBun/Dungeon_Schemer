@@ -5,18 +5,19 @@ import { runCampaign } from "./campaign-driver";
 describe("백테스트 캠페인 driver", () => {
   it("실제 Store 액션으로 캠페인을 엔딩까지 진행한다", () => {
     const result = runCampaign({ seed: "driver-smoke", strategy: createStrategy("survival"), accuracy: 0.7 });
+    if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
     expect(result.ok).toBe(true);
-    if (!result.ok) return;
     expect(result.campaign.phase).toBe("ended");
     expect(result.trace.actionTypes).toContain("COMPLETE_EXPEDITION");
+    expect(result.trace.actionTypes).toContain("ACKNOWLEDGE_OUTCOME");
     expect(result.trace.steps).toBeLessThanOrEqual(800);
   });
 
   it("실제 원정의 조언 압력과 보스 진입 상태를 추적한다", () => {
     const result = runCampaign({ seed: "driver-balance-trace", strategy: createStrategy("survival"), accuracy: 0.7 });
 
+    if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
     expect(result.ok).toBe(true);
-    if (!result.ok) return;
     expect(result.trace.balanceExpeditions.length).toBeGreaterThanOrEqual(result.campaign.statistics.totalExpeditions);
     expect(result.trace.balanceExpeditions.filter((one) => one.result !== null)).toHaveLength(
       result.campaign.statistics.totalExpeditions,

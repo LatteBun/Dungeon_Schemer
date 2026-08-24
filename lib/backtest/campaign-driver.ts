@@ -1,10 +1,13 @@
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
+import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { RuleError } from "@/lib/domain";
 import type {
+  ActiveExpeditionContext,
   AdvicePressure,
   AdviceOutcome,
+  BaseAdviceOption,
   CampaignState,
   CampaignTransition,
   DungeonId,
@@ -163,12 +166,27 @@ function signature(campaign: CampaignState, active: ReturnType<ReturnType<typeof
     dungeon: active?.expedition.dungeonId,
     node: active?.expedition.currentNodeId,
     pending: active?.pendingEvent?.id,
+    outcome: active?.pendingOutcome?.event.id,
     result: active?.expedition.result?.status,
   });
 }
 
 function endingKind(campaign: CampaignState): EndingKind | null {
   return campaign.ending?.kind ?? null;
+}
+
+function selectableAdviceOptions(
+  campaign: CampaignState,
+  active: ActiveExpeditionContext,
+): readonly BaseAdviceOption[] {
+  const event = active.pendingEvent;
+  if (event === null) throw new DriverFailure("stall", "대기 중인 사건이 없다");
+  if (event.kind !== "merchant") return event.advice;
+  return event.advice.filter((advice) => getMerchantAdviceAvailability(
+    advice,
+    campaign.gold,
+    active.expedition.pendingMerchantEffect,
+  ).executable);
 }
 
 export function runCampaign(options: CampaignRunOptions): CampaignRun {
@@ -283,19 +301,33 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
         act({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) });
         continue;
       }
+      if (active.pendingOutcome !== null) {
+        act({ type: "ACKNOWLEDGE_OUTCOME" });
+        continue;
+      }
       if (active.pendingEvent !== null) {
         const view = projectAdviceDecision(campaign, active, betrayed);
         const intent = options.strategy.chooseAdviceIntent(view);
         if (intent !== "help" && intent !== "harm" && intent !== "neutral") fail("invalid-strategy-decision", `잘못된 조언 의도: ${intent}`);
-        const selection = selectAdviceByAccuracy({
-          campaignSeed: campaign.seed,
-          strategyId: options.strategy.id,
-          accuracy: options.accuracy,
-          expeditionId: active.expeditionId,
-          decisionIndex: trace.adviceSelections.length,
-          intendedOutcome: intent,
-          options: active.pendingEvent.advice,
-        });
+        const selectable = selectableAdviceOptions(campaign, active);
+        if (selectable.length === 0) fail("invalid-strategy-decision", "실행 가능한 조언이 없다");
+        const intendedIsSelectable = selectable.some((option) => option.outcome === intent);
+        const selection = intendedIsSelectable
+          ? selectAdviceByAccuracy({
+            campaignSeed: campaign.seed,
+            strategyId: options.strategy.id,
+            accuracy: options.accuracy,
+            expeditionId: active.expeditionId,
+            decisionIndex: trace.adviceSelections.length,
+            intendedOutcome: intent,
+            options: selectable,
+          })
+          : {
+            adviceId: selectable[0]!.id,
+            intendedOutcome: intent,
+            selectedOutcome: selectable[0]!.outcome,
+            hit: false,
+          };
         trace.adviceSelections.push(selection);
         trace.intendedAdviceCounts[intent] += 1;
         trace.selectedAdviceCounts[selection.selectedOutcome] += 1;
