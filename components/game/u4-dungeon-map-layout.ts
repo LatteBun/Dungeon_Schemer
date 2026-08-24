@@ -27,6 +27,10 @@ const MAP_BOTTOM = 0.88;
 const BOSS_POSITION: U4Point = { x: 0.5, y: MAP_TOP };
 const ENTRY_POSITION: U4Point = { x: 0.5, y: MAP_BOTTOM };
 
+function clampTo(value: number, low: number, high: number): number {
+  return Math.min(high, Math.max(low, value));
+}
+
 function renderGeometry(value: number): number {
   return Number(value.toFixed(4));
 }
@@ -35,14 +39,32 @@ function renderPoint(x: number, y: number): U4Point {
   return { x: renderGeometry(x), y: renderGeometry(y) };
 }
 
-function xPositions(count: number): readonly number[] {
+/**
+ * 층의 노드를 좌우로 벌린다.
+ *
+ * 늘 안전 구역 끝까지 벌리면 두 갈래짜리 층이 매번 왼쪽 끝과 오른쪽 끝에 박힌다.
+ * 그 층이 여럿 쌓이면 긴 대각선이 층층이 겹쳐 지도가 격자무늬가 된다 - 실제로
+ * 그렇게 보였다.
+ *
+ * 갈래가 적으면 좁게, 많으면 넓게 벌린다. 넓이도 층마다 조금씩 다르게 두어 층과
+ * 층이 같은 자리에 서지 않게 한다.
+ */
+function xPositions(count: number, spread: number, shift: number): readonly number[] {
   if (count <= 0) return [];
-  if (count === 1) return [0.5];
+  if (count === 1) return [clampTo(0.5 + shift, HORIZONTAL_MIN, HORIZONTAL_MAX)];
 
-  const step = (HORIZONTAL_MAX - HORIZONTAL_MIN) / (count - 1);
+  const full = HORIZONTAL_MAX - HORIZONTAL_MIN;
+  const width = full * spread;
+  const left = 0.5 - width / 2 + shift;
+  const step = width / (count - 1);
   return Array.from({ length: count }, (_, index) =>
-    HORIZONTAL_MIN + step * index,
+    clampTo(left + step * index, HORIZONTAL_MIN, HORIZONTAL_MAX),
   );
+}
+
+/** 갈래가 둘이면 절반쯤, 다섯이면 끝까지 벌린다. */
+function spreadFor(count: number): number {
+  return Math.min(1, 0.42 + 0.15 * Math.max(0, count - 1));
 }
 
 function depthY(index: number, depthCount: number): number {
@@ -51,6 +73,60 @@ function depthY(index: number, depthCount: number): number {
   const rowCount = depthCount + 1;
   const ratio = (index + 1) / rowCount;
   return MAP_BOTTOM - (MAP_BOTTOM - MAP_TOP) * ratio;
+}
+
+/*
+ * 노드 ID 하나에서 -1..1 사이 값을 뽑는다.
+ *
+ * 같은 던전은 늘 같은 모양이어야 하므로 난수를 쓰지 않는다. 같은 시드가 같은
+ * 지도를 낸다는 성질이 여기서도 지켜져야 한다.
+ */
+function wobble(nodeId: NodeId, salt: number): number {
+  let hash = 2166136261 ^ salt;
+  const text = String(nodeId);
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  /* 상위 비트를 쓴다. 하위 비트는 이웃한 ID 끼리 비슷하게 나온다. */
+  return ((hash >>> 8) % 2001) / 1000 - 1;
+}
+
+/**
+ * 자로 잰 격자를 조금 흐트러뜨린다.
+ *
+ * 층마다 균등 간격으로 놓으면 지도가 표처럼 보인다. 던전은 그렇게 파이지
+ * 않는다. 다만 흐트러짐이 뜻을 바꾸면 안 되므로 두 가지를 지킨다 - 같은 층
+ * 안의 좌우 순서와, 층과 층의 위아래 순서다. 그래서 흔들림을 간격의 일부로
+ * 묶는다. 좌우는 이웃과의 간격보다 작게, 위아래는 층 간격의 절반보다 작게.
+ */
+const X_WOBBLE = 0.18;
+const Y_WOBBLE = 0.22;
+
+export interface U4RoomVariation {
+  /** 방틀을 기울이는 각도. 아이콘은 돌리지 않는다 — 읽혀야 한다. */
+  readonly tiltDeg: number;
+  /** 방틀의 크기 배율. 방마다 조금씩 다르게 파인다. */
+  readonly scale: number;
+  /** 좌우를 뒤집는가. 같은 그림이 찍힌 것처럼 보이지 않게 한다. */
+  readonly flipped: boolean;
+}
+
+/**
+ * 방마다 조금씩 다르게 보이게 한다.
+ *
+ * 분류별 그림이 하나뿐이라 같은 분류가 여럿이면 도장 찍은 것처럼 보인다. 변형
+ * 자산을 새로 그리는 대신 기울기와 크기와 좌우를 바꾼다.
+ *
+ * 아이콘은 돌리지 않는다. 방이 무엇인지 알려 주는 것이 아이콘이라 기울면 읽기
+ * 어려워진다. 틀만 기운다.
+ */
+export function roomVariationFor(nodeId: NodeId): U4RoomVariation {
+  return {
+    tiltDeg: renderGeometry(wobble(nodeId, 3) * 7),
+    scale: renderGeometry(1 + wobble(nodeId, 4) * 0.09),
+    flipped: wobble(nodeId, 5) > 0,
+  };
 }
 
 function requirePosition(
@@ -73,10 +149,22 @@ export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
 
   map.layers.forEach((layer, layerIndex) => {
     const orderedNodeIds = optimized.rows[layerIndex + 1]!;
-    const xs = xPositions(layer.nodeIds.length);
+    /* 층마다 조금씩 옆으로 민다. 층과 층이 같은 자리에 서면 다시 격자가 된다. */
+    const shift = wobble(layer.nodeIds[0] ?? map.entryNodeId, 6) * 0.07;
+    const xs = xPositions(layer.nodeIds.length, spreadFor(layer.nodeIds.length), shift);
     const y = depthY(layerIndex, map.layers.length);
+    const xGap = layer.nodeIds.length > 1
+      ? (HORIZONTAL_MAX - HORIZONTAL_MIN) * spreadFor(layer.nodeIds.length) / (layer.nodeIds.length - 1)
+      : HORIZONTAL_MAX - HORIZONTAL_MIN;
+    const yGap = (MAP_BOTTOM - MAP_TOP) / (map.layers.length + 1);
+
     orderedNodeIds.forEach((nodeId, nodeIndex) => {
-      positions[nodeId] = renderPoint(xs[nodeIndex]!, y);
+      const x = clampTo(
+        xs[nodeIndex]! + wobble(nodeId, 1) * xGap * X_WOBBLE,
+        HORIZONTAL_MIN,
+        HORIZONTAL_MAX,
+      );
+      positions[nodeId] = renderPoint(x, y + wobble(nodeId, 2) * yGap * Y_WOBBLE);
     });
   });
 

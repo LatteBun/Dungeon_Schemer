@@ -9,6 +9,7 @@ import type { NodeId } from "@/lib/domain";
 import { GameShell } from "./GameShell";
 import { PartyMemberCard } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
+import { roomVariationFor } from "./u4-dungeon-map-layout";
 import type { U4MapLayout } from "./u4-dungeon-map-layout";
 import type {
   U4MapNodeView,
@@ -46,6 +47,16 @@ const ROOM_BASE: Readonly<Record<U4RoomKind, string>> = {
   merchant: "/assets/u4/rooms/room_merchant_base.png",
   special: "/assets/u4/rooms/room_special_base.png",
   boss: "/assets/u4/rooms/room_boss_base.png",
+};
+
+/** 분류가 뜻하는 것. 그 안의 사건은 밟아 봐야 안다. */
+const ROOM_HINT: Readonly<Record<U4RoomKind, string>> = {
+  entry: "들어온 자리다.",
+  monster: "무언가와 마주친다. 싸움이 될 수도, 지나칠 수도 있다.",
+  rest: "숨을 돌릴 자리다. 다만 쉬는 것이 늘 안전하지는 않다.",
+  merchant: "물건을 사고파는 자리다. 값을 치를 골드가 있어야 한다.",
+  special: "분류로만 알 수 있는 자리다. 무엇이 있을지는 가 봐야 안다.",
+  boss: "이 던전의 끝이다. 돌아 나올 길은 없다.",
 };
 
 const ROOM_ICON: Readonly<Record<U4RoomKind, string>> = {
@@ -122,6 +133,9 @@ function roomPositionStyle(x: number, y: number): CSSProperties {
 }
 
 function RoomVisual({ node }: { node: U4MapNodeView }) {
+  /* 같은 분류의 방이 도장 찍은 것처럼 보이지 않게 틀만 조금 흐트러뜨린다. */
+  const variation = roomVariationFor(node.id);
+
   return (
     <>
       <img
@@ -129,6 +143,9 @@ function RoomVisual({ node }: { node: U4MapNodeView }) {
         src={ROOM_BASE[node.kind]}
         alt=""
         aria-hidden="true"
+        style={{
+          transform: `rotate(${variation.tiltDeg}deg) scale(${variation.scale})${variation.flipped ? " scaleX(-1)" : ""}`,
+        }}
       />
       <img
         className="u4-room__state"
@@ -432,7 +449,16 @@ function RightPanel({
               <div>
                 <span>공개 사건 분류</span>
                 <strong>{ROOM_LABEL[destination.kind]}</strong>
-                <small>현재 위치에서 이동 가능한 지점</small>
+                {/*
+                  * 무엇이 기다리는지 말한다.
+                  *
+                  * 전에는 "현재 위치에서 이동 가능한 지점" 이라고만 적혀 있었다.
+                  * 고른 지점이 어디든 늘 같은 문장이라 아무것도 알려 주지 않는다.
+                  *
+                  * 분류가 뜻하는 것까지만 적는다. 그 안에 무슨 사건이 있는지는
+                  * 밟아 봐야 안다 - 미리 알면 고를 이유가 사라진다.
+                  */}
+                <small>{ROOM_HINT[destination.kind]}</small>
               </div>
             </div>
           )}

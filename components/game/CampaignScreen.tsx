@@ -8,7 +8,6 @@ import { useCampaignStore } from "./CampaignStoreProvider";
 import { IntroScreen } from "./IntroScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
-import { U5BattleScene } from "./U5BattleScene";
 import { U5ProgressScreen } from "./U5ProgressScreen";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
@@ -17,6 +16,7 @@ import {
   bossReplayFor,
   ecologyViewFor,
   eventReplayFor,
+  expeditionEndViewFor,
   logFor,
   progressViewFor,
   publicKindByNodeId,
@@ -154,13 +154,24 @@ function ExpeditionScreens() {
    * 보스전을 치렀거나 도중에 전멸했으면 더 걸을 곳이 없다. 정산 입력은 규칙이
    * 만든다 - 화면이 무엇이 최종 파티인지 판단하지 않는다.
    */
+  /*
+   * 원정이 끝났다. 정산으로 넘긴다.
+   *
+   * 보스전도 같은 화면에서 본다 - 상단 상태도 파티도 진행 기록도 그대로 있어야
+   * `/u5-2-test` 에서 보던 것과 같은 화면이 된다. 전에는 전투 장면만 덩그러니
+   * 띄웠다.
+   */
   const finished = active.expedition.bossResult !== null || active.expedition.result !== null;
   if (finished) {
-    const replay = bossReplayFor(campaign, active);
     return (
-      <ExpeditionEnd
-        replay={replay}
-        onSettle={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
+      <U5ProgressScreen
+        status={status}
+        progress={expeditionEndViewFor(campaign, active)}
+        log={logFor(campaign, active)}
+        ecology={ecologyViewFor(campaign, active)}
+        battleReplay={bossReplayFor(campaign, active) ?? undefined}
+        onAcknowledge={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
+        acknowledgeLabel="정산으로"
       />
     );
   }
@@ -215,29 +226,6 @@ function ExpeditionScreens() {
         setSelected(null);
       }}
     />
-  );
-}
-
-/**
- * 보스전을 보여 주고 정산으로 넘긴다.
- *
- * 전멸로 끝난 원정에는 보스전이 없다. 그때는 재생할 것이 없으므로 넘어가는 길만
- * 남는다.
- */
-function ExpeditionEnd({
-  replay,
-  onSettle,
-}: {
-  readonly replay: ReturnType<typeof bossReplayFor>;
-  readonly onSettle: () => void;
-}) {
-  return (
-    <div className="u5-battle-host">
-      {replay !== null && <U5BattleScene replay={replay} />}
-      <button type="button" className="u5-battle-settle" onClick={onSettle}>
-        정산으로
-      </button>
-    </div>
   );
 }
 

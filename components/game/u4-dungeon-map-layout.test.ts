@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GeneratedMap, NodeId } from "@/lib/domain";
-import { createU4DungeonMapLayout } from "./u4-dungeon-map-layout";
+import { createU4DungeonMapLayout, roomVariationFor } from "./u4-dungeon-map-layout";
 import {
   countU4LayerCrossings,
   createU4OptimizedLayerOrder,
@@ -187,5 +187,54 @@ describe("U4 dungeon map layout", () => {
     expect(geometry.every((value) => value === Number(value.toFixed(4)))).toBe(
       true,
     );
+  });
+});
+
+describe("지도가 자로 잰 듯 보이지 않는다", () => {
+  /* 같은 던전은 늘 같은 모양이어야 한다. 흐트러뜨리되 난수를 쓰지 않는다. */
+  it("같은 지도는 같은 좌표를 낸다", () => {
+    expect(createU4DungeonMapLayout(MAP)).toEqual(createU4DungeonMapLayout(MAP));
+    expect(roomVariationFor(D3A)).toEqual(roomVariationFor(D3A));
+  });
+
+  /* 한 층의 노드가 모두 같은 높이면 표처럼 보인다. */
+  it("같은 층의 높이가 서로 다르다", () => {
+    const layout = createU4DungeonMapLayout(MAP);
+    const ys = [D3A, D3B, D3C, D3D, D3E].map((nodeId) => layout.nodePositions[nodeId]!.y);
+
+    expect(new Set(ys).size).toBeGreaterThan(1);
+  });
+
+  /* 간격이 자로 잰 듯 같으면 격자다. */
+  it("좌우 간격이 균등하지 않다", () => {
+    const layout = createU4DungeonMapLayout(MAP);
+    const xs = [D3A, D3B, D3C, D3D, D3E].map((nodeId) => layout.nodePositions[nodeId]!.x);
+    const gaps = xs.slice(1).map((x, index) => Number((x - xs[index]!).toFixed(4)));
+
+    expect(new Set(gaps).size).toBeGreaterThan(1);
+  });
+
+  /* 흐트러뜨려도 뜻은 그대로다. 순서가 뒤집히면 길이 달라 보인다. */
+  it("흐트러뜨려도 좌우 순서와 층 순서는 그대로다", () => {
+    const layout = createU4DungeonMapLayout(MAP);
+    const xs = [D3A, D3B, D3C, D3D, D3E].map((nodeId) => layout.nodePositions[nodeId]!.x);
+
+    expect(xs).toEqual([...xs].sort((left, right) => left - right));
+    expect(xs.every((x) => x >= 0.1 && x <= 0.9)).toBe(true);
+    /* 입구와 보스는 흔들지 않는다. 그 둘은 자리가 곧 뜻이다. */
+    expect(layout.nodePositions[ENTRY]).toEqual({ x: 0.5, y: 0.88 });
+    expect(layout.nodePositions[BOSS]).toEqual({ x: 0.5, y: 0.12 });
+  });
+
+  /* 같은 분류의 방이 도장 찍은 것처럼 보이지 않아야 한다. */
+  it("방마다 기울기와 크기가 다르다", () => {
+    const tilts = new Set([D3A, D3B, D3C, D3D, D3E].map((nodeId) => roomVariationFor(nodeId).tiltDeg));
+    const scales = new Set([D3A, D3B, D3C, D3D, D3E].map((nodeId) => roomVariationFor(nodeId).scale));
+
+    expect(tilts.size).toBeGreaterThan(1);
+    expect(scales.size).toBeGreaterThan(1);
+    /* 너무 기울면 방이 아니라 기울어진 그림으로 보인다. */
+    for (const tilt of tilts) expect(Math.abs(tilt)).toBeLessThanOrEqual(7);
+    for (const scale of scales) expect(scale).toBeGreaterThan(0.9);
   });
 });
