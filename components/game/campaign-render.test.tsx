@@ -5,6 +5,7 @@ import type { CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
+import { RejectionNotice } from "./CampaignScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
@@ -342,5 +343,37 @@ describe("게시판에서 공고를 다시 고른다", () => {
 
     expect(store.getState().rejected).not.toBeNull();
     expect(store.getState().context.selectedOffer?.id).toBe(free[0]!.id);
+  });
+});
+
+describe("거부 알림", () => {
+  /*
+   * 규칙이 거부하면 그렇게 말한다.
+   *
+   * 지금 화면의 모든 경로는 잘 막혀 있어 이 알림이 뜰 일이 없다 — 승급 버튼은
+   * 자격이 없으면 비활성이고, 게시판은 취소를 대신 밟는다. 그래도 두는 것은
+   * 뒤로가기로 되살아난 낡은 화면이 보내는 조작이 여기로 오기 때문이고,
+   * 앞으로 생길 막힌 길이 또 조용하지 않게 하기 위해서다.
+   */
+  it("거부 사유를 그대로 보여준다", () => {
+    const reason = "아직 확인하지 않은 결과가 있다";
+    const markup = renderToStaticMarkup(createElement(RejectionNotice, { reason, onDismiss: noop }));
+
+    assertClean(markup, "거부 알림");
+    expect(markup).toContain(reason);
+    /* 스스로 읽어 주는 알림이라야 화면을 보지 않는 사람에게도 닿는다. */
+    expect(markup).toContain('role="alert"');
+    expect(markup).toContain("확인");
+  });
+
+  /* 규칙이 내는 사유가 그대로 뜬다. 화면이 다시 쓰지 않는다. */
+  it("실제 거부 사유가 사람이 읽을 수 있는 문장이다", () => {
+    const store = createCampaignStore("rejection-copy");
+    store.getState().dispatch({ type: "CHOOSE_ADVICE", adviceId: "없는-조언" as never });
+    const rejected = store.getState().rejected!;
+
+    expect(rejected.reason).not.toMatch(/[a-z]{4,}/);
+    expect(renderToStaticMarkup(createElement(RejectionNotice, { reason: rejected.reason, onDismiss: noop })))
+      .toContain(rejected.reason);
   });
 });
