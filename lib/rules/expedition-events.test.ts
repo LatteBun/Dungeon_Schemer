@@ -9,6 +9,29 @@ import type { ChoiceId, ClueId, DungeonId, GeneratedMap, MonsterId, NodeId, Prep
 import type { CharacterId, ClassId } from "@/lib/domain";
 
 describe("E3 원정 사건 준비와 물질화", () => {
+  it("위험도별 모든 실제 선택 경로에 monster 최소치를 보장한다", () => {
+    const cases = [
+      { campaignSeed: "issue-117-risk-1", dungeonId: "dungeon-spider-01" as DungeonId, riskLevel: 1 as const, theme: THEMES[0], minimum: 2 },
+      { campaignSeed: "issue-117-risk-3", dungeonId: "dungeon-graveyard-03" as DungeonId, riskLevel: 3 as const, theme: THEMES[2], minimum: 3 },
+    ];
+
+    for (const testCase of cases) {
+      const input = {
+        ...testCase,
+        initialRiskLevel: testCase.riskLevel,
+        attempt: 0,
+        activeRuleIds: testCase.theme.rules.map((rule) => rule.id),
+        activeMonsterIds: testCase.theme.monsters.map((monster) => monster.id),
+      };
+      const map = generateDungeonMap(input);
+      const prepared = prepareExpeditionEvents({ ...input, map });
+
+      for (const path of pathNodeIds(map)) {
+        expect(monsterCount(prepared, path)).toBeGreaterThanOrEqual(testCase.minimum);
+      }
+    }
+  });
+
   it("같은 입력의 준비 결과와 방문 EventId가 결정적이다", () => {
     const input = { campaignSeed: "e3-seed-0", dungeonId: "dungeon-spider-01" as DungeonId, initialRiskLevel: 3 as const, riskLevel: 3 as const, attempt: 0, activeRuleIds: THEMES[0].rules.map((rule) => rule.id), activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id) };
     const map = generateDungeonMap(input);
@@ -173,6 +196,24 @@ describe("E3 원정 사건 준비와 물질화", () => {
     expect(result.battle?.enemies[0]?.targetWeightMultipliers).toEqual({ mage: 3 });
   });
 });
+
+function pathNodeIds(map: GeneratedMap): readonly (readonly NodeId[])[] {
+  const nodesById = new Map(map.nodes.map((node) => [node.id, node]));
+  const visit = (nodeId: NodeId, path: readonly NodeId[]): readonly (readonly NodeId[])[] => {
+    if (nodeId === map.bossNodeId) return [path];
+    const node = nodesById.get(nodeId);
+    if (node === undefined) throw new Error("지도 node 없음");
+    return node.nextNodeIds.flatMap((nextNodeId) => visit(
+      nextNodeId,
+      node.kind === "normal" ? [...path, node.id] : path,
+    ));
+  };
+  return visit(map.entryNodeId, []);
+}
+
+function monsterCount(prepared: PreparedExpeditionEvents, path: readonly NodeId[]): number {
+  return path.filter((nodeId) => prepared.nodePlans.get(nodeId)?.category === "monster").length;
+}
 
 function capacityExchangeFixture() {
   const theme = THEMES.find((candidate) => candidate.id === "graveyard");
