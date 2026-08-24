@@ -8,6 +8,24 @@ const EXPECTED_RISK_BY_THEME: Readonly<Record<ThemeId, readonly number[]>> = {
   graveyard: [2, 3, 3, 4, 5],
 };
 
+const EXPECTED_NAME_BY_ID = {
+  "dungeon-spider-01": "라그나의 산란굴",
+  "dungeon-spider-02": "라그나의 검은실굴",
+  "dungeon-spider-03": "모르칸의 사체길",
+  "dungeon-spider-04": "세리나의 그림자굴",
+  "dungeon-spider-05": "아라크샤의 왕좌",
+  "dungeon-desert-01": "자카르의 불탄 우물",
+  "dungeon-desert-02": "카르둠의 바람길",
+  "dungeon-desert-03": "카르둠의 매장로",
+  "dungeon-desert-04": "오벨론의 순례길",
+  "dungeon-desert-05": "네프리스의 황무지",
+  "dungeon-graveyard-01": "모르비안의 묘문",
+  "dungeon-graveyard-02": "아즈라엘의 납골당",
+  "dungeon-graveyard-03": "아즈라엘의 묘역",
+  "dungeon-graveyard-04": "발드라크의 사냥터",
+  "dungeon-graveyard-05": "발드라크의 왕묘",
+} as const;
+
 describe("INITIAL_DUNGEON_SLOTS", () => {
   it("세 테마의 고정 슬롯 15개를 번호순으로 제공한다", () => {
     expect(INITIAL_DUNGEON_SLOTS).toHaveLength(15);
@@ -20,10 +38,11 @@ describe("INITIAL_DUNGEON_SLOTS", () => {
       expect(slots.map((slot) => slot.id)).toEqual(
         [1, 2, 3, 4, 5].map((number) => `dungeon-${theme}-${String(number).padStart(2, "0")}`),
       );
-      expect(slots.map((slot) => slot.name)).toEqual(
-        [1, 2, 3, 4, 5].map((number) => `${theme === "spider" ? "거미굴" : theme === "desert" ? "사막" : "묘지"} ${number}`),
-      );
     }
+
+    expect(
+      Object.fromEntries(INITIAL_DUNGEON_SLOTS.map(({ id, name }) => [id, name])),
+    ).toEqual(EXPECTED_NAME_BY_ID);
   });
 
   it("전체 초기 위험도 빈도가 문서의 3·4·4·3·1 매트릭스와 같다", () => {
