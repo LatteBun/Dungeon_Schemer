@@ -155,7 +155,7 @@
 
 .u6-settlement-side .u6-settlement-continue {
   grid-row: 3;
-  justify-self: stretch;
+  justify-self: end;
   text-align: center;
 }
 
