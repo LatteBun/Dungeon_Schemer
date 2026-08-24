@@ -164,6 +164,13 @@ describe("플레이어 업적 프로필", () => {
       ending: "unemployed",
     }, "2026-08-24T10:00:00.000Z");
     expect(at.unlocked["five-endings"]).toBeDefined();
+    const over = recordCompletedCampaign(at, {
+      ...completed,
+      runId: "five-endings-over",
+      ending: "completed",
+    }, "2026-08-24T10:00:00.000Z");
+    expect(over.unlocked["five-endings"]).toBeDefined();
+    expect(over.endingCounts.completed).toBe(2);
   });
 
   it.each([
@@ -205,6 +212,43 @@ describe("플레이어 업적 프로필", () => {
       ...atTotals,
     }, "2026-08-24T10:00:00.000Z");
     expect(at.unlocked[id]).toBeDefined();
+  });
+
+  it.each([
+    ["hundred-advices", { advices: 101 }, { current: 101, target: 100 }],
+    ["seasoned-expedition", { clearedExpeditions: 31 }, { current: 31, target: 30 }],
+    ["death-in-the-plan", { wipedExpeditions: 11 }, { current: 11, target: 10 }],
+  ] as const)("%s는 초과 값에서도 해금 상태를 유지한다", (id, overTotals, expectedProgress) => {
+    const over = recordCompletedCampaign(createEmptyPlayerProgress(), {
+      ...completed,
+      runId: `${id}-over`,
+      advices: 0,
+      clearedExpeditions: 0,
+      wipedExpeditions: 0,
+      ...overTotals,
+    }, "2026-08-24T10:00:00.000Z");
+    expect(over.unlocked[id]).toBeDefined();
+    expect(achievementProgressFor(over, id)).toEqual(expectedProgress);
+  });
+
+  it.each([
+    ["first-record", { ending: "exhausted" as const }],
+    ["dungeon-conqueror", { ending: "completed" as const }],
+    ["s-rank-guide", { ending: "completed" as const, finalRank: "S" as const }],
+    ["everyone-returned", { ending: "completed" as const, deaths: 0 }],
+  ] as const)("%s는 초과 완료 기록에서도 해금 상태를 유지한다", (id, result) => {
+    const once = recordCompletedCampaign(createEmptyPlayerProgress(), {
+      ...completed,
+      ...result,
+      runId: `${id}-over-1`,
+    }, "2026-08-24T10:00:00.000Z");
+    const over = recordCompletedCampaign(once, {
+      ...completed,
+      ...result,
+      runId: `${id}-over-2`,
+    }, "2026-08-24T10:00:00.000Z");
+    expect(over.unlocked[id]).toBeDefined();
+    expect(over.totals.completedCampaigns).toBe(2);
   });
 
   it("카탈로그 순서와 공개 누적 진행도를 제공한다", () => {
