@@ -102,6 +102,7 @@
 
 - [캠페인 개편 설계](superpowers/specs/2026-08-19-lattebun-campaign-rework-design.md): 확정 규칙, 폐기 규칙, 문서 개정 지도
 - [B1 현행 캠페인 백테스트 설계](superpowers/specs/2026-08-24-lattebun-b1-current-campaign-backtest-design.md): 실제 Store 기반 3전략×2정확도 calibration·holdout 진단과 조건부 B1-B 경계
+- [B1 현행 캠페인 백테스트 구현 계획](superpowers/plans/2026-08-24-lattebun-b1-current-campaign-backtest.md): 공개 정보 전략·실제 Store driver·calibration 승인·독립 holdout의 테스트 우선 실행 순서
 - [C4 원정 정산 설계](superpowers/specs/2026-08-23-lattebun-c4-expedition-settlement-design.md): 정산 계약, 유품, 응급 편성, C7·C8·U6 경계
 - [C4 원정 정산 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-expedition-settlement.md): C4와 연계 계약의 테스트 우선 구현 순서
 - [C4 PR 리뷰 수정 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-pr-review-fixes.md): 전멸 전용 다음 보상과 중상 경계 판정 수정 순서
