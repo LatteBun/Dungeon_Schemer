@@ -5,7 +5,7 @@
 - 작성 도구: Codex
 - 대상 작업: `E3`, GitHub issue #117
 - 기준 브랜치: `main`
-- 기준 커밋: `109e626` (PR #148 병합)
+- 기준 커밋: `b61fe96` (PR #149·#150 병합)
 
 ## 1. 문서의 지위
 
@@ -54,45 +54,57 @@
 
 ## 4. 생성 알고리즘
 
-`prepareExpeditionEvents`는 다음 우선순위로 category 역할을 정한다.
+초기 설계는 monster 보호 슬롯을 먼저 고정하고 남은 노드만 후보 수용량 보정에
+사용하려 했다. 실제 `CampaignDungeon` 3시드 × 15던전 × 두 attempt 회귀에서 이
+순서가 `경로별 사건 후보 용량을 만족하는 정상 분류를 만들 수 없다`로 실패했다.
+monster 하한을 만족하는 greedy 예약이 존재해도, 그 예약이 실제 사건 후보 풀과
+양립하는 배정이라는 보장은 없기 때문이다.
+
+따라서 `prepareExpeditionEvents`는 category를 순차 고정하지 않고, 경로 하한과 후보
+수용량을 같은 전역 탐색의 제약으로 다룬다.
 
 ```text
 보스 정보 special cut
-→ 경로별 monster 최소치 예약
-→ strong link 및 사건 후보 수용량 보정
-→ 남은 노드의 기존 시드 RNG category
+→ strong link 역할·허용 category 확정
+→ normal node category 후보 순서 생성
+→ 경로별 monster 하한 + 사건 후보 수용량 동시 전역 배정
+→ 최종 계약 검증
 ```
 
-### 4.1 monster 예약
+### 4.1 고정 역할과 category 후보
 
 1. 기존 계산으로 보스 정보 cut과 그 `special` 노드를 먼저 확정한다.
-2. cut을 제외한 일반 노드와 E1 논리 DAG에서 가능한 모든 입구→보스 경로를 얻는다.
-3. 각 경로의 예약 monster 수가 해당 위험도 최소치에 도달할 때까지 반복한다.
-4. 아직 부족한 경로를 가장 많이 통과하는 일반 노드를 하나 고른다. 동률은
-   안정된 노드 ID 순서로 푼다. 선택한 노드를 `monster` 보호 슬롯으로 예약한다.
-5. 어떤 후보 노드도 부족 경로를 늘릴 수 없으면
-   `RuleError("INVALID_GENERATION", ...)`으로 실패한다. 재추첨하거나 보장값을
-   낮추지 않는다.
+2. strong link의 predecessor/follower 노드와 단서 ID를 기존 계약대로 확정한다.
+   역할이 요구하는 사건 종류가 하나뿐이면 해당 category를 고정하고, 여러 종류를
+   허용하면 그 집합만 후보로 둔다.
+3. bossInfo와 strong-link 역할이 아닌 normal 노드는 네 category를 후보로 갖는다.
+   현재 시드 RNG가 처음 고른 category를 첫 후보로 두고 나머지는 seeded 순서로 둔다.
+4. E1 논리 DAG의 가능한 모든 입구→보스 경로를 안정된 NodeId 순서로 열거한다.
 
 현재 지도는 모든 경로가 같은 일반 Depth 수를 지나고, ★1~2는 보스 정보 cut 1개,
 ★3~5는 2개만 갖는다. 따라서 위 최소치는 현 지도 계약 안에서 충족 가능해야 한다.
 이 전제가 깨지는 새 템플릿은 테스트에서 즉시 드러난다.
 
-### 4.2 남은 category와 수용량 보정
+### 4.2 동시 전역 배정
 
-monster 보호 슬롯 이외의 일반 노드는 기존 RNG 흐름으로 category를 먼저 고른다.
-strong link 예약과 `repairNormalCategoryCapacity`는 이후에도 동작하지만 보호 슬롯을
-다른 category로 바꾸지 못한다.
+기존 `findDeterministicCapacityAssignment`의 완전 탐색 경계를 확장해 각 normal
+node에 category를 하나씩 배정한다. 탐색은 다음 두 조건을 동시에 검사한다.
 
-수용량 보정이 보호 슬롯을 제외하고 해결할 수 없으면 `INVALID_GENERATION`으로
-실패한다. 이 실패는 콘텐츠·템플릿 계약이 monster 최소 보장과 양립하지 않는다는
-신호이므로 조용한 RNG 재시도보다 우선한다.
+- **monster 가능성 pruning:** 부분 배정에서 어떤 경로의 현재 monster 수와 아직
+  배정하지 않은 monster 가능 노드 수를 더해도 하한에 못 미치면 그 가지를 버린다.
+- **사건 후보 가능성 pruning:** 기존 `categoryCapacityDeficit`의 partial 검사로 이미
+  고정된 역할·category가 후보 풀을 넘으면 그 가지를 버린다.
+- **완성 조건:** 모든 경로가 위험도별 monster 하한을 만족하고 전체 경로의 사건
+  후보 수용량 deficit이 0이어야 한다.
+
+첫 유효 배정을 채택한다. 후보와 node 순서가 결정적이므로 같은 입력은 같은 결과를
+낸다. 완성 배정이 없으면 `RuleError("INVALID_GENERATION", ...)`으로 실패하며,
+monster 하한을 낮추거나 새 RNG로 재시도하지 않는다.
 
 ## 5. 경계와 결정성
 
-- 새 예약 선택은 RNG를 소비하지 않는다. 안정된 노드 ID와 현재 예약 상태만으로
-  동률을 푼다.
-- 기존 RNG가 소비하는 남은 category의 순서와 의미는 바꾸지 않는다.
+- 전역 탐색 자체는 RNG를 소비하지 않는다. 최초 category와 후보 순서는 기존 seeded
+  RNG로 한 번 만들고, 탐색은 그 고정 순서를 따른다.
 - `bossInfo` 역할, strong predecessor/follower 역할, 실제 방문 시 event ID 물질화는
   외부 API와 소유 경계를 유지한다.
 - 최종 배정 후 모든 입구→보스 경로의 monster 수를 다시 검증한다. 내부 예약 또는
@@ -111,8 +123,8 @@ strong link 예약과 `repairNormalCategoryCapacity`는 이후에도 동작하�
 
 ## 7. 영향 파일
 
-- `lib/rules/expedition-events.ts`: monster 예약, 보호 슬롯을 고려한 수용량 보정,
-  최종 경로 검증
+- `lib/rules/expedition-events.ts`: 경로별 monster 가능성 pruning과 후보 수용량을
+  결합한 결정적 category 전역 배정, 최종 검증
 - `lib/rules/expedition-events.test.ts` 또는 책임이 분리된 E3 회귀 테스트: 경로별
   최소치·결정성·기존 계약 검증
 - `lib/rules/campaign-profile-event-materialization.test.ts`: 실제 생태 프로필 통합
