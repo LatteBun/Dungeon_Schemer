@@ -3,10 +3,30 @@ import { runCampaign } from "./campaign-driver";
 import { createStrategy } from "./strategies";
 import { aggregateRuns, metricsForRun, pairedMeanDifference, wilsonInterval, type CampaignRunMetrics } from "./metrics";
 
-function metric(overrides: Partial<CampaignRunMetrics> = {}): CampaignRunMetrics {
+function metric({ balanceExpeditions: balanceOverrides, depletion: depletionOverrides, ending: endingOverride, termination: terminationOverride, ...overrides }: Partial<CampaignRunMetrics> = {}): CampaignRunMetrics {
+  const balanceExpeditions = balanceOverrides ?? [{
+    expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
+    startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: null, endAdvicePressure: 0, result: "wiped",
+  }];
+  const locator = balanceExpeditions[0];
+  const depletion = depletionOverrides ?? (locator === undefined ? [] : [
+    { source: "expedition-general", worldTurn: 1, expeditionId: locator.expeditionId, dungeonId: locator.dungeonId, initialRiskLevel: locator.initialRiskLevel, attemptNumber: locator.attemptNumber, hpLost: 30, hpRecovered: 0, deaths: 2, seriousInjuriesStarted: 1, seriousInjuriesCleared: 0, trustZeroed: 1 },
+    { source: "expedition-boss", worldTurn: 1, expeditionId: locator.expeditionId, dungeonId: locator.dungeonId, initialRiskLevel: locator.initialRiskLevel, attemptNumber: locator.attemptNumber, hpLost: 70, hpRecovered: 0, deaths: 4, seriousInjuriesStarted: 2, seriousInjuriesCleared: 0, trustZeroed: 2 },
+    { source: "world-turn-background", worldTurn: 2, expeditionId: null, dungeonId: null, initialRiskLevel: null, attemptNumber: null, hpLost: 10, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+    { source: "world-turn-rest", worldTurn: 2, expeditionId: null, dungeonId: null, initialRiskLevel: null, attemptNumber: null, hpLost: 0, hpRecovered: 20, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 1, trustZeroed: 0 },
+  ]);
+  const ending = endingOverride ?? "exhausted";
+  const termination = terminationOverride ?? ({
+    completed: "completed",
+    exhausted: "pool-exhausted",
+    unemployed: "no-eligible-party",
+    distrust: "distrust",
+    denounced: "denounced",
+    "run-error": "run-error",
+  } as const)[ending];
   return {
     seed: "fixture", strategyId: "survival", accuracy: 0.7,
-    ending: "exhausted", completed: false, finalRank: "C", reachedRankS: false,
+    ending, completed: false, finalRank: "C", reachedRankS: false,
     totalExpeditions: 0, clearedExpeditions: 0, wipedExpeditions: 0, totalDeaths: 0,
     aliveCount: 0, deployableCount: 0, zeroTrustCount: 0, gravelyWoundedCount: 0,
     finalReputation: 0, finalGold: 0, contractGold: 0, relicGold: 0, cumulativeGold: 0,
@@ -19,10 +39,9 @@ function metric(overrides: Partial<CampaignRunMetrics> = {}): CampaignRunMetrics
     betrayalAttempts: 0, betrayalWipes: 0, betrayalCompletions: 0,
     merchantGoldSpent: 0, merchantEffectsConsumed: 0, adviceHits: 0, adviceTotal: 0,
     errorKind: null,
-    balanceExpeditions: [{
-      expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
-      startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: null, endAdvicePressure: 0, result: "wiped",
-    }],
+    termination,
+    balanceExpeditions,
+    depletion,
     ...overrides,
   } as CampaignRunMetrics;
 }
@@ -51,6 +70,83 @@ describe("백테스트 통계", () => {
     expect(metrics.relicGold).toBeGreaterThanOrEqual(0);
     expect(metrics.totalExpeditions).toBeGreaterThan(0);
     expect(metrics.adviceTotal).toBe(run.ok ? run.trace.adviceSelections.length : 0);
+    expect(metrics.depletion).toEqual(run.trace.depletion);
+    expect(metrics.termination).toBeDefined();
+  });
+
+  it("run-error의 이미 확정된 손실 trace와 종료 사유를 보존한다", () => {
+    const run = runCampaign({ seed: "metrics-run-error", strategy: createStrategy("survival"), accuracy: 0.7, stepLimit: 30 });
+    if (run.ok) throw new Error("step limit fixture가 실행 오류를 만들지 않았다");
+
+    const metrics = metricsForRun(run);
+    const aggregate = aggregateRuns([metrics]).combinations["survival@0.7"]!;
+    expect(metrics.depletion).toEqual(run.trace.depletion);
+    expect(metrics.termination).toBe("run-error");
+    expect(aggregate.terminationCounts["run-error"]).toBe(1);
+  });
+
+  it("손실 원장을 source별로 손계산 집계하고 사망 60% 우세 원인을 판정한다", () => {
+    const aggregate = aggregateRuns([metric({
+      strategyId: "opportunist", totalDeaths: 6,
+    })]);
+    const combination = aggregate.combinations["opportunist@0.7"]!;
+
+    expect(combination.depletionBySource["expedition-general"]).toMatchObject({ hpLost: 30, deaths: 2 });
+    expect(combination.depletionBySource["expedition-boss"]).toMatchObject({ hpLost: 70, deaths: 4 });
+    expect(combination.depletionBySource["world-turn-background"]).toMatchObject({ hpLost: 10, deaths: 0 });
+    expect(combination.depletionBySource["world-turn-rest"]).toMatchObject({ hpRecovered: 20, deaths: 0 });
+    expect(combination.depletionVerdict).toMatchObject({ kind: "dominant", source: "expedition-boss" });
+  });
+
+  it("사망 비중이 정확히 60%이면 dominant로 판정한다", () => {
+    const aggregate = aggregateRuns([metric({
+      depletion: [
+        { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 10, hpRecovered: 0, deaths: 3, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+        { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 10, hpRecovered: 0, deaths: 2, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+      ],
+    })]);
+
+    expect(aggregate.combinations["survival@0.7"]!.depletionVerdict).toMatchObject({ kind: "dominant", source: "expedition-general" });
+  });
+
+  it("사망이 0이면 HP 손실 60%로 dominant를 판정하고 59%는 mixed로 남긴다", () => {
+    const dominant = aggregateRuns([metric({
+      depletion: [
+        { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 60, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+        { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 40, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+      ],
+    })]).combinations["survival@0.7"]!;
+    const mixed = aggregateRuns([metric({
+      depletion: [
+        { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 59, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+        { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 41, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+      ],
+    })]).combinations["survival@0.7"]!;
+
+    expect(dominant.depletionVerdict).toMatchObject({ kind: "dominant", source: "expedition-general" });
+    expect(mixed.depletionVerdict).toMatchObject({ kind: "mixed" });
+  });
+
+  it("월드턴 백그라운드 손실의 사망을 거절한다", () => {
+    expect(() => aggregateRuns([metric({
+      depletion: [{ source: "world-turn-background", worldTurn: 1, expeditionId: null, dungeonId: null, initialRiskLevel: null, attemptNumber: null, hpLost: 0, hpRecovered: 0, deaths: 1, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 }],
+    })])).toThrow("월드턴 백그라운드 손실에 사망이 있다");
+  });
+
+  it.each([
+    ["원정 locator 누락", { expeditionId: null }],
+    ["음수 HP", { hpLost: -1 }],
+    ["소수 사망", { deaths: 0.5 }],
+  ])("잘못된 손실 원장(%s)을 집계 오류로 거절한다", (_, overrides) => {
+    expect(() => aggregateRuns([metric({
+      depletion: [{ source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 0, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0, ...overrides }],
+    })])).toThrow("유효하지 않은 손실 원장");
+  });
+
+  it("원정 손실 locator의 attempt가 balance trace와 다르면 거절한다", () => {
+    expect(() => aggregateRuns([metric({
+      depletion: [{ source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 2, hpLost: 0, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 }],
+    })])).toThrow("원정 손실 locator가 balance trace와 다르다");
   });
 
   it("빈 집계는 aggregation error를 낸다", () => {

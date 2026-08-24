@@ -1,8 +1,29 @@
 import type { AdviceOutcome, CampaignState, EndingKind, GuideRank, InfoReaction, RiskLevel } from "@/lib/domain";
-import type { CampaignRun, ExpeditionBalanceTrace, RunErrorKind } from "./campaign-driver";
+import type { CampaignRun, DepletionSource, DepletionTraceEntry, ExpeditionBalanceTrace, RunErrorKind } from "./campaign-driver";
 import type { Accuracy, PublicNodeCategory, StrategyId } from "./public-state";
 
 export type CombinationId = `${StrategyId}@${Accuracy}`;
+
+export type CampaignTerminationReason =
+  | "completed"
+  | "pool-exhausted"
+  | "no-eligible-party"
+  | "distrust"
+  | "denounced"
+  | "run-error";
+
+export interface DepletionTotals {
+  readonly hpLost: number;
+  readonly hpRecovered: number;
+  readonly deaths: number;
+  readonly seriousInjuriesStarted: number;
+  readonly seriousInjuriesCleared: number;
+  readonly trustZeroed: number;
+}
+
+export type DepletionVerdict =
+  | { readonly kind: "dominant"; readonly source: DepletionSource; readonly evidence: string }
+  | { readonly kind: "mixed"; readonly evidence: string };
 
 export interface CampaignRunMetrics {
   readonly seed: string;
@@ -45,6 +66,8 @@ export interface CampaignRunMetrics {
   readonly adviceTotal: number;
   readonly errorKind: RunErrorKind | null;
   readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
+  readonly depletion?: readonly DepletionTraceEntry[];
+  readonly termination?: CampaignTerminationReason;
 }
 
 export interface WilsonInterval {
@@ -104,6 +127,9 @@ export interface CombinationAggregate {
   readonly firstAttemptByThemeRisk: Readonly<Record<string, ExpeditionFunnel>>;
   readonly rankSCount: number;
   readonly endingCounts: Readonly<Record<EndingKind | "run-error", number>>;
+  readonly terminationCounts: Readonly<Record<CampaignTerminationReason, number>>;
+  readonly depletionBySource: Readonly<Record<DepletionSource, DepletionTotals>>;
+  readonly depletionVerdict: DepletionVerdict;
   readonly adviceHits: number;
   readonly adviceTotal: number;
   readonly betrayalAttempts: number;
@@ -140,10 +166,23 @@ function emptyCounts<T extends string>(keys: readonly T[]): Record<T, number> {
 
 const ENDINGS: readonly (EndingKind | "run-error")[] = ["distrust", "denounced", "completed", "exhausted", "unemployed", "run-error"];
 const ERROR_KINDS: readonly RunErrorKind[] = ["generation", "rejected-transition", "invalid-strategy-decision", "stall", "step-limit", "nondeterminism"];
+const DEPLETION_SOURCES = ["expedition-general", "expedition-boss", "world-turn-background", "world-turn-rest"] as const satisfies readonly DepletionSource[];
+const TERMINATION_REASONS = ["completed", "pool-exhausted", "no-eligible-party", "distrust", "denounced", "run-error"] as const satisfies readonly CampaignTerminationReason[];
 const NODE_CATEGORIES: readonly PublicNodeCategory[] = ["rest", "merchant", "special", "monster", "boss"];
 const OUTCOMES: readonly AdviceOutcome[] = ["help", "harm", "neutral"];
 const REACTIONS: readonly InfoReaction[] = ["accepted", "suspected", "exposed"];
 const RISK_LEVELS = [1, 2, 3, 4, 5] as const satisfies readonly RiskLevel[];
+
+function terminationForEnding(ending: EndingKind | "run-error"): CampaignTerminationReason {
+  switch (ending) {
+    case "completed": return "completed";
+    case "exhausted": return "pool-exhausted";
+    case "unemployed": return "no-eligible-party";
+    case "distrust": return "distrust";
+    case "denounced": return "denounced";
+    case "run-error": return "run-error";
+  }
+}
 
 function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetrics {
   return {
@@ -163,6 +202,8 @@ function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetri
     adviceHits: run.trace.adviceSelections.filter((selection) => selection.hit).length,
     adviceTotal: run.trace.adviceSelections.length, errorKind: run.errorKind,
     balanceExpeditions: run.trace.balanceExpeditions,
+    depletion: run.trace.depletion,
+    termination: "run-error",
   };
 }
 
@@ -216,6 +257,8 @@ function successfulMetrics(campaign: CampaignState, run: Extract<CampaignRun, { 
     adviceTotal: run.trace.adviceSelections.length,
     errorKind: null,
     balanceExpeditions: run.trace.balanceExpeditions,
+    depletion: run.trace.depletion,
+    termination: terminationForEnding(campaign.ending?.kind ?? "unemployed"),
   };
 }
 
@@ -296,6 +339,112 @@ function validateExpeditionTraces(runs: readonly CampaignRunMetrics[], id: Combi
   }
 }
 
+function emptyDepletionTotals(): DepletionTotals {
+  return {
+    hpLost: 0,
+    hpRecovered: 0,
+    deaths: 0,
+    seriousInjuriesStarted: 0,
+    seriousInjuriesCleared: 0,
+    trustZeroed: 0,
+  };
+}
+
+function validDepletionCount(value: number): boolean {
+  return Number.isInteger(value) && value >= 0;
+}
+
+function depletionForRun(run: CampaignRunMetrics): readonly DepletionTraceEntry[] {
+  return run.depletion ?? [];
+}
+
+function terminationForRun(run: CampaignRunMetrics): CampaignTerminationReason {
+  return run.termination ?? terminationForEnding(run.ending);
+}
+
+function validateDepletionTraces(runs: readonly CampaignRunMetrics[], id: CombinationId): void {
+  for (const run of runs) {
+    if (run.depletion !== undefined && !Array.isArray(run.depletion)) throw new AggregationError(`손실 원장이 없다: ${id}`);
+    const termination = terminationForRun(run);
+    if (!TERMINATION_REASONS.includes(termination)
+      || termination !== terminationForEnding(run.ending)) {
+      throw new AggregationError(`유효하지 않은 종료 사유: ${id}`);
+    }
+    for (const entry of depletionForRun(run)) {
+      if (!DEPLETION_SOURCES.includes(entry.source)
+        || !Number.isInteger(entry.worldTurn)
+        || entry.worldTurn < 0
+        || !validDepletionCount(entry.hpLost)
+        || !validDepletionCount(entry.hpRecovered)
+        || !validDepletionCount(entry.deaths)
+        || !validDepletionCount(entry.seriousInjuriesStarted)
+        || !validDepletionCount(entry.seriousInjuriesCleared)
+        || !validDepletionCount(entry.trustZeroed)) {
+        throw new AggregationError(`유효하지 않은 손실 원장: ${id}`);
+      }
+      const expeditionSource = entry.source === "expedition-general" || entry.source === "expedition-boss";
+      if (expeditionSource) {
+        if (entry.expeditionId === null || entry.dungeonId === null
+          || entry.initialRiskLevel === null || entry.attemptNumber === null) {
+          throw new AggregationError(`유효하지 않은 손실 원장: ${id}`);
+        }
+        const expedition = run.balanceExpeditions.find((candidate) => candidate.expeditionId === entry.expeditionId);
+        if (expedition === undefined
+          || expedition.dungeonId !== entry.dungeonId
+          || expedition.initialRiskLevel !== entry.initialRiskLevel
+          || expedition.attemptNumber !== entry.attemptNumber) {
+          throw new AggregationError(`원정 손실 locator가 balance trace와 다르다: ${id}`);
+        }
+      } else if (entry.expeditionId !== null || entry.dungeonId !== null
+        || entry.initialRiskLevel !== null || entry.attemptNumber !== null) {
+        throw new AggregationError(`유효하지 않은 손실 원장: ${id}`);
+      }
+      if (entry.source === "world-turn-background" && entry.deaths !== 0) {
+        throw new AggregationError(`월드턴 백그라운드 손실에 사망이 있다: ${id}`);
+      }
+    }
+  }
+}
+
+function sumDepletion(runs: readonly CampaignRunMetrics[]): Readonly<Record<DepletionSource, DepletionTotals>> {
+  const totals = Object.fromEntries(DEPLETION_SOURCES.map((source) => [source, emptyDepletionTotals()])) as Record<DepletionSource, DepletionTotals>;
+  for (const entry of runs.flatMap(depletionForRun)) {
+    const total = totals[entry.source];
+    totals[entry.source] = {
+      hpLost: total.hpLost + entry.hpLost,
+      hpRecovered: total.hpRecovered + entry.hpRecovered,
+      deaths: total.deaths + entry.deaths,
+      seriousInjuriesStarted: total.seriousInjuriesStarted + entry.seriousInjuriesStarted,
+      seriousInjuriesCleared: total.seriousInjuriesCleared + entry.seriousInjuriesCleared,
+      trustZeroed: total.trustZeroed + entry.trustZeroed,
+    };
+  }
+  return totals;
+}
+
+function depletionVerdictFor(depletionBySource: Readonly<Record<DepletionSource, DepletionTotals>>): DepletionVerdict {
+  const lossSources = DEPLETION_SOURCES.filter((source) => source !== "world-turn-rest");
+  const totalDeaths = lossSources.reduce((total, source) => total + depletionBySource[source].deaths, 0);
+  if (totalDeaths > 0) {
+    const source = lossSources.find((candidate) => depletionBySource[candidate].deaths / totalDeaths >= 0.6);
+    if (source !== undefined) {
+      const deaths = depletionBySource[source].deaths;
+      return { kind: "dominant", source, evidence: `사망 ${deaths}/${totalDeaths} (${(deaths / totalDeaths * 100).toFixed(1)}%)` };
+    }
+    return { kind: "mixed", evidence: `사망 60% 이상 source 없음 (총 ${totalDeaths})` };
+  }
+  const totalHpLost = lossSources.reduce((total, source) => total + depletionBySource[source].hpLost, 0);
+  if (totalHpLost > 0) {
+    const source = lossSources.find((candidate) => depletionBySource[candidate].hpLost / totalHpLost >= 0.6);
+    if (source !== undefined) {
+      const hpLost = depletionBySource[source].hpLost;
+      return { kind: "dominant", source, evidence: `사망 0건, HP 손실 ${hpLost}/${totalHpLost} (${(hpLost / totalHpLost * 100).toFixed(1)}%)` };
+    }
+    return { kind: "mixed", evidence: `사망 0건, HP 손실 60% 이상 source 없음 (총 ${totalHpLost})` };
+  }
+  return { kind: "mixed", evidence: "사망과 HP 손실이 없다" };
+}
+
 function eventualDungeonRates(runs: readonly CampaignRunMetrics[]): Readonly<Record<RiskLevel, EventualDungeonRate>> {
   const dungeons = runs.flatMap((run) => {
     const attemptsByDungeon = new Map<string, ExpeditionBalanceTrace[]>();
@@ -330,6 +479,9 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
     throw new AggregationError(`유효하지 않은 완료 전멸 수: ${id}`);
   }
   validateExpeditionTraces(runs, id);
+  validateDepletionTraces(runs, id);
+  const depletionBySource = sumDepletion(runs);
+  const depletionVerdict = depletionVerdictFor(depletionBySource);
   const expeditionPressures = runs.flatMap((run) => {
     if (!Array.isArray(run.balanceExpeditions)) throw new AggregationError(`원정 밸런스 지표가 없다: ${id}`);
     return run.balanceExpeditions.map((expedition) => expedition.maxAdvicePressure);
@@ -362,6 +514,8 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
   }])) as CombinationAggregate["bossByThemeRisk"];
   const endingCounts = emptyCounts(ENDINGS);
   for (const run of runs) endingCounts[run.ending] += 1;
+  const terminationCounts = emptyCounts(TERMINATION_REASONS);
+  for (const run of runs) terminationCounts[terminationForRun(run)] += 1;
   const sum = (selector: (run: CampaignRunMetrics) => number) => runs.reduce((total, run) => total + selector(run), 0) / runs.length;
   const allExpeditions = runs.flatMap((run) => run.balanceExpeditions);
   const firstAttempts = allExpeditions.filter((expedition) => expedition.attemptNumber === 1);
@@ -382,6 +536,7 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
     eventualDungeonByInitialRisk: eventualDungeonRates(runs),
     firstAttemptByThemeRisk,
     rankSCount: runs.filter((run) => run.reachedRankS).length, endingCounts,
+    terminationCounts, depletionBySource, depletionVerdict,
     adviceHits: runs.reduce((total, run) => total + run.adviceHits, 0),
     adviceTotal: runs.reduce((total, run) => total + run.adviceTotal, 0),
     betrayalAttempts: runs.reduce((total, run) => total + run.betrayalAttempts, 0),
