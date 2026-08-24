@@ -230,13 +230,13 @@
 .u3-notice--3 {
   grid-column: 3 / span 4;
   grid-row: 7 / span 5;
-  transform: translate(0.45rem, -0.18rem) rotate(2.2deg);
+  transform: translate(0.45rem, 0.85rem) rotate(2.2deg);
 }
 
 .u3-notice--4 {
   grid-column: 10 / span 4;
   grid-row: 7 / span 5;
-  transform: translate(-0.35rem, 0.18rem) rotate(-1.8deg);
+  transform: translate(-0.35rem, 0.70rem) rotate(-1.8deg);
 }
 
 .u3-notice:hover,
