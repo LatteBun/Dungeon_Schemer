@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { U6EndingScreen } from "./U6EndingScreen";
-import { ENDING_CONSEQUENCE_TITLE, ENDING_REPORT_TITLE } from "./u6-ending-model";
+import { ENDING_CONSEQUENCE_TITLE, ENDING_REPORT_TITLE, ENDING_TITLE } from "./u6-ending-model";
 import { U6_PREVIEW_ENTRIES } from "./u6-preview-data";
 import type { EndingKind } from "@/lib/domain";
 
@@ -55,9 +55,23 @@ describe("U6EndingScreen", () => {
     expect(html).toContain('data-testid="u6-consequences"');
   });
 
-  it("정상 완주와 조기 종료를 색이 아니라 문구로 구분한다", () => {
-    expect(render("completed")).toContain("정상 완주");
-    expect(render("unemployed")).toContain("조기 종료");
+  /*
+   * 완주와 조기 종료는 문양과 표제로 갈린다.
+   *
+   * 전에는 문양 아래에 「정상 완주 / 조기 종료」를 글로 한 번 더 적었다. 등급은
+   * 문양 한가운데에 이미 크게 있고 결말의 이름은 표제에 있으므로, 그 줄은 그림이
+   * 하는 말을 되풀이하는 것이었다.
+   */
+  it("완주와 조기 종료가 서로 다른 문양과 표제를 쓴다", () => {
+    const done = render("completed");
+    const stopped = render("unemployed");
+
+    expect(done).not.toBe(stopped);
+    expect(done).toContain(ENDING_TITLE.completed);
+    expect(stopped).toContain(ENDING_TITLE.unemployed);
+    /* 그림이 하는 말을 글로 되풀이하지 않는다. */
+    expect(done).not.toContain("정상 완주");
+    expect(stopped).not.toContain("조기 종료");
   });
 
   /*

@@ -27,6 +27,7 @@ const view = (over: Partial<U6SettlementView> = {}): U6SettlementView => ({
   riskBefore: 3,
   riskAfter: 3,
   riskCapped: false,
+  members: [],
   reputationDelta: 9,
   goldDelta: 19,
   relicGold: 0,
@@ -64,9 +65,15 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("계약 시점");
   });
 
-  it("클리어에서는 다음 계약 보상을 표시하지 않는다", () => {
-    expect(render({ nextReward: null })).not.toContain("다음 계약 보상");
-    expect(render({ survivors: 0 })).toContain("다음 계약 보상");
+  /*
+   * 이 값은 전멸했을 때만 나오고, 그 던전을 다시 맡을 때의 보상이다.
+   *
+   * 「다음 계약 보상」이라고만 적으면 게시판의 다음 공고가 이미 정해진 것처럼
+   * 읽힌다. 무엇에 대한 값인지를 문구가 말해야 한다.
+   */
+  it("전멸에서만 재도전 보상을 보여준다", () => {
+    expect(render({ nextReward: null })).not.toContain("다시 맡으면");
+    expect(render({ survivors: 0 })).toContain("이 던전을 다시 맡으면");
   });
 
   it("위험도 변화를 전후로 함께 보여준다", () => {
@@ -90,5 +97,55 @@ describe("U6SettlementScreen", () => {
     expect(html).not.toContain("골드로 승급하기");
     expect(html).not.toContain('data-testid="u6-promotion"');
     expect(html).toContain("캠페인 변화");
+  });
+});
+
+describe("다녀온 사람", () => {
+  const member = (over: Record<string, unknown> = {}) => ({
+    id: "character-1",
+    name: "실바나",
+    classLabel: "마법사",
+    portraitSrc: "/assets/characters/live/mage/mage_a.png",
+    alive: true,
+    hp: { before: 24, after: 16, max: 24 },
+    trust: { before: 53, after: 35 },
+    ...over,
+  });
+
+  /* 정산은 사람에 대한 셈인데 숫자만 있고 사람이 없었다. */
+  it("돌아온 사람과 못 돌아온 사람을 함께 적는다", () => {
+    const html = render({
+      members: [
+        member(),
+        member({ id: "character-2", name: "오스왈드", alive: false, hp: { before: 28, after: 0, max: 28 } }),
+      ],
+    });
+
+    expect(html).toContain("실바나");
+    expect(html).toContain("HP 16 / 24");
+    expect(html).toContain("오스왈드");
+    expect(html).toContain("돌아오지 못했다");
+  });
+
+  /* 달라지지 않은 신뢰는 적지 않는다. 줄이 늘면 달라진 것이 묻힌다. */
+  it("신뢰가 그대로면 적지 않는다", () => {
+    const html = render({ members: [member({ trust: { before: 40, after: 40 } })] });
+
+    expect(html).not.toContain("신뢰 40");
+  });
+
+  it("사람이 없으면 칸을 두지 않는다", () => {
+    expect(render({ members: [] })).not.toContain("다녀온 사람");
+  });
+});
+
+describe("정산 인주", () => {
+  /* 붉은 인주 한 장뿐이라 색을 돌린다. 문서를 읽기 전에 색으로 먼저 안다. */
+  it("생존 인원에 따라 인주 색이 갈린다", () => {
+    const seal = (html: string) => html.match(/u6-changes__seal is-(\w+)/)?.[1];
+
+    expect(seal(render({ survivors: 3 }))).toBe("whole");
+    expect(seal(render({ survivors: 2 }))).toBe("costly");
+    expect(seal(render({ survivors: 0 }))).toBe("lost");
   });
 });

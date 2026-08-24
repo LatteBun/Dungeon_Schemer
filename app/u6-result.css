@@ -148,7 +148,7 @@
  * 있는 편이 찾기 쉽고, 오른쪽 아래는 어차피 비어 있었다.
  */
 .u6-settlement-side {
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   height: 100%;
   min-height: 0;
 }
@@ -341,11 +341,26 @@
 
 /* ── 가운데 띠: 이유 · 문양 · 보고서 ── */
 
-.u6-ending-stage {
+/*
+ * 위아래 두 줄이 같은 격자를 쓴다.
+ *
+ * 열 너비도 간격도 서로 달라(1fr 0.9fr 1fr 대 1fr 1fr 1fr) 상자의 좌우가
+ * 어긋났고, 가운데 정렬이라 윗변도 맞지 않았다. 같은 자를 쓰면 오와 열이 선다.
+ */
+.u6-ending-stage,
+.u6-ending-panels {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(0.8rem, 1.4cqw, 2.4rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.7rem, 1.1cqw, 1.9rem);
+}
+
+/* 두 상자의 윗변을 맞춘다. 가운데 문양은 제 높이대로 둔다. */
+.u6-ending-stage {
+  align-items: stretch;
+}
+
+.u6-ending-stage > .u6-ending-emblem {
+  align-self: center;
 }
 
 .u6-ending-card {
@@ -353,7 +368,14 @@
   padding: clamp(0.5rem, 0.7cqw, 1.1rem) clamp(0.6rem, 0.85cqw, 1.35rem);
   border: 1px solid color-mix(in srgb, var(--u6-ending-accent) 42%, var(--color-edge));
   border-radius: 0.22rem;
-  background: linear-gradient(180deg, rgb(18 13 9 / 88%), rgb(9 7 5 / 92%));
+  /*
+   * 상자가 배경을 덮지 않게 한다.
+   *
+   * 88% 로 깔아 두었더니 길잡이의 방이 상자 밑에 묻혀 네 귀퉁이에만 남았다.
+   * 글자가 읽힐 만큼만 남기고 그 뒤가 비치게 한다 - 배경을 깐 이유가 그것이다.
+   */
+  background: linear-gradient(180deg, rgb(16 11 8 / 74%), rgb(8 6 4 / 82%));
+  backdrop-filter: blur(2px);
   box-shadow: inset 0 1px 0 rgb(244 214 145 / 7%), 0 0.25rem 1.1rem rgb(0 0 0 / 62%);
   text-align: left;
 }
@@ -456,11 +478,7 @@
 
 /* ── 아래 세 패널 ── */
 
-.u6-ending-panels {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(0.7rem, 1.1cqw, 1.9rem);
-}
+
 
 .u6-result-list {
   display: grid;
@@ -732,8 +750,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.22;
-  filter: saturate(0.55) brightness(0.72);
+  /* 상자가 비쳐 주므로 조금 살리되, 얼굴이 화면을 차지하지 않을 만큼만 둔다. */
+  opacity: 0.3;
+  filter: saturate(0.55) brightness(0.7);
 }
 
 .u6-ending-backdrop {
@@ -743,6 +762,14 @@
 /* 네 모서리를 여민다. 문서로 읽히게 하는 것은 테두리다. */
 .u6-ending-corner {
   position: absolute;
+  /*
+   * 자산에 박힌 파일 이름을 잘라 낸다.
+   *
+   * 92x87 그림의 y 69~84% 왼쪽에 "…deco.png" 글자가 그려져 있다. 원본 시트에서
+   * 잘라 낼 때 딸려 온 것으로 보이는데, 그대로 두면 엔딩 화면에 워터마크가
+   * 찍힌다. 오른쪽 세로선만 남기고 그 아래 왼쪽을 도려낸다.
+   */
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 90% 100%, 90% 66%, 0 66%);
   /* 모서리는 셸을 기준으로 붙는다. */
   z-index: 2;
   width: clamp(3.2rem, 4cqw, 6rem);
@@ -751,10 +778,16 @@
   pointer-events: none;
 }
 
-.u6-ending-corner--tl { top: 0.6rem; left: 0.6rem; }
-.u6-ending-corner--tr { top: 0.6rem; right: 0.6rem; transform: scaleX(-1); }
-.u6-ending-corner--bl { bottom: 0.6rem; left: 0.6rem; transform: scaleY(-1); }
-.u6-ending-corner--br { bottom: 0.6rem; right: 0.6rem; transform: scale(-1); }
+/*
+ * 자산은 우상단 조각이다.
+ *
+ * 화소를 세어 보니 직선이 위(0~5행 전폭)와 오른쪽(x 86~91)에 있다. 좌상단으로
+ * 알고 그대로 놓았더니 세로선이 안쪽으로 들어가 네 귀퉁이가 다 어긋나 있었다.
+ */
+.u6-ending-corner--tr { top: 0.6rem; right: 0.6rem; }
+.u6-ending-corner--tl { top: 0.6rem; left: 0.6rem; transform: scaleX(-1); }
+.u6-ending-corner--br { bottom: 0.6rem; right: 0.6rem; transform: scaleY(-1); }
+.u6-ending-corner--bl { bottom: 0.6rem; left: 0.6rem; transform: scale(-1); }
 
 /* 문양 뒤에 결말의 색을 깐다. */
 .u6-ending-emblem {
@@ -810,18 +843,18 @@
   opacity: 0.72;
 }
 
-/* 등급 글자를 감싸는 월계관. 문양 안의 잎과 다른 바깥 테두리다. */
-.u6-ending-emblem__rank {
+/* 결말의 이름을 감싸는 월계관. 그 이름이 이 화면의 중심이다. */
+.u6-ending-head__title {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.3rem, 0.45cqw, 0.7rem);
+  gap: clamp(0.5rem, 0.9cqw, 1.5rem);
 }
 
-.u6-ending-emblem__laurel {
-  width: clamp(1.1rem, 1.5cqw, 2.2rem);
+.u6-ending-head__title img {
+  width: clamp(1.6rem, 2.4cqw, 3.6rem);
   height: auto;
-  opacity: 0.72;
+  opacity: 0.6;
 }
 
 /* 이야기와 숫자를 가르는 큰 구분선. */
@@ -840,4 +873,99 @@
   margin-bottom: clamp(0.2rem, 0.3cqh, 0.4rem);
   object-fit: contain;
   opacity: 0.5;
+}
+
+/*
+ * 다녀온 사람.
+ *
+ * 정산이 주인공이라 조촐하게 둔다 - 카드가 아니라 한 줄씩이다. 얼굴은 작게
+ * 두고, 읽어야 하는 것은 살아 돌아왔는지와 얼마나 상했는지다.
+ */
+.u6-returned {
+  min-height: 0;
+}
+
+.u6-returned__list {
+  display: grid;
+  row-gap: clamp(0.25rem, 0.35cqh, 0.45rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.u6-returned__list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(0.4rem, 0.55cqw, 0.85rem);
+  border-left: 2px solid #6b4f2c;
+  padding: clamp(0.2rem, 0.28cqh, 0.35rem) 0 clamp(0.2rem, 0.28cqh, 0.35rem) clamp(0.4rem, 0.5cqw, 0.7rem);
+}
+
+.u6-returned__list li.is-dead {
+  border-left-color: #7a3a2a;
+  opacity: 0.72;
+}
+
+.u6-returned__list img {
+  width: clamp(1.8rem, 2.1cqw, 2.9rem);
+  height: clamp(1.8rem, 2.1cqw, 2.9rem);
+  border: 1px solid #4d3922;
+  border-radius: 0.16rem;
+  object-fit: cover;
+  object-position: top;
+}
+
+.u6-returned__list li.is-dead img {
+  filter: grayscale(0.75);
+}
+
+.u6-returned__who {
+  display: grid;
+  min-width: 0;
+}
+
+.u6-returned__who strong {
+  color: #dcc9a4;
+  font-size: clamp(0.82rem, 0.86cqw, 1.02rem);
+}
+
+.u6-returned__who small {
+  color: #907c5c;
+  font-size: clamp(0.7rem, 0.72cqw, 0.85rem);
+}
+
+.u6-returned__state {
+  display: grid;
+  justify-items: end;
+  color: #bda27a;
+  font-size: clamp(0.74rem, 0.78cqw, 0.92rem);
+}
+
+.u6-returned__state em {
+  color: #907c5c;
+  font-size: clamp(0.68rem, 0.7cqw, 0.82rem);
+  font-style: normal;
+}
+
+.u6-returned__state.is-dead {
+  color: #c9836a;
+}
+
+/*
+ * 인주 색이 결과를 말한다.
+ *
+ * 붉은 인주 한 장뿐이라 색을 돌린다. 다 돌아왔으면 초록, 누군가를 잃었으면
+ * 호박색, 전멸이면 그대로 붉은색이다.
+ */
+.u6-changes__seal.is-whole {
+  filter: hue-rotate(88deg) saturate(0.85) brightness(1.05);
+}
+
+.u6-changes__seal.is-costly {
+  filter: hue-rotate(28deg) saturate(1.05) brightness(1.08);
+}
+
+.u6-changes__seal.is-lost {
+  filter: saturate(1.1);
 }

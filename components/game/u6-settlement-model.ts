@@ -1,3 +1,4 @@
+import { classLabel, portraitSrcForCharacter } from "./character-labels";
 import type {
   GuideRank,
   RiskLevel,
@@ -40,6 +41,23 @@ export interface U6SettlementView {
   /** 전멸에서만 회수한다. 그 외에는 0. */
   relicGold: number;
   nextReward: Reward | null;
+  /*
+   * 이 원정을 다녀온 사람들.
+   *
+   * 정산은 누가 돌아왔는지에 대한 셈이다. 그런데 숫자만 있고 사람이 없어,
+   * "2명 생존" 이 누구를 말하는지 화면에서 알 수 없었다.
+   */
+  members: readonly U6SettlementMember[];
+}
+
+export interface U6SettlementMember {
+  id: string;
+  name: string;
+  classLabel: string;
+  portraitSrc: string;
+  alive: boolean;
+  hp: { before: number; after: number; max: number };
+  trust: { before: number; after: number };
 }
 
 const RANK_CREST_ROOT = "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/ranks";
@@ -78,5 +96,14 @@ export function createU6SettlementView(
     goldDelta: settlement.goldDelta,
     relicGold: settlement.relicGold,
     nextReward: settlement.nextReward,
+    members: settlement.memberChanges.map(({ before, after }) => ({
+      id: String(after.id),
+      name: after.name,
+      classLabel: classLabel(after.classId),
+      portraitSrc: portraitSrcForCharacter({ id: after.id, classId: after.classId, alive: after.alive }),
+      alive: after.alive,
+      hp: { before: before.hp, after: after.hp, max: after.maxHp },
+      trust: { before: before.trust, after: after.trust },
+    })),
   };
 }

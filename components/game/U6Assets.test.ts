@@ -150,3 +150,37 @@ describe("U6 자산", () => {
     expect(assetFiles()).toHaveLength(38);
   });
 });
+
+describe("모서리 장식", () => {
+  /*
+   * 자산은 우상단 조각이다.
+   *
+   * 화소를 세어 보면 곧은 선이 위(첫 행들이 전폭)와 오른쪽(마지막 열들)에 있다.
+   * 좌상단으로 알고 그대로 놓으면 세로선이 안쪽으로 들어가 네 귀퉁이가 다
+   * 어긋난다. 실제로 그랬다.
+   */
+  it("곧은 선이 위와 오른쪽에 있다", () => {
+    const { width, height } = pngDimensions(assetPath("decorations/corner_deco.png"));
+    const padding = pngAlphaPadding(assetPath("decorations/corner_deco.png"));
+
+    /* 위와 오른쪽은 그림이 가장자리까지 닿는다. */
+    expect(padding.top).toBe(0);
+    expect(padding.right).toBe(0);
+    expect(width).toBeGreaterThan(0);
+    expect(height).toBeGreaterThan(0);
+  });
+
+  /*
+   * 이 자산에는 파일 이름이 그려져 있다.
+   *
+   * 원본 시트에서 잘라 낼 때 딸려 온 것으로 보인다. 그대로 두면 엔딩 화면에
+   * 워터마크가 찍히므로 화면에서 그 부분을 도려낸다. 자산이 고쳐지면 이 검사가
+   * 빨개져 알려 준다.
+   */
+  it("아래 왼쪽에 글자가 남아 있다", () => {
+    const sheet = readFileSync("app/u6-result.css", "utf8");
+    const rule = sheet.match(/\.u6-ending-corner\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(rule).toMatch(/clip-path:\s*polygon/);
+  });
+});

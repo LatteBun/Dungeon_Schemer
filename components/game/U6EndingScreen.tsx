@@ -89,7 +89,17 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
 
       <header className="u6-ending-head">
         <p className="u6-ending-head__eyebrow">캠페인 종료</p>
-        <h1>{ENDING_TITLE[ending.kind]}</h1>
+        {/*
+          * 표제를 월계관이 감싼다.
+          *
+          * 문양 아래에 두었을 때는 등급 글자에 붙은 장식이라 군더더기였다.
+          * 결말의 이름을 감싸면 그 이름이 이 화면의 중심이라는 말이 된다.
+          */}
+        <h1 className="u6-ending-head__title">
+          <img src={`${ASSET}/emblems/laurel_left.png`} alt="" aria-hidden="true" />
+          <span>{ENDING_TITLE[ending.kind]}</span>
+          <img src={`${ASSET}/emblems/laurel_right.png`} alt="" aria-hidden="true" />
+        </h1>
         <p className="u6-ending-head__subtitle">{ending.subtitle}</p>
         {/* 표제와 본문을 가르는 문양. 여기서부터 읽는 것이 달라진다. */}
         <img className="u6-ending-rule" src={`${ASSET}/decorations/ornament_arrow.png`} alt="" aria-hidden="true" />
@@ -123,7 +133,6 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
             alt=""
             aria-hidden="true"
           />
-          <p className="u6-ending-emblem__label">{completed ? "최종 등급" : "결말의 문양"}</p>
           <img
             className="u6-ending-emblem__crest"
             src={completed ? rankCrestSrc(ending.finalRank) : endingCrestSrc(ending.kind)}
@@ -132,13 +141,13 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
             width={246}
             height={295}
           />
-          {/* 등급 글자를 월계관이 감싼다. 문양 안의 잎과 다른, 바깥의 테두리다. */}
-          <p className="u6-ending-emblem__rank">
-            <img className="u6-ending-emblem__laurel" src={`${ASSET}/emblems/laurel_left.png`} alt="" aria-hidden="true" />
-            <span>{ending.finalRank}</span>
-            <img className="u6-ending-emblem__laurel" src={`${ASSET}/emblems/laurel_right.png`} alt="" aria-hidden="true" />
-            <small>{completed ? "정상 완주" : "조기 종료"}</small>
-          </p>
+          {/*
+            * 문양 아래에 이름표를 달지 않는다.
+            *
+            * 등급은 문양 한가운데에 이미 크게 적혀 있고, 「최종 등급」이나 「정상
+            * 완주」 같은 말은 그림이 하는 말을 글로 한 번 더 하는 것이다. 깃발과
+            * 문양만으로 충분하다.
+            */}
         </div>
 
         <section className="u6-ending-card u6-report" aria-labelledby="u6-report-title">
