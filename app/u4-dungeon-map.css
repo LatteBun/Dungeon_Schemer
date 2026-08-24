@@ -309,11 +309,29 @@ button.u4-room {
   filter: drop-shadow(0 0 0.7rem rgb(224 179 74 / 62%));
 }
 
+/*
+ * 빛으로만 알리지 않는다.
+ *
+ * 번짐을 크게 주었더니 그 빛이 아이콘 위로 올라와 무슨 지점인지 도리어 가렸다.
+ * 테와 크기와 표로 알리고 번짐은 은은하게 남긴다.
+ */
 .u4-room.is-selectable[aria-pressed="true"] {
   z-index: 10;
   outline: none;
   transform: translate(-50%, -50%) scale(1.12);
-  filter: drop-shadow(0 0 1.05rem rgb(240 200 96 / 95%));
+  filter: drop-shadow(0 0 0.5rem rgb(240 200 96 / 55%));
+}
+
+/* 고른 지점 위에 세우는 표. */
+.u4-room__chosen-marker {
+  position: absolute;
+  bottom: 84%;
+  left: 50%;
+  width: 46%;
+  height: auto;
+  transform: translateX(-50%) rotate(90deg);
+  filter: drop-shadow(0 0 0.3rem rgb(0 0 0 / 70%));
+  pointer-events: none;
 }
 
 /*
@@ -540,8 +558,11 @@ button.u4-room {
   overflow-y: auto;
 }
 
+/* 걸으면서 쌓이는 것이라 답사 아래에 둔다. */
 .u4-survey__progress {
-  margin: 0 0 clamp(0.35rem, 0.5cqh, 0.6rem);
+  margin: clamp(0.45rem, 0.6cqh, 0.8rem) 0 0;
+  border-top: 1px solid #4d3922;
+  padding-top: clamp(0.35rem, 0.45cqh, 0.6rem);
   color: #c7ab7c;
   font-size: clamp(0.85rem, 0.9cqw, 1.1rem);
 }
@@ -576,4 +597,19 @@ button.u4-room {
   margin: clamp(0.35rem, 0.45cqh, 0.6rem) 0 0;
   color: #8e7a5c;
   font-size: clamp(0.75rem, 0.78cqw, 0.92rem);
+}
+
+/*
+ * 누르는 동안에만 켜지는 판.
+ *
+ * 눌린 상태의 그림이 따로 있는데 쓰지 않고 있었다. 평소에는 감춰 두고 눌릴 때만
+ * 겹친다.
+ */
+.u4-move-button__center--active {
+  opacity: 0;
+  transition: opacity 90ms ease;
+}
+
+.u4-move-button:not(:disabled):active .u4-move-button__center--active {
+  opacity: 1;
 }

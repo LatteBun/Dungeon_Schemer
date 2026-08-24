@@ -150,16 +150,22 @@ export function U6SettlementScreen({ status, settlement, onContinue }: U6Settlem
             </p>
             <img className="u6-settlement-rule" src={`${ASSET}/decorations/divider_line.png`} alt="" aria-hidden="true" />
             <CauseChain settlement={settlement} />
-            {onContinue !== undefined && (
-              <button type="button" className="u6-settlement-continue" onClick={onContinue}>
-                세상이 한 턴 돈다
-              </button>
-            )}
           </div>
         }
         rightPanel={
           <div className="u6-settlement-side">
             <Changes settlement={settlement} />
+            {/*
+              * 화면을 넘기는 버튼은 오른쪽 아래에 둔다.
+              *
+              * 왼쪽 본문 안에 두면 읽는 자리를 좁히고, 오른쪽 아래는 비어 있었다.
+              * 다음으로 가는 길은 화면 끝에 있는 편이 찾기 쉽다.
+              */}
+            {onContinue !== undefined && (
+              <button type="button" className="u6-settlement-continue" onClick={onContinue}>
+                길드로 돌아간다
+              </button>
+            )}
           </div>
         }
         rightPanelLabel="캠페인 변화"

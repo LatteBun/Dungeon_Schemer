@@ -141,9 +141,22 @@
 
 /* ── 정산 우측: 캠페인 변화 ── */
 
+/*
+ * 캠페인 변화가 위, 넘어가는 버튼이 아래다.
+ *
+ * 버튼을 왼쪽 본문에 두면 읽는 자리를 좁힌다. 화면을 넘기는 것은 화면 끝에
+ * 있는 편이 찾기 쉽고, 오른쪽 아래는 어차피 비어 있었다.
+ */
 .u6-settlement-side {
-  grid-template-rows: auto auto;
-  align-content: start;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+}
+
+.u6-settlement-side .u6-settlement-continue {
+  grid-row: 3;
+  justify-self: stretch;
+  text-align: center;
 }
 
 .u6-risk-change {
