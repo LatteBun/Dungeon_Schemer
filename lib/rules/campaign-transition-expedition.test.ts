@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RuleError, createCampaignTransitionContext } from "@/lib/domain";
 import type {
+  ChoiceId,
   CampaignState,
   CampaignTransitionContext,
   CampaignTransitionResult,
@@ -349,6 +350,98 @@ describe("원정 이력", () => {
     } catch { /* 거부는 정상이다 */ }
 
     expect(begun.campaign.history.events).toHaveLength(0);
+  });
+});
+
+/**
+ * 신뢰가 무너질수록 조언이 안 먹힌다.
+ *
+ * `C6` 가 살아 있는 신뢰 0 인원 수로 보정을 내주는데(둘이면 수용 -5, 셋이면 -10,
+ * 넷이면 -15) 아무도 넘기지 않아 늘 0 이었다. 하강 나선이 통째로 없었다.
+ *
+ * 지금 밸런스에서는 이 구간에 닿지 않는다 - 40 판을 걸어도 살아 있는 신뢰 0 은
+ * 최대 한 명이다. 사람이 신뢰를 잃기 전에 죽기 때문이다. 그래서 걸어서는 못 보고
+ * 상태를 직접 만들어 본다.
+ */
+describe("캠페인 전체 신뢰 보정", () => {
+  /** 풀에서 살아 있는 사람 `count` 명의 신뢰를 0 으로 만든다. 파티 밖 사람들이다. */
+  function withZeroTrustOutsiders(state: CampaignTransitionResult, count: number): CampaignTransitionResult {
+    const party = new Set(state.context.activeExpedition!.partyMembers.map((member) => member.id));
+    const byId = { ...state.campaign.pool.byId };
+    let left = count;
+    for (const id of state.campaign.pool.order) {
+      if (left === 0) break;
+      const member = byId[id];
+      if (member === undefined || !member.alive || party.has(id)) continue;
+      byId[id] = { ...member, trust: 0 };
+      left -= 1;
+    }
+    if (left > 0) throw new Error("신뢰 0 으로 만들 사람이 모자란다");
+    return { ...state, campaign: { ...state.campaign, pool: { ...state.campaign.pool, byId } } };
+  }
+
+  function reactionsFor(state: CampaignTransitionResult, adviceId: ChoiceId) {
+    return transitionCampaign(state.campaign, state.context, { type: "CHOOSE_ADVICE", adviceId })
+      .context.activeExpedition!.records.at(-1)!.reactions.map((one) => one.reaction);
+  }
+
+  /** 사건 하나 앞에 선 상태. */
+  function atEvent(seed: string): CampaignTransitionResult | null {
+    let state = startedWith(seed);
+    for (let step = 0; step < 8; step += 1) {
+      if (state.context.activeExpedition!.pendingEvent !== null) return state;
+      const active = state.context.activeExpedition!;
+      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
+      /* 보스방으로 들어가면 사건이 없다. 평범한 지점만 밟는다. */
+      const next = here.nextNodeIds.find((id) => {
+        if (active.expedition.visitedNodeIds.includes(id)) return false;
+        return active.expedition.map.nodes.find((node) => node.id === id)?.kind === "normal";
+      });
+      if (next === undefined) return null;
+      state = transitionCampaign(state.campaign, state.context, { type: "VISIT_NODE", nodeId: next });
+    }
+    return null;
+  }
+
+  /*
+   * 보정이 걸리면 반응이 달라진다.
+   *
+   * 한 사건으로는 못 본다 - 보정이 임계를 넘기지 못하면 같은 반응이 나온다.
+   * 여러 사건을 훑어 달라지는 경우를 찾고, 하나도 못 찾으면 그것이 곧 실패다.
+   */
+  it("보정 구간에 들면 반응이 달라진다", () => {
+    let differed = 0;
+    let compared = 0;
+
+    for (let index = 0; index < 30 && differed === 0; index += 1) {
+      const state = atEvent(`trust-modifier-${index}`);
+      if (state === null) continue;
+      /* 넷이면 수용 -15 · 적발 +15 로 가장 크게 갈린다. */
+      const shakenState = withZeroTrustOutsiders(state, 4);
+
+      for (const option of state.context.activeExpedition!.pendingEvent!.advice) {
+        compared += 1;
+        if (reactionsFor(state, option.id).join() !== reactionsFor(shakenState, option.id).join()) differed += 1;
+      }
+    }
+
+    expect(compared).toBeGreaterThan(2);
+    expect(differed).toBeGreaterThan(0);
+  });
+
+  /* 구간 밖이면 그대로다. 아무 때나 흔들리면 보정이 아니라 잡음이다. */
+  it("한 명뿐이면 아직 보정이 없다", () => {
+    for (let index = 0; index < 30; index += 1) {
+      const state = atEvent(`trust-modifier-${index}`);
+      if (state === null) continue;
+      const oneDown = withZeroTrustOutsiders(state, 1);
+
+      for (const option of state.context.activeExpedition!.pendingEvent!.advice) {
+        expect(reactionsFor(oneDown, option.id)).toEqual(reactionsFor(state, option.id));
+      }
+      return;
+    }
+    throw new Error("사건 앞에 선 시드를 찾지 못했다");
   });
 });
 

@@ -37,7 +37,7 @@ import {
 } from "./campaign-history";
 import { resolveBossBattle } from "./boss-battle-adapter";
 import { generateDungeonMap } from "./dungeon-map";
-import { evaluateCampaignEnding, evaluateImmediateDistrustEnding } from "./ending";
+import { evaluateCampaignEnding, evaluateImmediateDistrustEnding, getCampaignTrustModifier } from "./ending";
 import { executeGuidePromotion, getGuidePromotionEligibility } from "./promotion";
 import {
   activateStrongFollower,
@@ -384,6 +384,14 @@ function transitionChooseAdvice(
     event,
     adviceId,
     members: living,
+    /*
+     * 신뢰가 무너질수록 조언이 안 먹힌다.
+     *
+     * `C6` 가 살아 있는 신뢰 0 인원 수로 보정을 내주는데(둘이면 수용 -5, 셋이면
+     * -10, 넷이면 -15) 아무도 넘기지 않아 늘 0 이었다. 하강 나선이 통째로
+     * 없었다는 뜻이다 - 사람을 잃고 신뢰를 잃어도 다음 조언이 똑같이 먹혔다.
+     */
+    campaignModifier: getCampaignTrustModifier(campaign),
   };
 
   /* 보스 정보는 지연형이다. 즉시 신뢰를 확정하지 않고 기록만 쌓는다. */
