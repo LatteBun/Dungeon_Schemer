@@ -477,6 +477,35 @@ function RightPanel({
         )}
       </section>
 
+      {/*
+        * 아래를 비워 두지 않는다.
+        *
+        * 답사로 알아낸 생태 규칙은 다음 지점을 고를 때 쓰라고 준 사실인데,
+        * 그동안 진행 화면의 기록 탭에만 있어 지도에서는 볼 수 없었다. 정작
+        * 고르는 자리가 여기다.
+        *
+        * 들어오자마자 내용이 차 있는 것이 맞다. 여기 적히는 것은 던전 안에서
+        * 알아낸 것이 아니라 **계약 전 답사**로 이미 알아낸 생태다 - `E2` 가
+        * 위험도에 따라 그만큼 공개한다. 「답사 기록」이라고만 적어 두면 걸으면서
+        * 쌓이는 것처럼 읽히므로 언제 알아낸 것인지를 이름에 넣는다.
+        */}
+      {survey === undefined ? null : (
+        <section className="panel-section u4-survey" aria-labelledby="u4-survey-title">
+          <h3 id="u4-survey-title">계약 전 답사</h3>
+          {survey.disclosedRules.length === 0 ? (
+            <p className="u4-survey__empty">답사로 알아낸 것이 없다. 이 던전은 위험도가 낮다.</p>
+          ) : (
+            <ul className="u4-survey__rules">
+              {survey.disclosedRules.map((rule) => <li key={rule}>{rule}</li>)}
+            </ul>
+          )}
+          {/* 걸으면서 쌓이는 것은 이쪽이다. */}
+          <p className="u4-survey__progress">
+            지나온 지점 <strong>{survey.visited}</strong> / {survey.total}
+          </p>
+        </section>
+      )}
+
       <section
         className="panel-section u4-destination"
         aria-labelledby="u4-destination-title"
@@ -538,35 +567,6 @@ function RightPanel({
           }}
         />
       </section>
-
-      {/*
-        * 아래를 비워 두지 않는다.
-        *
-        * 답사로 알아낸 생태 규칙은 다음 지점을 고를 때 쓰라고 준 사실인데,
-        * 그동안 진행 화면의 기록 탭에만 있어 지도에서는 볼 수 없었다. 정작
-        * 고르는 자리가 여기다.
-        *
-        * 들어오자마자 내용이 차 있는 것이 맞다. 여기 적히는 것은 던전 안에서
-        * 알아낸 것이 아니라 **계약 전 답사**로 이미 알아낸 생태다 - `E2` 가
-        * 위험도에 따라 그만큼 공개한다. 「답사 기록」이라고만 적어 두면 걸으면서
-        * 쌓이는 것처럼 읽히므로 언제 알아낸 것인지를 이름에 넣는다.
-        */}
-      {survey === undefined ? null : (
-        <section className="panel-section u4-survey" aria-labelledby="u4-survey-title">
-          <h3 id="u4-survey-title">계약 전 답사</h3>
-          {survey.disclosedRules.length === 0 ? (
-            <p className="u4-survey__empty">답사로 알아낸 것이 없다. 이 던전은 위험도가 낮다.</p>
-          ) : (
-            <ul className="u4-survey__rules">
-              {survey.disclosedRules.map((rule) => <li key={rule}>{rule}</li>)}
-            </ul>
-          )}
-          {/* 걸으면서 쌓이는 것은 이쪽이다. */}
-          <p className="u4-survey__progress">
-            지나온 지점 <strong>{survey.visited}</strong> / {survey.total}
-          </p>
-        </section>
-      )}
     </div>
   );
 }

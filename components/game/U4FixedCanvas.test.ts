@@ -128,17 +128,19 @@ describe("U4 fixed 16:9 canvas contract", () => {
    * 그렇다 - 알아낸 규칙이 쌓이고, 넘치면 그 안에서 스크롤한다. 앞 둘은 그대로
    * 내용 높이다.
    */
-  it("stacks the right panel and lets only the last block take the rest", () => {
+  it("keeps the survey flexible and the destination in the last row", () => {
     const base = readFileSync("app/u4-dungeon-map.css", "utf8");
-    const rule = base.match(/\.u4-right-panel\s*\{([^}]*)\}/)?.[1] ?? "";
-
-    expect(rule).toMatch(/grid-template-rows:\s*auto auto minmax\(0, 1fr\)/);
-    /* 마지막이 자리를 받아야 하므로 위로 몰지 않는다. */
-    expect(rule).not.toMatch(/align-content:\s*start/);
-
-    /* 늘어난 덩어리는 제 안에서 스크롤한다. 패널을 밀어내지 않는다. */
+    const rightPanel = base.match(/\.u4-right-panel\s*\{([^}]*)\}/)?.[1] ?? "";
+    const party = base.match(/\.u4-party\s*\{([^}]*)\}/)?.[1] ?? "";
     const survey = base.match(/\.u4-survey\s*\{([^}]*)\}/)?.[1] ?? "";
+    const destination = base.match(/\.u4-destination\s*\{([^}]*)\}/)?.[1] ?? "";
 
+    expect(rightPanel).toMatch(
+      /grid-template-rows:\s*auto minmax\(0, 1fr\) auto/,
+    );
+    expect(party).toMatch(/grid-row:\s*1/);
+    expect(survey).toMatch(/grid-row:\s*2/);
+    expect(destination).toMatch(/grid-row:\s*3/);
     expect(survey).toMatch(/min-height:\s*0/);
     expect(survey).toMatch(/overflow-y:\s*auto/);
 

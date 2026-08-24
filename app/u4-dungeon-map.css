@@ -364,12 +364,8 @@ button.u4-room {
 
 .u4-right-panel {
   display: grid;
-  /*
-   * 파티 · 목적지 · 답사 기록 셋이다.
-   *
-   * 전에는 둘뿐이라 아래가 비어 보였다. 마지막 덩어리가 남는 자리를 받는다.
-   */
-  grid-template-rows: auto auto minmax(0, 1fr);
+  /* 파티 · 답사 · 목적지 순서다. 가운데 답사만 남는 높이를 받아 넘치면 스크롤한다. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: clamp(0.55rem, 0.8cqh, 0.7rem);
   height: 100%;
   min-height: 0;
@@ -377,6 +373,7 @@ button.u4-room {
 
 .u4-party {
   display: grid;
+  grid-row: 1;
   grid-template-rows: auto auto;
   min-height: 0;
 }
@@ -384,6 +381,7 @@ button.u4-room {
 .u4-destination {
   position: relative;
   display: grid;
+  grid-row: 3;
   grid-template-rows: auto auto auto;
 }
 
@@ -589,6 +587,7 @@ button.u4-room {
 
 /* 답사 기록. 다음 지점을 고르는 자리에서 읽는 사실이다. */
 .u4-survey {
+  grid-row: 2;
   min-height: 0;
   overflow-y: auto;
 }
