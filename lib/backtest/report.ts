@@ -20,7 +20,7 @@ export interface FixedGateResult {
 export interface BacktestReportInput {
   readonly mode: "calibration" | "holdout";
   readonly namespace: "b1b-calibration-v1" | "b1b-holdout-v1";
-  readonly seedsPerCombination?: 2 | 50 | 100 | 200 | 2000;
+  readonly seedsPerCombination: 2 | 50 | 100 | 200 | 2000;
   readonly sourceRevision: string;
   readonly aggregate: BacktestAggregate;
   readonly fixedGates: readonly FixedGateResult[];
@@ -111,7 +111,7 @@ function nullableInterval(interval: { readonly low: number; readonly high: numbe
 }
 
 function resolveSeedsPerCombination(input: BacktestReportInput): 2 | 50 | 100 | 200 | 2000 {
-  const seedsPerCombination = input.seedsPerCombination ?? input.aggregate.runs.length / 6;
+  const { seedsPerCombination } = input;
   if (seedsPerCombination !== 2
     && seedsPerCombination !== 50
     && seedsPerCombination !== 100

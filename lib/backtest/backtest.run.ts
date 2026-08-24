@@ -1,10 +1,10 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { B1B_HOLDOUT_APPROVED, evaluateB1BAcceptance } from "./acceptance";
+import { B1B_HOLDOUT_APPROVED, evaluateB1BAcceptance, type B1BAcceptanceGate } from "./acceptance";
 import { runCampaign } from "./campaign-driver";
 import { aggregateRuns, metricsForRun, type BacktestAggregate, type CampaignRunMetrics } from "./metrics";
-import { evaluateFixedGates, renderBacktestReport } from "./report";
+import { evaluateFixedGates, renderBacktestReport, type FixedGateResult } from "./report";
 import { STRATEGY_IDS, createStrategy } from "./strategies";
 import type { Accuracy, StrategyId } from "./public-state";
 
@@ -65,6 +65,14 @@ export function optionsFromEnvironment(env: BacktestEnvironment = process.env): 
   };
 }
 
+export function shouldFailBacktest(
+  fixedGates: readonly FixedGateResult[],
+  acceptanceGates: readonly B1BAcceptanceGate[],
+): boolean {
+  return fixedGates.some((gate) => !gate.passed)
+    || acceptanceGates.some((gate) => gate.enforced && !gate.passed);
+}
+
 function runCli(): void {
   const options = optionsFromEnvironment();
   const aggregate = runBacktestSuite(options);
@@ -72,13 +80,17 @@ function runCli(): void {
   const report = renderBacktestReport({
     mode: options.mode,
     namespace: options.namespace,
+    seedsPerCombination: options.seedsPerCombination,
     sourceRevision: process.env.B1_SOURCE_REVISION ?? "working-tree",
     aggregate,
     fixedGates: gates,
   });
   writeFileSync(resolve(process.cwd(), "docs/technical/BACKTEST_REPORT.md"), report, "utf8");
-  const acceptanceGates = evaluateB1BAcceptance(aggregate);
-  if (options.mode === "holdout" && [...gates, ...acceptanceGates].some((gate) => !gate.passed)) process.exitCode = 1;
+  const acceptanceGates = evaluateB1BAcceptance(aggregate, {
+    mode: options.mode,
+    seedsPerCombination: options.seedsPerCombination,
+  });
+  if (shouldFailBacktest(gates, acceptanceGates)) process.exitCode = 1;
 }
 
 if (process.env.B1_BACKTEST_MODE !== undefined) {

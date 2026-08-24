@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { campaignSeed, optionsFromEnvironment } from "./backtest.run";
+import { campaignSeed, optionsFromEnvironment, shouldFailBacktest } from "./backtest.run";
 
 describe("B1 backtest seed 계약", () => {
   it("B1-B calibration namespace와 번호를 고정 폭으로 조합한다", () => {
@@ -30,5 +30,32 @@ describe("B1-B backtest runner 옵션", () => {
     { B1_BACKTEST_MODE: "unknown", B1_BACKTEST_SEEDS: "50" },
   ])("지원하지 않는 mode 또는 표본을 명시적으로 거부한다", (env) => {
     expect(() => optionsFromEnvironment(env)).toThrow();
+  });
+});
+
+describe("B1-B backtest 실행 종료 판정", () => {
+  it("고정 gate 실패는 관찰 단계에서도 실행을 실패시킨다", () => {
+    expect(shouldFailBacktest(
+      [{ id: "no-run-errors", passed: false, evidence: "1건" }],
+      [],
+    )).toBe(true);
+  });
+
+  it("OBSERVE acceptance 실패는 실행을 실패시키지 않는다", () => {
+    expect(shouldFailBacktest([], [{
+      id: "first-attempt-clear-rate:opportunist@0.7:risk-1",
+      passed: false,
+      enforced: false,
+      evidence: "관찰",
+    }])).toBe(false);
+  });
+
+  it("강제 acceptance 실패는 실행을 실패시킨다", () => {
+    expect(shouldFailBacktest([], [{
+      id: "first-attempt-clear-rate:opportunist@0.7:risk-1",
+      passed: false,
+      enforced: true,
+      evidence: "기준 이탈",
+    }])).toBe(true);
   });
 });
