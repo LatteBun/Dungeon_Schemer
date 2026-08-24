@@ -47,7 +47,7 @@ const PREVIEW_SEED = "u5-dungeon-progress-preview";
 /* 캠페인에 실제로 있는 던전이다. 전에는 어디에도 없는 "spider-1" 을 시드
  * 문자열로만 쓰고 있어서, 던전을 조회하는 순간 드러났다. */
 const PREVIEW_DUNGEON = "dungeon-spider-03" as DungeonId;
-const PREVIEW_ATTEMPT = 1;
+const PREVIEW_ATTEMPT = 0;
 
 const campaign = initializeCampaign(PREVIEW_SEED);
 
