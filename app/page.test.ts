@@ -12,7 +12,7 @@ describe("루트 메인 메뉴", () => {
 
     expect(html).toContain('href="/campaign"');
     expect(html).toContain('href="/achievements"');
-    expect(html).toContain("달성 — / 8");
+    expect(html).toContain("달성 — / 12");
     expect(html).not.toContain("캠페인 개편 진행 중");
   });
 });

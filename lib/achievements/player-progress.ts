@@ -6,6 +6,10 @@ export const PLAYER_PROGRESS_VERSION = 1 as const;
 export type AchievementId =
   | "first-record"
   | "dungeon-conqueror"
+  | "distrust-ending"
+  | "denounced-ending"
+  | "exhausted-ending"
+  | "unemployed-ending"
   | "s-rank-guide"
   | "everyone-returned"
   | "five-endings"
@@ -115,7 +119,7 @@ const cumulativeAchievement = (
   title,
   description,
   category: "cumulative",
-  hiddenWhenLocked: false,
+  hiddenWhenLocked: true,
   imageSrc,
   isUnlocked: (progress) => currentFor(progress) >= target,
   progress: (progress) => ({ current: currentFor(progress), target }),
@@ -125,37 +129,73 @@ export const ACHIEVEMENT_CATALOG: readonly AchievementDefinition[] = [
   {
     id: "first-record",
     title: "첫 기록",
-    description: "캠페인을 한 번 끝까지 기록한다.",
+    description: "성공 여부와 관계없이 첫 캠페인 결말을 기록한다.",
     category: "result",
-    hiddenWhenLocked: false,
-    imageSrc: "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_guild.png",
+    hiddenWhenLocked: true,
+    imageSrc: "/assets/achievements/achievement_first_record.png",
     isUnlocked: (progress) => progress.totals.completedCampaigns >= 1,
   },
   {
     id: "dungeon-conqueror",
     title: "던전 정복자",
-    description: "모든 원정을 클리어하고 캠페인을 완주한다.",
+    description: "15개 던전을 모두 돌파해 원정 완료 엔딩을 맞는다.",
     category: "result",
-    hiddenWhenLocked: false,
+    hiddenWhenLocked: true,
     imageSrc: "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_conquest.png",
     isUnlocked: (_progress, latest) => latest.ending === "completed",
+  },
+  {
+    id: "distrust-ending",
+    title: "불신의 대가",
+    description: "원정 생존자 전원이 길잡이를 더는 믿지 않게 된다.",
+    category: "result",
+    hiddenWhenLocked: true,
+    imageSrc: "/assets/achievements/achievement_distrust.png",
+    isUnlocked: (_progress, latest) => latest.ending === "distrust",
+  },
+  {
+    id: "denounced-ending",
+    title: "누적 고발",
+    description: "살아 있는 용사 5명 이상이 길잡이를 불신한다.",
+    category: "result",
+    hiddenWhenLocked: true,
+    imageSrc: "/assets/achievements/achievement_denounced.png",
+    isUnlocked: (_progress, latest) => latest.ending === "denounced",
+  },
+  {
+    id: "exhausted-ending",
+    title: "인력 소진",
+    description: "서로 다른 직업 3명으로 원정대를 꾸릴 수 없게 된다.",
+    category: "result",
+    hiddenWhenLocked: true,
+    imageSrc: "/assets/achievements/achievement_exhausted.png",
+    isUnlocked: (_progress, latest) => latest.ending === "exhausted",
+  },
+  {
+    id: "unemployed-ending",
+    title: "실직",
+    description: "승급할 수 없고 남은 모든 공고가 현재 길잡이 등급보다 높다.",
+    category: "result",
+    hiddenWhenLocked: true,
+    imageSrc: "/assets/achievements/achievement_unemployed.png",
+    isUnlocked: (_progress, latest) => latest.ending === "unemployed",
   },
   {
     id: "s-rank-guide",
     title: "S급 길잡이",
     description: "S급 길잡이로 캠페인을 완주한다.",
     category: "result",
-    hiddenWhenLocked: false,
+    hiddenWhenLocked: true,
     imageSrc: "/assets/achievements/achievement_s_rank.png",
     isUnlocked: (_progress, latest) => latest.ending === "completed" && latest.finalRank === "S",
   },
   {
     id: "everyone-returned",
     title: "모두 함께 돌아오다",
-    description: "사망자 없이 캠페인을 완주한다.",
+    description: "사망자를 한 명도 내지 않고 15개 던전을 모두 돌파한다.",
     category: "result",
-    hiddenWhenLocked: false,
-    imageSrc: "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_together.png",
+    hiddenWhenLocked: true,
+    imageSrc: "/assets/achievements/achievement_everyone_returned.png",
     isUnlocked: (_progress, latest) => latest.ending === "completed" && latest.deaths === 0,
   },
   {

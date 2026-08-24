@@ -12,7 +12,7 @@ describe("메인 메뉴 화면", () => {
     expect(html).toContain('href="/campaign"');
     expect(html).toContain("캠페인 시작");
     expect(html).toContain('href="/achievements"');
-    expect(html).toContain("달성 3 / 8");
+    expect(html).toContain("달성 3 / 12");
     expect(html).not.toMatch(/<button[^>]*>[^]*<a/);
   });
 
@@ -21,6 +21,6 @@ describe("메인 메뉴 화면", () => {
       createElement(MainMenuScreen, { unlockedCount: 0, loading: true }),
     );
 
-    expect(html).toContain("달성 — / 8");
+    expect(html).toContain("달성 — / 12");
   });
 });

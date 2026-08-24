@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePlayerProgressStore } from "@/components/game/PlayerProgressProvider";
-import { unlockedAchievementCount } from "@/lib/achievements/player-progress";
+import { ACHIEVEMENT_CATALOG, unlockedAchievementCount } from "@/lib/achievements/player-progress";
+
+const TOTAL_ACHIEVEMENTS = ACHIEVEMENT_CATALOG.length;
 
 export interface MainMenuScreenProps {
   readonly unlockedCount: number;
@@ -23,7 +25,11 @@ export function MainMenuScreen({ unlockedCount, loading }: MainMenuScreenProps) 
         </Link>
         <Link className="main-menu-screen__achievements" href="/achievements">
           <span>업적 기록</span>
-          <small>{loading ? "달성 — / 8" : `달성 ${unlockedCount} / 8`}</small>
+          <small>
+            {loading
+              ? `달성 — / ${TOTAL_ACHIEVEMENTS}`
+              : `달성 ${unlockedCount} / ${TOTAL_ACHIEVEMENTS}`}
+          </small>
         </Link>
       </nav>
     </main>

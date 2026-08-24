@@ -147,6 +147,22 @@ describe("플레이어 업적 프로필", () => {
     expect(result.unlocked["five-endings"]).toBeDefined();
   });
 
+  it.each([
+    ["distrust", "distrust-ending"],
+    ["denounced", "denounced-ending"],
+    ["completed", "dungeon-conqueror"],
+    ["exhausted", "exhausted-ending"],
+    ["unemployed", "unemployed-ending"],
+  ] as const)("%s 엔딩은 자기 결말 업적을 연다", (ending, achievementId) => {
+    const progress = recordCompletedCampaign(createEmptyPlayerProgress(), {
+      ...completed,
+      runId: `ending-achievement-${ending}`,
+      ending,
+    }, "2026-08-24T10:00:00.000Z");
+
+    expect(progress.unlocked[achievementId]).toBeDefined();
+  });
+
   it("다섯 엔딩 중 네 종류는 직전이고 다섯 번째에서 숨은 업적이 열린다", () => {
     const fourEndings = ["distrust", "denounced", "completed", "exhausted"] as const;
     const before = fourEndings.reduce(
@@ -255,6 +271,10 @@ describe("플레이어 업적 프로필", () => {
     expect(ACHIEVEMENT_CATALOG.map(({ id }) => id)).toEqual([
       "first-record",
       "dungeon-conqueror",
+      "distrust-ending",
+      "denounced-ending",
+      "exhausted-ending",
+      "unemployed-ending",
       "s-rank-guide",
       "everyone-returned",
       "five-endings",
@@ -262,7 +282,8 @@ describe("플레이어 업적 프로필", () => {
       "seasoned-expedition",
       "death-in-the-plan",
     ]);
-    expect(new Set(ACHIEVEMENT_CATALOG.map(({ id }) => id)).size).toBe(8);
+    expect(new Set(ACHIEVEMENT_CATALOG.map(({ id }) => id)).size).toBe(12);
+    expect(ACHIEVEMENT_CATALOG.every(({ hiddenWhenLocked }) => hiddenWhenLocked)).toBe(true);
 
     const progress = recordCompletedCampaign(createEmptyPlayerProgress(), completed, "2026-08-24T10:00:00.000Z");
     expect(achievementProgressFor(progress, "hundred-advices")).toEqual({ current: 72, target: 100 });
@@ -274,10 +295,14 @@ describe("플레이어 업적 프로필", () => {
 
   it("승인된 업적 문양 경로를 카탈로그 순서대로 고정한다", () => {
     expect(ACHIEVEMENT_CATALOG.map(({ imageSrc }) => imageSrc)).toEqual([
-      "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_guild.png",
+      "/assets/achievements/achievement_first_record.png",
       "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_conquest.png",
+      "/assets/achievements/achievement_distrust.png",
+      "/assets/achievements/achievement_denounced.png",
+      "/assets/achievements/achievement_exhausted.png",
+      "/assets/achievements/achievement_unemployed.png",
       "/assets/achievements/achievement_s_rank.png",
-      "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_together.png",
+      "/assets/achievements/achievement_everyone_returned.png",
       "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL/achievements/achievement_return.png",
       "/assets/achievements/achievement_advice.png",
       "/assets/achievements/achievement_expedition.png",

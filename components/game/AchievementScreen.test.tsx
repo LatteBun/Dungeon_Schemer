@@ -53,29 +53,38 @@ describe("길잡이 업적 기록 화면", () => {
     expect(html).toContain('dateTime="2026-08-24T10:00:00.000Z"');
   });
 
-  it("숨은 업적은 잠긴 동안 이름과 진행도를 감춘다", () => {
+  it("모든 미달성 업적은 이름과 조건과 진행도를 감춘다", () => {
     const html = renderEmptyGallery();
 
-    expect(html).toContain(">???</h2>");
+    expect(html.match(/>\?\?\?<\/h2>/g)).toHaveLength(12);
     expect(html).toContain("조건을 달성하면 기록이 공개됩니다.");
     expect(html).not.toContain("알 수 없는 기록");
+    expect(html).not.toContain("첫 기록</h2>");
     expect(html).not.toContain("다섯 갈래의 결말");
     expect(html).not.toContain("0 / 5");
+    expect(html).not.toContain('role="progressbar"');
   });
 
   it("미달성 문양은 잘리지 않는 이미지 슬롯 안에서 잠금 베일로 가린다", () => {
     const html = renderEmptyGallery();
 
-    expect(html.match(/class="achievement-card__image is-obscured"/g)).toHaveLength(8);
-    expect(html.match(/data-nimg="fill"/g)).toHaveLength(8);
-    expect(html.match(/class="achievement-card__lock" aria-hidden="true"/g)).toHaveLength(8);
+    expect(html.match(/class="achievement-card__image is-obscured"/g)).toHaveLength(12);
+    expect(html.match(/data-nimg="fill"/g)).toHaveLength(12);
+    expect(html.match(/class="achievement-card__lock" aria-hidden="true"/g)).toHaveLength(12);
   });
 
-  it("공개 누적 업적은 접근 가능한 진행도를 제공한다", () => {
-    const html = renderEmptyGallery();
+  it("달성한 누적 업적만 접근 가능한 진행도를 제공한다", () => {
+    const progress = recordCompletedCampaign(createEmptyPlayerProgress(), completed, "2026-08-24T10:00:00.000Z");
+    const html = renderToStaticMarkup(createElement(AchievementScreen, {
+      cards: achievementCardViewsFor(progress),
+      unlockedCount: unlockedAchievementCount(progress),
+      status: "ready",
+      message: null,
+      onClear: () => {},
+    }));
 
-    expect(html).toMatch(/role="progressbar"[^>]*aria-valuemax="100"[^>]*aria-valuenow="0"/);
-    expect(html).toContain("0 / 100");
+    expect(html).toMatch(/role="progressbar"[^>]*aria-valuemax="100"[^>]*aria-valuenow="100"/);
+    expect(html).toContain("100 / 100");
   });
 
   it("문턱을 넘긴 누적 기록은 실제 수치를 보이되 접근 가능한 진행도는 목표에서 멈춘다", () => {

@@ -9,6 +9,12 @@ const NEW_ASSETS = [
   "achievement_advice.png",
   "achievement_expedition.png",
   "achievement_wipe.png",
+  "achievement_first_record.png",
+  "achievement_everyone_returned.png",
+  "achievement_distrust.png",
+  "achievement_denounced.png",
+  "achievement_exhausted.png",
+  "achievement_unemployed.png",
 ] as const;
 
 function pathForImageSrc(imageSrc: string): string {

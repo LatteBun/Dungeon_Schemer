@@ -89,6 +89,10 @@ const PLAYER_PROGRESS_VERSION = 1 as const;
 type AchievementId =
   | "first-record"
   | "dungeon-conqueror"
+  | "distrust-ending"
+  | "denounced-ending"
+  | "exhausted-ending"
+  | "unemployed-ending"
   | "s-rank-guide"
   | "everyone-returned"
   | "five-endings"
@@ -151,18 +155,22 @@ interface CompletedCampaignRecord {
 
 | ID | 표시명 | 종류 | 해금 조건 | 잠금 중 공개 |
 | --- | --- | --- | --- | --- |
-| `first-record` | 첫 기록 | 결과형 | 캠페인 1회 종료 | 공개 |
-| `dungeon-conqueror` | 던전 정복자 | 결과형 | `completed` 엔딩 | 공개 |
-| `s-rank-guide` | S급 길잡이 | 결과형 | S등급 `completed` 엔딩 | 공개 |
-| `everyone-returned` | 모두 함께 돌아오다 | 결과형 | 사망자 0명으로 `completed` 엔딩 | 공개 |
+| `first-record` | 첫 기록 | 결과형 | 성공 여부와 관계없이 캠페인 1회 종료 | 비공개 |
+| `dungeon-conqueror` | 던전 정복자 | 결과형 | 15개 던전을 돌파한 `completed` 엔딩 | 비공개 |
+| `distrust-ending` | 불신의 대가 | 결과형 | `distrust` 엔딩 | 비공개 |
+| `denounced-ending` | 누적 고발 | 결과형 | `denounced` 엔딩 | 비공개 |
+| `exhausted-ending` | 인력 소진 | 결과형 | `exhausted` 엔딩 | 비공개 |
+| `unemployed-ending` | 실직 | 결과형 | `unemployed` 엔딩 | 비공개 |
+| `s-rank-guide` | S급 길잡이 | 결과형 | S등급 `completed` 엔딩 | 비공개 |
+| `everyone-returned` | 모두 함께 돌아오다 | 결과형 | 사망자 0명으로 `completed` 엔딩 | 비공개 |
 | `five-endings` | 다섯 갈래의 결말 | 결과형·누적 | 엔딩 5종을 각각 1회 이상 경험 | 비공개 |
-| `hundred-advices` | 백 번의 조언 | 누적형 | 누적 조언 100회 | 공개 |
-| `seasoned-expedition` | 노련한 원정대 | 누적형 | 누적 원정 클리어 30회 | 공개 |
-| `death-in-the-plan` | 죽음도 계획의 일부 | 누적형 | 누적 전멸 10회 | 공개 |
+| `hundred-advices` | 백 번의 조언 | 누적형 | 누적 조언 100회 | 비공개 |
+| `seasoned-expedition` | 노련한 원정대 | 누적형 | 누적 원정 클리어 30회 | 비공개 |
+| `death-in-the-plan` | 죽음도 계획의 일부 | 누적형 | 누적 전멸 10회 | 비공개 |
 
-`five-endings`는 잠금 상태에서 이름과 조건 대신 `알 수 없는 기록`을 표시한다.
-발견한 엔딩 수 같은 부분 진행도 노출하지 않아 숨은 엔딩의 총수와 종류를 화면이
-추가로 설명하지 않는다. 다른 누적형은 현재 값과 목표 값을 함께 보여준다.
+모든 업적은 잠금 상태에서 이름 대신 `???`, 조건 대신 공통 안내를 표시한다.
+누적형도 해금 전에는 현재 값과 목표 값, 진행 막대를 노출하지 않는다. 해금 뒤에만
+실제 이름·조건·진행도·최초 달성일을 함께 보여준다.
 
 해금은 단조 증가한다. 이미 해금된 업적은 다시 판정 결과가 거짓이어도 잠기지 않고
 `unlockedAt`도 최초 값에서 바뀌지 않는다.
@@ -232,7 +240,7 @@ type ProgressLoadResult =
 - 확인을 거친 전체 기록 초기화 액션
 
 서버 렌더에서는 빈 자리 크기를 먼저 그린 뒤 mount effect에서 `localStorage`를
-읽는다. 메인 메뉴의 `달성 — / 8`이 `달성 N / 8`로 바뀌어도 버튼과 제목의 위치는
+읽는다. 메인 메뉴의 `달성 — / 12`가 `달성 N / 12`로 바뀌어도 버튼과 제목의 위치는
 움직이지 않는다.
 
 ### 8.2 엔딩 기록 연결
@@ -258,38 +266,37 @@ type ProgressLoadResult =
 - 중앙 하단에 두 링크를 세로로 정렬한다.
   - 주요 금빛 CTA `캠페인 시작` → `/campaign`
   - 보조 금속·양피지 CTA `업적 기록` → `/achievements`
-- 업적 CTA 안에 로딩 자리를 고정하고 준비 뒤 `달성 N / 8`을 표시한다.
+- 업적 CTA 안에 로딩 자리를 고정하고 준비 뒤 `달성 N / 12`를 표시한다.
 - 두 항목은 실제 Next.js `Link`이며 버튼 안에 링크를 중첩하지 않는다.
 
 ### 9.2 업적 기록 `/achievements`
 
 - 길드의 기록 보관소를 연상시키는 전체 캔버스 화면이다.
-- 상단에 `길잡이 업적 기록`, `N / 8 달성`, 메인 메뉴 링크를 둔다.
-- 본문은 4열×2행 카드다. 1920×1080 기준 한 화면 안에서 스크롤 없이 보인다.
+- 상단에 `길잡이 업적 기록`, `N / 12 달성`, 메인 메뉴 링크를 둔다.
+- 본문은 4열×3행 카드다. 1920×1080 기준 한 화면 안에서 스크롤 없이 보인다.
 - 결과형과 누적형은 카드 라벨과 금색 구분선으로 함께 구별한다.
 - 해금 카드는 문양·이름·조건·최초 달성 날짜를 보여준다.
 - 잠금 카드는 명암, 잠금 문양, `미달성` 텍스트를 함께 사용한다.
-- 공개 누적형은 `현재 / 목표`와 진행 막대를 제공한다. `progressbar`에는
+- 해금한 누적형은 `현재 / 목표`와 진행 막대를 제공한다. `progressbar`에는
   `aria-valuemin`, `aria-valuemax`, `aria-valuenow`를 둔다.
-- 숨은 업적은 해금 전 대체 이름과 대체 설명만 보인다.
+- 모든 업적은 해금 전 `???`와 공통 대체 설명만 보인다.
 - 하단의 `기록 초기화`는 즉시 삭제하지 않고 확인 dialog를 거친다.
 - 저장 불가·복구 상태는 `role="status"` 안내로 알리되 페이지 사용을 막지 않는다.
 
 ### 9.3 문양
 
-기존 U6 문양을 다음 네 업적에 재사용한다.
+기존 U6 문양 중 의미가 맞는 다음 두 개를 재사용한다.
 
 | 업적 | 기존 자산 |
 | --- | --- |
-| 첫 기록 | `achievement_guild.png` |
 | 던전 정복자 | `achievement_conquest.png` |
-| 모두 함께 돌아오다 | `achievement_together.png` |
 | 다섯 갈래의 결말 | `achievement_return.png` |
 
-나머지 네 업적은 같은 금속·양피지 재질, 정면 문장, 낮은 채도와 금빛 가장자리의
-래스터 PNG를 만든다. 대상은 S급 문장, 펼친 지도와 흔적, 조언을 뜻하는 지도·깃펜,
-전멸을 뜻하는 깨진 원정 문장이다. 기존 장면형 UI에 플랫 SVG나 SaaS 배지를
-섞지 않는다.
+나머지 열 개 업적은 같은 금속·양피지 재질, 정면 문장, 낮은 채도와 금빛 가장자리의
+래스터 PNG를 사용한다. 첫 기록에는 문자가 없는 기록서, 모두 함께 돌아오다에는
+귀환하는 원정대처럼 해금 조건을 직접 연상할 수 있는 상징을 쓴다. 엔딩 네 종류도
+각 실패 원인을 구별할 수 있는 별도 문양을 둔다. 기존 장면형 UI에 플랫 SVG나
+SaaS 배지를 섞지 않는다.
 
 새 자산은 `public/assets/achievements/`에 두고 실제 카드 슬롯 비율과 최대 표시
 크기를 기준으로 제작한다. 기존 U6 자산은 이동하거나 복제하지 않고 manifest가
@@ -313,7 +320,7 @@ type ProgressLoadResult =
 - `docs/systems/PROGRESSION_AND_ENDINGS.md`: 엔딩 결과가 메타 업적 기록으로 전달되는
   책임과 업적이 규칙 보상을 주지 않는다는 점을 적는다.
 - `docs/experience/SCREEN_LAYOUT.md`: 메인 메뉴와 업적 기록을 전체 캔버스 예외로
-  추가하고 업적 4×2 구조를 기록한다.
+  추가하고 업적 4×3 구조를 기록한다.
 - `docs/experience/ONBOARDING_AND_INTERFACE.md`: 메인 메뉴에서 캠페인과 기록으로
   갈리는 진입 흐름을 추가한다.
 - `docs/technical/DEVELOPMENT_ENVIRONMENT.md`: 허용된 유일한 브라우저 영속 상태가
@@ -330,7 +337,7 @@ type ProgressLoadResult =
 ### 12.1 순수 규칙
 
 - 빈 V1 프로필 생성
-- 8개 업적 각각의 경계값 직전·도달·초과
+- 12개 업적 각각의 해금 조건과 누적 경계값 직전·도달·초과
 - S등급이지만 정상 완주가 아닌 경우 `s-rank-guide` 미해금
 - 정상 완주지만 사망자가 있으면 `everyone-returned` 미해금
 - 엔딩 5종의 마지막 종류가 들어오는 순간 `five-endings` 해금
@@ -349,7 +356,7 @@ type ProgressLoadResult =
 
 - 엔딩 전에는 기록하지 않고 엔딩에서 한 번만 기록
 - Strict Mode 재실행과 재렌더링에서 중복되지 않음
-- `/`의 `/campaign`, `/achievements` 링크와 `N / 8` 요약
+- `/`의 `/campaign`, `/achievements` 링크와 `N / 12` 요약
 - 잠금·해금·숨김·누적 진행 카드
 - 최초 달성 날짜와 저장 상태 안내
 - 초기화 확인·취소·완료 흐름
