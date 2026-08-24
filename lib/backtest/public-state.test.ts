@@ -52,6 +52,7 @@ describe("백테스트 공개 상태 projection", () => {
     }
     expect(view).not.toHaveProperty("preparedEvents");
     expect(view).not.toHaveProperty("hiddenRole");
+    expect(JSON.stringify(view)).not.toContain("advicePressure");
   });
 
   it("공식 상인 콘텐츠에서 최대 비용을 계산한다", () => {

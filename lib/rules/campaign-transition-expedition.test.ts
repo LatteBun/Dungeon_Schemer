@@ -4,10 +4,12 @@ import type {
   CampaignState,
   CampaignTransitionContext,
   CampaignTransitionResult,
+  AdvicePressure,
   Character,
   ExpeditionState,
   NodeId,
 } from "@/lib/domain";
+import { eventsForTheme } from "@/lib/content/event-registry";
 import { initializeCampaign } from "./campaign-init";
 import { generateDungeonMap } from "./dungeon-map";
 import { createExpeditionForOffer, transitionCampaign } from "./campaign-transition";
@@ -22,14 +24,14 @@ import { createExpeditionForOffer, transitionCampaign } from "./campaign-transit
 
 const SEED = "c7-inner-loop";
 
-function boardedCampaign(): { campaign: CampaignState; context: CampaignTransitionContext } {
-  const initial = initializeCampaign(SEED);
+function boardedCampaign(seed = SEED): { campaign: CampaignState; context: CampaignTransitionContext } {
+  const initial = initializeCampaign(seed);
   const opened = transitionCampaign(initial, createCampaignTransitionContext(), { type: "OPEN_BOARD" });
   return { campaign: opened.campaign, context: opened.context };
 }
 
-function started(): CampaignTransitionResult {
-  const { campaign, context } = boardedCampaign();
+function started(seed = SEED): CampaignTransitionResult {
+  const { campaign, context } = boardedCampaign(seed);
   const offer = campaign.offers.find((candidate) => candidate.lockReason === null);
   if (offer === undefined) throw new Error("계약 가능한 공고가 없다");
 
@@ -75,7 +77,35 @@ function firstStep(result: CampaignTransitionResult): NodeId {
   return current.nextNodeIds[0]!;
 }
 
+function resolveExecutedPressure(outcome: "help" | "harm", initial: AdvicePressure): AdvicePressure {
+  for (let index = 0; index < 100; index += 1) {
+    const begun = started(`pressure-${outcome}-${index}`);
+    const event = eventsForTheme("spider").find((candidate) =>
+      candidate.kind === "rest" && candidate.advice.some((option) => option.outcome === outcome));
+    if (event === undefined) throw new Error("rest 조언 fixture가 없다");
+    const option = event.advice.find((candidate) => candidate.outcome === outcome)!;
+    const active = begun.context.activeExpedition!;
+    const context = {
+      ...begun.context,
+      activeExpedition: {
+        ...active,
+        expedition: { ...active.expedition, advicePressure: initial },
+        pendingEvent: event,
+      },
+    };
+    const next = transitionCampaign(begun.campaign, context, { type: "CHOOSE_ADVICE", adviceId: option.id });
+    const pressure = next.context.activeExpedition!.expedition.advicePressure;
+    if (pressure !== initial) return pressure;
+  }
+  throw new Error(`${outcome} executed 시드를 찾지 못했다`);
+}
+
 describe("원정 안쪽 전이", () => {
+  it("실행된 도움과 방해 조언은 현재 원정 압력을 갱신한다", () => {
+    expect(resolveExecutedPressure("harm", 0)).toBe(1);
+    expect(resolveExecutedPressure("help", 2)).toBe(1);
+  });
+
   it("이어지지 않은 지점을 거부한다", () => {
     const begun = started();
     const far = begun.context.activeExpedition!.expedition.map.bossNodeId;

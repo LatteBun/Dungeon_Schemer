@@ -46,7 +46,7 @@ import {
 import { settleExpedition } from "./settlement";
 import { runWorldTurn } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
-import { assertAdvicePressure } from "./advice-pressure";
+import { advanceAdvicePressure, assertAdvicePressure } from "./advice-pressure";
 
 function invalidTransition(message: string, details: Record<string, unknown> = {}): never {
   throw new RuleError("INVALID_TRANSITION", message, details);
@@ -366,6 +366,10 @@ function transitionChooseAdvice(
       return finalizeImmediateAdviceTrust({ decision, members: living, applied: { executed: decision.executed, resultText } });
     })();
 
+  const advicePressure = advanceAdvicePressure(
+    active.expedition.advicePressure,
+    resolution.decision,
+  );
   const applied = applyEventChoice({ event, decision: resolution.decision, members: active.partyMembers });
   /* kind 가 유니온인 한 덩어리라 조건문으로 좁혀지지 않는다. 술어로 확인한다. */
   const isMonster = (candidate: typeof event): candidate is typeof event & { readonly kind: "monster" } =>
@@ -379,7 +383,7 @@ function transitionChooseAdvice(
     classDefs: CLASSES,
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/${active.expedition.currentNodeId}`,
     pendingMerchantEffect: active.expedition.pendingMerchantEffect,
-    advicePressure: active.expedition.advicePressure,
+    advicePressure,
   });
 
   const afterBattle = battle?.battle === null || battle === null
@@ -398,6 +402,7 @@ function transitionChooseAdvice(
   const wiped = withTrust.every((member) => !member.alive);
   const nextExpedition: ExpeditionState = {
     ...active.expedition,
+    advicePressure,
     infoRecords: [...active.expedition.infoRecords, ...resolution.decision.delayedRecords],
     pendingMerchantEffect: battle?.pendingMerchantEffect ?? active.expedition.pendingMerchantEffect,
     /* 전멸하면 남은 경로와 보스전을 건너뛴다. 문서가 그렇게 정한다. */
