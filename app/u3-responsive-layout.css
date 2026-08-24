@@ -17,22 +17,23 @@
 
 .u3-notice__heading strong {
   overflow: visible;
-  font-size: clamp(1rem, calc(0.82rem + 0.25cqw + 0.16cqh), 1.55rem);
+  font-size: clamp(0.82rem, calc(0.67rem + 0.2cqw + 0.13cqh), 1.24rem);
   line-height: 1.12;
   text-overflow: clip;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .u3-notice__heading small,
 .u3-notice__label {
-  font-size: clamp(0.72rem, calc(0.58rem + 0.18cqw + 0.12cqh), 1.05rem);
+  font-size: clamp(0.62rem, calc(0.5rem + 0.14cqw + 0.1cqh), 0.84rem);
   line-height: 1.18;
 }
 
 .u3-notice .u3-reward,
 .u3-notice__state {
-  font-size: clamp(0.84rem, calc(0.68rem + 0.22cqw + 0.14cqh), 1.25rem);
+  font-size: clamp(0.68rem, calc(0.55rem + 0.18cqw + 0.11cqh), 0.94rem);
   line-height: 1.18;
 }
 
@@ -46,25 +47,25 @@
 }
 
 .u3-risk-stars img {
-  width: clamp(0.95rem, calc(0.72rem + 0.22cqw + 0.08cqh), 1.55rem);
-  height: clamp(0.95rem, calc(0.72rem + 0.22cqw + 0.08cqh), 1.55rem);
+  width: clamp(0.8rem, calc(0.62rem + 0.17cqw + 0.06cqh), 1.25rem);
+  height: clamp(0.8rem, calc(0.62rem + 0.17cqw + 0.06cqh), 1.25rem);
 }
 
-.u3-board-screen .u3-reward__label {
+.u3-notice .u3-reward__label {
   margin-right: 0.12rem;
-  font-size: clamp(0.72rem, calc(0.6rem + 0.18cqw + 0.12cqh), 1.05rem);
+  font-size: clamp(0.62rem, calc(0.5rem + 0.14cqw + 0.1cqh), 0.84rem);
   line-height: 1;
   opacity: 0.96;
 }
 
-.u3-board-screen .u3-reward--compact {
-  font-size: clamp(0.84rem, calc(0.68rem + 0.22cqw + 0.14cqh), 1.25rem);
+.u3-notice .u3-reward--compact {
+  font-size: clamp(0.68rem, calc(0.55rem + 0.18cqw + 0.11cqh), 0.94rem);
   line-height: 1.1;
 }
 
-.u3-board-screen .u3-reward img {
-  width: clamp(1.05rem, calc(0.82rem + 0.2cqw + 0.08cqh), 1.55rem);
-  height: clamp(1.05rem, calc(0.82rem + 0.2cqw + 0.08cqh), 1.55rem);
+.u3-notice .u3-reward img {
+  width: clamp(0.84rem, calc(0.65rem + 0.16cqw + 0.06cqh), 1.25rem);
+  height: clamp(0.84rem, calc(0.65rem + 0.16cqw + 0.06cqh), 1.25rem);
 }
 
 /* Right detail always reserves a final row for the CTA. */
@@ -145,10 +146,4 @@
 .u3-contract-outcome__reward .u3-reward {
   flex-wrap: nowrap;
   gap: clamp(0.45rem, 0.5cqw, 0.85rem);
-}
-
-/* 1920×1080 캔버스에서 항상 적용되던 대화면 고밀도 규칙. 고정 비율이 되면서 기본값이 되었다. */
-.u3-notice .u3-reward,
-.u3-notice__state {
-  font-size: clamp(0.78rem, 0.68cqw, 1rem);
 }
