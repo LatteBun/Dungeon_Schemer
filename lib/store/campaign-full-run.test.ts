@@ -179,3 +179,49 @@ describe("막다른 길이 없다", () => {
     expect(stuck).toEqual([]);
   });
 });
+
+/**
+ * 캠페인이 제 기록을 남긴다.
+ *
+ * `C8-B` 가 이벤트 여섯 종을 정의했는데 오래 두 종만 쌓이고 있었다. 정산도
+ * 승급도 종료도 남지 않아, 「첫 사망」 전환점이 구조적으로 나올 수 없었다.
+ */
+describe("캠페인 이력", () => {
+  it("조언과 보스전 말고도 남는다", () => {
+    const run = runToEnd(SEED);
+    const types = new Set(run.campaign.history.events.map((event) => event.type));
+
+    expect(types).toContain("ADVICE_RESOLVED");
+    expect(types).toContain("BOSS_BATTLE_RESOLVED");
+    expect(types).toContain("EXPEDITION_SETTLED");
+    expect(types).toContain("GUIDE_PROMOTED");
+    expect(types).toContain("CAMPAIGN_ENDED");
+  });
+
+  /* 정산 횟수와 정산 이력 수가 갈라지면 한쪽이 빠뜨린 것이다. */
+  it("정산한 만큼 정산 이력이 남는다", () => {
+    const run = runToEnd(SEED);
+    const settled = run.campaign.history.events.filter((event) => event.type === "EXPEDITION_SETTLED");
+
+    expect(settled).toHaveLength(run.campaign.statistics.totalExpeditions);
+    expect(settled.length).toBeGreaterThan(1);
+  });
+
+  it("승급한 만큼 승급 이력이 남는다", () => {
+    const run = runToEnd(SEED);
+    const promoted = run.campaign.history.events.filter((event) => event.type === "GUIDE_PROMOTED");
+
+    expect(promoted).toHaveLength(run.taken.filter((one) => one === "PROMOTE_GUIDE").length);
+    expect(promoted.length).toBeGreaterThan(0);
+  });
+
+  /* 첫 사망은 정산 이력에서만 찾을 수 있다. 그 이력이 없으면 영영 안 나온다. */
+  it("첫 사망이 전환점으로 나온다", () => {
+    const run = runToEnd(SEED);
+    const kinds = run.campaign.history.turningPoints.map((point) => point.kind);
+
+    expect(kinds).toContain("firstCharacterDeath");
+    /* 첫 사망은 한 번뿐이다. */
+    expect(kinds.filter((kind) => kind === "firstCharacterDeath")).toHaveLength(1);
+  });
+});
