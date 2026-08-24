@@ -5,7 +5,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
 } from "react";
-import type { NodeId } from "@/lib/domain";
+import type { NodeId, ThemeId } from "@/lib/domain";
 import { GameShell } from "./GameShell";
 import { PartyMemberCard, type PartyMemberChangeEntry } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
@@ -40,6 +40,13 @@ export interface U4DungeonMapScreenProps {
   selectedNextNodeId: NodeId | null;
   onSelectNextNode: (nodeId: NodeId) => void;
   onMove: (nodeId: NodeId) => void;
+  /*
+   * 이 던전의 테마. 배경이 그것을 따른다.
+   *
+   * 던전마다 다른 곳에 들어와 있는데 배경이 한 장으로 고정이었다. 거미굴도
+   * 사막도 묘지도 같은 돌바닥이면 어디에 있는지가 이름에만 남는다.
+   */
+  themeId?: ThemeId;
   /** 이 원정에서 알아낸 것. 프리뷰에는 원정이 없어 주지 않는다. */
   survey?: U4SurveyView;
   /** 파티원별 이 원정의 변화. 주면 카드를 뒤집을 수 있다. */
@@ -227,6 +234,7 @@ function DungeonMap({
   layout,
   selectedNextNodeId,
   onSelectNextNode,
+  themeId,
 }: Omit<
   U4DungeonMapScreenProps,
   "status" | "party" | "onMove"
@@ -261,9 +269,16 @@ function DungeonMap({
       </header>
 
       <div className="u4-map-surface" data-testid="u4-map-surface">
+        {/*
+          * 배경은 던전의 테마를 따른다.
+          *
+          * 테마를 주지 않는 화면(프리뷰)은 예전의 돌바닥을 그대로 쓴다.
+          */}
         <img
-          className="u4-map-surface__background"
-          src="/assets/u4/map/map_background_base.png"
+          className={themeId === undefined ? "u4-map-surface__background" : "u4-map-surface__background is-themed"}
+          src={themeId === undefined
+            ? "/assets/u4/map/map_background_base.png"
+            : `/assets/u5/dungeon-progress-scenes/${themeId}/entry.png`}
           alt=""
           aria-hidden="true"
         />
@@ -581,6 +596,7 @@ export function U4DungeonMapScreen({
   selectedNextNodeId,
   onSelectNextNode,
   onMove,
+  themeId,
   survey,
   changesByMemberId,
 }: U4DungeonMapScreenProps) {
@@ -598,6 +614,7 @@ export function U4DungeonMapScreen({
             layout={layout}
             selectedNextNodeId={selectedNextNodeId}
             onSelectNextNode={onSelectNextNode}
+            themeId={themeId}
           />
         }
         rightPanel={
