@@ -20,6 +20,7 @@ export interface FixedGateResult {
 export interface BacktestReportInput {
   readonly mode: "calibration" | "holdout";
   readonly namespace: "b1b-calibration-v1" | "b1b-holdout-v1";
+  readonly seedsPerCombination?: 2 | 50 | 100 | 200 | 2000;
   readonly sourceRevision: string;
   readonly aggregate: BacktestAggregate;
   readonly fixedGates: readonly FixedGateResult[];
@@ -93,17 +94,42 @@ function lineForGate(gate: FixedGateResult): string {
 }
 
 function lineForB1BGate(gate: B1BAcceptanceGate): string {
-  return `| ${gate.id} | ${gate.passed ? "PASS" : "FAIL"} | ${gate.evidence} |`;
+  return `| ${gate.id} | ${gateStatus(gate)} | ${gate.evidence} |`;
+}
+
+function gateStatus(gate: B1BAcceptanceGate): "PASS" | "FAIL" | "OBSERVE" {
+  if (!gate.enforced) return "OBSERVE";
+  return gate.passed ? "PASS" : "FAIL";
 }
 
 function nullable(value: number | null, digits = 4): string {
   return value === null ? "—" : value.toFixed(digits);
 }
 
+function nullableInterval(interval: { readonly low: number; readonly high: number } | null): string {
+  return interval === null ? "—" : `${interval.low.toFixed(4)}–${interval.high.toFixed(4)}`;
+}
+
+function resolveSeedsPerCombination(input: BacktestReportInput): 2 | 50 | 100 | 200 | 2000 {
+  const seedsPerCombination = input.seedsPerCombination ?? input.aggregate.runs.length / 6;
+  if (seedsPerCombination !== 2
+    && seedsPerCombination !== 50
+    && seedsPerCombination !== 100
+    && seedsPerCombination !== 200
+    && seedsPerCombination !== 2000) {
+    throw new Error("조합당 표본 수는 2, 50, 100, 200, 2000 중 하나여야 한다");
+  }
+  return seedsPerCombination;
+}
+
 export function renderBacktestReport(input: BacktestReportInput): string {
   const aggregate = aggregateRuns([...input.aggregate.runs].sort((left, right) => `${left.strategyId}@${left.accuracy}/${left.seed}`.localeCompare(`${right.strategyId}@${right.accuracy}/${right.seed}`)));
+  const seedsPerCombination = resolveSeedsPerCombination(input);
   const gates = [...input.fixedGates].sort((left, right) => left.id.localeCompare(right.id));
-  const b1bGates = [...evaluateB1BAcceptance(aggregate)].sort((left, right) => left.id.localeCompare(right.id));
+  const b1bGates = [...evaluateB1BAcceptance(aggregate, {
+    mode: input.mode,
+    seedsPerCombination,
+  })].sort((left, right) => left.id.localeCompare(right.id));
   const rows: string[] = [];
   for (const strategy of STRATEGIES) {
     for (const accuracy of ACCURACIES) {
@@ -112,15 +138,35 @@ export function renderBacktestReport(input: BacktestReportInput): string {
       rows.push(`| ${strategy} | ${accuracy} | ${combination.count} | ${combination.completionRate.toFixed(4)} | ${nullable(combination.completedWipeMean)} | ${nullable(combination.fivePlusWipeRate)} | ${combination.meanMaxAdvicePressure.toFixed(4)} | ${nullable(combination.meanBossEntryHpRatio)} |`);
     }
   }
-  const bossRows: string[] = [];
+  const firstAttemptFunnelRows: string[] = [];
+  const allAttemptFunnelRows: string[] = [];
+  const eventualClearRows: string[] = [];
+  const themeFunnelRows: string[] = [];
   const endingRows: string[] = [];
   for (const strategy of STRATEGIES) {
     for (const accuracy of ACCURACIES) {
       const combination = aggregate.combinations[combinationId(strategy, accuracy)];
       if (combination === undefined) continue;
-      for (const [themeRisk, risk] of Object.entries(combination.bossByThemeRisk).sort(([left], [right]) => left.localeCompare(right))) {
-        const [initialRisk, theme] = themeRisk.split("/");
-        bossRows.push(`| ${strategy} | ${accuracy} | ${initialRisk} | ${theme} | ${risk.entries} | ${risk.clears} | ${risk.wipes} | ${risk.meanEntryHpRatio.toFixed(4)} |`);
+      for (const risk of [1, 2, 3, 4, 5] as const) {
+        const funnel = combination.firstAttemptByInitialRisk[risk];
+        firstAttemptFunnelRows.push(`| ${strategy} | ${accuracy} | ${risk} | ${funnel.starts} | ${funnel.bossEntries} | ${funnel.clears} | ${funnel.wipes} | ${funnel.interrupted} | ${funnel.preBossFailures} | ${funnel.bossFailures} | ${nullable(funnel.clearRate)} | ${nullable(funnel.bossReachRate)} | ${nullable(funnel.bossConversionRate)} | ${nullable(funnel.meanBossEntryHpRatio)} | ${nullable(funnel.meanBossEntryAliveCount)} | ${nullableInterval(funnel.clearRateWilson95)} |`);
+      }
+      for (const risk of [1, 2, 3, 4, 5] as const) {
+        const funnel = combination.allAttemptsByCurrentRisk[risk];
+        allAttemptFunnelRows.push(`| ${strategy} | ${accuracy} | ${risk} | ${funnel.starts} | ${funnel.bossEntries} | ${funnel.clears} | ${funnel.wipes} | ${funnel.interrupted} | ${funnel.preBossFailures} | ${funnel.bossFailures} | ${nullable(funnel.clearRate)} | ${nullable(funnel.bossReachRate)} | ${nullable(funnel.bossConversionRate)} | ${nullable(funnel.meanBossEntryHpRatio)} | ${nullable(funnel.meanBossEntryAliveCount)} | ${nullableInterval(funnel.clearRateWilson95)} |`);
+      }
+      for (const risk of [1, 2, 3, 4, 5] as const) {
+        const eventual = combination.eventualDungeonByInitialRisk[risk];
+        eventualClearRows.push(`| ${strategy} | ${accuracy} | ${risk} | ${eventual.attemptedDungeons} | ${eventual.clearedDungeons} | ${nullable(eventual.clearRate)} | ${nullableInterval(eventual.clearRateWilson95)} |`);
+      }
+      for (const themeRisk of Object.entries(combination.firstAttemptByThemeRisk)
+        .map(([themeRisk, funnel]) => {
+          const [theme, initialRisk] = themeRisk.split("/");
+          return { theme: theme!, initialRisk: Number(initialRisk), funnel };
+        })
+        .sort((left, right) => left.initialRisk - right.initialRisk || left.theme.localeCompare(right.theme))) {
+        const { theme, initialRisk, funnel } = themeRisk;
+        themeFunnelRows.push(`| ${strategy} | ${accuracy} | ${initialRisk} | ${theme} | ${funnel.starts} | ${funnel.bossEntries} | ${funnel.clears} | ${funnel.wipes} | ${funnel.interrupted} | ${funnel.preBossFailures} | ${funnel.bossFailures} | ${nullable(funnel.clearRate)} | ${nullable(funnel.bossReachRate)} | ${nullable(funnel.bossConversionRate)} | ${nullable(funnel.meanBossEntryHpRatio)} | ${nullable(funnel.meanBossEntryAliveCount)} | ${nullableInterval(funnel.clearRateWilson95)} |`);
       }
       endingRows.push(`| ${strategy} | ${accuracy} | ${combination.endingCounts.completed} | ${combination.endingCounts.exhausted} | ${combination.endingCounts.unemployed} | ${combination.endingCounts.denounced} | ${combination.endingCounts.distrust} | ${combination.endingCounts["run-error"]} | ${rate(combination.rankSCount, combination.count)} |`);
     }
@@ -146,7 +192,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     `- source revision: ${input.sourceRevision}`,
     "- 전략: survival, opportunist, selective-betrayal",
     "- 정확도: 0.4, 0.7",
-    `- 조합당 표본: ${input.aggregate.runs.length / 6}`,
+    `- 조합당 표본: ${seedsPerCombination}`,
     "",
     "## 설정 revision과 현재 수치",
     "",
@@ -177,11 +223,31 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...rows,
     "",
-    "## 위험도·테마별 보스 진입/클리어/전멸",
+    "## 초기 위험도별 첫 시도 던전 funnel",
     "",
-    "| 전략 | 정확도 | 초기 위험도 | 테마 | 진입 | 클리어 | 전멸 | 평균 진입 HP 비율 |",
-    "| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |",
-    ...(bossRows.length === 0 ? ["| — | — | — | — | 0 | 0 | 0 | — |"] : bossRows),
+    "| 전략 | 정확도 | 초기 위험도 | 첫 시도 표본 | 보스 진입 | 클리어 | 전멸 | 중단 | 보스 전 실패 | 보스 실패 | 클리어율 | 보스 도달률 | 보스 전환율 | 평균 보스 진입 HP 비율 | 평균 보스 진입 생존 인원 | Wilson 95% |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+    ...firstAttemptFunnelRows,
+    "",
+    "## 현재 위험도별 전체 시도와 최종 통과",
+    "",
+    "### 전체 시도 funnel",
+    "",
+    "| 전략 | 정확도 | 현재 위험도 | 전체 시도 표본 | 보스 진입 | 클리어 | 전멸 | 중단 | 보스 전 실패 | 보스 실패 | 클리어율 | 보스 도달률 | 보스 전환율 | 평균 보스 진입 HP 비율 | 평균 보스 진입 생존 인원 | Wilson 95% |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+    ...allAttemptFunnelRows,
+    "",
+    "### 초기 위험도별 최종 통과",
+    "",
+    "| 전략 | 정확도 | 초기 위험도 | 시도 던전 | 최종 통과 던전 | 최종 통과율 | Wilson 95% |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
+    ...eventualClearRows,
+    "",
+    "## 초기 위험도·테마별 첫 시도 funnel",
+    "",
+    "| 전략 | 정확도 | 초기 위험도 | 테마 | 첫 시도 표본 | 보스 진입 | 클리어 | 전멸 | 중단 | 보스 전 실패 | 보스 실패 | 클리어율 | 보스 도달률 | 보스 전환율 | 평균 보스 진입 HP 비율 | 평균 보스 진입 생존 인원 | Wilson 95% |",
+    "| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+    ...(themeFunnelRows.length === 0 ? ["| — | — | — | — | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | — | — | — | — | — |"] : themeFunnelRows),
     "",
     "## 엔딩·최종 등급 분포",
     "",
