@@ -98,6 +98,16 @@ const party: readonly U4PartyMemberView[] = [
   },
 ];
 
+const survey = {
+  visited: 2,
+  total: 12,
+  disclosedRules: [
+    "거미는 불을 피한다",
+    "동굴거미는 발소리와 진동에 민감하게 반응한다",
+    "그림자거미는 빛이 없는 곳에서만 모습을 드러낸다",
+  ],
+} as const;
+
 function render(
   selectedNextNodeId: NodeId | null = MONSTER,
   themeId?: ThemeId,
@@ -114,6 +124,7 @@ function render(
       selectedNextNodeId,
       onSelectNextNode: () => undefined,
       onMove: () => undefined,
+      survey,
     }),
   );
 }
@@ -187,6 +198,17 @@ describe("U4DungeonMapScreen", () => {
     const html = render(null);
     expect(html).toContain("다음 지점을 선택하세요");
     expect(html).toMatch(/data-testid=\"u4-move-button\"[^>]*disabled=\"\"/);
+  });
+
+  it("orders the survey before the selected destination and keeps the move CTA last", () => {
+    const html = render(MONSTER);
+    const surveyIndex = html.indexOf("계약 전 답사");
+    const destinationIndex = html.indexOf("선택한 지점");
+    const moveIndex = html.indexOf("이 지점으로 이동");
+
+    expect(surveyIndex).toBeGreaterThan(-1);
+    expect(surveyIndex).toBeLessThan(destinationIndex);
+    expect(destinationIndex).toBeLessThan(moveIndex);
   });
 
   it("orders left/right keyboard navigation by the room x coordinate", () => {
