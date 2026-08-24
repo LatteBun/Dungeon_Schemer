@@ -144,7 +144,8 @@ function promotionFor(view: BoardDecisionView, reserveMerchant: boolean): Promot
   if (promotion === null) return null;
   if (promotion.canPromoteByReputation) return "reputation";
   if (!canUseGoldPromotion(view)) return null;
-  if (reserveMerchant && view.gold - promotion.goldRequired < maxMerchantGoldCost()) return null;
+  if (reserveMerchant && accessibleOffers(view).length > 0
+    && view.gold - promotion.goldRequired < maxMerchantGoldCost()) return null;
   return "gold";
 }
 

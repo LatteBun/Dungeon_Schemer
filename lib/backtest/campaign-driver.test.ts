@@ -27,6 +27,18 @@ describe("백테스트 캠페인 driver", () => {
     if (result.ok) expect(result.campaign.phase).toBe("ended");
   });
 
+  it("rank 잠금만 남은 board에서 기회주의형은 골드 승급으로 정상 종료한다", () => {
+    // Break caught: the opportunist merchant reserve declined the only promotion that could unlock a contract, causing a board generation error.
+    const result = runCampaign({
+      seed: "b1b-calibration-v1/000002",
+      strategy: createStrategy("opportunist"),
+      accuracy: 0.7,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.campaign.phase).toBe("ended");
+  });
+
   it("실제 원정의 조언 압력과 보스 진입 상태를 추적한다", () => {
     const result = runCampaign({ seed: "driver-balance-trace", strategy: createStrategy("survival"), accuracy: 0.7 });
 

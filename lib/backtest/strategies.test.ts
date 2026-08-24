@@ -34,6 +34,63 @@ describe("백테스트 전략", () => {
     expect(chosen).toEqual({ offerId: "rich-risky", betrayal: false });
   });
 
+  it("진행 불능 rank 잠금은 상인 예비금보다 골드 승급을 우선한다", () => {
+    // Break caught: applying the merchant reserve to a board with no accessible offers returns null and leaves the campaign unable to choose a contract.
+    const lockedOffer = (id: string) => ({
+      id: id as BoardDecisionView["offers"][number]["id"],
+      dungeonId: `dungeon-${id}` as BoardDecisionView["offers"][number]["dungeonId"],
+      dungeonName: id,
+      theme: "spider" as const,
+      riskLevel: 3 as const,
+      fullSurvivorReward: { reputation: 20, gold: 60 },
+      lockReason: "rankTooLow" as const,
+      party: [member(`${id}-member`, "warrior")],
+    });
+    const view: BoardDecisionView = {
+      rank: "C", reputation: 53, gold: 151, cumulativeGold: 151, remainingDungeonCount: 5,
+      offers: [lockedOffer("one"), lockedOffer("two"), lockedOffer("three"), lockedOffer("four"), lockedOffer("five")],
+      pool: [],
+      promotion: {
+        fromRank: "C", toRank: "B", newlyUnlockedRiskLevel: 3,
+        reputationRequired: 80, goldRequired: 150, currentReputation: 53, currentGold: 151,
+        canPromoteByReputation: false, canPromoteByGold: true,
+      },
+    };
+
+    expect(createStrategy("opportunist").choosePromotion(view)).toBe("gold");
+  });
+
+  it("접근 가능한 공고가 있으면 기회주의형은 골드 승급 뒤 상인 예비금을 지킨다", () => {
+    // Break caught: bypassing the merchant reserve whenever rank-locked offers exist spends protected merchant gold despite an available contract.
+    const view: BoardDecisionView = {
+      rank: "C", reputation: 53, gold: 151, cumulativeGold: 151, remainingDungeonCount: 5,
+      offers: [
+        {
+          id: "accessible" as BoardDecisionView["offers"][number]["id"],
+          dungeonId: "dungeon-accessible" as BoardDecisionView["offers"][number]["dungeonId"],
+          dungeonName: "accessible", theme: "spider", riskLevel: 1,
+          fullSurvivorReward: { reputation: 10, gold: 20 }, lockReason: null,
+          party: [member("accessible-member", "warrior")],
+        },
+        {
+          id: "locked" as BoardDecisionView["offers"][number]["id"],
+          dungeonId: "dungeon-locked" as BoardDecisionView["offers"][number]["dungeonId"],
+          dungeonName: "locked", theme: "spider", riskLevel: 3,
+          fullSurvivorReward: { reputation: 20, gold: 60 }, lockReason: "rankTooLow",
+          party: [member("locked-member", "mage")],
+        },
+      ],
+      pool: [],
+      promotion: {
+        fromRank: "C", toRank: "B", newlyUnlockedRiskLevel: 3,
+        reputationRequired: 80, goldRequired: 150, currentReputation: 53, currentGold: 151,
+        canPromoteByReputation: false, canPromoteByGold: true,
+      },
+    };
+
+    expect(createStrategy("opportunist").choosePromotion(view)).toBeNull();
+  });
+
   it("경로는 전략별 category 우선순위를 따른다", () => {
     const view: MapDecisionView = {
       expeditionId: "exp", betrayed: false, currentNodeId: "entry" as MapDecisionView["currentNodeId"],
