@@ -164,8 +164,8 @@ describe("U3 extracted asset-board assets", () => {
       [".u3-notice--0", "grid-column: 1 / span 4", "grid-row: 1 / span 5", "rotate(-2.1deg)"],
       [".u3-notice--1", "grid-column: 6 / span 4", "grid-row: 2 / span 5", "rotate(1.4deg)"],
       [".u3-notice--2", "grid-column: 11 / span 4", "grid-row: 1 / span 5", "rotate(-1.2deg)"],
-      [".u3-notice--3", "grid-column: 3 / span 4", "grid-row: 7 / span 5", "rotate(2.2deg)"],
-      [".u3-notice--4", "grid-column: 10 / span 4", "grid-row: 7 / span 5", "rotate(-1.8deg)"],
+      [".u3-notice--3", "grid-column: 3 / span 4", "grid-row: 7 / span 5", "translate(0.45rem, 0.85rem) rotate(2.2deg)"],
+      [".u3-notice--4", "grid-column: 10 / span 4", "grid-row: 7 / span 5", "translate(-0.35rem, 0.70rem) rotate(-1.8deg)"],
     ] as const;
 
     const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
