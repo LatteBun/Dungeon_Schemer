@@ -105,8 +105,7 @@ function PartyCard({ member, index }: { member: U3OfferDetailView["party"][numbe
 }
 
 function ContractOutcomes({ detail }: { detail: U3OfferDetailView }) {
-  // u3-detail-section 을 붙이지 않는다. 그 클래스가 불투명한 질감 배경을 달고
-  // 오는데, 계약 카드 안에서는 그것이 던전 장면을 덮어 버린다.
+  // 계약 조건은 계약 카드의 공통 어두운 바탕 안에서 보상 정보를 우선한다.
   return (
     <section className="u3-contract-outcomes" aria-labelledby="u3-contract-title">
       <h3 id="u3-contract-title">계약 조건</h3>
