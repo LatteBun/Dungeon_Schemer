@@ -159,6 +159,17 @@ describe("U3BoardScreen", () => {
     expect(html).toContain("이 공고 계약하기");
   });
 
+  it("계약 상세는 테마 배경 modifier와 scrim 없이 정보만 렌더링한다", () => {
+    const html = render("offer-1");
+
+    expect(html).toContain('class="u3-detail-section u3-contract-card"');
+    expect(html).not.toContain("u3-contract-card--desert");
+    expect(html).not.toContain("u3-contract-card--spider");
+    expect(html).not.toContain("u3-contract-card__scrim");
+    expect(html).toContain("모래 협곡");
+    expect(html).toContain("전원 생존 시");
+  });
+
   it("진입 불가 공고도 상세를 볼 수 있지만 계약은 비활성화한다", () => {
     const html = render("offer-2");
     expect(html).toContain("진입 불가");

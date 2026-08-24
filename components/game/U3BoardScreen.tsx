@@ -136,16 +136,10 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
         </ul>
       </section>
 
-      {/*
-        던전 정보와 계약 조건을 한 카드로 묶는다. 어느 던전에 어떤 조건으로
-        들어가는지가 한 덩어리의 판단이기 때문이다. 바탕에는 그 던전의 장면을
-        깔되 글씨가 묻히지 않게 어둡게 덮는다.
-      */}
       <section
-        className={`u3-detail-section u3-contract-card u3-contract-card--${detail.theme}`}
+        className="u3-detail-section u3-contract-card"
         aria-labelledby="u3-dungeon-title"
       >
-        <div className="u3-contract-card__scrim" aria-hidden="true" />
         <div className="u3-contract-card__body">
           <header className="u3-contract-card__head">
             <span className="u3-contract-card__theme">{detail.themeLabel}</span>
