@@ -70,7 +70,7 @@
   gap: 0.75rem;
   margin: 0 0 0.45rem;
   color: #d5aa58;
-  font-size: clamp(0.75rem, 1cqw, 0.92rem);
+  font-size: clamp(0.86rem, 1.15cqw, 1.06rem);
   font-weight: 800;
   letter-spacing: 0.08em;
 }
@@ -86,7 +86,7 @@
   margin: 0;
   color: #f0dfbb;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.9rem, 3cqw, 3.1rem);
+  font-size: clamp(2.18rem, 3.45cqw, 3.55rem);
   font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 1.04;
@@ -97,7 +97,7 @@
   max-width: 58rem;
   margin: 0.9rem 0 0;
   color: #d5c4a6;
-  font-size: clamp(0.78rem, 1.12cqw, 0.96rem);
+  font-size: clamp(0.9rem, 1.29cqw, 1.1rem);
   line-height: 1.68;
 }
 
@@ -185,7 +185,7 @@
   margin: 0;
   color: #21190f;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.05rem, 1.45cqw, 1.35rem);
+  font-size: clamp(1.2rem, 1.67cqw, 1.55rem);
   font-weight: 800;
 }
 
@@ -200,7 +200,7 @@
   max-width: 17rem;
   margin: 0;
   color: #44331f;
-  font-size: clamp(0.7rem, 0.95cqw, 0.84rem);
+  font-size: clamp(0.81rem, 1.09cqw, 0.97rem);
   line-height: 1.55;
   word-break: keep-all;
   overflow-wrap: normal;
@@ -241,7 +241,7 @@
 }
 
 .u2-intro__cta {
-  --cta-text-size: clamp(1.18rem, 2cqw, 1.65rem);
+  --cta-text-size: clamp(1.36rem, 2.3cqw, 1.9rem);
 }
 
 .u2-intro__cta-emblem {
