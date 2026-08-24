@@ -171,12 +171,10 @@
 /* 세 개가 같은 모양이어야 한다. 슬롯별 변형을 두지 않는다. */
 .u5-advice__button {
   display: grid;
-  grid-template-rows: repeat(4, auto);
-  align-content: center;
-  justify-items: center;
-  gap: clamp(0.2rem, 0.28cqw, 0.42rem);
+  grid-template-rows: minmax(0, 1fr);
   width: 100%;
   height: 100%;
+  min-width: 0;
   min-height: 0;
   position: relative;
   border: 0.125rem solid color-mix(in srgb, var(--color-shell-metal) 72%, var(--color-edge));
@@ -184,9 +182,10 @@
   background: linear-gradient(145deg, rgb(40 27 16 / 96%), rgb(20 14 9 / 98%));
   box-shadow: inset 0 0 0 0.18rem #120c07, inset 0 0 0 0.25rem #87673c;
   color: inherit;
-  padding: clamp(0.4rem, 0.55cqw, 0.85rem) clamp(0.6rem, 0.8cqw, 1.2rem);
+  padding: 0;
   cursor: pointer;
   text-align: center;
+  overflow: hidden;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
@@ -200,6 +199,22 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+/* 긴 비용과 잠금 이유는 명패 안에서만 스크롤한다. */
+.u5-advice__content {
+  display: grid;
+  grid-template-rows: repeat(4, auto);
+  align-content: center;
+  justify-items: center;
+  gap: clamp(0.2rem, 0.28cqw, 0.42rem);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(0.4rem, 0.55cqw, 0.85rem) clamp(0.6rem, 0.8cqw, 1.2rem);
+  overflow: auto;
 }
 
 .u5-advice__rivet {
@@ -292,8 +307,11 @@
 }
 
 .u5-advice__cost {
+  min-width: 0;
+  max-width: 100%;
   color: var(--color-shell-gold);
   font-size: clamp(0.74rem, 0.78cqw, 1.05rem);
+  overflow-wrap: anywhere;
 }
 
 /* ── 선택 뒤 결과 ── */

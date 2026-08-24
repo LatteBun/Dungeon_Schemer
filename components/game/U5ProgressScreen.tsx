@@ -78,18 +78,20 @@ function AdviceOption({ slot, text, rationale, goldCost, unavailableReason, onSe
           <i className="u5-advice__rivet is-bottom-left" />
           <i className="u5-advice__rivet is-bottom-right" />
         </span>
-        {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
-        <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
-        <strong className="u5-advice__text">{text}</strong>
-        <span className="u5-advice__divider" aria-hidden="true" />
-        <span className="u5-advice__rationale">{rationale}</span>
-        {goldCost === undefined ? null : (
-          <span className="u5-advice__cost">골드 {goldCost}</span>
-        )}
-        {/* 왜 고를 수 없는지 적는다. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */}
-        {unavailableReason === undefined ? null : (
-          <span className="u5-advice__blocked">{unavailableReason}</span>
-        )}
+        <span className="u5-advice__content">
+          {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
+          <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
+          <strong className="u5-advice__text">{text}</strong>
+          <span className="u5-advice__divider" aria-hidden="true" />
+          <span className="u5-advice__rationale">{rationale}</span>
+          {goldCost === undefined ? null : (
+            <span className="u5-advice__cost">골드 {goldCost}</span>
+          )}
+          {/* 왜 고를 수 없는지 적는다. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */}
+          {unavailableReason === undefined ? null : (
+            <span className="u5-advice__blocked">{unavailableReason}</span>
+          )}
+        </span>
       </button>
     </li>
   );
