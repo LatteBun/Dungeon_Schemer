@@ -5,6 +5,7 @@ import type { CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
+import { firstChoosableAdvice } from "@/lib/store/legal-advice";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
@@ -86,7 +87,7 @@ function settled() {
       return run;
     }
     if (active.pendingEvent !== null) {
-      run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+      run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
       /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
       run.act({ type: "ACKNOWLEDGE_OUTCOME" });
       continue;
@@ -117,7 +118,7 @@ function ended(seed: string) {
         continue;
       }
       if (active.pendingEvent !== null) {
-        run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+        run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
         /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
         run.act({ type: "ACKNOWLEDGE_OUTCOME" });
         continue;

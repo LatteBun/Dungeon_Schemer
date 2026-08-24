@@ -5,6 +5,7 @@ import { createU6EndingView } from "@/components/game/u6-ending-adapter";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import type { CampaignStoreState } from "./campaign-store";
 import { createCampaignStore, screenForPhase } from "./campaign-store";
+import { firstChoosableAdvice } from "./legal-advice";
 
 /**
  * 한 캠페인을 끝까지 돌린다.
@@ -50,7 +51,7 @@ function runToEnd(seed: string, limit = 400, onStep: (state: CampaignStoreState)
         continue;
       }
       if (active.pendingEvent !== null) {
-        act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+        act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(campaign(), active) });
         /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
         act({ type: "ACKNOWLEDGE_OUTCOME" });
         continue;

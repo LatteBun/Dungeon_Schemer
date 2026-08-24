@@ -48,16 +48,22 @@ const REACTION_LABEL = {
  * 슬롯 번호 말고는 서로 다른 표시가 없어야 한다. 유형·정합·확률·신뢰 변화는
  * View 에 아예 없으므로 여기서 실수로도 드러낼 수 없다.
  */
-function AdviceOption({ slot, text, rationale, goldCost, onSelect }: {
+function AdviceOption({ slot, text, rationale, goldCost, unavailableReason, onSelect }: {
   slot: number;
   text: string;
   rationale: string;
   goldCost?: number;
+  unavailableReason?: string;
   onSelect?: (slot: number) => void;
 }) {
   return (
-    <li className="u5-advice">
-      <button type="button" className="u5-advice__button" onClick={() => onSelect?.(slot)}>
+    <li className={unavailableReason === undefined ? "u5-advice" : "u5-advice is-unavailable"}>
+      <button
+        type="button"
+        className="u5-advice__button"
+        disabled={unavailableReason !== undefined}
+        onClick={() => onSelect?.(slot)}
+      >
         {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
         <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
         <strong className="u5-advice__text">{text}</strong>
@@ -65,6 +71,10 @@ function AdviceOption({ slot, text, rationale, goldCost, onSelect }: {
         <span className="u5-advice__rationale">{rationale}</span>
         {goldCost === undefined ? null : (
           <span className="u5-advice__cost">골드 {goldCost}</span>
+        )}
+        {/* 왜 고를 수 없는지 적는다. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */}
+        {unavailableReason === undefined ? null : (
+          <span className="u5-advice__blocked">{unavailableReason}</span>
         )}
       </button>
     </li>
@@ -219,6 +229,7 @@ export function U5ProgressScreen({
                           text={option.text}
                           rationale={option.rationale}
                           goldCost={option.goldCost}
+                          unavailableReason={option.unavailableReason}
                           onSelect={onSelectAdvice}
                         />
                       ))}
