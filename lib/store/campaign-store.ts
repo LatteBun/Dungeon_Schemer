@@ -36,6 +36,8 @@ export interface CampaignStoreState {
   /** 거부된 전이. 화면이 왜 안 되는지 말할 수 있게 남긴다. */
   readonly rejected: RejectedTransition | null;
   dispatch(action: CampaignTransition): void;
+  /** 거부를 읽고 치운다. 화면이 알린 뒤 부른다. */
+  clearRejected(): void;
   /** 뒤로가기로 되살아난 화면이 현재 상태를 다시 읽을 때 쓴다. */
   snapshot(): Pick<CampaignStoreState, "campaign" | "context" | "last">;
 }
@@ -99,6 +101,10 @@ export function createCampaignStore(seed: string) {
           },
         });
       }
+    },
+
+    clearRejected() {
+      if (get().rejected !== null) set({ rejected: null });
     },
 
     snapshot() {

@@ -176,3 +176,38 @@ describe("C8-A 누적", () => {
     expect(store.getState().campaign.statistics).toBe(before);
   });
 });
+
+describe("거부를 치운다", () => {
+  /* 화면이 알린 뒤 치울 수 있어야 한다. 안 그러면 알림이 영영 붙어 있다. */
+  it("clearRejected 가 거부를 지운다", () => {
+    const store = createCampaignStore("clear-rejected");
+    store.getState().dispatch({ type: "CHOOSE_ADVICE", adviceId: "없는-조언" as never });
+    expect(store.getState().rejected).not.toBeNull();
+
+    store.getState().clearRejected();
+
+    expect(store.getState().rejected).toBeNull();
+  });
+
+  /* 다음 전이가 성공하면 저절로 지워진다. 치우는 것을 잊어도 남지 않는다. */
+  it("성공한 전이가 거부를 지운다", () => {
+    const store = createCampaignStore("clear-on-success");
+    store.getState().dispatch({ type: "CHOOSE_ADVICE", adviceId: "없는-조언" as never });
+    expect(store.getState().rejected).not.toBeNull();
+
+    store.getState().dispatch({ type: "OPEN_BOARD" });
+
+    expect(store.getState().rejected).toBeNull();
+    expect(store.getState().campaign.phase).toBe("board");
+  });
+
+  /* 거부는 상태를 바꾸지 않는다. 알림만 뜨고 캠페인은 그대로다. */
+  it("거부는 캠페인을 바꾸지 않는다", () => {
+    const store = createCampaignStore("reject-no-change");
+    const before = store.getState().campaign;
+    store.getState().dispatch({ type: "CHOOSE_ADVICE", adviceId: "없는-조언" as never });
+
+    expect(store.getState().campaign).toBe(before);
+    expect(store.getState().rejected?.reason.length).toBeGreaterThan(0);
+  });
+});

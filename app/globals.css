@@ -627,3 +627,52 @@ body {
   bottom: clamp(1rem, 1.5cqh, 2rem);
   z-index: 2;
 }
+
+/*
+ * 규칙이 거부했을 때의 알림.
+ *
+ * 화면 위에 얹되 조작을 막지 않는다 — 거부는 상태를 바꾸지 않았으므로 길잡이가
+ * 하던 일을 그대로 이어갈 수 있어야 한다. 그래서 전면을 덮지 않고 아래에 선다.
+ */
+.campaign-rejection {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.2rem, 2cqh, 2.4rem);
+  z-index: 20;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: clamp(0.7rem, 1cqw, 1.2rem);
+  max-width: 60cqw;
+  padding: clamp(0.6rem, 0.8cqh, 1rem) clamp(1rem, 1.4cqw, 1.7rem);
+  border: 1px solid #8d5b3a;
+  border-radius: 0.2rem;
+  background: linear-gradient(180deg, #2a1a12, #170e0a);
+  box-shadow: 0 0.4rem 1.2rem rgb(0 0 0 / 55%);
+  color: #e8cfa6;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(0.9rem, 0.95cqw, 1.2rem);
+}
+
+.campaign-rejection__reason {
+  margin: 0;
+  min-width: 0;
+}
+
+.campaign-rejection button {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.8rem;
+  cursor: pointer;
+  border: 1px solid #b99145;
+  border-radius: 0.15rem;
+  background: #1d140e;
+  color: #e6d3a3;
+  font: inherit;
+}
+
+.campaign-rejection button:hover,
+.campaign-rejection button:focus-visible {
+  outline: 2px solid #d9c37c;
+  outline-offset: 2px;
+  filter: brightness(1.15);
+}
