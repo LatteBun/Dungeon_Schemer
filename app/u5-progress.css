@@ -120,8 +120,7 @@
 }
 
 .u5-console__tabs button:focus-visible,
-.u5-log__filters button:focus-visible,
-.u5-advice__button:focus-visible {
+.u5-log__filters button:focus-visible {
   outline: 2px solid var(--color-parchment);
   outline-offset: 2px;
 }
@@ -191,6 +190,12 @@
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
+/* 잘린 외곽선 밖으로 나가지 않고 금속 명패 안에서 초점을 읽는다. */
+.u5-advice__button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 0.18rem #120c07, inset 0 0 0 0.25rem #87673c, inset 0 0 0 0.4rem var(--color-parchment);
+}
+
 .u5-advice__rivets {
   position: absolute;
   inset: 0;
@@ -258,7 +263,10 @@
 
 /* 왜 못 고르는지. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */
 .u5-advice__blocked {
+  box-sizing: border-box;
   margin-top: clamp(0.15rem, 0.22cqh, 0.3rem);
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid #7a4a3a;
   border-radius: 999px;
   padding: 0.1rem clamp(0.4rem, 0.55cqw, 0.75rem);
@@ -266,6 +274,7 @@
   color: #d99a7e;
   font-size: clamp(0.72rem, 0.76cqw, 0.95rem);
   letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
 }
 
 .u5-advice__text {

@@ -343,6 +343,24 @@ describe("잠긴 조언", () => {
     expect(html).toContain("u5-advice__blocked");
   });
 
+  it("공백 없는 긴 잠금 이유도 잠긴 카드 안에서 줄바꿈할 수 있다", () => {
+    const unavailableReason = "잠금사유".repeat(80);
+    const html = render({
+      ...blocked,
+      advice: [
+        { ...blocked.advice[0], unavailableReason },
+        blocked.advice[1],
+        blocked.advice[2],
+      ],
+    });
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+
+    expect(html).toContain(unavailableReason);
+    expect(html).toContain('class="u5-advice__blocked"');
+    expect(sheet).toMatch(/\.u5-advice__blocked\s*\{[^}]*min-width:\s*0/);
+    expect(sheet).toMatch(/\.u5-advice__blocked\s*\{[^}]*overflow-wrap:\s*anywhere/);
+  });
+
   it("잠기지 않은 조언은 그대로 누를 수 있다", () => {
     const html = render(blocked);
     const buttons = html.split("u5-advice__button").length - 1;
@@ -362,5 +380,11 @@ describe("잠긴 모양", () => {
     expect(sheet).toMatch(/\.u5-advice__blocked\s*\{/);
     /* 잠긴 버튼에는 hover 가 걸리지 않는다. */
     expect(sheet).toMatch(/\.u5-advice__button:hover:not\(:disabled\)/);
+  });
+
+  it("잘린 조언 버튼의 키보드 초점은 안쪽 표시로 읽힌다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+
+    expect(sheet).toMatch(/\.u5-advice__button:focus-visible\s*\{[^}]*outline:\s*none[^}]*box-shadow:[^}]*inset/);
   });
 });
