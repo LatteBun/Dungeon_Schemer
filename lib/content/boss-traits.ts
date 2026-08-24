@@ -1,4 +1,5 @@
 import { RuleError } from "@/lib/domain";
+import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
 import type { AdviceOutcome, BossRuleId, ThemeContent } from "@/lib/domain";
 
 export type BossTraitId =
@@ -18,16 +19,9 @@ export interface BossTrait {
   readonly axis: BossTraitAxis;
 }
 
-export const BOSS_INFO_MULTIPLIERS = {
-  targetWeight: { help: 0.8, harm: 1.25 },
-  incomingDamage: { help: 0.8, harm: 1.25 },
-  outgoingDamage: { help: 1.25, harm: 0.8 },
-} as const satisfies Readonly<Record<BossTraitAxis, Readonly<Record<"help" | "harm", number>>>>;
+export const BOSS_INFO_MULTIPLIERS = CAMPAIGN_BALANCE.bossInfo.multipliers;
 
-export const BOSS_INFO_MULTIPLIER_LIMITS = {
-  min: 0.7,
-  max: 1.5,
-} as const;
+export const BOSS_INFO_MULTIPLIER_LIMITS = CAMPAIGN_BALANCE.bossInfo.limits;
 
 export const BOSS_INFO_CUE_AXIS_PRIORITY = {
   targetWeight: 0,
