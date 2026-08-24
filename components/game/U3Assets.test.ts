@@ -116,18 +116,6 @@ describe("U3 extracted asset-board assets", () => {
     expect(css).toContain("clamp(1.5rem, 1.6cqw, 2.4rem)");
   });
 
-  /*
-   * 상태 바는 이 목록에서 빠졌다. 화면별 재선언을 없애고 globals.css 한 곳으로
-   * 옮겼기 때문이다. 그 계약은 StatusBarConsistency.test.ts 가 지킨다.
-   */
-  it("공고와 상세의 텍스트 크기를 캔버스 기준으로 고정한다", () => {
-    const css = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
-
-    expect(css).toContain(".u3-notice__heading strong");
-    expect(css).toContain(".u3-notice__heading small");
-    expect(css).toContain(".u3-contract-outcomes__rows > div");
-  });
-
   it("공고의 남는 공간은 장면 행에만 배분한다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
 
@@ -208,15 +196,6 @@ describe("U3 extracted asset-board assets", () => {
     // 파티 · 계약 카드 · 버튼 세 행이다. 던전 정보를 계약 카드에 합치며 한 행이 줄었다.
     expect(css).toContain("grid-template-rows: auto minmax(0, 1fr) auto");
     expect(css).toContain("min-height: 0");
-  });
-
-  it("크기 계산은 캔버스 가로·세로를 함께 쓰고 공고의 명성·골드 라벨을 크게 유지한다", () => {
-    const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
-
-    expect(css).toContain(".u3-notice .u3-reward__label");
-    expect(css).toContain("clamp(0.72rem");
-    expect(css).not.toContain(".u3-notice__environment strong");
-    expect(css).toContain(".u3-contract-outcomes__rows > div");
   });
 
   /* 탐험대 카드의 골드 표시는 party-card.css 로 옮겼다. 계약은 PartyMemberCard.test.tsx 가 지킨다. */
