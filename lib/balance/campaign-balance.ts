@@ -35,6 +35,13 @@ export interface CampaignBalance {
   };
 }
 
+export interface CampaignCalibrationSettings {
+  readonly revision: string;
+  readonly generalMonsterBaseStatMultiplier: number;
+  readonly restRecoveryRatio: number;
+  readonly bossBaseStatMultiplierByInitialRisk: Readonly<Record<1 | 2 | 3 | 4 | 5, number>>;
+}
+
 export const CAMPAIGN_BALANCE = {
   revision: "b1c-boss-depletion-v1",
   generalMonsterBaseStatMultiplier: 1.00,
@@ -55,6 +62,27 @@ export const CAMPAIGN_BALANCE = {
     limits: { min: 0.70, max: 1.50 },
   },
 } as const satisfies CampaignBalance;
+
+export const B1C_CALIBRATION_SELECTION = {
+  selectedAxis: "bossBaseStatMultiplierByInitialRisk",
+  before: {
+    revision: "b1b-risk-curve-v1",
+    generalMonsterBaseStatMultiplier: 1.00,
+    restRecoveryRatio: 0.20,
+    bossBaseStatMultiplierByInitialRisk: { 1: 1.125, 2: 0.85, 3: 0.675, 4: 0.575, 5: 0.625 },
+  },
+  after: {
+    revision: CAMPAIGN_BALANCE.revision,
+    generalMonsterBaseStatMultiplier: CAMPAIGN_BALANCE.generalMonsterBaseStatMultiplier,
+    restRecoveryRatio: CAMPAIGN_BALANCE.worldTurn.restRecoveryRatio,
+    bossBaseStatMultiplierByInitialRisk: CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk,
+  },
+} as const satisfies {
+  readonly selectedAxis: keyof Pick<CampaignBalance,
+    "generalMonsterBaseStatMultiplier" | "worldTurn" | "bossBaseStatMultiplierByInitialRisk">;
+  readonly before: CampaignCalibrationSettings;
+  readonly after: CampaignCalibrationSettings;
+};
 
 function isCalibrationStep(value: number): boolean {
   const steps = (value - BOSS_MULTIPLIER_CALIBRATION.min)

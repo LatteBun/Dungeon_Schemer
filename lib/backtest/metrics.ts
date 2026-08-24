@@ -1,5 +1,5 @@
 import type { AdviceOutcome, CampaignState, EndingKind, GuideRank, InfoReaction, RiskLevel } from "@/lib/domain";
-import type { CampaignRun, DepletionSource, DepletionTraceEntry, ExpeditionBalanceTrace, RunErrorKind } from "./campaign-driver";
+import type { CampaignRun, CampaignTerminationEvidence, DepletionSource, DepletionTraceEntry, ExpeditionBalanceTrace, RunErrorKind } from "./campaign-driver";
 import type { Accuracy, PublicNodeCategory, StrategyId } from "./public-state";
 
 export type CombinationId = `${StrategyId}@${Accuracy}`;
@@ -67,6 +67,7 @@ export interface CampaignRunMetrics {
   readonly errorKind: RunErrorKind | null;
   readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
   readonly depletion: readonly DepletionTraceEntry[];
+  readonly terminationEvidence: CampaignTerminationEvidence | null;
   readonly termination: CampaignTerminationReason;
 }
 
@@ -209,6 +210,7 @@ function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetri
     adviceTotal: run.trace.adviceSelections.length, errorKind: run.errorKind,
     balanceExpeditions: run.trace.balanceExpeditions,
     depletion: run.trace.depletion,
+    terminationEvidence: run.trace.terminationEvidence,
     termination: terminationForEnding(run.trace.termination),
   };
 }
@@ -267,6 +269,7 @@ function successfulMetrics(campaign: CampaignState, run: Extract<CampaignRun, { 
     errorKind: null,
     balanceExpeditions: run.trace.balanceExpeditions,
     depletion: run.trace.depletion,
+    terminationEvidence: run.trace.terminationEvidence,
     termination: terminationForEnding(run.trace.termination),
   };
 }
@@ -411,6 +414,32 @@ function validateDepletionTraces(runs: readonly CampaignRunMetrics[], id: Combin
       totals.seriousInjuriesCleared += entry.seriousInjuriesCleared;
       totals.trustZeroed += entry.trustZeroed;
     }
+    const evidence = run.terminationEvidence;
+    if (evidence !== null) {
+      const poolStates = [evidence.precedingPool, evidence.resultingPool, evidence.finalPool];
+      if (poolStates.some((pool) => Object.values(pool).some((value) => !validDepletionCount(value)))) {
+        throw new AggregationError(`유효하지 않은 종료 선행 풀 상태: ${id}`);
+      }
+      if (evidence.finalPool.aliveCount !== run.aliveCount
+        || evidence.finalPool.deployableCount !== run.deployableCount
+        || evidence.finalPool.zeroTrustCount !== run.zeroTrustCount
+        || evidence.finalPool.gravelyWoundedCount !== run.gravelyWoundedCount) {
+        throw new AggregationError(`종료 선행 근거와 최종 풀 상태가 다르다: ${id}`);
+      }
+      for (const loss of evidence.sourceLosses) {
+        const matchingEntry = run.depletion.some((entry) => entry.source === loss.source
+          && entry.hpLost === loss.hpLost
+          && entry.deaths === loss.deaths
+          && entry.seriousInjuriesStarted === loss.seriousInjuriesStarted
+          && entry.trustZeroed === loss.trustZeroed);
+        if (!matchingEntry) throw new AggregationError(`종료 선행 source 손실이 원장과 다르다: ${id}`);
+      }
+      if (evidence.wipeSource !== null) {
+        const matchingWipe = run.balanceExpeditions.some((expedition) => expedition.result === "wiped"
+          && (evidence.wipeSource === "expedition-boss" ? expedition.bossEntry !== null : expedition.bossEntry === null));
+        if (!matchingWipe) throw new AggregationError(`종료 선행 전멸 source가 원정 결과와 다르다: ${id}`);
+      }
+    }
     if (totals.deaths !== run.totalDeaths
       || totals.trustZeroed !== run.zeroTrustCount
       || totals.seriousInjuriesStarted - totals.seriousInjuriesCleared !== run.gravelyWoundedCount) {
@@ -462,15 +491,32 @@ function firstAttemptDepletionByThemeRisk(runs: readonly CampaignRunMetrics[]): 
   return Object.fromEntries([...totalsByThemeRisk.entries()].sort(([left], [right]) => left.localeCompare(right)));
 }
 
-function dominantTerminationFor(terminationCounts: Readonly<Record<CampaignTerminationReason, number>>): CampaignTerminationReason | null {
-  const maximum = Math.max(...TERMINATION_REASONS.map((reason) => terminationCounts[reason]));
-  const dominant = TERMINATION_REASONS.filter((reason) => terminationCounts[reason] === maximum);
-  return maximum > 0 && dominant.length === 1 ? dominant[0]! : null;
+function correlatedTerminationSource(run: CampaignRunMetrics):
+  | { readonly kind: "correlated"; readonly source: Exclude<DepletionSource, "world-turn-rest"> }
+  | { readonly kind: "unavailable" }
+  | { readonly kind: "conflicting" } {
+  if (run.termination !== "pool-exhausted" && run.termination !== "no-eligible-party") {
+    return { kind: "unavailable" };
+  }
+  const evidence = run.terminationEvidence;
+  if (evidence === null
+    || evidence.precedingPool.emergencyEligibleClassCount < 3
+    || evidence.resultingPool.emergencyEligibleClassCount >= 3
+    || evidence.finalPool.emergencyEligibleClassCount >= 3) {
+    return { kind: "unavailable" };
+  }
+  const sources = new Set<Exclude<DepletionSource, "world-turn-rest">>(
+    evidence.sourceLosses.map((loss) => loss.source),
+  );
+  if (evidence.wipeSource !== null) sources.add(evidence.wipeSource);
+  if (sources.size === 0) return { kind: "unavailable" };
+  if (sources.size > 1) return { kind: "conflicting" };
+  return { kind: "correlated", source: [...sources][0]! };
 }
 
 function depletionVerdictFor(
   depletionBySource: Readonly<Record<DepletionSource, DepletionTotals>>,
-  terminationCounts: Readonly<Record<CampaignTerminationReason, number>>,
+  runs: readonly CampaignRunMetrics[],
 ): DepletionVerdict {
   const lossSources = DEPLETION_SOURCES.filter((source) => source !== "world-turn-rest");
   const totalDeaths = lossSources.reduce((total, source) => total + depletionBySource[source].deaths, 0);
@@ -487,16 +533,21 @@ function depletionVerdictFor(
     const source = lossSources.find((candidate) => depletionBySource[candidate].hpLost / totalHpLost >= 0.6);
     if (source !== undefined) {
       const hpLost = depletionBySource[source].hpLost;
-      const termination = dominantTerminationFor(terminationCounts);
-      if (termination === "pool-exhausted" || termination === "no-eligible-party") {
-        return { kind: "dominant", source, evidence: `사망 0건, HP 손실 ${hpLost}/${totalHpLost} (${(hpLost / totalHpLost * 100).toFixed(1)}%), 종료 ${termination}` };
+      const terminatingRuns = runs.filter((run) => run.termination === "pool-exhausted" || run.termination === "no-eligible-party");
+      const correlations = terminatingRuns.map(correlatedTerminationSource);
+      if (terminatingRuns.length === 0 || correlations.some((correlation) => correlation.kind === "unavailable")) {
+        return { kind: "mixed", evidence: `사망 0건, HP 손실 ${hpLost}/${totalHpLost}이나 종료 선행 근거 없음` };
       }
-      return {
-        kind: "mixed",
-        evidence: termination === null
-          ? `사망 0건, HP 손실 ${hpLost}/${totalHpLost}이나 종료 최다 원인이 동률이다`
-          : `사망 0건, HP 손실 ${hpLost}/${totalHpLost}이나 종료 ${termination}과 충돌한다`,
-      };
+      if (correlations.some((correlation) => correlation.kind === "conflicting")) {
+        return { kind: "mixed", evidence: `사망 0건, HP 손실 ${hpLost}/${totalHpLost}이나 종료 선행 source 충돌` };
+      }
+      const correlatedSources = new Set(correlations.flatMap((correlation) =>
+        correlation.kind === "correlated" ? [correlation.source] : [],
+      ));
+      if (correlatedSources.size !== 1 || !correlatedSources.has(source)) {
+        return { kind: "mixed", evidence: `사망 0건, HP 손실 ${hpLost}/${totalHpLost}이나 종료 선행 source와 불일치` };
+      }
+      return { kind: "dominant", source, evidence: `사망 0건, HP 손실 ${hpLost}/${totalHpLost} (${(hpLost / totalHpLost * 100).toFixed(1)}%), 종료 선행 ${source}` };
     }
     return { kind: "mixed", evidence: `사망 0건, HP 손실 60% 이상 source 없음 (총 ${totalHpLost})` };
   }
@@ -573,7 +624,7 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
   for (const run of runs) endingCounts[run.ending] += 1;
   const terminationCounts = emptyCounts(TERMINATION_REASONS);
   for (const run of runs) terminationCounts[run.termination] += 1;
-  const depletionVerdict = depletionVerdictFor(depletionBySource, terminationCounts);
+  const depletionVerdict = depletionVerdictFor(depletionBySource, runs);
   const sum = (selector: (run: CampaignRunMetrics) => number) => runs.reduce((total, run) => total + selector(run), 0) / runs.length;
   const allExpeditions = runs.flatMap((run) => run.balanceExpeditions);
   const firstAttempts = allExpeditions.filter((expedition) => expedition.attemptNumber === 1);

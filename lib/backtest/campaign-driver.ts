@@ -2,7 +2,7 @@ import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rul
 import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore, type CampaignStoreState } from "@/lib/store/campaign-store";
-import { RuleError } from "@/lib/domain";
+import { canDeploy, canDeployEmergency, RuleError } from "@/lib/domain";
 import type {
   ActiveExpeditionContext,
   AdvicePressure,
@@ -51,6 +51,32 @@ export interface DepletionTraceEntry {
   readonly trustZeroed: number;
 }
 
+export interface DepletionPoolStateEvidence {
+  readonly aliveCount: number;
+  readonly deployableCount: number;
+  readonly normalEligibleClassCount: number;
+  readonly emergencyEligibleClassCount: number;
+  readonly zeroTrustCount: number;
+  readonly gravelyWoundedCount: number;
+  readonly totalHp: number;
+}
+
+export interface TerminationSourceLoss {
+  readonly source: Exclude<DepletionSource, "world-turn-rest">;
+  readonly hpLost: number;
+  readonly deaths: number;
+  readonly seriousInjuriesStarted: number;
+  readonly trustZeroed: number;
+}
+
+export interface CampaignTerminationEvidence {
+  readonly sourceLosses: readonly TerminationSourceLoss[];
+  readonly wipeSource: Extract<DepletionSource, "expedition-general" | "expedition-boss"> | null;
+  readonly precedingPool: DepletionPoolStateEvidence;
+  readonly resultingPool: DepletionPoolStateEvidence;
+  readonly finalPool: DepletionPoolStateEvidence;
+}
+
 export interface CampaignRunTrace {
   readonly seed: string;
   readonly strategyId: StrategyPolicy["id"];
@@ -67,6 +93,7 @@ export interface CampaignRunTrace {
   readonly merchantEffectsConsumed: number;
   readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
   readonly depletion: readonly DepletionTraceEntry[];
+  readonly terminationEvidence: CampaignTerminationEvidence | null;
   readonly termination: EndingKind | "run-error";
   readonly steps: number;
 }
@@ -142,6 +169,7 @@ type MutableTrace = {
   merchantEffectsConsumed: number;
   balanceExpeditions: MutableExpeditionBalanceTrace[];
   depletion: DepletionTraceEntry[];
+  terminationEvidence: CampaignTerminationEvidence | null;
   steps: number;
 };
 
@@ -162,6 +190,7 @@ function initialTrace(options: CampaignRunOptions): MutableTrace {
     merchantEffectsConsumed: 0,
     balanceExpeditions: [],
     depletion: [],
+    terminationEvidence: null,
     steps: 0,
   };
 }
@@ -184,9 +213,10 @@ export function merchantTraceDeltaFor(
 
 function freezeTrace(
   trace: MutableTrace,
-  active: ActiveExpeditionContext | null,
+  state: CampaignStoreState,
   termination: EndingKind | "run-error",
 ): CampaignRunTrace {
+  const active = state.context.activeExpedition;
   return {
     ...trace,
     termination,
@@ -207,6 +237,13 @@ function freezeTrace(
       bossEntry: expedition.bossEntry === null ? null : { ...expedition.bossEntry },
     })),
     depletion: trace.depletion.map((entry) => ({ ...entry })),
+    terminationEvidence: trace.terminationEvidence === null ? null : {
+      sourceLosses: trace.terminationEvidence.sourceLosses.map((loss) => ({ ...loss })),
+      wipeSource: trace.terminationEvidence.wipeSource,
+      precedingPool: { ...trace.terminationEvidence.precedingPool },
+      resultingPool: { ...trace.terminationEvidence.resultingPool },
+      finalPool: poolStateEvidence(state),
+    },
   };
 }
 
@@ -218,6 +255,50 @@ function balanceTraceFor(trace: MutableTrace, expeditionId: string): MutableExpe
 
 type PoolDelta = Pick<DepletionTraceEntry,
   "hpLost" | "hpRecovered" | "deaths" | "seriousInjuriesStarted" | "seriousInjuriesCleared" | "trustZeroed">;
+
+function poolStateEvidence(state: CampaignStoreState): DepletionPoolStateEvidence {
+  const activeById = new Map(state.context.activeExpedition?.partyMembers.map((member) => [member.id, member]) ?? []);
+  const members = state.campaign.pool.order.flatMap((id) => {
+    const member = activeById.get(id) ?? state.campaign.pool.byId[id];
+    return member === undefined ? [] : [member];
+  });
+  return {
+    aliveCount: members.filter((member) => member.alive).length,
+    deployableCount: members.filter(canDeploy).length,
+    normalEligibleClassCount: new Set(members.filter(canDeploy).map((member) => member.classId)).size,
+    emergencyEligibleClassCount: new Set(members.filter(canDeployEmergency).map((member) => member.classId)).size,
+    zeroTrustCount: members.filter((member) => member.trust === 0).length,
+    gravelyWoundedCount: members.filter((member) => member.gravelyWounded).length,
+    totalHp: members.reduce((sum, member) => sum + member.hp, 0),
+  };
+}
+
+function sourceLossesFor(entries: readonly DepletionTraceEntry[]): readonly TerminationSourceLoss[] {
+  return entries.flatMap((entry) => entry.source === "world-turn-rest"
+    || (entry.hpLost === 0 && entry.deaths === 0 && entry.seriousInjuriesStarted === 0 && entry.trustZeroed === 0)
+    ? []
+    : [{
+      source: entry.source,
+      hpLost: entry.hpLost,
+      deaths: entry.deaths,
+      seriousInjuriesStarted: entry.seriousInjuriesStarted,
+      trustZeroed: entry.trustZeroed,
+    }]);
+}
+
+function wipeSourceFor(
+  after: CampaignStoreState,
+  sourceLosses: readonly TerminationSourceLoss[],
+): CampaignTerminationEvidence["wipeSource"] {
+  const active = after.context.activeExpedition;
+  const wiped = active?.expedition.result?.status === "wiped"
+    || active?.expedition.bossResult?.status === "wiped";
+  if (!wiped) return null;
+  const expeditionSources = [...new Set(sourceLosses.flatMap((loss) =>
+    loss.source === "expedition-general" || loss.source === "expedition-boss" ? [loss.source] : [],
+  ))];
+  return expeditionSources.length === 1 ? expeditionSources[0]! : null;
+}
 
 function poolDelta(
   before: CampaignStoreState,
@@ -416,6 +497,8 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
   const act = (action: CampaignTransition): void => {
     if (trace.steps >= limit) fail("step-limit", `800 action 안에 엔딩에 도달하지 못했다`);
     const before = store.getState();
+    const precedingPool = poolStateEvidence(before);
+    const depletionStart = trace.depletion.length;
     before.dispatch(action);
     trace.steps += 1;
     trace.actionTypes.push(action.type);
@@ -425,6 +508,17 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
     trace.merchantGoldSpent += merchantDelta.goldSpent;
     trace.merchantEffectsConsumed += merchantDelta.effectsConsumed;
     appendDepletionFor(action, before, after, trace);
+    const finalPool = poolStateEvidence(after);
+    if (precedingPool.emergencyEligibleClassCount >= 3 && finalPool.emergencyEligibleClassCount < 3) {
+      const sourceLosses = sourceLossesFor(trace.depletion.slice(depletionStart));
+      trace.terminationEvidence = {
+        sourceLosses,
+        wipeSource: wipeSourceFor(after, sourceLosses),
+        precedingPool,
+        resultingPool: finalPool,
+        finalPool,
+      };
+    }
     const event = after.campaign.history.events.at(-1);
     if (event?.type === "ADVICE_RESOLVED") {
       for (const reaction of event.reactions) trace.reactionCounts[reaction.reaction] += 1;
@@ -438,7 +532,7 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
       if (campaign.phase === "ended") {
         const ending = campaign.ending;
         if (ending === null) throw new DriverFailure("stall", "종료된 캠페인에 종료 사유가 없다");
-        return { ok: true, campaign, trace: freezeTrace(trace, context.activeExpedition, ending.kind) };
+        return { ok: true, campaign, trace: freezeTrace(trace, state, ending.kind) };
       }
       const currentSignature = signature(campaign, context.activeExpedition);
       if (currentSignature === previousSignature) fail("stall", "같은 캠페인 상태가 반복되었다");
@@ -591,7 +685,7 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
       errorKind: failure.kind,
       message: failure.message,
       phase: current.campaign.phase,
-      trace: freezeTrace(trace, current.context.activeExpedition, "run-error"),
+      trace: freezeTrace(trace, current, "run-error"),
     };
   }
 }

@@ -52,9 +52,62 @@ function metric({
     merchantGoldSpent: 0, merchantEffectsConsumed: 0, adviceHits: 0, adviceTotal: 0,
     errorKind: null,
     termination,
+    terminationEvidence: null,
     balanceExpeditions,
     depletion,
     ...overrides,
+  } as CampaignRunMetrics;
+}
+
+function withTerminationEvidence(
+  run: CampaignRunMetrics,
+  evidence: {
+    readonly sourceLosses: readonly {
+      readonly source: "expedition-general" | "expedition-boss" | "world-turn-background";
+      readonly hpLost: number;
+      readonly deaths: number;
+      readonly seriousInjuriesStarted: number;
+      readonly trustZeroed: number;
+    }[];
+    readonly wipeSource: "expedition-general" | "expedition-boss" | null;
+  },
+): CampaignRunMetrics {
+  return {
+    ...run,
+    aliveCount: 3,
+    deployableCount: 2,
+    zeroTrustCount: 1,
+    gravelyWoundedCount: 0,
+    terminationEvidence: {
+      ...evidence,
+      precedingPool: {
+        aliveCount: 3,
+        deployableCount: 3,
+        normalEligibleClassCount: 3,
+        emergencyEligibleClassCount: 3,
+        zeroTrustCount: 0,
+        gravelyWoundedCount: 0,
+        totalHp: 100,
+      },
+      resultingPool: {
+        aliveCount: 3,
+        deployableCount: 2,
+        normalEligibleClassCount: 2,
+        emergencyEligibleClassCount: 2,
+        zeroTrustCount: 1,
+        gravelyWoundedCount: 0,
+        totalHp: 40,
+      },
+      finalPool: {
+        aliveCount: 3,
+        deployableCount: 2,
+        normalEligibleClassCount: 2,
+        emergencyEligibleClassCount: 2,
+        zeroTrustCount: 1,
+        gravelyWoundedCount: 0,
+        totalHp: 40,
+      },
+    },
   } as CampaignRunMetrics;
 }
 
@@ -147,13 +200,84 @@ describe("백테스트 통계", () => {
     expect(aggregate.combinations["survival@0.7"]!.depletionVerdict).toMatchObject({ kind: "dominant", source: "expedition-general" });
   });
 
-  it("사망이 0이면 HP 손실 60%로 dominant를 판정하고 59%는 mixed로 남긴다", () => {
-    const dominant = aggregateRuns([metric({
+  it("사망 0 HP 손실 60%만으로는 generic 종료를 source에 귀속하지 않는다", () => {
+    const unavailable = aggregateRuns([metric({
       depletion: [
         { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 60, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
         { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 40, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
       ],
     })]).combinations["survival@0.7"]!;
+
+    expect(unavailable.depletionVerdict).toMatchObject({ kind: "mixed" });
+    expect(unavailable.depletionVerdict.evidence).toContain("종료 선행 근거 없음");
+  });
+
+  it("사망 0 HP 손실 우세 source가 인력 소진 직전 손실과 일치할 때만 dominant로 판정한다", () => {
+    const correlated = aggregateRuns([withTerminationEvidence(metric({
+      depletion: [
+        { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 60, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 1 },
+        { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 40, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+      ],
+    }), {
+      sourceLosses: [{ source: "expedition-general", hpLost: 60, deaths: 0, seriousInjuriesStarted: 0, trustZeroed: 1 }],
+      wipeSource: "expedition-general",
+    })]).combinations["survival@0.7"]!;
+
+    expect(correlated.depletionVerdict).toMatchObject({ kind: "dominant", source: "expedition-general" });
+    expect(correlated.depletionVerdict.evidence).toContain("종료 선행 expedition-general");
+  });
+
+  it("사망 0 종료 직전 손실 source와 전멸 소유 source가 충돌하면 mixed로 남긴다", () => {
+    const conflicting = aggregateRuns([withTerminationEvidence(metric({
+      balanceExpeditions: [expedition({
+        initialRiskLevel: 1,
+        bossEntry: { advicePressure: 0, aliveCount: 3, hp: 100, maxHp: 100 },
+      })],
+      depletion: [
+        { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 60, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 1 },
+        { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 40, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+      ],
+    }), {
+      sourceLosses: [{ source: "expedition-general", hpLost: 60, deaths: 0, seriousInjuriesStarted: 0, trustZeroed: 1 }],
+      wipeSource: "expedition-boss",
+    })]).combinations["survival@0.7"]!;
+
+    expect(conflicting.depletionVerdict).toMatchObject({ kind: "mixed" });
+    expect(conflicting.depletionVerdict.evidence).toContain("종료 선행 source 충돌");
+  });
+
+  it("종료 선행 source 손실이나 final pool 상태가 실제 run과 다르면 집계 오류를 낸다", () => {
+    const run = withTerminationEvidence(metric({
+      depletion: [
+        { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 60, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 1 },
+        { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 40, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+      ],
+    }), {
+      sourceLosses: [{ source: "expedition-general", hpLost: 999, deaths: 0, seriousInjuriesStarted: 0, trustZeroed: 1 }],
+      wipeSource: "expedition-general",
+    });
+    const validRun = withTerminationEvidence(metric({
+      depletion: [
+        { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 60, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 1 },
+        { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 40, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+      ],
+    }), {
+      sourceLosses: [{ source: "expedition-general", hpLost: 60, deaths: 0, seriousInjuriesStarted: 0, trustZeroed: 1 }],
+      wipeSource: "expedition-general",
+    });
+    const invalidFinalPool = {
+      ...validRun,
+      terminationEvidence: {
+        ...validRun.terminationEvidence!,
+        finalPool: { ...validRun.terminationEvidence!.finalPool, deployableCount: 1 },
+      },
+    };
+
+    expect(() => aggregateRuns([run])).toThrow("종료 선행 source 손실이 원장과 다르다");
+    expect(() => aggregateRuns([invalidFinalPool])).toThrow("종료 선행 근거와 최종 풀 상태가 다르다");
+  });
+
+  it("사망 0 HP 손실 59%는 종료 선행 근거가 있어도 mixed로 남긴다", () => {
     const mixed = aggregateRuns([metric({
       depletion: [
         { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 59, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
@@ -161,7 +285,6 @@ describe("백테스트 통계", () => {
       ],
     })]).combinations["survival@0.7"]!;
 
-    expect(dominant.depletionVerdict).toMatchObject({ kind: "dominant", source: "expedition-general" });
     expect(mixed.depletionVerdict).toMatchObject({ kind: "mixed" });
   });
 

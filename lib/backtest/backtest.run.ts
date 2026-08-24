@@ -1,10 +1,11 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { B1C_CALIBRATION_SELECTION } from "@/lib/balance/campaign-balance";
 import { B1B_HOLDOUT_APPROVED, evaluateB1BAcceptance, type B1BAcceptanceGate } from "./acceptance";
 import { runCampaign } from "./campaign-driver";
 import { aggregateRuns, metricsForRun, type BacktestAggregate, type CampaignRunMetrics } from "./metrics";
-import { evaluateFixedGates, renderBacktestReport, type FixedGateResult } from "./report";
+import { evaluateFixedGates, renderBacktestReport, type CalibrationEvidence, type CalibrationStageEvidence, type FixedGateResult } from "./report";
 import { STRATEGY_IDS, createStrategy } from "./strategies";
 import type { Accuracy, StrategyId } from "./public-state";
 
@@ -41,6 +42,77 @@ export function runBacktestSuite(options: BacktestSuiteOptions): BacktestAggrega
     }
   }
   return aggregateRuns(runs);
+}
+
+function aggregateForCalibrationStage(
+  aggregate: BacktestAggregate,
+  seedsPerCombination: 50 | 100 | 200,
+): BacktestAggregate | null {
+  const accuracies: readonly Accuracy[] = [0.4, 0.7];
+  const runs: CampaignRunMetrics[] = [];
+  for (const strategyId of STRATEGY_IDS) {
+    for (const accuracy of accuracies) {
+      const combinationRuns = aggregate.runs
+        .filter((run) => run.strategyId === strategyId && run.accuracy === accuracy)
+        .sort((left, right) => left.seed.localeCompare(right.seed));
+      if (combinationRuns.length < seedsPerCombination) return null;
+      runs.push(...combinationRuns.slice(0, seedsPerCombination));
+    }
+  }
+  return aggregateRuns(runs);
+}
+
+function calibrationStageEvidence(
+  aggregate: BacktestAggregate,
+  seedsPerCombination: 50 | 100 | 200,
+): CalibrationStageEvidence {
+  const stageAggregate = aggregateForCalibrationStage(aggregate, seedsPerCombination);
+  if (stageAggregate === null) {
+    return { seedsPerCombination, depletionVerdict: null, gateStatus: "NOT_RUN", failureIds: [] };
+  }
+  const fixedGates = evaluateFixedGates(stageAggregate);
+  const acceptanceGates = evaluateB1BAcceptance(stageAggregate, {
+    mode: "calibration",
+    seedsPerCombination,
+  });
+  const failedFixed = fixedGates.filter((gate) => !gate.passed);
+  const failedAcceptance = acceptanceGates.filter((gate) => !gate.passed);
+  const enforcedAcceptance = acceptanceGates.filter((gate) => gate.enforced);
+  const enforcedFailure = failedFixed.length > 0
+    || failedAcceptance.some((gate) => gate.enforced);
+  return {
+    seedsPerCombination,
+    depletionVerdict: stageAggregate.combinations["opportunist@0.7"]?.depletionVerdict ?? null,
+    gateStatus: enforcedFailure
+      ? "FAIL"
+      : enforcedAcceptance.length === 0 ? "OBSERVE" : "PASS",
+    failureIds: [...new Set([
+      ...failedFixed.map((gate) => gate.id),
+      ...failedAcceptance.map((gate) => gate.id),
+    ])].sort(),
+  };
+}
+
+export function buildCalibrationEvidence(
+  options: BacktestSuiteOptions,
+  aggregate: BacktestAggregate,
+): CalibrationEvidence {
+  return {
+    selectedAxis: B1C_CALIBRATION_SELECTION.selectedAxis,
+    before: {
+      ...B1C_CALIBRATION_SELECTION.before,
+      bossBaseStatMultiplierByInitialRisk: { ...B1C_CALIBRATION_SELECTION.before.bossBaseStatMultiplierByInitialRisk },
+    },
+    after: {
+      ...B1C_CALIBRATION_SELECTION.after,
+      bossBaseStatMultiplierByInitialRisk: { ...B1C_CALIBRATION_SELECTION.after.bossBaseStatMultiplierByInitialRisk },
+    },
+    stages: ([50, 100, 200] as const).map((seedsPerCombination) =>
+      options.mode === "calibration"
+        ? calibrationStageEvidence(aggregate, seedsPerCombination)
+        : { seedsPerCombination, depletionVerdict: null, gateStatus: "NOT_RUN", failureIds: [] },
+    ),
+  };
 }
 
 type BacktestEnvironment = Partial<Pick<NodeJS.ProcessEnv, "B1_BACKTEST_MODE" | "B1_BACKTEST_SEEDS" | "NODE_ENV">>;
@@ -96,6 +168,7 @@ function runCli(): void {
     sourceRevision: process.env.B1_SOURCE_REVISION ?? "working-tree",
     aggregate,
     fixedGates: gates,
+    calibrationEvidence: buildCalibrationEvidence(options, aggregate),
   });
   writeFileSync(resolve(process.cwd(), "docs/technical/BACKTEST_REPORT.md"), report, "utf8");
   const acceptanceGates = evaluateB1BAcceptance(aggregate, {

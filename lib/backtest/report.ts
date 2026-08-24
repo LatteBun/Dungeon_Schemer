@@ -1,18 +1,19 @@
-import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
+import { CAMPAIGN_BALANCE, type CampaignCalibrationSettings } from "@/lib/balance/campaign-balance";
 import type { EndingKind } from "@/lib/domain";
-import { evaluateB1BAcceptance, type B1BAcceptanceGate } from "./acceptance";
+import { B1B_ACCEPTANCE, evaluateB1BAcceptance, type B1BAcceptanceGate } from "./acceptance";
 import {
   aggregateRuns,
   pairedMeanDifference,
   wilsonInterval,
   type BacktestAggregate,
   type CombinationId,
+  type DepletionVerdict,
   type PairedDifference,
 } from "./metrics";
 import type { Accuracy, StrategyId } from "./public-state";
 
 export interface FixedGateResult {
-  readonly id: "no-run-errors" | "accuracy-interval" | "not-all-rank-s" | "betrayal-can-complete";
+  readonly id: "no-run-errors" | "accuracy-interval" | "not-all-rank-s" | "betrayal-can-complete" | "accuracy-has-effect";
   readonly passed: boolean;
   readonly evidence: string;
 }
@@ -24,6 +25,21 @@ export interface BacktestReportInput {
   readonly sourceRevision: string;
   readonly aggregate: BacktestAggregate;
   readonly fixedGates: readonly FixedGateResult[];
+  readonly calibrationEvidence: CalibrationEvidence;
+}
+
+export interface CalibrationStageEvidence {
+  readonly seedsPerCombination: 50 | 100 | 200;
+  readonly depletionVerdict: DepletionVerdict | null;
+  readonly gateStatus: "PASS" | "FAIL" | "OBSERVE" | "NOT_RUN";
+  readonly failureIds: readonly string[];
+}
+
+export interface CalibrationEvidence {
+  readonly selectedAxis: "generalMonsterBaseStatMultiplier" | "worldTurn" | "bossBaseStatMultiplierByInitialRisk";
+  readonly before: CampaignCalibrationSettings;
+  readonly after: CampaignCalibrationSettings;
+  readonly stages: readonly CalibrationStageEvidence[];
 }
 
 const STRATEGIES: readonly StrategyId[] = ["survival", "opportunist", "selective-betrayal"];
@@ -78,12 +94,32 @@ export function evaluateFixedGates(aggregate: BacktestAggregate): readonly Fixed
     return combination !== undefined && combination.rankSCount < combination.count;
   }));
   const betrayal = aggregate.combinations["selective-betrayal@0.7"];
-  const betrayalCanComplete = betrayal !== undefined && betrayal.betrayalCompletions > 0;
+  const completedBetrayalCampaigns = betrayal?.runs.filter((run) => run.completed).length ?? 0;
+  const betrayalCanComplete = completedBetrayalCampaigns > 0;
+  let accuracyHasEffect = true;
+  const pairedEvidence: string[] = [];
+  for (const strategy of STRATEGIES) {
+    const difference = pairedCompleted(aggregate, strategy);
+    if (difference === null) {
+      accuracyHasEffect = false;
+      pairedEvidence.push(`${strategy}: paired 표본 부족`);
+      continue;
+    }
+    const practical = difference.mean >= B1B_ACCEPTANCE.minimumPairedAccuracyEffect;
+    const statistical = difference.low95 > 0;
+    accuracyHasEffect &&= practical && statistical;
+    pairedEvidence.push(`${strategy}: ${difference.mean.toFixed(3)} (${difference.low95.toFixed(3)}–${difference.high95.toFixed(3)}, ${statistical ? "0 제외" : "0 포함"})`);
+  }
   return [
     noErrors,
     { id: "accuracy-interval", passed: accuracyPassed, evidence: accuracyEvidence.join("; ") },
     { id: "not-all-rank-s", passed: notAllS, evidence: "각 조합 S 도달률 100% 미만" },
-    { id: "betrayal-can-complete", passed: betrayalCanComplete, evidence: `배신 완주 ${betrayal?.betrayalCompletions ?? 0}건` },
+    { id: "betrayal-can-complete", passed: betrayalCanComplete, evidence: `캠페인 정상 완주 ${completedBetrayalCampaigns}건` },
+    {
+      id: "accuracy-has-effect",
+      passed: accuracyHasEffect,
+      evidence: `최소 실질 차이 ${B1B_ACCEPTANCE.minimumPairedAccuracyEffect.toFixed(3)}; ${pairedEvidence.join("; ")}`,
+    },
   ];
 }
 
@@ -116,6 +152,17 @@ function calibrationMultiplier(multiplier: number): string {
   return Math.abs(multiplier * 100 - Math.round(multiplier * 100)) < 1e-9
     ? multiplier.toFixed(2)
     : multiplier.toFixed(3);
+}
+
+function calibrationSettingsMultipliers(settings: CampaignCalibrationSettings): string {
+  return Object.entries(settings.bossBaseStatMultiplierByInitialRisk)
+    .map(([risk, multiplier]) => `★${risk}: ${multiplier.toFixed(3)}`)
+    .join(", ");
+}
+
+function calibrationVerdict(verdict: DepletionVerdict | null): string {
+  if (verdict === null) return "—";
+  return `${verdict.kind}${verdict.kind === "dominant" ? ` (${verdict.source})` : ""}: ${verdict.evidence}`;
 }
 
 function resolveSeedsPerCombination(input: BacktestReportInput): 2 | 50 | 100 | 200 | 2000 {
@@ -215,6 +262,15 @@ export function renderBacktestReport(input: BacktestReportInput): string {
   const pressureRows = Object.entries(CAMPAIGN_BALANCE.advicePressure).map(([pressure, values]) =>
     `| ${pressure} | ${values.incomingDamageMultiplier.toFixed(2)} | ${values.outgoingDamageMultiplier.toFixed(2)} |`,
   );
+  const calibrationSettingRows = ([
+    ["이전", input.calibrationEvidence.before],
+    ["이후", input.calibrationEvidence.after],
+  ] as const).map(([label, settings]) =>
+    `| ${label} | ${settings.revision} | ${settings.generalMonsterBaseStatMultiplier.toFixed(3)} | ${settings.restRecoveryRatio.toFixed(3)} | ${calibrationSettingsMultipliers(settings)} |`,
+  );
+  const calibrationStageRows = [...input.calibrationEvidence.stages]
+    .sort((left, right) => left.seedsPerCombination - right.seedsPerCombination)
+    .map((stage) => `| ${stage.seedsPerCombination} | ${calibrationVerdict(stage.depletionVerdict)} | ${stage.gateStatus} | ${stage.failureIds.join(", ") || "없음"} |`);
   return [
     "# B1 현행 캠페인 백테스트 보고서",
     "",
@@ -235,6 +291,18 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "| 조언 압력 | 받는 피해 배율 | 주는 피해 배율 |",
     "| ---: | ---: | ---: |",
     ...pressureRows,
+    "",
+    "## calibration 선택과 단계별 근거",
+    "",
+    `- 선택 축: ${input.calibrationEvidence.selectedAxis}`,
+    "",
+    "| 설정 | revision | 일반 몬스터 배율 | 휴식 회복률 | 초기 위험도별 보스 배율 |",
+    "| --- | --- | ---: | ---: | --- |",
+    ...calibrationSettingRows,
+    "",
+    "| 조합당 시드 | 손실 판정 | Gate 상태 | 실패 ID |",
+    "| ---: | --- | --- | --- |",
+    ...calibrationStageRows,
     "",
     "## 고정 무결성 gate",
     "",

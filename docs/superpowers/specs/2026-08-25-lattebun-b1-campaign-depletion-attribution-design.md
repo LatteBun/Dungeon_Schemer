@@ -95,6 +95,10 @@ type CampaignTerminationReason =
   캠페인 전체 손실을 둘 다 drill-down할 수 있다.
 - 원정이 `interrupted`로 끝나도 그 시점까지 확정된 손실 entry는 보존한다. 드라이버
   오류는 만들어진 entry를 지우지 않고 최종 종료 사유만 `run-error`로 표시한다.
+- driver는 응급 편성 가능 직업 수가 3 이상에서 3 미만으로 떨어진 마지막 전이에
+  대해 source별 직접 손실, 전멸 원정의 일반/보스 소유, 전이 직전·직후 풀 상태와
+  캠페인 최종 풀 상태를 구조화된 `terminationEvidence`로 남긴다. metrics는 이
+  근거가 원장·원정 결과·최종 풀 지표와 일치하는지 검증한다.
 
 ### 3.2 집계와 불변식
 
@@ -119,12 +123,14 @@ type CampaignTerminationReason =
 1. `expedition-general`, `expedition-boss`, `world-turn-background`의
    `hpLost` 비중과 deaths 비중을 계산한다. `world-turn-rest`는 회복이라 손실
    원인의 분모에 넣지 않는다.
-2. 원정 전멸과 캠페인 종료 사유의 최다 발생 source를 함께 기록한다.
+2. 원정 전멸 소유 source와 응급 편성 경계를 넘긴 직전 source 손실, 그 전후·최종
+   풀 상태를 캠페인 종료별로 함께 기록한다.
 3. 한 source가 원정 사망의 60% 이상이거나, 원정 사망이 0일 때는 누적 HP 손실의
-   60% 이상이면서 캠페인 종료의 최다 원인과 일치하면 `dominant`다.
-4. 60%를 만족하는 source가 없거나 HP 손실 지배자와 종료 지배자가 충돌하면
-   `mixed`다. mixed 결과에서는 밸런스 값을 바꾸지 않고 별도 설계 대상으로
-   보고한다.
+   60% 이상이면서 모든 일반 종료(`pool-exhausted`, `no-eligible-party`)의 선행
+   source 근거가 같은 source로 귀속될 때만 `dominant`다.
+4. 60%를 만족하는 source가 없거나 HP 손실 지배자와 선행 source가 충돌하거나,
+   일반 종료 중 선행 근거를 만들 수 없는 run이 하나라도 있으면 `mixed`다. mixed
+   결과에서는 밸런스 값을 바꾸지 않고 별도 설계 대상으로 보고한다.
 
 `pool-exhausted`와 `no-eligible-party`는 직접 피해 source가 아니라 종료 결과다.
 원장은 각각 직전의 사망·신뢰 0·중상 분포를 같이 보고해 어떤 source가 종료에
@@ -157,7 +163,8 @@ type CampaignTerminationReason =
   `0.65~0.75`, ★3 `0.50~0.60`, ★4 `0.35~0.45`, ★5 `0.20~0.30`; 각 표본 30 이상,
   엄격한 내림차순.
 - 기존 B1-B 각 조합의 완주율, 완료 캠페인 전멸 평균, 정확도 Wilson interval,
-  모든 전략 S등급 방지, 배신 전략 완주 가능성, run error 0.
+  모든 전략 S등급 방지, 배신 전략 캠페인 완주 가능성, 각 전략의 0.7−0.4 paired
+  정상 완주 차이 `0.05` 이상이면서 95% 신뢰구간이 0 제외, run error 0.
 - 원장 불변식, source 합계, 종료 사유 합계, 같은 실행 입력의 trace·보고서 결정성.
 
 보고서는 기존 funnel 앞에 다음을 추가한다.

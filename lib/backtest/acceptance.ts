@@ -8,6 +8,7 @@ import type { BacktestAggregate, CombinationId } from "./metrics";
 export const B1B_HOLDOUT_APPROVED = false;
 
 export const B1B_ACCEPTANCE = {
+  minimumPairedAccuracyEffect: 0.05,
   completionRateByCombination: {
     "survival@0.7": [0.60, 0.80],
     "survival@0.4": [0.30, 0.40],

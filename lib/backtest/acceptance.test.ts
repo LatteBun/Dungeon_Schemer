@@ -17,6 +17,7 @@ function metric(strategyId: StrategyId, accuracy: Accuracy, completed: boolean, 
     betrayalAttempts: 0, betrayalWipes: 0, betrayalCompletions: 0, merchantGoldSpent: 0, merchantEffectsConsumed: 0,
     adviceHits: 0, adviceTotal: 0, errorKind: null,
     termination: completed ? "completed" : "pool-exhausted",
+    terminationEvidence: null,
     depletion: [],
     balanceExpeditions: [{
       expeditionId: seed, dungeonId: `dungeon-${seed}` as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,

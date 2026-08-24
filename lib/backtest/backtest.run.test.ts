@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertBacktestPasses, campaignSeed, optionsFromEnvironment, shouldFailBacktest } from "./backtest.run";
+import { assertBacktestPasses, buildCalibrationEvidence, campaignSeed, optionsFromEnvironment, runBacktestSuite, shouldFailBacktest } from "./backtest.run";
 
 describe("B1 backtest seed 계약", () => {
   it("B1-B calibration namespace와 번호를 고정 폭으로 조합한다", () => {
@@ -30,6 +30,28 @@ describe("B1-B backtest runner 옵션", () => {
     { B1_BACKTEST_MODE: "unknown", B1_BACKTEST_SEEDS: "50" },
   ])("지원하지 않는 mode 또는 표본을 명시적으로 거부한다", (env) => {
     expect(() => optionsFromEnvironment(env)).toThrow();
+  });
+});
+
+describe("B1-C calibration 근거 모델", () => {
+  it("runner가 실행하지 않은 후속 단계를 임의 결과로 채우지 않는다", () => {
+    const options = {
+      mode: "calibration" as const,
+      seedsPerCombination: 2 as const,
+      namespace: "b1b-calibration-v1" as const,
+    };
+    const evidence = buildCalibrationEvidence(options, runBacktestSuite(options));
+
+    expect(evidence).toMatchObject({
+      selectedAxis: "bossBaseStatMultiplierByInitialRisk",
+      before: { revision: "b1b-risk-curve-v1" },
+      after: { revision: "b1c-boss-depletion-v1" },
+    });
+    expect(evidence.stages).toEqual([
+      { seedsPerCombination: 50, depletionVerdict: null, gateStatus: "NOT_RUN", failureIds: [] },
+      { seedsPerCombination: 100, depletionVerdict: null, gateStatus: "NOT_RUN", failureIds: [] },
+      { seedsPerCombination: 200, depletionVerdict: null, gateStatus: "NOT_RUN", failureIds: [] },
+    ]);
   });
 });
 

@@ -87,6 +87,27 @@ describe("백테스트 캠페인 driver", () => {
       .toBe(members.filter((member) => member.gravelyWounded).length);
   });
 
+  it("인력 소진 종료에는 가용 직업 경계를 넘긴 선행 손실과 전멸 source를 보존한다", () => {
+    const result = runCampaign({
+      seed: "b1b-calibration-v1/000000",
+      strategy: createStrategy("survival"),
+      accuracy: 0.7,
+    });
+    if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
+
+    expect(result.campaign.ending?.kind).toBe("exhausted");
+    expect(result.trace.terminationEvidence).toMatchObject({
+      sourceLosses: expect.arrayContaining([
+        expect.objectContaining({ source: "expedition-boss", deaths: expect.any(Number) }),
+      ]),
+      wipeSource: "expedition-boss",
+      precedingPool: { emergencyEligibleClassCount: expect.any(Number) },
+      finalPool: { emergencyEligibleClassCount: expect.any(Number) },
+    });
+    expect(result.trace.terminationEvidence!.precedingPool.emergencyEligibleClassCount).toBeGreaterThanOrEqual(3);
+    expect(result.trace.terminationEvidence!.finalPool.emergencyEligibleClassCount).toBeLessThan(3);
+  });
+
   it("원정마다 초기·현재 위험도와 던전별 시도 번호를 기록한다", () => {
     const result = runCampaign({
       seed: "driver-balance-trace",
