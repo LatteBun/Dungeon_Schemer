@@ -120,9 +120,18 @@ describe("E3 원정 사건 준비와 물질화", () => {
     expect(new Set(materializePath(fixture.lowerPath))).toHaveLength(fixture.lowerPath.length);
   });
 
+  it("후보 수용량과 monster 경로 하한을 동시에 만족하는 분류를 만든다", () => {
+    const fixture = capacityExchangeFixture();
+    const prepared = prepareExpeditionEvents({ ...fixture, campaignSeed: "issue-117-capacity-protection" });
+
+    for (const path of [fixture.upperPath, fixture.lowerPath]) {
+      expect(monsterCount(prepared, path)).toBeGreaterThanOrEqual(2);
+    }
+  });
+
   it("실제 후보 pool에 어느 normal category 배정도 없으면 INVALID_GENERATION으로 거부한다", () => {
     const fixture = capacityExchangeFixture();
-    const impossibleCatalog = fixture.eventCatalog.filter((event) => event.kind !== "rest");
+    const impossibleCatalog = fixture.eventCatalog.filter((event) => event.kind === "special");
 
     try {
       prepareExpeditionEvents({ ...fixture, eventCatalog: impossibleCatalog });
@@ -219,15 +228,15 @@ function capacityExchangeFixture() {
   const theme = THEMES.find((candidate) => candidate.id === "graveyard");
   if (theme === undefined) throw new Error("graveyard theme 없음");
   const events = eventsForTheme(theme.id);
-  const monster = events.find((event) => event.id === "graveyard-light-candle-mage");
+  const monsters = events.filter((event) => event.kind === "monster").slice(0, 4);
   const rest = events.filter((event) => event.kind === "rest").slice(0, 2);
   const merchant = events.find((event) => event.kind === "merchant");
   const special = events.find((event) => event.kind === "special" && event.targetBossId === undefined);
   const bossEvent = events.find((event) => event.kind === "special" && event.targetBossId !== undefined);
-  if (monster === undefined || rest.length !== 2 || merchant === undefined || special === undefined || bossEvent?.targetBossId === undefined) {
+  if (monsters.length !== 4 || rest.length !== 2 || merchant === undefined || special === undefined || bossEvent?.targetBossId === undefined) {
     throw new Error("capacity fixture event 없음");
   }
-  const eventCatalog: readonly SituationEvent[] = [monster, ...rest, merchant, special, bossEvent];
+  const eventCatalog: readonly SituationEvent[] = [...monsters, ...rest, merchant, special, bossEvent];
   const entry = "capacity:entry" as NodeId;
   const sharedFirst = "capacity:shared:first" as NodeId;
   const sharedSecond = "capacity:shared:second" as NodeId;
