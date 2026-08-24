@@ -160,3 +160,49 @@ describe("U4 fixed 16:9 canvas contract", () => {
     expect(fixes).toMatch(/\.u4-move-button__left,[\s\S]*display:\s*none/);
   });
 });
+
+describe("선택한 지점 썸네일", () => {
+  /*
+   * 무슨 지점인지 말하는 것은 아이콘이다.
+   *
+   * 방 밑그림이 돌문이라, 아이콘을 그 어두운 아치 안에 작게 두었더니 문에 묻혀
+   * 보이지 않았다. 문이 앞을 가리는 것처럼 보인 까닭이다. 문은 바탕으로 물리고
+   * 아이콘이 앞에 서야 한다.
+   */
+  it("분류 아이콘이 방 밑그림보다 앞에 선다", () => {
+    const sheet = readFileSync("app/u4-dungeon-map.css", "utf8");
+
+    /*
+     * 한 클래스가 여러 규칙에 걸쳐 있다.
+     *
+     * `.u4-destination__room, .u4-destination__frame { … }` 처럼 묶인 규칙과
+     * 따로 선 규칙이 함께 있어서, 처음 하나만 보면 `z-index` 를 못 찾고 0 으로
+     * 읽는다. 그러면 무엇을 비교해도 통과한다 - 실제로 그랬다.
+     */
+    const layerOf = (name: string) => {
+      const rules = [...sheet.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+        .filter(([, selector]) => selector.includes(`.u4-destination__${name}`));
+      const layers = rules.map(([, , body]) => Number(body.match(/z-index:\s*(-?\d+)/)?.[1] ?? "0"));
+      return Math.max(0, ...layers);
+    };
+    const room = [...sheet.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+      .filter(([, selector]) => selector.includes(".u4-destination__room"))
+      .map(([, , body]) => body.match(/opacity:\s*([\d.]+)/)?.[1])
+      .find((one) => one !== undefined) ?? "1";
+
+    expect(layerOf("icon")).toBeGreaterThan(layerOf("frame"));
+    /* 밑그림은 물러나 있어야 아이콘이 읽힌다. */
+    expect(Number(room)).toBeLessThan(0.8);
+  });
+
+  /* 아이콘이 작으면 문 안에 묻힌다. */
+  it("분류 아이콘이 썸네일의 절반을 넘는다", () => {
+    const sheet = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const icon = [...sheet.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+      .filter(([, selector]) => selector.includes(".u4-destination__icon"))
+      .map(([, , body]) => body.match(/width:\s*(\d+)%/)?.[1])
+      .find((one) => one !== undefined) ?? "0";
+
+    expect(Number(icon)).toBeGreaterThan(50);
+  });
+});

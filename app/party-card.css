@@ -326,3 +326,52 @@
   color: #a8906a;
   font-size: clamp(0.72rem, 0.74cqw, 0.88rem);
 }
+
+/*
+ * 이 원정의 총합을 먼저 크게 보여준다.
+ *
+ * 한 줄씩 훑어 더해야 얼마나 상했는지 알 수 있으면 되짚는 뜻이 없다. 사슬은 그
+ * 아래에서 "왜" 를 말한다.
+ */
+.party-card__net {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: clamp(0.3rem, 0.45cqw, 0.6rem);
+  margin: 0 0 clamp(0.45rem, 0.6cqh, 0.8rem);
+}
+
+.party-card__net > div {
+  border: 1px solid #4d3922;
+  border-radius: 0.2rem;
+  padding: clamp(0.28rem, 0.4cqh, 0.5rem) clamp(0.3rem, 0.42cqw, 0.6rem);
+  background: linear-gradient(180deg, #1d150e, #120c08);
+}
+
+.party-card__net dt {
+  color: #9c8a6b;
+  font-size: clamp(0.68rem, 0.7cqw, 0.82rem);
+  letter-spacing: 0.04em;
+}
+
+.party-card__net dd {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.party-card__net b {
+  font-size: clamp(1.05rem, 1.15cqw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.party-card__net small {
+  color: #8a7657;
+  font-size: clamp(0.66rem, 0.68cqw, 0.8rem);
+}
+
+/* 오른 것과 깎인 것은 색으로 갈린다. 숫자를 읽기 전에 안다. */
+.party-card__net .is-down b { color: #d98b6a; }
+.party-card__net .is-up b { color: #8fc07a; }

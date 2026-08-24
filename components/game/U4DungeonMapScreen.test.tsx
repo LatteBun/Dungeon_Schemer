@@ -169,8 +169,9 @@ describe("U4DungeonMapScreen", () => {
 
   it("shows the selected destination separately and keeps CTA text in HTML", () => {
     const html = render(MONSTER);
-    expect(html).toContain("선택한 다음 지점");
-    expect(html).toContain("공개 사건 분류");
+    expect(html).toContain("선택한 지점");
+    /* 「공개 사건 분류」라는 이름표는 없앴다. 분류 자체가 곧 그 뜻이다. */
+    expect(html).not.toContain("공개 사건 분류");
     expect(html).toContain("전투");
     expect(html).toContain("이 지점으로 이동");
     expect(html).toContain("/assets/u4/navigation/cta_button_arrow.png");
