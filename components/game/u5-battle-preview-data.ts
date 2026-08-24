@@ -143,7 +143,7 @@ function createE3Resolution(): BattleResolution {
     classDefs: CLASSES,
     seed: "u5-2-e3-monster-preview",
     pendingMerchantEffect: null,
-    retrySteps: 0,
+    advicePressure: 0,
   });
   if (battle === null) throw new Error("U5-2 E3 프리뷰 전투 결과가 비어 있다");
   return battle;

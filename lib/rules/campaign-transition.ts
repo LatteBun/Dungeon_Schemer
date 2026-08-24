@@ -379,7 +379,7 @@ function transitionChooseAdvice(
     classDefs: CLASSES,
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/${active.expedition.currentNodeId}`,
     pendingMerchantEffect: active.expedition.pendingMerchantEffect,
-    retrySteps: dungeon.attempts,
+    advicePressure: active.expedition.advicePressure,
   });
 
   const afterBattle = battle?.battle === null || battle === null

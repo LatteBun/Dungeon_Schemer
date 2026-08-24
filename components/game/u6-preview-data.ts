@@ -146,7 +146,7 @@ function causeInputsFromExpedition(): { choice: string; reactions: string; damag
       event, modifier: applied.encounterModifier ?? {},
       activeMonsterIds: dungeon.activeMonsterIds, monsterDefs: SPIDER_THEME.monsters,
       members: applied.members, classDefs: CLASSES,
-      seed: `${PREVIEW_SEED}/${dungeon.id}/settlement`, pendingMerchantEffect: null, retrySteps: 0,
+      seed: `${PREVIEW_SEED}/${dungeon.id}/settlement`, pendingMerchantEffect: null, advicePressure: 0,
     }).battle;
 
     const word = (reaction: string) => reaction === "accepted" ? "수용" : reaction === "suspected" ? "의심" : "적발";
