@@ -2,7 +2,7 @@
 
 - 모드: calibration
 - namespace: b1b-calibration-v1
-- source revision: b8fb0bb
+- source revision: b6220f5
 - 전략: survival, opportunist, selective-betrayal
 - 정확도: 0.4, 0.7
 - 조합당 표본: 50
@@ -12,7 +12,7 @@
 - revision: b1b-initial-v1
 - 휴식 회복: 0.20
 - 비출전 HP 손실: 5–10%
-- 초기 위험도별 보스 배율: ★1: 0.80, ★2: 0.80, ★3: 0.78, ★4: 0.80, ★5: 0.80
+- 초기 위험도별 보스 배율: ★1: 0.80, ★2: 0.80, ★3: 0.78, ★4: 0.78, ★5: 0.80
 
 | 조언 압력 | 받는 피해 배율 | 주는 피해 배율 |
 | ---: | ---: | ---: |
@@ -25,7 +25,7 @@
 
 | Gate | 결과 | 근거 |
 | --- | --- | --- |
-| accuracy-interval | PASS | survival@0.4 0.3678–0.4131 포함; survival@0.7 0.6652–0.7065 포함; opportunist@0.4 0.3697–0.4181 포함; opportunist@0.7 0.6776–0.7195 포함; selective-betrayal@0.4 0.3820–0.4306 포함; selective-betrayal@0.7 0.6557–0.7054 포함 |
+| accuracy-interval | PASS | survival@0.4 0.3677–0.4129 포함; survival@0.7 0.6652–0.7065 포함; opportunist@0.4 0.3697–0.4181 포함; opportunist@0.7 0.6776–0.7195 포함; selective-betrayal@0.4 0.3820–0.4306 포함; selective-betrayal@0.7 0.6557–0.7054 포함 |
 | betrayal-can-complete | PASS | 배신 완주 182건 |
 | no-run-errors | PASS | 실행 오류 0건 |
 | not-all-rank-s | PASS | 각 조합 S 도달률 100% 미만 |
@@ -49,8 +49,8 @@
 
 | 전략 | 정확도 | 표본 | 완주율 | 완주 전멸 평균 | 5+ 전멸 비율 | 평균 최대 압력 | 보스 진입 HP 비율 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| survival | 0.4 | 50 | 0.0000 | — | — | 1.2444 | 0.8925 |
-| survival | 0.7 | 50 | 0.0000 | — | — | 0.6876 | 0.9209 |
+| survival | 0.4 | 50 | 0.0000 | — | — | 1.2454 | 0.8925 |
+| survival | 0.7 | 50 | 0.0000 | — | — | 0.6900 | 0.9209 |
 | opportunist | 0.4 | 50 | 0.0000 | — | — | 1.2015 | 0.8928 |
 | opportunist | 0.7 | 50 | 0.0000 | — | — | 0.6606 | 0.9081 |
 | selective-betrayal | 0.4 | 50 | 0.0000 | — | — | 1.5276 | 0.8074 |
@@ -66,22 +66,22 @@
 | survival | 0.4 | 2 | graveyard | 67 | 46 | 21 | 0.8771 |
 | survival | 0.4 | 2 | spider | 69 | 44 | 25 | 0.8889 |
 | survival | 0.4 | 3 | desert | 67 | 8 | 59 | 0.9073 |
-| survival | 0.4 | 3 | graveyard | 125 | 15 | 110 | 0.8771 |
-| survival | 0.4 | 3 | spider | 58 | 13 | 45 | 0.8925 |
+| survival | 0.4 | 3 | graveyard | 126 | 15 | 111 | 0.8754 |
+| survival | 0.4 | 3 | spider | 58 | 14 | 44 | 0.8957 |
 | survival | 0.4 | 4 | desert | 28 | 1 | 27 | 0.8581 |
 | survival | 0.4 | 4 | graveyard | 29 | 0 | 29 | 0.8617 |
-| survival | 0.4 | 4 | spider | 28 | 0 | 28 | 0.8785 |
+| survival | 0.4 | 4 | spider | 28 | 0 | 28 | 0.8817 |
 | survival | 0.7 | 1 | desert | 50 | 50 | 0 | 0.9612 |
 | survival | 0.7 | 1 | spider | 101 | 100 | 1 | 0.9346 |
 | survival | 0.7 | 2 | desert | 113 | 100 | 13 | 0.9270 |
 | survival | 0.7 | 2 | graveyard | 56 | 49 | 7 | 0.9342 |
 | survival | 0.7 | 2 | spider | 57 | 50 | 7 | 0.9223 |
 | survival | 0.7 | 3 | desert | 74 | 30 | 44 | 0.9165 |
-| survival | 0.7 | 3 | graveyard | 144 | 37 | 107 | 0.9018 |
+| survival | 0.7 | 3 | graveyard | 142 | 37 | 105 | 0.9001 |
 | survival | 0.7 | 3 | spider | 72 | 34 | 38 | 0.9340 |
-| survival | 0.7 | 4 | desert | 44 | 0 | 44 | 0.8894 |
-| survival | 0.7 | 4 | graveyard | 47 | 1 | 46 | 0.9180 |
-| survival | 0.7 | 4 | spider | 48 | 1 | 47 | 0.9113 |
+| survival | 0.7 | 4 | desert | 47 | 0 | 47 | 0.8965 |
+| survival | 0.7 | 4 | graveyard | 47 | 1 | 46 | 0.9165 |
+| survival | 0.7 | 4 | spider | 47 | 2 | 45 | 0.9117 |
 | survival | 0.7 | 5 | graveyard | 7 | 0 | 7 | 0.8113 |
 | opportunist | 0.4 | 1 | desert | 38 | 37 | 1 | 0.8995 |
 | opportunist | 0.4 | 1 | spider | 81 | 80 | 1 | 0.9048 |

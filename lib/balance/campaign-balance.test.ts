@@ -9,7 +9,7 @@ describe("CAMPAIGN_BALANCE", () => {
       backgroundLossPercent: { min: 5, max: 10 },
     });
     expect(Object.keys(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk)).toEqual(["1", "2", "3", "4", "5"]);
-    expect(Object.values(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk)).toEqual([0.8, 0.8, 0.775, 0.8, 0.8]);
+    expect(Object.values(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk)).toEqual([0.8, 0.8, 0.775, 0.775, 0.8]);
     expect(CAMPAIGN_BALANCE.advicePressure).toEqual({
       0: { incomingDamageMultiplier: 1, outgoingDamageMultiplier: 1 },
       1: { incomingDamageMultiplier: 1.05, outgoingDamageMultiplier: 1 },
