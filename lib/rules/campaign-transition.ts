@@ -394,12 +394,21 @@ function transitionChooseAdvice(
     retrySteps: dungeon.attempts,
   });
 
-  const afterBattle = battle?.battle === null || battle === null
-    ? applied.members
-    : battle.battle.party.map((member) => {
-      const before = applied.members.find((candidate) => String(candidate.id) === String(member.id));
-      return before === undefined ? before : { ...before, hp: member.hp, alive: member.hp > 0 };
-    }).filter((member): member is Character => member !== undefined);
+  /*
+   * 전투 결과를 파티 명단 **위에** 얹는다. 명단을 결과로 갈아치우지 않는다.
+   *
+   * `resolveMonsterEventBattle` 은 살아 있는 사람만 데려가므로 그 결과에는 이미
+   * 죽어 있던 사람이 없다. 결과를 그대로 명단으로 삼으면 죽은 사람이 파티에서
+   * 사라지고, 정산이 "최종 파티원이 3명이 아니다" 로 거부한다.
+   *
+   * 여태 드러나지 않은 것은 일반 몹이 전부 HP 1 이라 아무도 죽지 않았기
+   * 때문이다. 몬스터에 제 수치를 넣자마자 120 시드 중 6 이 거기서 멈췄다.
+   */
+  const battleParty = new Map((battle?.battle?.party ?? []).map((member) => [String(member.id), member]));
+  const afterBattle = applied.members.map((member) => {
+    const fought = battleParty.get(String(member.id));
+    return fought === undefined ? member : { ...member, hp: fought.hp, alive: fought.hp > 0 };
+  });
 
   const withTrust = afterBattle.map((member) => {
     const change = resolution.trustChanges.filter((one) => one.characterId === member.id)
