@@ -168,8 +168,11 @@ describe("U3 extracted asset-board assets", () => {
       [".u3-notice--4", "grid-column: 10 / span 4", "grid-row: 7 / span 5", "rotate(-1.8deg)"],
     ] as const;
 
-    for (const fragments of placements) {
-      for (const fragment of fragments) expect(boardCss).toContain(fragment);
+    const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    for (const [selector, column, row, rotation] of placements) {
+      expect(boardCss).toMatch(new RegExp(
+        `${escapeRegExp(selector)}\\s*\\{[^}]*${escapeRegExp(column)};[^}]*${escapeRegExp(row)};[^}]*${escapeRegExp(rotation)}`,
+      ));
     }
 
     expect(themeCss).not.toMatch(/\.u3-notice--[34]/);
@@ -179,13 +182,22 @@ describe("U3 extracted asset-board assets", () => {
     const largeCss = readFileSync(join(process.cwd(), "app", "u3-large-screen.css"), "utf8");
     const responsiveCss = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
 
-    expect(largeCss).toContain("minmax(5.8rem, 1fr)");
-    expect(largeCss).toContain("clamp(1.5rem, 1.15cqw, 2.15rem)");
-    expect(largeCss).toContain("clamp(10rem, 12cqw, 19rem)");
-    expect(responsiveCss).toContain(".u3-notice .u3-reward__label");
-    expect(responsiveCss).toContain(".u3-notice .u3-reward--compact");
-    expect(responsiveCss).toContain(".u3-notice .u3-reward img");
-    expect(responsiveCss).toContain("word-break: keep-all");
+    expect(largeCss).toMatch(/\.u3-notice\s*\{[^}]*grid-template-rows:\s*auto auto minmax\(5\.8rem, 1fr\)/);
+    expect(largeCss).toMatch(/\.u3-notice__pin\s*\{[^}]*width:\s*clamp\(1\.5rem, 1\.15cqw, 2\.15rem\);/);
+    expect(largeCss).toMatch(/\.u3-notice \.u3-theme-scene\s*\{[^}]*width:\s*min\(100%, clamp\(10rem, 12cqw, 19rem\)\);/);
+    expect(responsiveCss).toMatch(/\.u3-notice__heading strong\s*\{[^}]*word-break:\s*keep-all;/);
+  });
+
+  it("작은 수배지 보상만 줄이고 우측 계약 보상은 이전 크기를 유지한다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u3-responsive-layout.css"), "utf8");
+
+    expect(css).toMatch(/\.u3-board-screen \.u3-reward__label\s*\{[^}]*font-size:\s*clamp\(0\.72rem, calc\(0\.6rem \+ 0\.18cqw \+ 0\.12cqh\), 1\.05rem\);/);
+    expect(css).toMatch(/\.u3-board-screen \.u3-reward--compact\s*\{[^}]*font-size:\s*clamp\(0\.84rem, calc\(0\.68rem \+ 0\.22cqw \+ 0\.14cqh\), 1\.25rem\);/);
+    expect(css).toMatch(/\.u3-board-screen \.u3-reward img\s*\{[^}]*width:\s*clamp\(1\.05rem, calc\(0\.82rem \+ 0\.2cqw \+ 0\.08cqh\), 1\.55rem\);[^}]*height:\s*clamp\(1\.05rem, calc\(0\.82rem \+ 0\.2cqw \+ 0\.08cqh\), 1\.55rem\);/);
+
+    expect(css).toMatch(/\.u3-notice \.u3-reward__label\s*\{[^}]*font-size:\s*clamp\(0\.62rem, calc\(0\.5rem \+ 0\.14cqw \+ 0\.1cqh\), 0\.84rem\);/);
+    expect(css).toMatch(/\.u3-notice \.u3-reward--compact\s*\{[^}]*font-size:\s*clamp\(0\.68rem, calc\(0\.55rem \+ 0\.18cqw \+ 0\.11cqh\), 0\.94rem\);/);
+    expect(css).toMatch(/\.u3-notice \.u3-reward img\s*\{[^}]*width:\s*clamp\(0\.84rem, calc\(0\.65rem \+ 0\.16cqw \+ 0\.06cqh\), 1\.25rem\);[^}]*height:\s*clamp\(0\.84rem, calc\(0\.65rem \+ 0\.16cqw \+ 0\.06cqh\), 1\.25rem\);/);
   });
 
   it("공고와 계약 패널의 행 분배를 캔버스 기준으로 고정한다", () => {
