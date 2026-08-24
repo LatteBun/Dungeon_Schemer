@@ -56,9 +56,19 @@ describe("길잡이 업적 기록 화면", () => {
   it("숨은 업적은 잠긴 동안 이름과 진행도를 감춘다", () => {
     const html = renderEmptyGallery();
 
-    expect(html).toContain("알 수 없는 기록");
+    expect(html).toContain(">???</h2>");
+    expect(html).toContain("조건을 달성하면 기록이 공개됩니다.");
+    expect(html).not.toContain("알 수 없는 기록");
     expect(html).not.toContain("다섯 갈래의 결말");
     expect(html).not.toContain("0 / 5");
+  });
+
+  it("미달성 문양은 잘리지 않는 이미지 슬롯 안에서 잠금 베일로 가린다", () => {
+    const html = renderEmptyGallery();
+
+    expect(html.match(/class="achievement-card__image is-obscured"/g)).toHaveLength(8);
+    expect(html.match(/data-nimg="fill"/g)).toHaveLength(8);
+    expect(html.match(/class="achievement-card__lock" aria-hidden="true"/g)).toHaveLength(8);
   });
 
   it("공개 누적 업적은 접근 가능한 진행도를 제공한다", () => {

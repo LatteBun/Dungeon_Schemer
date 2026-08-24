@@ -24,8 +24,8 @@ export interface AchievementCardView {
 
 export type AchievementScreenStatus = "loading" | "ready" | "recovered" | "unavailable";
 
-const HIDDEN_TITLE = "알 수 없는 기록";
-const HIDDEN_DESCRIPTION = "아직 드러나지 않은 길드 기록입니다.";
+const HIDDEN_TITLE = "???";
+const HIDDEN_DESCRIPTION = "조건을 달성하면 기록이 공개됩니다.";
 
 export function achievementCardViewsFor(progress: PlayerProgressV1): readonly AchievementCardView[] {
   return ACHIEVEMENT_CATALOG.map((achievement) => {
@@ -101,8 +101,18 @@ function AchievementCard({ card }: { readonly card: AchievementCardView }) {
 
   return (
     <article className={`achievement-card ${card.unlocked ? "is-unlocked" : "is-locked"}`}>
-      <div className="achievement-card__image">
-        <Image src={card.imageSrc} alt={imageAlt} width={1024} height={1024} style={{ objectFit: "contain" }} />
+      <div className={`achievement-card__image${card.unlocked ? "" : " is-obscured"}`}>
+        <Image src={card.imageSrc} alt={imageAlt} fill sizes="25rem" style={{ objectFit: "contain" }} />
+        {!card.unlocked ? (
+          <span className="achievement-card__lock" aria-hidden="true">
+            <svg viewBox="0 0 64 72" focusable="false">
+              <path d="M18 30v-9a14 14 0 0 1 28 0v9h-7v-9a7 7 0 0 0-14 0v9Z" />
+              <rect x="9" y="28" width="46" height="36" rx="6" />
+              <circle cx="32" cy="45" r="5" />
+              <path d="m29 49-2 9h10l-2-9Z" />
+            </svg>
+          </span>
+        ) : null}
       </div>
       <div className="achievement-card__copy">
         <p className="achievement-card__category">{card.categoryLabel}</p>

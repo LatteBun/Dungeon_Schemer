@@ -99,16 +99,46 @@
 }
 
 .achievement-card__image {
+  position: relative;
   display: grid;
   min-height: 0;
   place-items: center;
   overflow: hidden;
+  isolation: isolate;
+  background: radial-gradient(circle, #30352e 0, #151916 72%);
 }
 
 .achievement-card__image img {
-  width: 100%;
-  height: 100%;
   object-fit: contain;
+  transform: scale(0.94);
+  transition: filter 160ms ease, opacity 160ms ease;
+}
+
+.achievement-card__image.is-obscured img {
+  filter: grayscale(1) brightness(0.26) contrast(0.9);
+  opacity: 0.48;
+}
+
+.achievement-card__lock {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle, transparent 0 12%, #080a08b8 54%, #080a08e6 100%);
+}
+
+.achievement-card__lock svg {
+  width: 3.4rem;
+  height: 3.8rem;
+  padding: 0.65rem;
+  border: 0.0625rem solid #9c8148;
+  border-radius: 50%;
+  fill: #c6a45c;
+  stroke: #2a2112;
+  stroke-width: 1.4;
+  background: #121611e8;
+  box-shadow: 0 0.45rem 1.2rem #050605, inset 0 0 0 0.18rem #27251b;
 }
 
 .achievement-card__copy {
