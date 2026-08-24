@@ -103,9 +103,18 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
         </div>
       </dl>
 
+      {/*
+        * 다음 계약이 정해져 있다는 말이 아니다.
+        *
+        * 이 값은 전멸했을 때만 나온다. 던전은 그대로 남고 위험도만 올랐으므로,
+        * 그 던전을 다시 맡으면 얼마를 받는지가 정해진다 - 보상표가 위험도와
+        * 생존 인원의 함수이기 때문이다. 「다음 계약 보상」이라고만 적으면
+        * 게시판의 다음 공고가 이미 정해진 것처럼 읽힌다.
+        */}
       {settlement.nextReward === null ? null : (
         <p className="u6-next-reward">
-          다음 계약 보상 <strong>명성 {settlement.nextReward.reputation}</strong>
+          <span>이 던전을 다시 맡으면 · 3명 생환 기준</span>
+          <strong>명성 {settlement.nextReward.reputation}</strong>
           <strong>골드 {settlement.nextReward.gold}</strong>
         </p>
       )}
@@ -114,8 +123,48 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
         * 봉인으로 닫는다.
         *
         * 정산은 길드에 넘기는 문서다. 봉인이 찍혀야 끝난 문서로 읽힌다.
+        *
+        * 인주는 한 장뿐이라 색을 입힌다. 다 살아 돌아왔으면 초록, 누군가를
+        * 잃었으면 호박색, 전멸이면 그대로 붉은색이다 - 문서를 읽기 전에 색으로
+        * 먼저 안다.
         */}
-      <img className="u6-changes__seal" src={`${ASSET}/emblems/wax_seal.png`} alt="" aria-hidden="true" />
+      <img
+        className={`u6-changes__seal is-${settlement.survivors === 3 ? "whole" : settlement.survivors === 0 ? "lost" : "costly"}`}
+        src={`${ASSET}/emblems/wax_seal.png`}
+        alt=""
+        aria-hidden="true"
+      />
+    </section>
+  );
+}
+
+function Returned({ settlement }: { settlement: U6SettlementView }) {
+  if (settlement.members.length === 0) return null;
+
+  return (
+    <section className="panel-section u6-returned" aria-labelledby="u6-returned-title">
+      <h3 id="u6-returned-title">다녀온 사람</h3>
+      <ul className="u6-returned__list">
+        {settlement.members.map((member) => (
+          <li key={member.id} className={member.alive ? "" : "is-dead"}>
+            <img src={member.portraitSrc} alt="" aria-hidden="true" />
+            <span className="u6-returned__who">
+              <strong>{member.name}</strong>
+              <small>{member.classLabel}</small>
+            </span>
+            {member.alive ? (
+              <span className="u6-returned__state">
+                HP {member.hp.after} / {member.hp.max}
+                {member.trust.after === member.trust.before ? null : (
+                  <em>신뢰 {member.trust.before} → {member.trust.after}</em>
+                )}
+              </span>
+            ) : (
+              <span className="u6-returned__state is-dead">돌아오지 못했다</span>
+            )}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -155,6 +204,15 @@ export function U6SettlementScreen({ status, settlement, onContinue }: U6Settlem
         rightPanel={
           <div className="u6-settlement-side">
             <Changes settlement={settlement} />
+            {/*
+              * 누가 돌아왔는지.
+              *
+              * 정산은 사람에 대한 셈인데 숫자만 있고 사람이 없어, "2명 생존" 이
+              * 누구를 말하는지 화면에서 알 수 없었다. 다만 정산 자체가 주인공이라
+              * 조촐하게 둔다 - 카드가 아니라 한 줄씩이다.
+              */}
+            <Returned settlement={settlement} />
+
             {/*
               * 화면을 넘기는 버튼은 오른쪽 아래에 둔다.
               *
