@@ -56,6 +56,46 @@ export interface PartyMemberCardProps {
 
 const GOLD_ICON = "/assets/u2/status-gold.svg";
 
+/** 이 원정에서 얼마나 달라졌는가. 처음 값과 마지막 값만 본다. */
+function netOf(
+  changes: readonly PartyMemberChangeEntry[],
+  pick: (entry: PartyMemberChangeEntry) => { readonly before: number; readonly after: number } | undefined,
+): { readonly before: number; readonly after: number } | undefined {
+  const seen = changes.map(pick).filter((one) => one !== undefined);
+  const first = seen[0];
+  const last = seen[seen.length - 1];
+  return first === undefined || last === undefined ? undefined : { before: first.before, after: last.after };
+}
+
+function NetChange({ changes }: { changes: readonly PartyMemberChangeEntry[] }) {
+  const hp = netOf(changes, (entry) => entry.hp);
+  const trust = netOf(changes, (entry) => entry.trust);
+  if (hp === undefined && trust === undefined) return null;
+
+  return (
+    <dl className="party-card__net">
+      {hp === undefined ? null : (
+        <div className={hp.after < hp.before ? "is-down" : "is-up"}>
+          <dt>HP</dt>
+          <dd>
+            <b>{hp.after - hp.before > 0 ? `+${hp.after - hp.before}` : hp.after - hp.before}</b>
+            <small>{hp.before} → {hp.after}</small>
+          </dd>
+        </div>
+      )}
+      {trust === undefined ? null : (
+        <div className={trust.after < trust.before ? "is-down" : "is-up"}>
+          <dt>신뢰</dt>
+          <dd>
+            <b>{trust.after - trust.before > 0 ? `+${trust.after - trust.before}` : trust.after - trust.before}</b>
+            <small>{trust.before} → {trust.after}</small>
+          </dd>
+        </div>
+      )}
+    </dl>
+  );
+}
+
 function percent(value: number, max: number): number {
   if (max <= 0) return 0;
   return Math.max(0, Math.min(100, (value / max) * 100));
@@ -130,11 +170,21 @@ export function PartyMemberCard({ member, index, testId, changes }: PartyMemberC
 
       {canFlip && (
         <div className="party-card__back" data-testid="party-member-changes">
-          {/* 뒤집혀도 누구인지는 남는다. 이름이 없으면 어느 카드인지 잃는다. */}
-          <h4>
-            <strong>{member.name}</strong>
-            <span>이 원정에서</span>
-          </h4>
+          {/*
+            * 뒤집혀도 누구인지는 남는다. 이름이 없으면 어느 카드인지 잃는다.
+            *
+            * 「이 원정에서」는 적지 않는다 - 아래 총합과 사슬이 이미 이 원정의
+            * 것이고, 뒤집어 놓고 다시 설명할 자리가 아니다.
+            */}
+          <h4><strong>{member.name}</strong></h4>
+
+          {/*
+            * 이 원정의 총합을 먼저 크게 보여준다.
+            *
+            * 한 줄씩 훑어 더해야 얼마나 상했는지 알 수 있으면 되짚는 뜻이 없다.
+            * 사슬은 그 아래에서 "왜" 를 말한다.
+            */}
+          <NetChange changes={changes} />
           {changes.length === 0 ? (
             <p className="party-card__back-empty">아직 아무 일도 없었다.</p>
           ) : (

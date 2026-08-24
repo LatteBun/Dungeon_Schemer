@@ -162,3 +162,54 @@ describe("카드 뒤집기", () => {
     expect(html).toContain("신뢰 45 → 41");
   });
 });
+
+describe("이 원정의 총합", () => {
+  const member = {
+    id: "character-1",
+    name: "로자린드",
+    classLabel: "마법사",
+    personalityLabel: "신중한",
+    hp: 12,
+    maxHp: 24,
+    trust: 30,
+    gold: 12,
+    alive: true,
+  };
+
+  /* 한 줄씩 훑어 더해야 알 수 있으면 되짚는 뜻이 없다. */
+  it("여러 자리의 변화를 처음과 마지막으로 합친다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [
+        { cause: "첫 자리", hp: { before: 24, after: 18 }, trust: { before: 45, after: 40 } },
+        { cause: "둘째 자리", hp: { before: 18, after: 12 }, trust: { before: 40, after: 30 } },
+      ],
+    }));
+
+    /* 24 에서 12 로, 45 에서 30 으로. 중간값은 총합에 나오지 않는다. */
+    expect(html).toContain("-12");
+    expect(html).toContain("24 → 12");
+    expect(html).toContain("-15");
+    expect(html).toContain("45 → 30");
+  });
+
+  it("오른 것은 더하기로 적는다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [{ cause: "쉬어 갔다", hp: { before: 12, after: 20 } }],
+    }));
+
+    expect(html).toContain("+8");
+  });
+
+  /* 아무것도 달라지지 않았으면 총합 칸을 두지 않는다. */
+  it("변화가 없으면 총합이 없다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [{ cause: "반응만 했다", reaction: "수용" }],
+    }));
+
+    expect(html).not.toContain("party-card__net");
+    expect(html).toContain("반응만 했다");
+  });
+});

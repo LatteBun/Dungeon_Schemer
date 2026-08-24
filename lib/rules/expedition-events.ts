@@ -27,6 +27,44 @@ function cutDepths(riskLevel: RiskLevel, layerCount: number): readonly number[] 
   return Array.from({ length: count }, (_, index) => Math.min(layerCount - 2, first + index));
 }
 
+function minimumMonsterCount(riskLevel: RiskLevel): number {
+  return riskLevel <= 2 ? 2 : 3;
+}
+
+function normalPaths(map: GeneratedMap): readonly (readonly NodeId[])[] {
+  const nodesById = new Map(map.nodes.map((node) => [node.id, node]));
+  const visit = (nodeId: NodeId, path: readonly NodeId[]): readonly (readonly NodeId[])[] => {
+    if (nodeId === map.bossNodeId) return [path];
+    const node = nodesById.get(nodeId);
+    if (node === undefined) invalid("monster 경로 검사 중 지도 node가 없다", { nodeId });
+    return [...node.nextNodeIds].sort().flatMap((nextNodeId) => visit(
+      nextNodeId,
+      node.kind === "normal" ? [...path, node.id] : path,
+    ));
+  };
+  return visit(map.entryNodeId, []);
+}
+
+function hasPathMonsterMinimum(input: {
+  readonly map: GeneratedMap;
+  readonly plans: ReadonlyMap<NodeId, PreparedNodePlan>;
+  readonly minimum: number;
+}): boolean {
+  return normalPaths(input.map).every((path) => path.filter((nodeId) => input.plans.get(nodeId)?.category === "monster").length >= input.minimum);
+}
+
+function hasPathMonsterPotential(input: {
+  readonly map: GeneratedMap;
+  readonly plans: ReadonlyMap<NodeId, PreparedNodePlan>;
+  readonly unassignedNodeIds: ReadonlySet<NodeId>;
+  readonly categoryChoices: ReadonlyMap<NodeId, readonly EventKind[]>;
+  readonly minimum: number;
+}): boolean {
+  return normalPaths(input.map).every((path) => path.filter((nodeId) => input.unassignedNodeIds.has(nodeId)
+    ? input.categoryChoices.get(nodeId)?.includes("monster") === true
+    : input.plans.get(nodeId)?.category === "monster").length >= input.minimum);
+}
+
 function reachableNodes(map: GeneratedMap, start: NodeId, blocked?: NodeId): ReadonlySet<NodeId> {
   const nodes = new Map(map.nodes.map((node) => [node.id, node]));
   const visited = new Set<NodeId>();
@@ -157,7 +195,6 @@ function reserveStrongLinkCategories(input: {
     const free = input.map.nodes
       .filter((node) => node.kind === "normal" && !taken.has(node.id) && input.plans.has(node.id))
       .map((node) => node.id);
-
     let pair: readonly [NodeId, NodeId] | undefined;
     for (const predecessorId of free) {
       const predecessorLayer = input.layerByNode.get(predecessorId) ?? -1;
@@ -196,6 +233,8 @@ export function prepareExpeditionEvents(input: {
   readonly theme: ThemeContent;
   readonly activeRuleIds: readonly RuleId[];
   readonly activeMonsterIds: readonly MonsterId[];
+  /** 콘텐츠 검증·생성 fixture용 후보 catalog. 생략하면 테마 정식 catalog를 쓴다. */
+  readonly eventCatalog?: readonly SituationEvent[];
 }): PreparedExpeditionEvents {
   if (input.attempt < 0 || !Number.isInteger(input.attempt)) invalid("attempt가 유효하지 않다", { attempt: input.attempt });
   const rng = createRng(`${input.campaignSeed}/${input.dungeonId}/${input.attempt}`).derive("event");
@@ -212,7 +251,7 @@ export function prepareExpeditionEvents(input: {
     });
   }
   const bossInfoCuts = cuts.map((depth) => ({ nodeIds: input.map.layers[depth]?.nodeIds ?? [] }));
-  const allEvents = eventsForTheme(input.theme.id);
+  const allEvents = input.eventCatalog ?? eventsForTheme(input.theme.id);
   const activeRuleIds = new Set(input.activeRuleIds);
   const activeMonsterIds = new Set(input.activeMonsterIds);
   const eligibleEvents = allEvents.filter((event) => eventMatchesProfile(event, activeRuleIds, activeMonsterIds));
@@ -286,6 +325,19 @@ export function prepareExpeditionEvents(input: {
     plans.set(link.predecessorNodeId, { ...predecessorPlan, hiddenRole: "strongPredecessor", plannedClueId: link.clueId });
     strongLinks.push(link);
   }
+  assignNormalCategories({
+    plans,
+    map: input.map,
+    strongLinks,
+    eligibleEvents,
+    strongClues: new Set(strongClues),
+    minimumMonsterCount: minimumMonsterCount(input.riskLevel),
+    rng,
+    categories,
+  });
+  if (!hasPathMonsterMinimum({ map: input.map, plans, minimum: minimumMonsterCount(input.riskLevel) })) {
+    invalid("경로별 monster 최소치가 충족되지 않는다", { minimum: minimumMonsterCount(input.riskLevel) });
+  }
   return {
     nodePlans: plans,
     bossInfoCuts,
@@ -303,6 +355,182 @@ function normalCandidates(events: readonly SituationEvent[], role: PreparedNodeP
   return events.filter((event) => event.requiresClue === undefined && (event.revealsClue === undefined || !strongClues.has(event.revealsClue)) && event.targetBossId === undefined);
 }
 
+function plannedRoleForCapacity(input: {
+  readonly nodeId: NodeId;
+  readonly plan: PreparedNodePlan;
+  readonly strongLinks: readonly StrongLinkPlan[];
+}): { readonly role: PreparedNodePlan["hiddenRole"]; readonly clueId: ClueId | undefined } {
+  const follower = input.strongLinks.find((link) => link.followerNodeId === input.nodeId);
+  if (follower !== undefined) return { role: "strongFollower", clueId: follower.clueId };
+  return { role: input.plan.hiddenRole, clueId: input.plan.plannedClueId };
+}
+
+function minimumBossInfoCandidateCount(events: readonly SituationEvent[]): number {
+  const countsByBoss = new Map<string, number>();
+  for (const event of events) {
+    if (event.targetBossId === undefined) continue;
+    countsByBoss.set(event.targetBossId, (countsByBoss.get(event.targetBossId) ?? 0) + 1);
+  }
+  return countsByBoss.size === 0 ? 0 : Math.min(...countsByBoss.values());
+}
+
+export function findDeterministicCapacityAssignment<Node, Category>(input: {
+  readonly nodeOrder: readonly Node[];
+  readonly categoryChoices: ReadonlyMap<Node, readonly Category[]>;
+  readonly hasPotential: (assignment: ReadonlyMap<Node, Category>) => boolean;
+  readonly isValid: (assignment: ReadonlyMap<Node, Category>) => boolean;
+}): Map<Node, Category> | undefined {
+  const assignment = new Map<Node, Category>();
+  const search = (index: number): Map<Node, Category> | undefined => {
+    if (!input.hasPotential(assignment)) return undefined;
+    if (index === input.nodeOrder.length) return input.isValid(assignment) ? new Map(assignment) : undefined;
+    const nodeId = input.nodeOrder[index];
+    const choices = input.categoryChoices.get(nodeId);
+    if (choices === undefined || choices.length === 0) return undefined;
+
+    for (const category of choices) {
+      assignment.set(nodeId, category);
+      const result = search(index + 1);
+      if (result !== undefined) return result;
+    }
+    assignment.delete(nodeId);
+    return undefined;
+  };
+
+  return search(0);
+}
+
+/**
+ * 공개 계획이 실제 방문 순서에서 소비할 수 있는 서로 다른 사건 수를 넘는지 잰다.
+ *
+ * target boss가 prepare 입력에 없으므로 bossInfo는 테마의 모든 보스 후보 중 가장
+ * 작은 풀로 보수적으로 검사한다. normal과 strong predecessor/follower도 active
+ * profile 뒤의 후보 풀을 경로마다 검사한다.
+ * strong follower는 아직 방문 전에는 normal로 보이지만, 선행이 실제 경로에서 먼저
+ * 열어야 하므로 이 단계에서는 미리 follower 후보 풀로 계산한다.
+ */
+function categoryCapacityDeficit(input: {
+  readonly plans: ReadonlyMap<NodeId, PreparedNodePlan>;
+  readonly map: GeneratedMap;
+  readonly strongLinks: readonly StrongLinkPlan[];
+  readonly eligibleEvents: readonly SituationEvent[];
+  readonly strongClues: ReadonlySet<ClueId>;
+  readonly ignoredNormalNodeIds?: ReadonlySet<NodeId>;
+}): number {
+  const nodes = new Map(input.map.nodes.map((node) => [node.id, node]));
+  const visit = (nodeId: NodeId, usedByPool: ReadonlyMap<string, number>): number => {
+    if (nodeId === input.map.bossNodeId) return 0;
+    const node = nodes.get(nodeId);
+    if (node === undefined) invalid("용량 검사 중 지도 node가 없다", { nodeId });
+    const plan = input.plans.get(nodeId);
+    if (plan === undefined) return node.nextNodeIds.reduce((sum, nextNodeId) => sum + visit(nextNodeId, usedByPool), 0);
+
+    const { role, clueId } = plannedRoleForCapacity({ nodeId, plan, strongLinks: input.strongLinks });
+    if (role === "normal" && input.ignoredNormalNodeIds?.has(nodeId)) {
+      return node.nextNodeIds.reduce((sum, nextNodeId) => sum + visit(nextNodeId, usedByPool), 0);
+    }
+    const eventsForCategory = input.eligibleEvents.filter((event) => event.kind === plan.category);
+    const candidateCount = role === "bossInfo"
+      ? minimumBossInfoCandidateCount(eventsForCategory)
+      : new Set(normalCandidates(eventsForCategory, role, clueId, undefined, input.strongClues).map((event) => event.id)).size;
+    const poolKey = `${plan.category}/${role}/${clueId ?? ""}`;
+    const count = (usedByPool.get(poolKey) ?? 0) + 1;
+    const nextUsedByPool = new Map(usedByPool);
+    nextUsedByPool.set(poolKey, count);
+    const deficit = Math.max(0, count - candidateCount);
+    return deficit + node.nextNodeIds.reduce((sum, nextNodeId) => sum + visit(nextNodeId, nextUsedByPool), 0);
+  };
+
+  return visit(input.map.entryNodeId, new Map());
+}
+
+/**
+ * 경로 monster 하한과 후보 수용량을 seeded order의 완전 탐색으로 함께 만족시킨다.
+ * 아직 배정하지 않은 normal node는 partial 검사에서 빼므로 이미 확정한 역할·분류가
+ * 후보 풀을 넘는 가지에만 pruning한다. EventId를 예약하거나 방문 시점에 분류를
+ * 바꾸지 않고, strong-link와 bossInfo 예약 노드는 고정한다.
+ */
+function assignNormalCategories(input: {
+  readonly plans: Map<NodeId, PreparedNodePlan>;
+  readonly map: GeneratedMap;
+  readonly strongLinks: readonly StrongLinkPlan[];
+  readonly eligibleEvents: readonly SituationEvent[];
+  readonly strongClues: ReadonlySet<ClueId>;
+  readonly minimumMonsterCount: number;
+  readonly rng: ReturnType<typeof createRng>;
+  readonly categories: readonly EventKind[];
+}): void {
+  const linkedNodeIds = new Set(input.strongLinks.flatMap((link) => [link.predecessorNodeId, link.followerNodeId]));
+  const mutableNodeIds = input.map.nodes
+    .filter((node) => node.kind === "normal" && !linkedNodeIds.has(node.id) && input.plans.get(node.id)?.hiddenRole === "normal")
+    .map((node) => node.id);
+  if (categoryCapacityDeficit(input) === 0 && hasPathMonsterMinimum({
+    map: input.map,
+    plans: input.plans,
+    minimum: input.minimumMonsterCount,
+  })) return;
+
+  const nodeOrder = input.rng.shuffle(mutableNodeIds);
+  const categoryChoices = new Map<NodeId, readonly EventKind[]>();
+  for (const nodeId of nodeOrder) {
+    const plan = input.plans.get(nodeId);
+    if (plan === undefined) invalid("용량 보정할 node plan이 없다", { nodeId });
+    const eligibleCategories = input.rng.shuffle(input.categories.filter((category) => category !== plan.category))
+      .filter((category) => normalCandidates(
+        input.eligibleEvents.filter((event) => event.kind === category),
+        "normal",
+        undefined,
+        undefined,
+        input.strongClues,
+      ).length > 0);
+    categoryChoices.set(nodeId, [plan.category, ...eligibleCategories]);
+  }
+
+  const plansWith = (assignment: ReadonlyMap<NodeId, EventKind>): Map<NodeId, PreparedNodePlan> => {
+    const plans = new Map(input.plans);
+    for (const [nodeId, category] of assignment) {
+      const plan = plans.get(nodeId);
+      if (plan === undefined) invalid("용량 보정할 node plan이 없다", { nodeId });
+      plans.set(nodeId, { ...plan, category });
+    }
+    return plans;
+  };
+  const assignment = findDeterministicCapacityAssignment({
+    nodeOrder,
+    categoryChoices,
+    hasPotential: (partial) => {
+      const plans = plansWith(partial);
+      const unassignedNodeIds = new Set(mutableNodeIds.filter((nodeId) => !partial.has(nodeId)));
+      return hasPathMonsterPotential({
+        map: input.map,
+        plans,
+        unassignedNodeIds,
+        categoryChoices,
+        minimum: input.minimumMonsterCount,
+      }) && categoryCapacityDeficit({
+        ...input,
+        plans,
+        ignoredNormalNodeIds: unassignedNodeIds,
+      }) === 0;
+    },
+    isValid: (complete) => {
+      const plans = plansWith(complete);
+      return hasPathMonsterMinimum({ map: input.map, plans, minimum: input.minimumMonsterCount })
+        && categoryCapacityDeficit({ ...input, plans }) === 0;
+    },
+  });
+  if (assignment === undefined) {
+    invalid("경로별 monster 최소치와 사건 후보 용량을 함께 만족하는 정상 분류를 만들 수 없다", {
+      minimumMonsterCount: input.minimumMonsterCount,
+    });
+  }
+  for (const [nodeId, category] of assignment) {
+    const plan = input.plans.get(nodeId);
+    if (plan === undefined) invalid("용량 보정할 node plan이 없다", { nodeId });
+    input.plans.set(nodeId, { ...plan, category });
+  }
+}
+
 export function materializeNodeEvent(input: {
   readonly prepared: PreparedExpeditionEvents;
   readonly nodeId: NodeId | string;
@@ -313,6 +541,8 @@ export function materializeNodeEvent(input: {
   readonly targetBossId?: string;
   readonly activeRuleIds: readonly RuleId[];
   readonly activeMonsterIds: readonly MonsterId[];
+  /** prepare 단계와 같은 fixture catalog를 써 물질화 경계를 검증한다. */
+  readonly eventCatalog?: readonly SituationEvent[];
 }): MaterializedNodeEvent {
   const plan = input.prepared.nodePlans.get(input.nodeId as NodeId);
   if (plan === undefined) invalid("방문할 node plan이 없다", { nodeId: input.nodeId });
@@ -323,7 +553,7 @@ export function materializeNodeEvent(input: {
   if (plan.hiddenRole === "strongFollower" && plan.plannedClueId !== undefined && !input.prepared.heldClueIds.has(plan.plannedClueId)) {
     invalid("strong follower의 선행 단서가 아직 없다", { nodeId: input.nodeId, clueId: plan.plannedClueId });
   }
-  const eligibleEvents = eventsForTheme(input.theme.id).filter((event) => eventMatchesProfile(event, new Set(input.activeRuleIds), new Set(input.activeMonsterIds)));
+  const eligibleEvents = (input.eventCatalog ?? eventsForTheme(input.theme.id)).filter((event) => eventMatchesProfile(event, new Set(input.activeRuleIds), new Set(input.activeMonsterIds)));
   const strongClues = new Set(eligibleEvents.flatMap((event) => event.requiresClue ? [event.requiresClue] : []));
   const candidates = normalCandidates(eligibleEvents.filter((event) => event.kind === plan.category), plan.hiddenRole, plan.plannedClueId, input.targetBossId, strongClues);
   const available = candidates.filter((event) => !input.prepared.usedEventIds.has(event.id));

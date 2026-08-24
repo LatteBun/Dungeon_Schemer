@@ -160,3 +160,71 @@ describe("U4 fixed 16:9 canvas contract", () => {
     expect(fixes).toMatch(/\.u4-move-button__left,[\s\S]*display:\s*none/);
   });
 });
+
+describe("선택한 지점 썸네일", () => {
+  /*
+   * 여기서 필요한 것은 분류 하나다.
+   *
+   * 방 밑그림이 돌문이라 칸의 주인공이 되어, 정작 무슨 지점인지 말하는 아이콘을
+   * 덮었다. 밑그림을 물려 두는 것으로 한 번 넘겼다가 아예 뺐다 - 지도의 방들은
+   * 그대로 그 밑그림을 쓰고, 이 칸은 아이콘과 테두리만 든다.
+   */
+  /*
+   * 아이콘 하나만 든다.
+   *
+   * 방 밑그림(돌문)은 칸의 주인공이 되어 아이콘을 덮었고, 액자 그림은 244x119
+   * 라 정사각 칸에 넣으면 늘어났다. 여기서 필요한 것은 분류 하나뿐이라 둘 다
+   * 버리고 테두리는 CSS 로 두른다.
+   */
+  it("아이콘 말고 다른 그림을 두지 않는다", () => {
+    const source = readFileSync("components/game/U4DungeonMapScreen.tsx", "utf8");
+    const thumbnail = source.match(/u4-destination__thumbnail[\s\S]*?<\/div>/)?.[0] ?? "";
+
+    expect(thumbnail).toContain("u4-destination__icon");
+    expect(thumbnail).not.toContain("u4-destination__room");
+    expect(thumbnail).not.toContain("u4-destination__frame");
+  });
+
+  /* 아이콘이 작으면 테두리 안에 묻힌다. */
+  it("분류 아이콘이 썸네일의 절반을 넘는다", () => {
+    const sheet = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const icon = [...sheet.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+      .filter(([, selector]) => selector.includes(".u4-destination__icon"))
+      .map(([, , body]) => body.match(/width:\s*(\d+)%/)?.[1])
+      .find((one) => one !== undefined) ?? "0";
+
+    expect(Number(icon)).toBeGreaterThan(50);
+  });
+});
+
+
+describe("액자를 늘리지 않는다", () => {
+  /*
+   * 241x129 짜리를 700x70 판에 늘려 씌우고 있었다.
+   *
+   * 가로로 세 배 늘고 세로로 눌려 네 귀퉁이 문양이 찌그러졌다. `border-image` 는
+   * 귀퉁이를 그대로 두고 변만 늘린다.
+   */
+  it("선택한 지점 액자는 border-image 로 잘라 쓴다", () => {
+    const sheet = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const panel = sheet.match(/\.u4-destination__panel\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(panel).toMatch(/border-image:\s*url\("\/assets\/u4\/navigation\/destination_panel_frame\.png"\)/);
+    /* 늘려 씌우던 그림 요소는 남아 있지 않아야 한다. */
+    expect(sheet).not.toContain("u4-destination__panel-frame");
+  });
+
+  /*
+   * 폭은 열이 정하고 그림이 따른다.
+   *
+   * 같은 변수를 열과 그림에 각각 주었더니 둘이 어긋나 액자가 첫 글자를 덮었다.
+   */
+  /* 좌우로 긴 칸보다 네모난 칸이 아이콘을 크게 보여준다. */
+  it("썸네일은 정사각이고 폭은 열이 정한다", () => {
+    const sheet = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const thumb = sheet.match(/\.u4-destination__thumbnail\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(thumb).toMatch(/width:\s*100%/);
+    expect(thumb).toMatch(/aspect-ratio:\s*1/);
+  });
+});

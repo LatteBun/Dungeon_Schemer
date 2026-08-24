@@ -149,7 +149,7 @@ function roomPositionStyle(x: number, y: number): CSSProperties {
   };
 }
 
-function RoomVisual({ node }: { node: U4MapNodeView }) {
+function RoomVisual({ node, selected = false }: { node: U4MapNodeView; selected?: boolean }) {
   /* 같은 분류의 방이 도장 찍은 것처럼 보이지 않게 틀만 조금 흐트러뜨린다. */
   const variation = roomVariationFor(node.id);
 
@@ -176,6 +176,20 @@ function RoomVisual({ node }: { node: U4MapNodeView }) {
         alt=""
         aria-hidden="true"
       />
+      {/*
+        * 고른 지점에는 표를 세운다.
+        *
+        * 빛만으로 알리면 그 빛이 아이콘 위로 번져 무슨 지점인지 도리어 가린다.
+        * 위에 표를 세우면 아이콘은 그대로 두고 고른 것만 가리킬 수 있다.
+        */}
+      {selected ? (
+        <img
+          className="u4-room__chosen-marker"
+          src="/assets/u4/navigation/cta_button_arrow.png"
+          alt=""
+          aria-hidden="true"
+        />
+      ) : null}
       {node.state === "current" ? (
         <img
           className="u4-room__current-marker"
@@ -241,7 +255,6 @@ function DungeonMap({
     <div className="u4-map-panel">
       <header className="u4-map-panel__header">
         <div>
-          <span>공개 분기 지도</span>
           <strong>{dungeonName}</strong>
         </div>
         <RiskStars riskLevel={riskLevel} />
@@ -312,7 +325,7 @@ function DungeonMap({
                   onClick={() => onSelectNextNode(node.id)}
                   onKeyDown={(event) => handleArrow(event, node.id)}
                 >
-                  <RoomVisual node={node} />
+                  <RoomVisual node={node} selected={selectedNextNodeId === node.id} />
                 </button>
               );
             }
@@ -389,9 +402,22 @@ function MoveButton({
           src="/assets/u4/navigation/cta_button_left.png"
           alt=""
         />
+        {/*
+          * 눌릴 수 있는지에 따라 판이 달라진다.
+          *
+          * 눌린 판과 잠긴 판이 따로 그려져 있는데 가운데 판 하나만 쓰고 있었다.
+          * 잠긴 버튼은 흐리게만 보여 왜 못 누르는지 덜 분명했다.
+          */}
         <img
           className="u4-move-button__center"
-          src="/assets/u4/navigation/cta_button_center.png"
+          src={disabled
+            ? "/assets/u4/navigation/cta_button_disabled_center.png"
+            : "/assets/u4/navigation/cta_button_center.png"}
+          alt=""
+        />
+        <img
+          className="u4-move-button__center u4-move-button__center--active"
+          src="/assets/u4/navigation/cta_button_active_center.png"
           alt=""
         />
         <img
@@ -400,13 +426,14 @@ function MoveButton({
           alt=""
         />
       </span>
+      {/*
+        * 화살표를 두지 않는다.
+        *
+        * 문구가 이미 "이 지점으로 이동" 이라 어디로 가는지 말하고 있고, 같은
+        * 화살 그림을 고른 지점 위에도 세워 두었다. 한 화면에 두 번 나오면
+        * 그것이 표인지 꾸밈인지 흐려진다.
+        */}
       <strong>이 지점으로 이동</strong>
-      <img
-        className="u4-move-button__arrow"
-        src="/assets/u4/navigation/cta_button_arrow.png"
-        alt=""
-        aria-hidden="true"
-      />
     </button>
   );
 }
@@ -454,31 +481,34 @@ function RightPanel({
         className="panel-section u4-destination"
         aria-labelledby="u4-destination-title"
       >
-        <h3 id="u4-destination-title">선택한 다음 지점</h3>
+        <h3 id="u4-destination-title">선택한 지점</h3>
         <div className="u4-destination__panel">
           {destination === undefined ? (
             <p className="u4-destination__empty">다음 지점을 선택하세요</p>
           ) : (
             <div className="u4-destination__summary">
+              {/*
+                * 방 밑그림을 두지 않는다.
+                *
+                * 돌문 그림이 칸의 주인공이 되어 정작 무슨 지점인지 말하는 아이콘을
+                * 덮었다. 밑그림을 물려 두는 것으로 넘겼었는데, 애초에 여기서
+                * 필요한 것은 분류 하나다. 지도의 방들은 그대로 그 밑그림을 쓴다.
+                */}
               <div className="u4-destination__thumbnail" aria-hidden="true">
-                <img
-                  className="u4-destination__room"
-                  src={ROOM_BASE[destination.kind]}
-                  alt=""
-                />
                 <img
                   className="u4-destination__icon"
                   src={ROOM_ICON[destination.kind]}
                   alt=""
                 />
-                <img
-                  className="u4-destination__frame"
-                  src="/assets/u4/navigation/destination_thumbnail_frame.png"
-                  alt=""
-                />
+                {/*
+                  * 액자 그림을 쓰지 않는다.
+                  *
+                  * 자산이 244x119 라 정사각 칸에 넣으면 늘어나고, 제 비율로 두면
+                  * 좌우로 길어 아이콘이 작아 보인다. 여기서 필요한 것은 분류
+                  * 하나이므로 네모난 테두리만 두르고 아이콘을 크게 세운다.
+                  */}
               </div>
               <div>
-                <span>공개 사건 분류</span>
                 <strong>{ROOM_LABEL[destination.kind]}</strong>
                 {/*
                   * 무엇이 기다리는지 말한다.
@@ -493,12 +523,13 @@ function RightPanel({
               </div>
             </div>
           )}
-          <img
-            className="u4-destination__panel-frame"
-            src="/assets/u4/navigation/destination_panel_frame.png"
-            alt=""
-            aria-hidden="true"
-          />
+          {/*
+            * 액자를 이미지로 덮지 않는다.
+            *
+            * 241x129 짜리를 700x70 판에 늘려 씌우고 있었다. 가로로 세 배 늘고
+            * 세로로 눌려 문양이 찌그러졌다. 같은 그림을 `border-image` 로 주면
+            * 네 귀퉁이는 그대로 두고 변만 늘어난다.
+            */}
         </div>
         <MoveButton
           disabled={destination === undefined}
@@ -514,20 +545,26 @@ function RightPanel({
         * 답사로 알아낸 생태 규칙은 다음 지점을 고를 때 쓰라고 준 사실인데,
         * 그동안 진행 화면의 기록 탭에만 있어 지도에서는 볼 수 없었다. 정작
         * 고르는 자리가 여기다.
+        *
+        * 들어오자마자 내용이 차 있는 것이 맞다. 여기 적히는 것은 던전 안에서
+        * 알아낸 것이 아니라 **계약 전 답사**로 이미 알아낸 생태다 - `E2` 가
+        * 위험도에 따라 그만큼 공개한다. 「답사 기록」이라고만 적어 두면 걸으면서
+        * 쌓이는 것처럼 읽히므로 언제 알아낸 것인지를 이름에 넣는다.
         */}
       {survey === undefined ? null : (
         <section className="panel-section u4-survey" aria-labelledby="u4-survey-title">
-          <h3 id="u4-survey-title">답사 기록</h3>
-          <p className="u4-survey__progress">
-            지나온 지점 <strong>{survey.visited}</strong> / {survey.total}
-          </p>
+          <h3 id="u4-survey-title">계약 전 답사</h3>
           {survey.disclosedRules.length === 0 ? (
-            <p className="u4-survey__empty">이 던전에서 알아낸 규칙이 아직 없다.</p>
+            <p className="u4-survey__empty">답사로 알아낸 것이 없다. 이 던전은 위험도가 낮다.</p>
           ) : (
             <ul className="u4-survey__rules">
               {survey.disclosedRules.map((rule) => <li key={rule}>{rule}</li>)}
             </ul>
           )}
+          {/* 걸으면서 쌓이는 것은 이쪽이다. */}
+          <p className="u4-survey__progress">
+            지나온 지점 <strong>{survey.visited}</strong> / {survey.total}
+          </p>
         </section>
       )}
     </div>
@@ -551,7 +588,8 @@ export function U4DungeonMapScreen({
     <div className="expedition-screen u4-dungeon-map-screen">
       <GameShell
         status={status}
-        screenTitle="던전 지도"
+        screenTitle=""
+        ariaTitle="던전 지도"
         main={
           <DungeonMap
             dungeonName={dungeonName}

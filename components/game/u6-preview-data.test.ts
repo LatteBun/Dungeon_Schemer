@@ -65,3 +65,29 @@ describe("U6 프리뷰 데이터", () => {
     expect(again.U6_PREVIEW_ENTRIES).toEqual(U6_PREVIEW_ENTRIES);
   });
 });
+
+describe("프리뷰의 피해 줄", () => {
+  /*
+   * 한 번 만들어 모든 변형에 돌려 쓰고 있었다.
+   *
+   * 그러면 전멸 정산에도 "피해 없이 지나갔다" 가 실린다 - 셋이 다 죽었는데.
+   * 프리뷰가 거짓을 말하면 프리뷰를 보고 고친 화면도 거짓을 담는다.
+   */
+  it("전멸 정산이 피해 없다고 말하지 않는다", () => {
+    const wiped = U6_PREVIEW_ENTRIES.find((entry) => entry.settlement?.survivors === 0);
+    if (wiped?.settlement === undefined) throw new Error("전멸 정산 프리뷰가 없다");
+
+    const damage = wiped.settlement.causeChain.find((step) => step.label === "피해")?.detail ?? "";
+
+    expect(damage).not.toBe("피해 없이 지나갔다");
+    expect(damage).toContain("→ 0");
+  });
+
+  it("생존 정산과 전멸 정산의 피해 줄이 다르다", () => {
+    const lines = U6_PREVIEW_ENTRIES
+      .filter((entry) => entry.settlement !== undefined)
+      .map((entry) => entry.settlement!.causeChain.find((step) => step.label === "피해")?.detail);
+
+    expect(new Set(lines).size).toBeGreaterThan(1);
+  });
+});

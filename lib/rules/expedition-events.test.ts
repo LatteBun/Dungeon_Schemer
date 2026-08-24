@@ -1,13 +1,37 @@
 import { describe, expect, it } from "vitest";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
-import { activateStrongFollower, applyImmediateEffect, prepareExpeditionEvents, materializeNodeEvent, resolveMonsterEventBattle, retryCombatMultiplier } from "@/lib/rules/expedition-events";
+import { activateStrongFollower, applyImmediateEffect, findDeterministicCapacityAssignment, prepareExpeditionEvents, materializeNodeEvent, resolveMonsterEventBattle, retryCombatMultiplier } from "@/lib/rules/expedition-events";
 import { THEMES } from "@/lib/content/themes";
 import { eventsForTheme } from "@/lib/content/event-registry";
 import { CLASSES } from "@/lib/content/classes";
-import type { ChoiceId, ClueId, DungeonId, NodeId, PreparedExpeditionEvents, PreparedNodePlan, StrongLinkPlan } from "@/lib/domain";
+import { RuleError } from "@/lib/domain";
+import type { ChoiceId, ClueId, DungeonId, GeneratedMap, MonsterId, NodeId, PreparedExpeditionEvents, PreparedNodePlan, RuleId, SituationEvent, StrongLinkPlan } from "@/lib/domain";
 import type { CharacterId, ClassId } from "@/lib/domain";
 
 describe("E3 원정 사건 준비와 물질화", () => {
+  it("위험도별 모든 실제 선택 경로에 monster 최소치를 보장한다", () => {
+    const cases = [
+      { campaignSeed: "issue-117-risk-1", dungeonId: "dungeon-spider-01" as DungeonId, riskLevel: 1 as const, theme: THEMES[0], minimum: 2 },
+      { campaignSeed: "issue-117-risk-3", dungeonId: "dungeon-graveyard-03" as DungeonId, riskLevel: 3 as const, theme: THEMES[2], minimum: 3 },
+    ];
+
+    for (const testCase of cases) {
+      const input = {
+        ...testCase,
+        initialRiskLevel: testCase.riskLevel,
+        attempt: 0,
+        activeRuleIds: testCase.theme.rules.map((rule) => rule.id),
+        activeMonsterIds: testCase.theme.monsters.map((monster) => monster.id),
+      };
+      const map = generateDungeonMap(input);
+      const prepared = prepareExpeditionEvents({ ...input, map });
+
+      for (const path of pathNodeIds(map)) {
+        expect(monsterCount(prepared, path)).toBeGreaterThanOrEqual(testCase.minimum);
+      }
+    }
+  });
+
   it("같은 입력의 준비 결과와 방문 EventId가 결정적이다", () => {
     const input = { campaignSeed: "e3-seed-0", dungeonId: "dungeon-spider-01" as DungeonId, initialRiskLevel: 3 as const, riskLevel: 3 as const, attempt: 0, activeRuleIds: THEMES[0].rules.map((rule) => rule.id), activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id) };
     const map = generateDungeonMap(input);
@@ -29,6 +53,93 @@ describe("E3 원정 사건 준비와 물질화", () => {
     const monsterNode = [...prepared.nodePlans.values()].find((plan) => plan.category === "monster" && plan.hiddenRole === "normal" && !prepared.strongLinks.some((link) => link.followerNodeId === plan.nodeId));
     if (monsterNode === undefined) throw new Error("monster normal node 없음");
     expect(() => materializeNodeEvent({ prepared, nodeId: monsterNode.nodeId, campaignSeed: input.campaignSeed, dungeonId: input.dungeonId, attempt: 0, theme: THEMES[0], activeRuleIds: [], activeMonsterIds: [] })).toThrow(/사용 가능한 사건이 없다/);
+  });
+
+  it("후보 용량을 넘기던 묘지 경로도 중복 EventId 없이 모두 물질화한다", () => {
+    const theme = THEMES.find((candidate) => candidate.id === "graveyard");
+    if (theme === undefined) throw new Error("graveyard theme 없음");
+    const input = {
+      campaignSeed: "i2-run-3",
+      dungeonId: "dungeon-graveyard-05" as DungeonId,
+      initialRiskLevel: 5 as const,
+      riskLevel: 5 as const,
+      attempt: 0,
+      activeRuleIds: ["graveyard-light" as RuleId, "graveyard-archer-light" as RuleId, "graveyard-desecration" as RuleId],
+      activeMonsterIds: ["graveyard-mage" as MonsterId, "graveyard-archer" as MonsterId],
+    };
+    const map = generateDungeonMap(input);
+    const visitedNodeIds = [
+      "dungeon-graveyard-05:attempt:0:depth:1:node:0" as NodeId,
+      "dungeon-graveyard-05:attempt:0:depth:2:node:2" as NodeId,
+      "dungeon-graveyard-05:attempt:0:depth:3:node:2" as NodeId,
+      "dungeon-graveyard-05:attempt:0:depth:4:node:2" as NodeId,
+      "dungeon-graveyard-05:attempt:0:depth:5:node:2" as NodeId,
+      "dungeon-graveyard-05:attempt:0:depth:6:node:0" as NodeId,
+      "dungeon-graveyard-05:attempt:0:depth:7:node:1" as NodeId,
+      "dungeon-graveyard-05:attempt:0:depth:8:node:0" as NodeId,
+    ] as const;
+    const materializedIds: string[] = [];
+    let prepared = prepareExpeditionEvents({ ...input, map, theme });
+
+    for (const nodeId of visitedNodeIds) {
+      const result = materializeNodeEvent({
+        prepared,
+        nodeId,
+        campaignSeed: input.campaignSeed,
+        dungeonId: input.dungeonId,
+        attempt: input.attempt,
+        theme,
+        targetBossId: "boss-graveyard-4",
+        activeRuleIds: input.activeRuleIds,
+        activeMonsterIds: input.activeMonsterIds,
+      });
+      materializedIds.push(result.event.id);
+      prepared = result.revealedClueId === undefined
+        ? result.state
+        : activateStrongFollower({ prepared: result.state, clueId: result.revealedClueId, nodeId });
+    }
+
+    expect(new Set(materializedIds)).toHaveLength(visitedNodeIds.length);
+  });
+
+  it("실제 후보 pool에서 중립 교환이 필요한 plan을 준비하고 양쪽 경로를 물질화한다", () => {
+    const fixture = capacityExchangeFixture();
+    const prepared = prepareExpeditionEvents(fixture);
+    const materializePath = (nodeIds: readonly NodeId[]) => {
+      let state = prepared;
+      const ids: string[] = [];
+      for (const nodeId of nodeIds) {
+        const result = materializeNodeEvent({ ...fixture, prepared: state, nodeId, targetBossId: fixture.bossEvent.targetBossId, eventCatalog: fixture.eventCatalog });
+        ids.push(result.event.id);
+        state = result.state;
+      }
+      return ids;
+    };
+
+    expect(new Set(materializePath(fixture.upperPath))).toHaveLength(fixture.upperPath.length);
+    expect(new Set(materializePath(fixture.lowerPath))).toHaveLength(fixture.lowerPath.length);
+  });
+
+  it("후보 수용량과 monster 경로 하한을 동시에 만족하는 분류를 만든다", () => {
+    const fixture = capacityExchangeFixture();
+    const prepared = prepareExpeditionEvents({ ...fixture, campaignSeed: "issue-117-capacity-protection" });
+
+    for (const path of [fixture.upperPath, fixture.lowerPath]) {
+      expect(monsterCount(prepared, path)).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("실제 후보 pool에 어느 normal category 배정도 없으면 INVALID_GENERATION으로 거부한다", () => {
+    const fixture = capacityExchangeFixture();
+    const impossibleCatalog = fixture.eventCatalog.filter((event) => event.kind === "special");
+
+    try {
+      prepareExpeditionEvents({ ...fixture, eventCatalog: impossibleCatalog });
+      throw new Error("불가능한 후보 pool이 준비되었다");
+    } catch (error) {
+      expect(error).toBeInstanceOf(RuleError);
+      expect((error as RuleError).code).toBe("INVALID_GENERATION");
+    }
   });
 
   it("예약된 follower는 predecessor보다 먼저 일반 사건으로 소모되지 않는다", () => {
@@ -94,6 +205,88 @@ describe("E3 원정 사건 준비와 물질화", () => {
     expect(result.battle?.enemies[0]?.targetWeightMultipliers).toEqual({ mage: 3 });
   });
 });
+
+function pathNodeIds(map: GeneratedMap): readonly (readonly NodeId[])[] {
+  const nodesById = new Map(map.nodes.map((node) => [node.id, node]));
+  const visit = (nodeId: NodeId, path: readonly NodeId[]): readonly (readonly NodeId[])[] => {
+    if (nodeId === map.bossNodeId) return [path];
+    const node = nodesById.get(nodeId);
+    if (node === undefined) throw new Error("지도 node 없음");
+    return node.nextNodeIds.flatMap((nextNodeId) => visit(
+      nextNodeId,
+      node.kind === "normal" ? [...path, node.id] : path,
+    ));
+  };
+  return visit(map.entryNodeId, []);
+}
+
+function monsterCount(prepared: PreparedExpeditionEvents, path: readonly NodeId[]): number {
+  return path.filter((nodeId) => prepared.nodePlans.get(nodeId)?.category === "monster").length;
+}
+
+function capacityExchangeFixture() {
+  const theme = THEMES.find((candidate) => candidate.id === "graveyard");
+  if (theme === undefined) throw new Error("graveyard theme 없음");
+  const events = eventsForTheme(theme.id);
+  const monsters = events.filter((event) => event.kind === "monster").slice(0, 4);
+  const rest = events.filter((event) => event.kind === "rest").slice(0, 2);
+  const merchant = events.find((event) => event.kind === "merchant");
+  const special = events.find((event) => event.kind === "special" && event.targetBossId === undefined);
+  const bossEvent = events.find((event) => event.kind === "special" && event.targetBossId !== undefined);
+  if (monsters.length !== 4 || rest.length !== 2 || merchant === undefined || special === undefined || bossEvent?.targetBossId === undefined) {
+    throw new Error("capacity fixture event 없음");
+  }
+  const eventCatalog: readonly SituationEvent[] = [...monsters, ...rest, merchant, special, bossEvent];
+  const entry = "capacity:entry" as NodeId;
+  const sharedFirst = "capacity:shared:first" as NodeId;
+  const sharedSecond = "capacity:shared:second" as NodeId;
+  const upperBranch = "capacity:upper:branch" as NodeId;
+  const lowerBranch = "capacity:lower:branch" as NodeId;
+  const bossInfo = "capacity:boss-info" as NodeId;
+  const upperTail = "capacity:upper:tail" as NodeId;
+  const lowerTail = "capacity:lower:tail" as NodeId;
+  const exit = "capacity:exit" as NodeId;
+  const boss = "capacity:boss" as NodeId;
+  const map: GeneratedMap = {
+    entryNodeId: entry,
+    bossNodeId: boss,
+    layers: [
+      { depth: 1, nodeIds: [sharedFirst] },
+      { depth: 2, nodeIds: [sharedSecond] },
+      { depth: 3, nodeIds: [upperBranch, lowerBranch] },
+      { depth: 4, nodeIds: [bossInfo] },
+      { depth: 5, nodeIds: [upperTail, lowerTail] },
+      { depth: 6, nodeIds: [exit] },
+    ],
+    nodes: [
+      { id: entry, kind: "entry", nextNodeIds: [sharedFirst] },
+      { id: sharedFirst, kind: "normal", nextNodeIds: [sharedSecond] },
+      { id: sharedSecond, kind: "normal", nextNodeIds: [upperBranch, lowerBranch] },
+      { id: upperBranch, kind: "normal", nextNodeIds: [bossInfo] },
+      { id: lowerBranch, kind: "normal", nextNodeIds: [bossInfo] },
+      { id: bossInfo, kind: "normal", nextNodeIds: [upperTail, lowerTail] },
+      { id: upperTail, kind: "normal", nextNodeIds: [exit] },
+      { id: lowerTail, kind: "normal", nextNodeIds: [exit] },
+      { id: exit, kind: "normal", nextNodeIds: [boss] },
+      { id: boss, kind: "boss", nextNodeIds: [] },
+    ],
+  };
+  return {
+    campaignSeed: "capacity-exchange-1380",
+    dungeonId: "dungeon-capacity-exchange" as DungeonId,
+    initialRiskLevel: 1 as const,
+    riskLevel: 1 as const,
+    attempt: 0,
+    map,
+    theme,
+    activeRuleIds: theme.rules.map((rule) => rule.id),
+    activeMonsterIds: theme.monsters.map((monsterDef) => monsterDef.id),
+    eventCatalog,
+    bossEvent,
+    upperPath: [sharedFirst, sharedSecond, upperBranch, bossInfo, upperTail, exit],
+    lowerPath: [sharedFirst, sharedSecond, lowerBranch, bossInfo, lowerTail, exit],
+  };
+}
 
 /** 그 시드로 ★3 던전 하나를 준비한다. 짝이 안 놓이면 `null` 이다. */
 function prepareForSeed(seed: string) {

@@ -79,11 +79,10 @@ function assertValidMembers(members: readonly Character[]): void {
         maxHp: member.maxHp,
       });
     }
-    if (
-      !Number.isInteger(member.hp) ||
-      member.hp < 1 ||
-      member.hp > member.maxHp
-    ) {
+    const validHp = member.alive
+      ? Number.isInteger(member.hp) && member.hp >= 1 && member.hp <= member.maxHp
+      : member.hp === 0;
+    if (!validHp) {
       invalidState("파티원의 HP가 유효하지 않다", {
         field: "members.hp",
         characterId: member.id,

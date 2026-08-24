@@ -15,9 +15,10 @@ import { createCampaignStore } from "@/lib/store/campaign-store";
 
 const StoreContext = createContext<CampaignStore | null>(null);
 
-export function CampaignStoreProvider({ seed, children }: {
+export function CampaignStoreProvider({ seed, children, store: providedStore }: {
   readonly seed: string;
   readonly children: React.ReactNode;
+  readonly store?: CampaignStore;
 }) {
   /*
    * 한 번만 만든다. 매 렌더마다 새로 만들면 캠페인이 계속 처음으로 돌아간다.
@@ -25,7 +26,7 @@ export function CampaignStoreProvider({ seed, children }: {
    * `useRef` 로 지연 생성하는 흔한 방법은 렌더 중에 ref 를 읽어야 해서 React 19
    * 에서 막힌다. `useState` 의 초기화 함수는 첫 렌더에서 한 번만 돈다.
    */
-  const [store] = useState(() => createCampaignStore(seed));
+  const [store] = useState(() => providedStore ?? createCampaignStore(seed));
 
   /*
    * 뒤로가기로 되살아난 문서를 다시 그린다.
