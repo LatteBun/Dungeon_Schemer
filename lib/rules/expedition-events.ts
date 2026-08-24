@@ -331,6 +331,32 @@ function minimumBossInfoCandidateCount(events: readonly SituationEvent[]): numbe
   return countsByBoss.size === 0 ? 0 : Math.min(...countsByBoss.values());
 }
 
+export function findDeterministicCapacityAssignment<Node, Category>(input: {
+  readonly nodeOrder: readonly Node[];
+  readonly categoryChoices: ReadonlyMap<Node, readonly Category[]>;
+  readonly hasPotential: (assignment: ReadonlyMap<Node, Category>) => boolean;
+  readonly isValid: (assignment: ReadonlyMap<Node, Category>) => boolean;
+}): Map<Node, Category> | undefined {
+  const assignment = new Map<Node, Category>();
+  const search = (index: number): Map<Node, Category> | undefined => {
+    if (!input.hasPotential(assignment)) return undefined;
+    if (index === input.nodeOrder.length) return input.isValid(assignment) ? new Map(assignment) : undefined;
+    const nodeId = input.nodeOrder[index];
+    const choices = input.categoryChoices.get(nodeId);
+    if (choices === undefined || choices.length === 0) return undefined;
+
+    for (const category of choices) {
+      assignment.set(nodeId, category);
+      const result = search(index + 1);
+      if (result !== undefined) return result;
+    }
+    assignment.delete(nodeId);
+    return undefined;
+  };
+
+  return search(0);
+}
+
 /**
  * 공개 계획이 실제 방문 순서에서 소비할 수 있는 서로 다른 사건 수를 넘는지 잰다.
  *
@@ -346,6 +372,7 @@ function categoryCapacityDeficit(input: {
   readonly strongLinks: readonly StrongLinkPlan[];
   readonly eligibleEvents: readonly SituationEvent[];
   readonly strongClues: ReadonlySet<ClueId>;
+  readonly ignoredNormalNodeIds?: ReadonlySet<NodeId>;
 }): number {
   const nodes = new Map(input.map.nodes.map((node) => [node.id, node]));
   const visit = (nodeId: NodeId, usedByPool: ReadonlyMap<string, number>): number => {
@@ -356,6 +383,9 @@ function categoryCapacityDeficit(input: {
     if (plan === undefined) return node.nextNodeIds.reduce((sum, nextNodeId) => sum + visit(nextNodeId, usedByPool), 0);
 
     const { role, clueId } = plannedRoleForCapacity({ nodeId, plan, strongLinks: input.strongLinks });
+    if (role === "normal" && input.ignoredNormalNodeIds?.has(nodeId)) {
+      return node.nextNodeIds.reduce((sum, nextNodeId) => sum + visit(nextNodeId, usedByPool), 0);
+    }
     const eventsForCategory = input.eligibleEvents.filter((event) => event.kind === plan.category);
     const candidateCount = role === "bossInfo"
       ? minimumBossInfoCandidateCount(eventsForCategory)
@@ -372,9 +402,10 @@ function categoryCapacityDeficit(input: {
 }
 
 /**
- * 후보 풀이 모자라는 공개 분류만, 이미 소비한 event RNG의 결정적 순서로 고친다.
- * EventId를 예약하거나 방문 시점에 분류를 바꾸지 않고, strong-link와 bossInfo
- * 예약 노드는 고정한다.
+ * 후보 풀이 모자라는 공개 분류만, seeded order를 tie-breaker로 삼아 완전 탐색한다.
+ * 아직 배정하지 않은 normal node는 partial 검사에서 빼므로 이미 확정한 역할·분류가
+ * 후보 풀을 넘는 가지에만 pruning한다. EventId를 예약하거나 방문 시점에 분류를
+ * 바꾸지 않고, strong-link와 bossInfo 예약 노드는 고정한다.
  */
 function repairNormalCategoryCapacity(input: {
   readonly plans: Map<NodeId, PreparedNodePlan>;
@@ -389,29 +420,50 @@ function repairNormalCategoryCapacity(input: {
   const mutableNodeIds = input.map.nodes
     .filter((node) => node.kind === "normal" && !linkedNodeIds.has(node.id) && input.plans.get(node.id)?.hiddenRole === "normal")
     .map((node) => node.id);
-  const score = () => categoryCapacityDeficit(input);
-  let deficit = score();
+  if (categoryCapacityDeficit(input) === 0) return;
 
-  while (deficit > 0) {
-    let repaired = false;
-    for (const nodeId of input.rng.shuffle(mutableNodeIds)) {
-      const plan = input.plans.get(nodeId);
+  const nodeOrder = input.rng.shuffle(mutableNodeIds);
+  const categoryChoices = new Map<NodeId, readonly EventKind[]>();
+  for (const nodeId of nodeOrder) {
+    const plan = input.plans.get(nodeId);
+    if (plan === undefined) invalid("용량 보정할 node plan이 없다", { nodeId });
+    const eligibleCategories = input.rng.shuffle(input.categories.filter((category) => category !== plan.category))
+      .filter((category) => normalCandidates(
+        input.eligibleEvents.filter((event) => event.kind === category),
+        "normal",
+        undefined,
+        undefined,
+        input.strongClues,
+      ).length > 0);
+    categoryChoices.set(nodeId, [plan.category, ...eligibleCategories]);
+  }
+
+  const plansWith = (assignment: ReadonlyMap<NodeId, EventKind>): Map<NodeId, PreparedNodePlan> => {
+    const plans = new Map(input.plans);
+    for (const [nodeId, category] of assignment) {
+      const plan = plans.get(nodeId);
       if (plan === undefined) invalid("용량 보정할 node plan이 없다", { nodeId });
-      for (const category of input.rng.shuffle(input.categories.filter((candidate) => candidate !== plan.category))) {
-        input.plans.set(nodeId, { ...plan, category });
-        const nextDeficit = score();
-        if (nextDeficit < deficit) {
-          deficit = nextDeficit;
-          repaired = true;
-          break;
-        }
-      }
-      if (repaired) break;
-      input.plans.set(nodeId, plan);
+      plans.set(nodeId, { ...plan, category });
     }
-    if (!repaired) {
-      invalid("경로별 사건 후보 용량을 만족하는 정상 분류를 만들 수 없다", { deficit });
-    }
+    return plans;
+  };
+  const assignment = findDeterministicCapacityAssignment({
+    nodeOrder,
+    categoryChoices,
+    hasPotential: (partial) => categoryCapacityDeficit({
+      ...input,
+      plans: plansWith(partial),
+      ignoredNormalNodeIds: new Set(mutableNodeIds.filter((nodeId) => !partial.has(nodeId))),
+    }) === 0,
+    isValid: (complete) => categoryCapacityDeficit({ ...input, plans: plansWith(complete) }) === 0,
+  });
+  if (assignment === undefined) {
+    invalid("경로별 사건 후보 용량을 만족하는 정상 분류를 만들 수 없다");
+  }
+  for (const [nodeId, category] of assignment) {
+    const plan = input.plans.get(nodeId);
+    if (plan === undefined) invalid("용량 보정할 node plan이 없다", { nodeId });
+    input.plans.set(nodeId, { ...plan, category });
   }
 }
 

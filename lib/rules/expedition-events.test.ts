@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
-import { activateStrongFollower, applyImmediateEffect, prepareExpeditionEvents, materializeNodeEvent, resolveMonsterEventBattle, retryCombatMultiplier } from "@/lib/rules/expedition-events";
+import { activateStrongFollower, applyImmediateEffect, findDeterministicCapacityAssignment, prepareExpeditionEvents, materializeNodeEvent, resolveMonsterEventBattle, retryCombatMultiplier } from "@/lib/rules/expedition-events";
 import { THEMES } from "@/lib/content/themes";
 import { eventsForTheme } from "@/lib/content/event-registry";
 import { CLASSES } from "@/lib/content/classes";
@@ -76,6 +76,23 @@ describe("E3 원정 사건 준비와 물질화", () => {
     }
 
     expect(new Set(materializedIds)).toHaveLength(visitedNodeIds.length);
+  });
+
+  it("중립 교환 뒤에만 해소되는 후보 용량 assignment를 찾는다", () => {
+    const assignment = findDeterministicCapacityAssignment({
+      nodeOrder: ["upper", "lower"],
+      categoryChoices: new Map([
+        ["upper", ["monster", "merchant"]],
+        ["lower", ["merchant", "monster"]],
+      ]),
+      hasPotential: () => true,
+      isValid: (categories) => categories.get("upper") === "merchant" && categories.get("lower") === "monster",
+    });
+
+    expect(assignment).toEqual(new Map([
+      ["upper", "merchant"],
+      ["lower", "monster"],
+    ]));
   });
 
   it("예약된 follower는 predecessor보다 먼저 일반 사건으로 소모되지 않는다", () => {
