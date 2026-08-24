@@ -1,7 +1,47 @@
 import { describe, expect, it } from "vitest";
-import { CAMPAIGN_BALANCE } from "./campaign-balance";
+import {
+  CAMPAIGN_BALANCE,
+  type CampaignBalance,
+  validateCampaignBalance,
+} from "./campaign-balance";
 
 describe("CAMPAIGN_BALANCE", () => {
+  it("현재 보스 배율 설정은 calibration 계약을 충족한다", () => {
+    expect(() => validateCampaignBalance(CAMPAIGN_BALANCE)).not.toThrow();
+  });
+
+  it.each([0.199, 1.201, 0.81, Number.NaN, Number.POSITIVE_INFINITY])(
+    "보스 배율 %p를 calibration 계약으로 거부한다",
+    (multiplier) => {
+      expect(() => validateCampaignBalance({
+        ...CAMPAIGN_BALANCE,
+        bossBaseStatMultiplierByInitialRisk: {
+          ...CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk,
+          3: multiplier,
+        },
+      })).toThrow();
+    },
+  );
+
+  it("위험도 키 5가 없는 보스 배율 설정을 거부한다", () => {
+    const { 5: _missingRiskLevel, ...missingRiskLevel } = CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk;
+
+    expect(() => validateCampaignBalance({
+      ...CAMPAIGN_BALANCE,
+      bossBaseStatMultiplierByInitialRisk: missingRiskLevel as CampaignBalance["bossBaseStatMultiplierByInitialRisk"],
+    })).toThrow();
+  });
+
+  it("0 이하 보스 배율을 거부한다", () => {
+    expect(() => validateCampaignBalance({
+      ...CAMPAIGN_BALANCE,
+      bossBaseStatMultiplierByInitialRisk: {
+        ...CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk,
+        3: 0,
+      },
+    })).toThrow();
+  });
+
   it("B1-B 초기 월드턴, 보스, 조언 압력 설정을 제공한다", () => {
     expect(CAMPAIGN_BALANCE.revision).toBe("b1b-initial-v1");
     expect(CAMPAIGN_BALANCE.worldTurn).toEqual({

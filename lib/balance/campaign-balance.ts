@@ -3,6 +3,14 @@ export type AdvicePressure = 0 | 1 | 2 | 3;
 type BossInfoAxis = "targetWeight" | "incomingDamage" | "outgoingDamage";
 type BossInfoOutcome = "help" | "harm";
 
+const INITIAL_RISK_LEVELS = [1, 2, 3, 4, 5] as const;
+
+export const BOSS_MULTIPLIER_CALIBRATION = {
+  min: 0.20,
+  max: 1.20,
+  step: 0.025,
+} as const;
+
 export interface CampaignBalance {
   readonly revision: string;
   readonly worldTurn: {
@@ -39,3 +47,33 @@ export const CAMPAIGN_BALANCE = {
     limits: { min: 0.70, max: 1.50 },
   },
 } as const satisfies CampaignBalance;
+
+function isCalibrationStep(value: number): boolean {
+  const steps = (value - BOSS_MULTIPLIER_CALIBRATION.min)
+    / BOSS_MULTIPLIER_CALIBRATION.step;
+  return Math.abs(steps - Math.round(steps)) < 1e-9;
+}
+
+export function validateCampaignBalance(balance: CampaignBalance): void {
+  const multipliers = balance.bossBaseStatMultiplierByInitialRisk;
+  const keys = Object.keys(multipliers).sort();
+  const expectedKeys = INITIAL_RISK_LEVELS.map(String);
+  if (keys.length !== expectedKeys.length || keys.some((key, index) => key !== expectedKeys[index])) {
+    throw new Error("보스 기본 능력치 배율의 위험도 키가 calibration 계약과 다르다");
+  }
+
+  for (const riskLevel of INITIAL_RISK_LEVELS) {
+    const multiplier = multipliers[riskLevel];
+    if (
+      !Number.isFinite(multiplier)
+      || multiplier <= 0
+      || multiplier < BOSS_MULTIPLIER_CALIBRATION.min
+      || multiplier > BOSS_MULTIPLIER_CALIBRATION.max
+      || !isCalibrationStep(multiplier)
+    ) {
+      throw new Error("보스 기본 능력치 배율이 calibration 계약을 벗어난다");
+    }
+  }
+}
+
+validateCampaignBalance(CAMPAIGN_BALANCE);
