@@ -8,7 +8,6 @@ import { useCampaignStore } from "./CampaignStoreProvider";
 import { IntroScreen } from "./IntroScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
-import { U5BattleScene } from "./U5BattleScene";
 import { U5ProgressScreen } from "./U5ProgressScreen";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
@@ -16,6 +15,8 @@ import {
   adviceIdForSlotIn,
   bossReplayFor,
   ecologyViewFor,
+  eventReplayFor,
+  expeditionEndViewFor,
   logFor,
   progressViewFor,
   publicKindByNodeId,
@@ -93,12 +94,23 @@ export function CampaignScreen() {
     return <ExpeditionScreens />;
   }
 
-  if (screen === "settlement" && last?.settlement != null) {
-    const dungeon = campaign.dungeons.find((one) => one.id === last.settlement!.dungeonId);
+  /*
+   * 월드턴 동안에도 방금 본 정산이 그대로 서 있어야 한다.
+   *
+   * `worldTurn` 단계도 정산 화면으로 온다. 그런데 그때는 `last` 가 월드턴 결과로
+   * 바뀐 뒤라 `last.settlement` 가 비어 있고, 그러면 「이 단계를 그릴 수 없다」가
+   * 뜬다. 지금은 두 액션을 한 핸들러에서 연달아 보내 그 사이에 렌더가 없어
+   * 드러나지 않지만, 월드턴이 한 번이라도 거부되면 길잡이가 오류 화면에 갇힌다.
+   *
+   * `C8-A` 가 정산을 누적하므로 마지막 정산은 통계에 남아 있다. 거기서 읽는다.
+   */
+  const shownSettlement = last?.settlement ?? campaign.statistics.settlements.at(-1) ?? null;
+  if (screen === "settlement" && shownSettlement !== null) {
+    const dungeon = campaign.dungeons.find((one) => one.id === shownSettlement.dungeonId);
     return (
       <U6SettlementScreen
         status={status}
-        settlement={createU6SettlementView(last.settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider")}
+        settlement={createU6SettlementView(shownSettlement, dungeon?.name ?? "", dungeon?.theme ?? "spider")}
         onContinue={() => {
           /*
            * 정산을 확인하면 세상이 한 턴 돈다.
@@ -142,27 +154,47 @@ function ExpeditionScreens() {
    * 보스전을 치렀거나 도중에 전멸했으면 더 걸을 곳이 없다. 정산 입력은 규칙이
    * 만든다 - 화면이 무엇이 최종 파티인지 판단하지 않는다.
    */
+  /*
+   * 원정이 끝났다. 정산으로 넘긴다.
+   *
+   * 보스전도 같은 화면에서 본다 - 상단 상태도 파티도 진행 기록도 그대로 있어야
+   * `/u5-2-test` 에서 보던 것과 같은 화면이 된다. 전에는 전투 장면만 덩그러니
+   * 띄웠다.
+   */
   const finished = active.expedition.bossResult !== null || active.expedition.result !== null;
   if (finished) {
-    const replay = bossReplayFor(campaign, active);
     return (
-      <ExpeditionEnd
-        replay={replay}
-        onSettle={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
+      <U5ProgressScreen
+        status={status}
+        progress={expeditionEndViewFor(campaign, active)}
+        log={logFor(campaign, active)}
+        ecology={ecologyViewFor(campaign, active)}
+        battleReplay={bossReplayFor(campaign, active) ?? undefined}
+        onAcknowledge={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
+        acknowledgeLabel="정산으로"
       />
     );
   }
 
-  if (active.pendingEvent !== null) {
+  /*
+   * 고르는 중이거나 결과를 보는 중이다.
+   *
+   * 둘은 같은 화면의 두 상태다 — 상황도 파티도 그대로 있고, 조언 자리에 결과가
+   * 들어선다. 결과를 보는 동안 전투가 있었으면 그것도 함께 재생한다.
+   */
+  if (active.pendingEvent !== null || active.pendingOutcome !== null) {
+    const seeing = active.pendingOutcome !== null;
     return (
       <U5ProgressScreen
         status={status}
         progress={progressViewFor(campaign, active)!}
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
-        onSelectAdvice={(slot) => {
+        battleReplay={eventReplayFor(campaign, active) ?? undefined}
+        onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });
         }}
+        onAcknowledge={seeing ? () => dispatch({ type: "ACKNOWLEDGE_OUTCOME" }) : undefined}
       />
     );
   }
@@ -194,29 +226,6 @@ function ExpeditionScreens() {
         setSelected(null);
       }}
     />
-  );
-}
-
-/**
- * 보스전을 보여 주고 정산으로 넘긴다.
- *
- * 전멸로 끝난 원정에는 보스전이 없다. 그때는 재생할 것이 없으므로 넘어가는 길만
- * 남는다.
- */
-function ExpeditionEnd({
-  replay,
-  onSettle,
-}: {
-  readonly replay: ReturnType<typeof bossReplayFor>;
-  readonly onSettle: () => void;
-}) {
-  return (
-    <div className="u5-battle-host">
-      {replay !== null && <U5BattleScene replay={replay} />}
-      <button type="button" className="u5-battle-settle" onClick={onSettle}>
-        정산으로
-      </button>
-    </div>
   );
 }
 

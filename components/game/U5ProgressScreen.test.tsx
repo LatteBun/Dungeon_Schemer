@@ -191,3 +191,28 @@ describe("U5ProgressScreen", () => {
     expect(html).not.toContain('data-testid="u5-log"');
   });
 });
+
+describe("반응이 없을 때", () => {
+  /* 빈 상자만 남으면 화면이 깨진 것처럼 보인다. */
+  it("반응이 없으면 없다고 적는다", () => {
+    const html = render({
+      outcome: { reactions: [], resultText: "보스방을 넘지 못했다.", changes: [{ label: "HP", detail: "오린 24 → 0" }] },
+    });
+
+    expect(html).toContain("확인할 반응이 없다");
+    expect(html).toContain("보스방을 넘지 못했다");
+  });
+
+  it("반응이 있으면 그 줄은 없다", () => {
+    const html = render({
+      outcome: {
+        reactions: [{ memberName: "오린", reaction: "accepted", note: "고개를 끄덕인다." }],
+        resultText: "지나갔다.",
+        changes: [{ label: "변화", detail: "그대로다." }],
+      },
+    });
+
+    expect(html).not.toContain("확인할 반응이 없다");
+    expect(html).toContain("오린");
+  });
+});

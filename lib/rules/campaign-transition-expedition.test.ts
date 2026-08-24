@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RuleError, createCampaignTransitionContext } from "@/lib/domain";
 import type {
+  ChoiceId,
   CampaignState,
   CampaignTransitionContext,
   CampaignTransitionResult,
@@ -22,14 +23,19 @@ import { createExpeditionForOffer, transitionCampaign } from "./campaign-transit
 
 const SEED = "c7-inner-loop";
 
-function boardedCampaign(): { campaign: CampaignState; context: CampaignTransitionContext } {
-  const initial = initializeCampaign(SEED);
+function boardedCampaign(seed: string = SEED): { campaign: CampaignState; context: CampaignTransitionContext } {
+  const initial = initializeCampaign(seed);
   const opened = transitionCampaign(initial, createCampaignTransitionContext(), { type: "OPEN_BOARD" });
   return { campaign: opened.campaign, context: opened.context };
 }
 
 function started(): CampaignTransitionResult {
-  const { campaign, context } = boardedCampaign();
+  return startedWith(SEED);
+}
+
+/** 시드를 바꿔 가며 여러 판을 걷고 싶을 때 쓴다. */
+function startedWith(seed: string): CampaignTransitionResult {
+  const { campaign, context } = boardedCampaign(seed);
   const offer = campaign.offers.find((candidate) => candidate.lockReason === null);
   if (offer === undefined) throw new Error("계약 가능한 공고가 없다");
 
@@ -127,7 +133,13 @@ describe("원정 안쪽 전이", () => {
     })).toThrow(RuleError);
   });
 
-  it("조언을 고르면 사건이 닫히고 다음 지점으로 갈 수 있다", () => {
+  /*
+   * 조언을 고르면 사건이 닫히고 결과가 열린다.
+   *
+   * 결과를 보기 전에는 움직일 수 없다. 곧장 지도로 돌려보내면 자기 조언이 어떻게
+   * 됐는지 모른 채 다음 갈림길에 서게 된다.
+   */
+  it("조언을 고르면 결과가 열리고, 확인해야 움직인다", () => {
     const begun = started();
     const visited = transitionCampaign(begun.campaign, begun.context, {
       type: "VISIT_NODE", nodeId: firstStep(begun),
@@ -138,9 +150,34 @@ describe("원정 안쪽 전이", () => {
     });
 
     expect(chosen.context.activeExpedition!.pendingEvent).toBeNull();
+    expect(chosen.context.activeExpedition!.pendingOutcome).not.toBeNull();
     expect(() => transitionCampaign(chosen.campaign, chosen.context, {
       type: "VISIT_NODE", nodeId: firstStep(chosen),
+    })).toThrow(/확인하지 않은 결과/);
+
+    const seen = transitionCampaign(chosen.campaign, chosen.context, { type: "ACKNOWLEDGE_OUTCOME" });
+
+    expect(seen.context.activeExpedition!.pendingOutcome).toBeNull();
+    expect(() => transitionCampaign(seen.campaign, seen.context, {
+      type: "VISIT_NODE", nodeId: firstStep(seen),
     })).not.toThrow();
+  });
+
+  /* 결과에는 반응과 결과 문장이 실제로 들어 있어야 한다. 빈 화면이면 뜻이 없다. */
+  it("결과가 반응과 결과 문장을 담는다", () => {
+    const begun = started();
+    const visited = transitionCampaign(begun.campaign, begun.context, {
+      type: "VISIT_NODE", nodeId: firstStep(begun),
+    });
+    const event = visited.context.activeExpedition!.pendingEvent!;
+    const chosen = transitionCampaign(visited.campaign, visited.context, {
+      type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
+    });
+    const outcome = chosen.context.activeExpedition!.pendingOutcome!;
+
+    expect(outcome.resultText.length).toBeGreaterThan(0);
+    expect(outcome.reactions.length).toBeGreaterThan(0);
+    expect(outcome.event.id).toBe(event.id);
   });
 
   /*
@@ -168,6 +205,8 @@ describe("원정 안쪽 전이", () => {
       state = transitionCampaign(state.campaign, state.context, {
         type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
       });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      state = transitionCampaign(state.campaign, state.context, { type: "ACKNOWLEDGE_OUTCOME" });
     }
 
     expect(sizes.length).toBeGreaterThan(1);
@@ -193,6 +232,8 @@ describe("원정 안쪽 전이", () => {
       state = transitionCampaign(state.campaign, state.context, {
         type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
       });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      state = transitionCampaign(state.campaign, state.context, { type: "ACKNOWLEDGE_OUTCOME" });
     }
 
     expect(seen.length).toBeGreaterThan(1);
@@ -309,5 +350,162 @@ describe("원정 이력", () => {
     } catch { /* 거부는 정상이다 */ }
 
     expect(begun.campaign.history.events).toHaveLength(0);
+  });
+});
+
+/**
+ * 신뢰가 무너질수록 조언이 안 먹힌다.
+ *
+ * `C6` 가 살아 있는 신뢰 0 인원 수로 보정을 내주는데(둘이면 수용 -5, 셋이면 -10,
+ * 넷이면 -15) 아무도 넘기지 않아 늘 0 이었다. 하강 나선이 통째로 없었다.
+ *
+ * 지금 밸런스에서는 이 구간에 닿지 않는다 - 40 판을 걸어도 살아 있는 신뢰 0 은
+ * 최대 한 명이다. 사람이 신뢰를 잃기 전에 죽기 때문이다. 그래서 걸어서는 못 보고
+ * 상태를 직접 만들어 본다.
+ */
+describe("캠페인 전체 신뢰 보정", () => {
+  /** 풀에서 살아 있는 사람 `count` 명의 신뢰를 0 으로 만든다. 파티 밖 사람들이다. */
+  function withZeroTrustOutsiders(state: CampaignTransitionResult, count: number): CampaignTransitionResult {
+    const party = new Set(state.context.activeExpedition!.partyMembers.map((member) => member.id));
+    const byId = { ...state.campaign.pool.byId };
+    let left = count;
+    for (const id of state.campaign.pool.order) {
+      if (left === 0) break;
+      const member = byId[id];
+      if (member === undefined || !member.alive || party.has(id)) continue;
+      byId[id] = { ...member, trust: 0 };
+      left -= 1;
+    }
+    if (left > 0) throw new Error("신뢰 0 으로 만들 사람이 모자란다");
+    return { ...state, campaign: { ...state.campaign, pool: { ...state.campaign.pool, byId } } };
+  }
+
+  function reactionsFor(state: CampaignTransitionResult, adviceId: ChoiceId) {
+    return transitionCampaign(state.campaign, state.context, { type: "CHOOSE_ADVICE", adviceId })
+      .context.activeExpedition!.records.at(-1)!.reactions.map((one) => one.reaction);
+  }
+
+  /** 사건 하나 앞에 선 상태. */
+  function atEvent(seed: string): CampaignTransitionResult | null {
+    let state = startedWith(seed);
+    for (let step = 0; step < 8; step += 1) {
+      if (state.context.activeExpedition!.pendingEvent !== null) return state;
+      const active = state.context.activeExpedition!;
+      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
+      /* 보스방으로 들어가면 사건이 없다. 평범한 지점만 밟는다. */
+      const next = here.nextNodeIds.find((id) => {
+        if (active.expedition.visitedNodeIds.includes(id)) return false;
+        return active.expedition.map.nodes.find((node) => node.id === id)?.kind === "normal";
+      });
+      if (next === undefined) return null;
+      state = transitionCampaign(state.campaign, state.context, { type: "VISIT_NODE", nodeId: next });
+    }
+    return null;
+  }
+
+  /*
+   * 보정이 걸리면 반응이 달라진다.
+   *
+   * 한 사건으로는 못 본다 - 보정이 임계를 넘기지 못하면 같은 반응이 나온다.
+   * 여러 사건을 훑어 달라지는 경우를 찾고, 하나도 못 찾으면 그것이 곧 실패다.
+   */
+  it("보정 구간에 들면 반응이 달라진다", () => {
+    let differed = 0;
+    let compared = 0;
+
+    for (let index = 0; index < 30 && differed === 0; index += 1) {
+      const state = atEvent(`trust-modifier-${index}`);
+      if (state === null) continue;
+      /* 넷이면 수용 -15 · 적발 +15 로 가장 크게 갈린다. */
+      const shakenState = withZeroTrustOutsiders(state, 4);
+
+      for (const option of state.context.activeExpedition!.pendingEvent!.advice) {
+        compared += 1;
+        if (reactionsFor(state, option.id).join() !== reactionsFor(shakenState, option.id).join()) differed += 1;
+      }
+    }
+
+    expect(compared).toBeGreaterThan(2);
+    expect(differed).toBeGreaterThan(0);
+  });
+
+  /* 구간 밖이면 그대로다. 아무 때나 흔들리면 보정이 아니라 잡음이다. */
+  it("한 명뿐이면 아직 보정이 없다", () => {
+    for (let index = 0; index < 30; index += 1) {
+      const state = atEvent(`trust-modifier-${index}`);
+      if (state === null) continue;
+      const oneDown = withZeroTrustOutsiders(state, 1);
+
+      for (const option of state.context.activeExpedition!.pendingEvent!.advice) {
+        expect(reactionsFor(oneDown, option.id)).toEqual(reactionsFor(state, option.id));
+      }
+      return;
+    }
+    throw new Error("사건 앞에 선 시드를 찾지 못했다");
+  });
+});
+
+/**
+ * 전투에서 죽어도 파티 명단에서 사라지지 않는다.
+ *
+ * `resolveMonsterEventBattle` 은 살아 있는 사람만 데려간다. 그 결과를 그대로
+ * 명단으로 삼으면 죽은 사람이 파티에서 사라지고, 정산이 「최종 파티원이 3명이
+ * 아니다」로 거부한다.
+ *
+ * 사라지는 것은 **이미 죽어 있던** 사람이다. 빈사인 사람은 전투에 참가하므로
+ * 결과에 남는다. 앞선 싸움에서 죽은 사람이 다음 싸움에 안 실려 가고, 그때
+ * 명단에서 지워진다. 그래서 한 명을 죽은 채로 두고 싸움을 붙인다.
+ */
+describe("전투 뒤 파티 명단", () => {
+  /** 한 명이 이미 죽은 채로 사건 앞까지 간다. */
+  function atEventWithDeadMember() {
+    /* 이 시드의 첫 사건이 실제로 싸움이 되는 monster 사건이다. */
+    const begun = startedWith("party-roster-1");
+    const active = begun.context.activeExpedition!;
+    const weakened = {
+      ...begun.context,
+      activeExpedition: {
+        ...active,
+        partyMembers: active.partyMembers.map((member, index) =>
+          index === 0 ? { ...member, hp: 0, alive: false } : member),
+      },
+    };
+
+    let state: CampaignTransitionResult = { ...begun, context: weakened };
+    for (let step = 0; step < 10; step += 1) {
+      const current = state.context.activeExpedition!;
+      if (current.pendingEvent !== null) return state;
+      const here = current.expedition.map.nodes.find((node) => node.id === current.expedition.currentNodeId)!;
+      const next = here.nextNodeIds.find((id) => !current.expedition.visitedNodeIds.includes(id));
+      if (next === undefined) break;
+      state = transitionCampaign(state.campaign, state.context, { type: "VISIT_NODE", nodeId: next });
+    }
+    throw new Error("사건이 확정되는 지점에 닿지 못했다");
+  }
+
+  it("이미 죽은 사람이 다음 전투에서 명단에서 사라지지 않는다", () => {
+    const state = atEventWithDeadMember();
+    const event = state.context.activeExpedition!.pendingEvent!;
+    const fallen = state.context.activeExpedition!.partyMembers[0]!;
+    expect(event.kind).toBe("monster");
+
+    let deaths = 0;
+    /* 세 조언 중 어느 것을 골라도 명단은 셋이어야 한다. */
+    for (const option of event.advice) {
+      const chosen = transitionCampaign(state.campaign, state.context, {
+        type: "CHOOSE_ADVICE", adviceId: option.id,
+      });
+      const after = chosen.context.activeExpedition!.partyMembers;
+
+      expect(after).toHaveLength(3);
+      expect(after.map((member) => member.id)).toContain(fallen.id);
+      /* 죽었으면 사라지는 것이 아니라 표시가 꺼진다. */
+      const dead = after.filter((one) => !one.alive);
+      deaths += dead.length;
+      for (const member of dead) expect(member.hp).toBe(0);
+    }
+
+    /* 아무도 안 죽으면 이 검사는 아무것도 보지 않은 것이다. */
+    expect(deaths).toBeGreaterThan(0);
   });
 });

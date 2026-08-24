@@ -220,7 +220,12 @@ export function createU6EndingView(campaign: CampaignState, ending: CampaignEndi
     zeroTrustPartySize: facts.triggerCount,
     finalReputation: facts.finalReputation,
     cumulativeGold: facts.cumulativeGold,
-    adviceTotal: campaign.history.events.length,
+    /*
+     * 조언만 센다. 이력 전체를 세면 보스전이 조언 수에 섞인다.
+     *
+     * 한 캠페인에서 이력 87건 중 조언은 76건이었고, 엔딩은 87 이라 적고 있었다.
+     */
+    adviceTotal: campaign.history.events.filter((one) => one.type === "ADVICE_RESOLVED").length,
     totalExpeditions: campaign.statistics.totalExpeditions,
     clearedExpeditions: facts.clearedExpeditions,
     wipedExpeditions: facts.wipedExpeditions,

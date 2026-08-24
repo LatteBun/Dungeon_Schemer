@@ -58,6 +58,13 @@ export interface U5AdviceOptionView {
   rationale: string;
   /** 상인 사건에서만 온다. 가격은 감출 대상이 아니다. */
   goldCost?: number;
+  /*
+   * 지금 고를 수 없는 이유. 고를 수 있으면 없다.
+   *
+   * 값을 보여주면서 살 수 있는지는 안 알려 주면, 길잡이는 눌러 보고서야 안 된다는
+   * 것을 안다. 규칙이 판단하고 화면은 옮겨 적는다.
+   */
+  unavailableReason?: string;
 }
 
 export interface U5ReactionView {
@@ -104,12 +111,15 @@ export interface U5ProgressView {
  */
 export function toAdviceViews(
   presented: readonly PresentedAdviceOption[],
+  /** 슬롯별로 고를 수 없는 이유. 규칙이 판단해 넘긴다. */
+  unavailableBySlot: Readonly<Record<number, string>> = {},
 ): readonly U5AdviceOptionView[] {
   return presented.map((option, index) => ({
     slot: index as 0 | 1 | 2,
     text: option.label,
     rationale: option.line,
     ...(option.goldCost === undefined ? {} : { goldCost: option.goldCost }),
+    ...(unavailableBySlot[index] === undefined ? {} : { unavailableReason: unavailableBySlot[index] }),
   }));
 }
 

@@ -5,13 +5,15 @@ import type { CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
+import { firstChoosableAdvice } from "@/lib/store/legal-advice";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import {
-  adviceIdForSlotIn, ecologyViewFor, logFor, progressViewFor, publicKindByNodeId, statusFor,
+  adviceIdForSlotIn, bossReplayFor, ecologyViewFor, eventReplayFor, expeditionEndViewFor, logFor,
+  progressViewFor, publicKindByNodeId, statusFor,
 } from "./campaign-adapters";
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
@@ -86,7 +88,9 @@ function settled() {
       return run;
     }
     if (active.pendingEvent !== null) {
-      run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+      run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      run.act({ type: "ACKNOWLEDGE_OUTCOME" });
       continue;
     }
     const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
@@ -115,7 +119,9 @@ function ended(seed: string) {
         continue;
       }
       if (active.pendingEvent !== null) {
-        run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+        run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+        /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+        run.act({ type: "ACKNOWLEDGE_OUTCOME" });
         continue;
       }
       const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
@@ -310,6 +316,79 @@ describe("엔딩이 실제 캠페인으로 그려진다", () => {
   });
 });
 
+describe("결과 화면이 실제 판정으로 그려진다", () => {
+  /** 조언 하나를 고른 직후. 결과를 보는 중이다. */
+  function atOutcome() {
+    const run = atEvent();
+    const active = run.state().context.activeExpedition!;
+    run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent!.advice[0]!.id });
+    return run;
+  }
+
+  it("반응과 결과 문장이 찍힌다", () => {
+    const run = atOutcome();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const outcome = active.pendingOutcome!;
+
+    const markup = renderToStaticMarkup(createElement(U5ProgressScreen, {
+      status: statusFor(campaign, active),
+      progress: progressViewFor(campaign, active)!,
+      log: logFor(campaign, active),
+      ecology: ecologyViewFor(campaign, active),
+      battleReplay: eventReplayFor(campaign, active) ?? undefined,
+      onAcknowledge: noop,
+    }));
+
+    assertClean(markup, "결과 화면");
+    expect(markup).toContain(outcome.resultText.slice(0, 15));
+    for (const reaction of outcome.reactions) {
+      const name = active.partyMembers.find((one) => one.id === reaction.characterId)!.name;
+      expect(markup).toContain(name);
+    }
+    /*
+     * 길잡이가 읽는 것은 사람의 태도지 규칙의 상태가 아니다.
+     *
+     * `is-accepted` 같은 class 는 꾸밈용 훅이라 그대로 둔다 — 반응은 어차피
+     * 화면에 드러나는 것이라 감출 정보가 아니다. 다만 **읽는 자리**에는 우리말이
+     * 와야 한다.
+     */
+    const verdicts = markup.match(/u5-reaction__verdict">([^<]*)</g) ?? [];
+    expect(verdicts.length).toBe(outcome.reactions.length);
+    for (const verdict of verdicts) expect(verdict).toMatch(/수용|의심|적발/);
+    expect(markup).toContain("지도로 돌아간다");
+  });
+
+  /* 결과를 보는 중에는 조언을 다시 고를 수 없어야 한다. */
+  it("결과를 보는 중에는 조언 목록이 없다", () => {
+    const run = atOutcome();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+
+    const markup = renderToStaticMarkup(createElement(U5ProgressScreen, {
+      status: statusFor(campaign, active),
+      progress: progressViewFor(campaign, active)!,
+      log: logFor(campaign, active),
+      ecology: ecologyViewFor(campaign, active),
+      onAcknowledge: noop,
+    }));
+
+    expect(markup).toContain("u5-outcome");
+    expect(markup).not.toContain("u5-advice-list");
+  });
+
+  /* 결과를 보는 동안에도 상황은 그대로 있어야 한다. 무엇에 대한 결과인지 알아야 한다. */
+  it("결과를 보는 동안에도 상황이 남는다", () => {
+    const run = atOutcome();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const view = progressViewFor(campaign, active)!;
+
+    expect(view.situation).toBe(active.pendingOutcome!.event.description);
+    expect(view.nodeLabel).toBe(active.pendingOutcome!.event.title);
+  });
+});
+
 describe("게시판에서 공고를 다시 고른다", () => {
   /*
    * 규칙은 `contract` 에서 `SELECT_CONTRACT` 를 받지 않는다. 물러서는 것이 먼저다.
@@ -342,5 +421,80 @@ describe("게시판에서 공고를 다시 고른다", () => {
 
     expect(store.getState().rejected).not.toBeNull();
     expect(store.getState().context.selectedOffer?.id).toBe(free[0]!.id);
+  });
+});
+
+describe("보스전도 같은 화면에서 본다", () => {
+  /** 보스전을 치른 직후. */
+  function afterBoss() {
+    for (let index = 0; index < 30; index += 1) {
+      const run = driven(`boss-screen-${index}`);
+      run.act({ type: "OPEN_BOARD" });
+      const offer = run.state().campaign.offers.find((one) => one.lockReason === null)!;
+      run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
+      run.act({ type: "START_EXPEDITION", expeditionId: "b", ...createExpeditionForOffer(run.state().campaign, offer) });
+
+      for (let step = 0; step < 40; step += 1) {
+        const active = run.state().context.activeExpedition;
+        if (active === null) break;
+        if (active.expedition.bossResult !== null) return run;
+        if (active.expedition.result !== null) break;
+        if (active.pendingOutcome !== null) { run.act({ type: "ACKNOWLEDGE_OUTCOME" }); continue; }
+        if (active.pendingEvent !== null) {
+          run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+          continue;
+        }
+        const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
+        const next: NodeId | undefined = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
+        if (next === undefined) { run.act({ type: "ENTER_BOSS" }); continue; }
+        run.act({ type: "VISIT_NODE", nodeId: next });
+        if (next === active.expedition.map.bossNodeId) run.act({ type: "ENTER_BOSS" });
+      }
+    }
+    throw new Error("보스전에 닿지 못했다");
+  }
+
+  it("상단 상태와 파티가 함께 선다", () => {
+    const run = afterBoss();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+
+    const markup = renderToStaticMarkup(createElement(U5ProgressScreen, {
+      status: statusFor(campaign, active),
+      progress: expeditionEndViewFor(campaign, active),
+      log: logFor(campaign, active),
+      ecology: ecologyViewFor(campaign, active),
+      battleReplay: bossReplayFor(campaign, active) ?? undefined,
+      onAcknowledge: noop,
+      acknowledgeLabel: "정산으로",
+    }));
+
+    assertClean(markup, "보스전 화면");
+    /* 전에는 전투 장면만 덩그러니 떴다. 셸이 함께 서야 같은 화면이다. */
+    expect(markup).toContain("u5-party");
+    expect(markup).toContain("u5-console");
+    expect(markup).toContain("u5-battle-scene");
+    expect(markup).toContain("정산으로");
+    for (const member of active.partyMembers) expect(markup).toContain(member.name);
+  });
+
+  /*
+   * 싸움에 든 사람은 그때 살아 있었다.
+   *
+   * 전투 후 상태로 초상화를 고르면 이 싸움에서 죽을 사람이 첫 프레임부터 죽은
+   * 그림으로 선다. 살아서 시작하는데 미리 회색인 것이다.
+   */
+  it("전투를 시작할 때는 아무도 죽은 그림이 아니다", () => {
+    const run = afterBoss();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const replay = bossReplayFor(campaign, active)!;
+    const party = replay.participants.filter((one) => one.side === "party");
+
+    expect(party.length).toBeGreaterThan(0);
+    for (const participant of party) expect(participant.imageSrc).not.toContain("/dead/");
+    /* 실제로 죽은 사람이 있어야 이 검사에 뜻이 있다. */
+    expect(active.partyMembers.some((member) => !member.alive)
+      || active.expedition.bossResult!.status === "cleared").toBe(true);
   });
 });

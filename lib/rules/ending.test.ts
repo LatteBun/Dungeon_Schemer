@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createCampaignStatistics } from "@/lib/domain";
+import { PROMOTION_GOLD, PROMOTION_REPUTATION, createCampaignStatistics } from "@/lib/domain";
 import type { BoardOffer, CampaignEnding, CampaignState, Character, CharacterId } from "@/lib/domain";
+import { createBoardOffers } from "./board";
 import { initializeCampaign } from "./campaign-init";
 import {
   countLivingZeroTrust,
@@ -214,5 +215,51 @@ describe("정상 경로 엔딩 우선순위", () => {
       { classId: "rogue" },
       { classId: "cleric" },
     ]), offers: [] })).toBeNull();
+  });
+});
+
+describe("실직 판정과 승급", () => {
+  /*
+   * 올라갈 수 있으면 실직이 아니다.
+   *
+   * 공고가 전부 등급 미달이어도 지금 승급할 수 있으면 그 공고들이 열린다. 실제로
+   * 명성 60(B 요건)과 골드 153(요건 150)을 둘 다 갖춘 캠페인이 실직으로 끝났다.
+   */
+  function allLocked(over: Partial<CampaignState>): CampaignState {
+    const base = initializeCampaign("unemployed-vs-promotion");
+    const boarded = { ...base, offers: createBoardOffers(base) };
+    return {
+      ...boarded,
+      offers: boarded.offers.map((offer) => ({ ...offer, lockReason: "rankTooLow" as const })),
+      ...over,
+    };
+  }
+
+  it("명성으로 올라갈 수 있으면 실직이 아니다", () => {
+    const campaign = allLocked({ reputation: PROMOTION_REPUTATION.B, gold: 0 });
+
+    expect(evaluateCampaignEnding(campaign)).toBeNull();
+  });
+
+  it("골드로 올라갈 수 있으면 실직이 아니다", () => {
+    const campaign = allLocked({ reputation: 0, gold: PROMOTION_GOLD.B });
+
+    expect(evaluateCampaignEnding(campaign)).toBeNull();
+  });
+
+  it("둘 다 문턱에 못 미치면 실직이다", () => {
+    const campaign = allLocked({
+      reputation: PROMOTION_REPUTATION.B - 1,
+      gold: PROMOTION_GOLD.B - 1,
+    });
+
+    expect(evaluateCampaignEnding(campaign)?.kind).toBe("unemployed");
+  });
+
+  /* 문턱을 딱 맞춘 값이 통과해야 한다. 경계에서 갈리면 한 걸음이 사라진다. */
+  it("문턱을 딱 맞추면 올라갈 수 있다", () => {
+    expect(evaluateCampaignEnding(allLocked({ reputation: PROMOTION_REPUTATION.B, gold: 0 }))).toBeNull();
+    expect(evaluateCampaignEnding(allLocked({ reputation: PROMOTION_REPUTATION.B - 1, gold: 0 }))?.kind)
+      .toBe("unemployed");
   });
 });

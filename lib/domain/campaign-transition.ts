@@ -1,3 +1,4 @@
+import type { BattleResolution } from "./battle";
 import type { Character } from "./character";
 import type { CampaignEnding, CampaignState, BoardOffer, PromotionMethod, PromotionResult } from "./campaign";
 import type { BossInfoVerificationAction, ExpeditionState, MaterializedNodeEvent, PreparedExpeditionEvents } from "./expedition";
@@ -37,6 +38,29 @@ export interface ExpeditionRecord {
   readonly battle: { readonly rounds: number; readonly victory: boolean } | null;
 }
 
+/**
+ * 조언 하나가 끝난 직후. 결과를 보는 중이다.
+ *
+ * 전에는 조언을 고르면 곧장 지도로 돌아갔다. 규칙은 반응도 결과 문장도 전투도
+ * 이미 계산해 두고 그대로 버렸고, 화면에는 그것을 그리는 자리가 있는데 캠페인이
+ * 한 번도 채우지 않았다. 길잡이는 자기 조언이 어떻게 됐는지 보지 못한 채 다음
+ * 갈림길에 섰다.
+ *
+ * 조언 식별자는 담지 않는다. 결과 문장은 이미 골라 둔 것을 담는다 — 화면이
+ * 식별자를 들고 정답을 되짚을 수 없어야 한다.
+ */
+export interface ExpeditionOutcome {
+  /** 그 자리의 사건. 결과를 보는 동안에도 상황이 그대로 있어야 한다. */
+  readonly event: MaterializedNodeEvent["event"];
+  readonly reactions: readonly MemberReaction[];
+  /** 무슨 일이 왜 일어났는지. 아무도 수용하지 않으면 기본 결과 문구가 온다. */
+  readonly resultText: string;
+  readonly hpChanges: readonly { readonly characterId: CharacterId; readonly before: number; readonly after: number }[];
+  readonly trustChanges: readonly { readonly characterId: CharacterId; readonly before: number; readonly after: number }[];
+  /** 싸웠으면 그 전투. 화면이 재생한다. 싸우지 않았으면 `null` 이다. */
+  readonly battle: BattleResolution | null;
+}
+
 export interface ActiveExpeditionContext {
   readonly expeditionId: string;
   readonly offer: BoardOffer;
@@ -57,6 +81,8 @@ export interface ActiveExpeditionContext {
   readonly pendingEvent: MaterializedNodeEvent["event"] | null;
   /** 이 원정에서 일어난 일들. 시간 순이다. */
   readonly records: readonly ExpeditionRecord[];
+  /** 방금 고른 조언의 결과. 길잡이가 확인하면 사라진다. */
+  readonly pendingOutcome: ExpeditionOutcome | null;
 }
 
 export interface CampaignTransitionContext {
@@ -88,7 +114,9 @@ export type CampaignTransition =
   /* 원정 안쪽. 문서가 정한 「지점 선택 → 조언 선택 → 보스방」 순서다. */
   | { readonly type: "VISIT_NODE"; readonly nodeId: NodeId }
   | { readonly type: "CHOOSE_ADVICE"; readonly adviceId: ChoiceId }
-  | { readonly type: "ENTER_BOSS" };
+  | { readonly type: "ENTER_BOSS" }
+  /** 결과를 다 봤다. 지도로 돌아간다. */
+  | { readonly type: "ACKNOWLEDGE_OUTCOME" };
 
 export interface CampaignTransitionResult {
   readonly campaign: CampaignState;
