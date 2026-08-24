@@ -21,10 +21,18 @@ function metric(overrides: Partial<CampaignRunMetrics> = {}): CampaignRunMetrics
     errorKind: null,
     balanceExpeditions: [{
       expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
-      startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: null, endAdvicePressure: 0, result: "cleared",
+      startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: null, endAdvicePressure: 0, result: "wiped",
     }],
     ...overrides,
   } as CampaignRunMetrics;
+}
+
+function expedition(overrides: Partial<CampaignRunMetrics["balanceExpeditions"][number]> = {}): CampaignRunMetrics["balanceExpeditions"][number] {
+  return {
+    expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, theme: "spider", initialRiskLevel: 2, currentRiskLevel: 2, attemptNumber: 1,
+    startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: null, endAdvicePressure: 0, result: "wiped",
+    ...overrides,
+  } as CampaignRunMetrics["balanceExpeditions"][number];
 }
 
 describe("백테스트 통계", () => {
@@ -91,6 +99,47 @@ describe("백테스트 통계", () => {
     expect(combination.fivePlusWipeRate).toBeNull();
   });
 
+  it("첫 시도, 현재 위험도별 전체 시도, 최종 던전 통과를 분리해 손계산 집계한다", () => {
+    const combination = aggregateRuns([metric({
+      balanceExpeditions: [
+        expedition({
+          expeditionId: "retry-first", dungeonId: "dungeon-retry" as never,
+          bossEntry: { advicePressure: 0, aliveCount: 2, hp: 50, maxHp: 100 }, result: "wiped",
+        }),
+        expedition({
+          expeditionId: "retry-second", dungeonId: "dungeon-retry" as never, currentRiskLevel: 3, attemptNumber: 2,
+          bossEntry: { advicePressure: 0, aliveCount: 3, hp: 75, maxHp: 100 }, result: "cleared",
+        }),
+        expedition({ expeditionId: "interrupted", dungeonId: "dungeon-interrupted" as never, result: "interrupted" }),
+      ],
+    })]).combinations["survival@0.7"]!;
+
+    expect(combination.firstAttemptByInitialRisk[2]).toMatchObject({
+      starts: 2,
+      bossEntries: 1,
+      clears: 0,
+      wipes: 1,
+      interrupted: 1,
+      preBossFailures: 1,
+      bossFailures: 1,
+      clearRate: 0,
+      bossReachRate: 0.5,
+      bossConversionRate: 0,
+      meanBossEntryHpRatio: 0.5,
+      meanBossEntryAliveCount: 2,
+      clearRateWilson95: wilsonInterval(0, 2),
+    });
+    expect(combination.firstAttemptByInitialRisk[1]).toMatchObject({ starts: 0, clearRate: null, clearRateWilson95: null });
+    expect(combination.allAttemptsByCurrentRisk[3]).toMatchObject({ starts: 1, clears: 1, clearRate: 1 });
+    expect(combination.eventualDungeonByInitialRisk[2]).toMatchObject({
+      attemptedDungeons: 2,
+      clearedDungeons: 1,
+      clearRate: 0.5,
+      clearRateWilson95: wilsonInterval(1, 2),
+    });
+    expect(combination.firstAttemptByThemeRisk["spider/2"]).toMatchObject({ starts: 2, wipes: 1, interrupted: 1 });
+  });
+
   it("원정 압력 표본이 없으면 0으로 위장하지 않고 집계 오류를 낸다", () => {
     expect(() => aggregateRuns([metric({ balanceExpeditions: [] })])).toThrow("원정 밸런스 지표가 없다");
   });
@@ -102,5 +151,24 @@ describe("백테스트 통계", () => {
         startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: { advicePressure: 0, aliveCount: 3, hp: 30, maxHp: 60 }, endAdvicePressure: 0, result: "cleared",
       }],
     })])).toThrow("유효하지 않은 초기 위험도");
+  });
+
+  it.each([
+    ["시도 번호 0", { attemptNumber: 0 }],
+    ["위험도 누락", { currentRiskLevel: Number.NaN }],
+    ["보스 없이 cleared", { bossEntry: null, result: "cleared" }],
+  ])("잘못된 원정 trace(%s)를 집계 오류로 거절한다", (_, overrides) => {
+    expect(() => aggregateRuns([metric({
+      balanceExpeditions: [expedition(overrides as Partial<CampaignRunMetrics["balanceExpeditions"][number]>)],
+    })])).toThrow("유효하지 않은 원정 trace");
+  });
+
+  it("같은 run의 던전 시도 번호가 건너뛰면 집계 오류를 낸다", () => {
+    expect(() => aggregateRuns([metric({
+      balanceExpeditions: [
+        expedition({ expeditionId: "first", dungeonId: "dungeon-retry" as never, attemptNumber: 1 }),
+        expedition({ expeditionId: "third", dungeonId: "dungeon-retry" as never, attemptNumber: 3 }),
+      ],
+    })])).toThrow("원정 시도 번호가 이어지지 않는다");
   });
 });

@@ -17,7 +17,7 @@ function metric(strategyId: StrategyId, accuracy: Accuracy, completed: boolean, 
     adviceHits: 0, adviceTotal: 0, errorKind: null,
     balanceExpeditions: [{
       expeditionId: seed, dungeonId: `dungeon-${seed}` as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
-      startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: null, endAdvicePressure: 0, result: "cleared",
+      startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: { advicePressure: 0, aliveCount: 3, hp: 100, maxHp: 100 }, endAdvicePressure: 0, result: "cleared",
     }],
   } as CampaignRunMetrics;
 }

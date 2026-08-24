@@ -1,4 +1,4 @@
-import type { AdviceOutcome, CampaignState, EndingKind, GuideRank, InfoReaction } from "@/lib/domain";
+import type { AdviceOutcome, CampaignState, EndingKind, GuideRank, InfoReaction, RiskLevel } from "@/lib/domain";
 import type { CampaignRun, ExpeditionBalanceTrace, RunErrorKind } from "./campaign-driver";
 import type { Accuracy, PublicNodeCategory, StrategyId } from "./public-state";
 
@@ -59,6 +59,29 @@ export interface PairedDifference {
   readonly high95: number;
 }
 
+export interface ExpeditionFunnel {
+  readonly starts: number;
+  readonly bossEntries: number;
+  readonly clears: number;
+  readonly wipes: number;
+  readonly interrupted: number;
+  readonly preBossFailures: number;
+  readonly bossFailures: number;
+  readonly clearRate: number | null;
+  readonly bossReachRate: number | null;
+  readonly bossConversionRate: number | null;
+  readonly meanBossEntryHpRatio: number | null;
+  readonly meanBossEntryAliveCount: number | null;
+  readonly clearRateWilson95: WilsonInterval | null;
+}
+
+export interface EventualDungeonRate {
+  readonly attemptedDungeons: number;
+  readonly clearedDungeons: number;
+  readonly clearRate: number | null;
+  readonly clearRateWilson95: WilsonInterval | null;
+}
+
 export interface CombinationAggregate {
   readonly id: CombinationId;
   readonly count: number;
@@ -75,6 +98,10 @@ export interface CombinationAggregate {
     readonly wipes: number;
     readonly meanEntryHpRatio: number;
   }>>;
+  readonly firstAttemptByInitialRisk: Readonly<Record<RiskLevel, ExpeditionFunnel>>;
+  readonly allAttemptsByCurrentRisk: Readonly<Record<RiskLevel, ExpeditionFunnel>>;
+  readonly eventualDungeonByInitialRisk: Readonly<Record<RiskLevel, EventualDungeonRate>>;
+  readonly firstAttemptByThemeRisk: Readonly<Record<string, ExpeditionFunnel>>;
   readonly rankSCount: number;
   readonly endingCounts: Readonly<Record<EndingKind | "run-error", number>>;
   readonly adviceHits: number;
@@ -116,6 +143,7 @@ const ERROR_KINDS: readonly RunErrorKind[] = ["generation", "rejected-transition
 const NODE_CATEGORIES: readonly PublicNodeCategory[] = ["rest", "merchant", "special", "monster", "boss"];
 const OUTCOMES: readonly AdviceOutcome[] = ["help", "harm", "neutral"];
 const REACTIONS: readonly InfoReaction[] = ["accepted", "suspected", "exposed"];
+const RISK_LEVELS = [1, 2, 3, 4, 5] as const satisfies readonly RiskLevel[];
 
 function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetrics {
   return {
@@ -216,6 +244,84 @@ export function pairedMeanDifference(left: readonly number[], right: readonly nu
   return { mean, standardError, low95: mean - 1.96 * standardError, high95: mean + 1.96 * standardError };
 }
 
+function meanOrNull(values: readonly number[]): number | null {
+  return values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function finalizeFunnel(entries: readonly ExpeditionBalanceTrace[]): ExpeditionFunnel {
+  const starts = entries.length;
+  const bossEntries = entries.filter((entry) => entry.bossEntry !== null);
+  const clears = entries.filter((entry) => entry.result === "cleared").length;
+  const wipes = entries.filter((entry) => entry.result === "wiped").length;
+  const interrupted = entries.filter((entry) => entry.result === "interrupted").length;
+  return {
+    starts,
+    bossEntries: bossEntries.length,
+    clears,
+    wipes,
+    interrupted,
+    preBossFailures: starts - bossEntries.length,
+    bossFailures: bossEntries.length - clears,
+    clearRate: starts === 0 ? null : clears / starts,
+    bossReachRate: starts === 0 ? null : bossEntries.length / starts,
+    bossConversionRate: bossEntries.length === 0 ? null : clears / bossEntries.length,
+    meanBossEntryHpRatio: meanOrNull(bossEntries.map(({ bossEntry }) => bossEntry!.hp / bossEntry!.maxHp)),
+    meanBossEntryAliveCount: meanOrNull(bossEntries.map(({ bossEntry }) => bossEntry!.aliveCount)),
+    clearRateWilson95: starts === 0 ? null : wilsonInterval(clears, starts),
+  };
+}
+
+function funnelsByRisk(entries: readonly ExpeditionBalanceTrace[], risk: (entry: ExpeditionBalanceTrace) => RiskLevel): Readonly<Record<RiskLevel, ExpeditionFunnel>> {
+  return Object.fromEntries(RISK_LEVELS.map((level) => [
+    level,
+    finalizeFunnel(entries.filter((entry) => risk(entry) === level)),
+  ])) as Record<RiskLevel, ExpeditionFunnel>;
+}
+
+function validateExpeditionTraces(runs: readonly CampaignRunMetrics[], id: CombinationId): void {
+  for (const run of runs) {
+    const attemptsByDungeon = new Map<string, number>();
+    for (const expedition of run.balanceExpeditions) {
+      if (!RISK_LEVELS.includes(expedition.initialRiskLevel)) throw new AggregationError(`유효하지 않은 초기 위험도: ${id}`);
+      if (!Number.isInteger(expedition.attemptNumber) || expedition.attemptNumber < 1
+        || !RISK_LEVELS.includes(expedition.currentRiskLevel)
+        || (expedition.result !== "cleared" && expedition.result !== "wiped" && expedition.result !== "interrupted")
+        || (expedition.result === "cleared" && expedition.bossEntry === null)) {
+        throw new AggregationError(`유효하지 않은 원정 trace: ${id}`);
+      }
+      const expectedAttempt = (attemptsByDungeon.get(expedition.dungeonId) ?? 0) + 1;
+      if (expedition.attemptNumber !== expectedAttempt) throw new AggregationError(`원정 시도 번호가 이어지지 않는다: ${id}`);
+      attemptsByDungeon.set(expedition.dungeonId, expedition.attemptNumber);
+    }
+  }
+}
+
+function eventualDungeonRates(runs: readonly CampaignRunMetrics[]): Readonly<Record<RiskLevel, EventualDungeonRate>> {
+  const dungeons = runs.flatMap((run) => {
+    const attemptsByDungeon = new Map<string, ExpeditionBalanceTrace[]>();
+    for (const expedition of run.balanceExpeditions) {
+      const attempts = attemptsByDungeon.get(expedition.dungeonId) ?? [];
+      attempts.push(expedition);
+      attemptsByDungeon.set(expedition.dungeonId, attempts);
+    }
+    return [...attemptsByDungeon.values()].map((attempts) => ({
+      initialRiskLevel: attempts[0]!.initialRiskLevel,
+      cleared: attempts.some((attempt) => attempt.result === "cleared"),
+    }));
+  });
+  return Object.fromEntries(RISK_LEVELS.map((level) => {
+    const entries = dungeons.filter((dungeon) => dungeon.initialRiskLevel === level);
+    const clearedDungeons = entries.filter((dungeon) => dungeon.cleared).length;
+    const attemptedDungeons = entries.length;
+    return [level, {
+      attemptedDungeons,
+      clearedDungeons,
+      clearRate: attemptedDungeons === 0 ? null : clearedDungeons / attemptedDungeons,
+      clearRateWilson95: attemptedDungeons === 0 ? null : wilsonInterval(clearedDungeons, attemptedDungeons),
+    }];
+  })) as Record<RiskLevel, EventualDungeonRate>;
+}
+
 function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetrics[]): CombinationAggregate {
   if (runs.length === 0) throw new AggregationError(`조합 표본이 없다: ${id}`);
   const completed = runs.filter((run) => run.completed);
@@ -223,6 +329,7 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
   if (completedWipes.some((wipes) => !Number.isFinite(wipes) || wipes < 0)) {
     throw new AggregationError(`유효하지 않은 완료 전멸 수: ${id}`);
   }
+  validateExpeditionTraces(runs, id);
   const expeditionPressures = runs.flatMap((run) => {
     if (!Array.isArray(run.balanceExpeditions)) throw new AggregationError(`원정 밸런스 지표가 없다: ${id}`);
     return run.balanceExpeditions.map((expedition) => expedition.maxAdvicePressure);
@@ -256,6 +363,11 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
   const endingCounts = emptyCounts(ENDINGS);
   for (const run of runs) endingCounts[run.ending] += 1;
   const sum = (selector: (run: CampaignRunMetrics) => number) => runs.reduce((total, run) => total + selector(run), 0) / runs.length;
+  const allExpeditions = runs.flatMap((run) => run.balanceExpeditions);
+  const firstAttempts = allExpeditions.filter((expedition) => expedition.attemptNumber === 1);
+  const firstAttemptByThemeRisk = Object.fromEntries([...new Set(firstAttempts.map((expedition) => `${expedition.theme}/${expedition.initialRiskLevel}`))]
+    .sort((left, right) => left.localeCompare(right))
+    .map((themeRisk) => [themeRisk, finalizeFunnel(firstAttempts.filter((expedition) => `${expedition.theme}/${expedition.initialRiskLevel}` === themeRisk))])) as Record<string, ExpeditionFunnel>;
   return {
     id, count: runs.length, completedCount: completed.length,
     completionRate: completed.length / runs.length,
@@ -265,6 +377,10 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
     meanMaxAdvicePressure: expeditionPressures.reduce((total, pressure) => total + pressure, 0) / expeditionPressures.length,
     meanBossEntryHpRatio: bossEntryRatios.length === 0 ? null : bossEntryRatios.reduce((total, ratio) => total + ratio, 0) / bossEntryRatios.length,
     bossByThemeRisk,
+    firstAttemptByInitialRisk: funnelsByRisk(firstAttempts, (expedition) => expedition.initialRiskLevel),
+    allAttemptsByCurrentRisk: funnelsByRisk(allExpeditions, (expedition) => expedition.currentRiskLevel),
+    eventualDungeonByInitialRisk: eventualDungeonRates(runs),
+    firstAttemptByThemeRisk,
     rankSCount: runs.filter((run) => run.reachedRankS).length, endingCounts,
     adviceHits: runs.reduce((total, run) => total + run.adviceHits, 0),
     adviceTotal: runs.reduce((total, run) => total + run.adviceTotal, 0),
