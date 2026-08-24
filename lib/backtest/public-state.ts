@@ -95,6 +95,7 @@ export interface AdviceDecisionView {
   readonly options: readonly PresentedAdviceOption[];
   readonly party: readonly PublicMemberView[];
   readonly campaignGold: number;
+  readonly goldPromotionCost?: number;
   readonly hasPendingMerchantEffect: boolean;
   readonly disclosedRuleIds: readonly RuleId[];
   readonly observations: readonly string[];
@@ -203,6 +204,7 @@ export function projectAdviceDecision(
     options: presented,
     party: publicParty(active.partyMembers),
     campaignGold: campaign.gold,
+    goldPromotionCost: getGuidePromotionEligibility(campaign)?.goldRequired,
     hasPendingMerchantEffect: active.expedition.pendingMerchantEffect !== null,
     disclosedRuleIds: [...active.expedition.disclosedRuleIds],
     observations: observations(active),
