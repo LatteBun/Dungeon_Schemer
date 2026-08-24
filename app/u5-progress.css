@@ -172,9 +172,41 @@
   background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-shell-metal) 62%, transparent), transparent);
 }
 
-.u5-advice__button:hover {
+.u5-advice__button:hover:not(:disabled) {
   border-color: var(--color-shell-gold);
   background: linear-gradient(180deg, rgb(48 34 18 / 92%), rgb(24 18 11 / 95%));
+}
+
+/*
+ * 잠긴 조언은 잠긴 것처럼 보여야 한다.
+ *
+ * 골드가 모자라거나 이미 사 둔 것이 있으면 규칙이 막는데, 그 버튼이 누를 수
+ * 있는 것과 똑같이 생겼다. 누르면 아무 일도 없으니 "선택이 안 된다" 로 보인다 -
+ * 실제로 그렇게 보였다. 왜 못 고르는지는 아래 한 줄이 말한다.
+ */
+.u5-advice__button:disabled {
+  border-color: color-mix(in srgb, var(--color-shell-metal) 22%, var(--color-edge));
+  background: linear-gradient(180deg, rgb(18 14 10 / 92%), rgb(11 9 6 / 95%));
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+  opacity: 0.62;
+}
+
+.u5-advice__button:disabled .u5-advice__slot {
+  border-color: #6b5c42;
+  color: #8b7a5c;
+}
+
+/* 왜 못 고르는지. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */
+.u5-advice__blocked {
+  margin-top: clamp(0.15rem, 0.22cqh, 0.3rem);
+  border: 1px solid #7a4a3a;
+  border-radius: 999px;
+  padding: 0.1rem clamp(0.4rem, 0.55cqw, 0.75rem);
+  background: rgb(48 24 18 / 55%);
+  color: #d99a7e;
+  font-size: clamp(0.72rem, 0.76cqw, 0.95rem);
+  letter-spacing: 0.02em;
 }
 
 .u5-advice__text {

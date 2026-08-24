@@ -400,7 +400,7 @@ button.u4-room {
  * 는 귀퉁이를 그대로 두고 변만 늘리므로 폭이 달라져도 문양이 상하지 않는다.
  */
 .u4-destination__panel {
-  --u4-destination-thumb: clamp(4.4rem, 6cqw, 7.5rem);
+  --u4-destination-thumb: clamp(3.4rem, 4.4cqw, 5.6rem);
 
   position: relative;
   min-height: clamp(4.1rem, 5.6cqh, 5rem);
@@ -436,25 +436,25 @@ button.u4-room {
  * 비었다. 칸을 그림에 맞추면 둘 다 없다.
  */
 /*
- * 폭은 열이 정하고 그림이 따른다.
+ * 네모난 칸에 아이콘을 크게 세운다.
  *
- * 같은 변수를 열과 그림에 각각 주었더니 둘이 17px 어긋나, 액자가 첫 글자를
- * 덮었다("특수 사건" 이 "수 사건" 으로). 정하는 곳을 하나로 둔다.
+ * 액자 자산이 244x119 라 정사각 칸에 넣으면 늘어나고, 제 비율로 두면 좌우로
+ * 길어 아이콘이 작아 보인다. 여기서 필요한 것은 분류 하나뿐이라 그림 액자를
+ * 버리고 테두리만 두른다.
  */
 .u4-destination__thumbnail {
   position: relative;
   width: 100%;
-  aspect-ratio: 244 / 119;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 52%, var(--color-edge));
+  border-radius: 0.2rem;
+  background:
+    radial-gradient(circle at 50% 40%, rgb(70 50 26 / 34%), transparent 68%),
+    linear-gradient(180deg, #1b140d, #100b07);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 55%);
 }
 
-.u4-destination__frame {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  /* 칸이 그림과 같은 비율이라 채워도 늘어나지 않는다. */
-  object-fit: fill;
-}
+
 
 
 

@@ -169,13 +169,20 @@ describe("선택한 지점 썸네일", () => {
    * 덮었다. 밑그림을 물려 두는 것으로 한 번 넘겼다가 아예 뺐다 - 지도의 방들은
    * 그대로 그 밑그림을 쓰고, 이 칸은 아이콘과 테두리만 든다.
    */
-  it("방 밑그림을 두지 않는다", () => {
+  /*
+   * 아이콘 하나만 든다.
+   *
+   * 방 밑그림(돌문)은 칸의 주인공이 되어 아이콘을 덮었고, 액자 그림은 244x119
+   * 라 정사각 칸에 넣으면 늘어났다. 여기서 필요한 것은 분류 하나뿐이라 둘 다
+   * 버리고 테두리는 CSS 로 두른다.
+   */
+  it("아이콘 말고 다른 그림을 두지 않는다", () => {
     const source = readFileSync("components/game/U4DungeonMapScreen.tsx", "utf8");
     const thumbnail = source.match(/u4-destination__thumbnail[\s\S]*?<\/div>/)?.[0] ?? "";
 
     expect(thumbnail).toContain("u4-destination__icon");
-    expect(thumbnail).toContain("u4-destination__frame");
     expect(thumbnail).not.toContain("u4-destination__room");
+    expect(thumbnail).not.toContain("u4-destination__frame");
   });
 
   /* 아이콘이 작으면 테두리 안에 묻힌다. */
@@ -212,11 +219,12 @@ describe("액자를 늘리지 않는다", () => {
    *
    * 같은 변수를 열과 그림에 각각 주었더니 둘이 어긋나 액자가 첫 글자를 덮었다.
    */
-  it("썸네일 폭을 두 곳에서 정하지 않는다", () => {
+  /* 좌우로 긴 칸보다 네모난 칸이 아이콘을 크게 보여준다. */
+  it("썸네일은 정사각이고 폭은 열이 정한다", () => {
     const sheet = readFileSync("app/u4-dungeon-map.css", "utf8");
     const thumb = sheet.match(/\.u4-destination__thumbnail\s*\{([^}]*)\}/)?.[1] ?? "";
 
     expect(thumb).toMatch(/width:\s*100%/);
-    expect(thumb).toMatch(/aspect-ratio:\s*244 \/ 119/);
+    expect(thumb).toMatch(/aspect-ratio:\s*1/);
   });
 });

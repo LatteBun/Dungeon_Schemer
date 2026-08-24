@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -246,5 +247,51 @@ describe("넘어가는 버튼", () => {
 
   it("주지 않으면 버튼이 없다", () => {
     expect(render({ outcome })).not.toContain("u5-outcome-continue");
+  });
+});
+
+describe("잠긴 조언", () => {
+  const blocked = {
+    ...base,
+    advice: [
+      { slot: 0 as const, text: "값을 치르고 사세요", rationale: "지금은 그럴 값이 없다", goldCost: 40, unavailableReason: "골드가 모자란다" },
+      { slot: 1 as const, text: "그냥 지나가세요", rationale: "돈을 쓰지 않는다" },
+      { slot: 2 as const, text: "값을 깎아 보라고 하세요", rationale: "해 볼 만하다" },
+    ],
+  };
+
+  /*
+   * 잠긴 조언은 잠긴 것처럼 보여야 한다.
+   *
+   * 누를 수 있는 것과 똑같이 생기면 눌러도 아무 일이 없으니 "선택이 안 된다" 로
+   * 보인다. 실제로 그렇게 보였다.
+   */
+  it("잠긴 버튼과 이유가 함께 나온다", () => {
+    const html = render(blocked);
+
+    expect(html).toContain("disabled");
+    expect(html).toContain("골드가 모자란다");
+    expect(html).toContain("u5-advice__blocked");
+  });
+
+  it("잠기지 않은 조언은 그대로 누를 수 있다", () => {
+    const html = render(blocked);
+    const buttons = html.split("u5-advice__button").length - 1;
+
+    expect(buttons).toBe(3);
+    /* 잠긴 것은 하나뿐이다. */
+    expect(html.split('disabled=""').length - 1).toBe(1);
+  });
+});
+
+describe("잠긴 모양", () => {
+  /* 모양이 없으면 잠긴 것과 누를 수 있는 것이 같아 보인다. */
+  it("잠긴 버튼에 제 모양이 있다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+
+    expect(sheet).toMatch(/\.u5-advice__button:disabled\s*\{/);
+    expect(sheet).toMatch(/\.u5-advice__blocked\s*\{/);
+    /* 잠긴 버튼에는 hover 가 걸리지 않는다. */
+    expect(sheet).toMatch(/\.u5-advice__button:hover:not\(:disabled\)/);
   });
 });
