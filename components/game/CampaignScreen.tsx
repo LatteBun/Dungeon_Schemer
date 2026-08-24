@@ -39,7 +39,26 @@ import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
  * 되살아난 문서도 다시 그릴 때 현재 `phase` 를 보므로, 계약을 맺은 뒤 게시판이
  * `계약 전` 모습으로 되살아나는 일이 없다.
  */
+/**
+ * 규칙이 거부하면 그렇게 말한다.
+ *
+ * 거부는 값으로만 남고 아무 화면도 읽지 않았다. 그래서 규칙이 막는 조작은
+ * **눌러도 아무 일이 없을 뿐**이었다 - 게시판에서 두 번째 공고가 안 골라지던
+ * 것이 그 증상이었고, 같은 일이 또 생기면 또 조용할 것이었다.
+ */
 export function CampaignScreen() {
+  const rejected = useCampaignStore((state) => state.rejected);
+  const clearRejected = useCampaignStore((state) => state.clearRejected);
+
+  return (
+    <>
+      <CurrentScreen />
+      {rejected !== null && <RejectionNotice reason={rejected.reason} onDismiss={clearRejected} />}
+    </>
+  );
+}
+
+function CurrentScreen() {
   const campaign = useCampaignStore((state) => state.campaign);
   const context = useCampaignStore((state) => state.context);
   const last = useCampaignStore((state) => state.last);
@@ -247,6 +266,21 @@ function changesByMemberId(active: ActiveExpeditionContext) {
     byId[String(member.id)] = memberChangesFor(active, member.id);
   }
   return byId;
+}
+
+export function RejectionNotice({
+  reason,
+  onDismiss,
+}: {
+  readonly reason: string;
+  readonly onDismiss: () => void;
+}) {
+  return (
+    <div className="campaign-rejection" role="alert" data-testid="campaign-rejection">
+      <p className="campaign-rejection__reason">{reason}</p>
+      <button type="button" onClick={onDismiss}>확인</button>
+    </div>
+  );
 }
 
 function EndingUnavailable({ reason }: { readonly reason: string }) {

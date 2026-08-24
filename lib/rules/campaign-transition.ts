@@ -6,6 +6,7 @@ import {
 } from "@/lib/domain";
 import type {
   BoardOffer,
+  CampaignEnding,
   ChoiceId,
   NodeId,
   PreparedExpeditionEvents,
@@ -34,6 +35,10 @@ import {
   appendCampaignEvent,
   toAdviceResolvedEventDraft,
   toBossBattleResolvedEventDraft,
+  toCampaignEndedEventDraft,
+  toExpeditionSettledEventDraft,
+  toGuidePromotedEventDraft,
+  toTrustCollapsedEventDraft,
 } from "./campaign-history";
 import { resolveBossBattle } from "./boss-battle-adapter";
 import { generateDungeonMap } from "./dungeon-map";
@@ -50,6 +55,30 @@ import { applyAcceptedMerchantAdvice } from "./merchant";
 import { settleExpedition } from "./settlement";
 import { runWorldTurn } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
+
+/**
+ * 끝난 캠페인이 남기는 기록.
+ *
+ * 불신으로 끝났다면 붕괴도 함께 남긴다 - `C8-B` 의 전환점이 그것을 가장 높게
+ * 친다. 그 이벤트가 없으면 「신뢰 붕괴」 전환점이 나올 자리가 없다.
+ */
+function withEndingRecords(
+  campaign: CampaignState,
+  ending: CampaignEnding,
+  expeditionId: string | null,
+): CampaignState["history"] {
+  const collapsed = ending.kind === "distrust" && expeditionId !== null
+    ? appendCampaignEvent(campaign.history, {
+      campaignTurn: campaign.worldTurn,
+      event: toTrustCollapsedEventDraft({ expeditionId, ending }),
+    })
+    : campaign.history;
+
+  return appendCampaignEvent(collapsed, {
+    campaignTurn: campaign.worldTurn,
+    event: toCampaignEndedEventDraft(ending),
+  });
+}
 
 /**
  * 상인에게 산 것을 치른다.
@@ -922,9 +951,19 @@ export function transitionCampaign(
         partyMembers: action.partyMembers.map((member) => ({ ...member })),
       };
       const ending = evaluateImmediateDistrustEnding(withLatestParty, action.partyMembers);
+      /*
+       * 신뢰가 무너진 것도 캠페인의 사건이다.
+       *
+       * 붕괴와 종료를 함께 남긴다 - 전환점은 붕괴를 보고, 기록은 종료를 본다.
+       */
       const nextCampaign = ending === null
         ? withLatestParty
-        : { ...withLatestParty, phase: "ended" as const, ending };
+        : {
+          ...withLatestParty,
+          phase: "ended" as const,
+          ending,
+          history: withEndingRecords(withLatestParty, ending, active.expeditionId),
+        };
       return {
         ...emptyResult(nextCampaign, {
           ...context,
@@ -959,6 +998,17 @@ export function transitionCampaign(
           {
             ...execution.campaign,
             phase: "settlement",
+            /*
+             * 정산 한 건을 이력에 남긴다.
+             *
+             * 누가 돌아오지 못했는지가 여기에만 있다. `C8-B` 의 전환점은 첫
+             * 사망을 이 이벤트에서 찾는데, 아무도 남기지 않아 그 전환점이
+             * 구조적으로 나올 수 없었다.
+             */
+            history: appendCampaignEvent(execution.campaign.history, {
+              campaignTurn: campaign.worldTurn,
+              event: toExpeditionSettledEventDraft(execution.result),
+            }),
             settledExpeditionIds: [
               ...campaign.settledExpeditionIds,
               action.snapshot.expeditionId,
@@ -1014,7 +1064,12 @@ export function transitionCampaign(
     const ending = evaluateCampaignEnding(withOffers);
     const nextCampaign = ending === null
       ? withOffers
-      : { ...withOffers, phase: "ended" as const, ending };
+      : {
+        ...withOffers,
+        phase: "ended" as const,
+        ending,
+        history: withEndingRecords(withOffers, ending, null),
+      };
     return {
       ...emptyResult(nextCampaign, {
         selectedOffer: null,
@@ -1036,6 +1091,11 @@ export function transitionCampaign(
         ...execution.campaign,
         phase: "board",
         offers: [],
+        /* 등급이 오른 것도 캠페인의 사건이다. */
+        history: appendCampaignEvent(execution.campaign.history, {
+          campaignTurn: campaign.worldTurn,
+          event: toGuidePromotedEventDraft(execution.result),
+        }),
       };
       return {
         ...emptyResult(
