@@ -346,9 +346,12 @@ button.u4-room {
 
 .u4-right-panel {
   display: grid;
-  /* 두 덩어리 모두 내용 높이다. 남는 자리는 패널 바탕으로 둔다. */
-  grid-template-rows: auto auto;
-  align-content: start;
+  /*
+   * 파티 · 목적지 · 답사 기록 셋이다.
+   *
+   * 전에는 둘뿐이라 아래가 비어 보였다. 마지막 덩어리가 남는 자리를 받는다.
+   */
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: clamp(0.55rem, 0.8cqh, 0.7rem);
   height: 100%;
   min-height: 0;
@@ -529,4 +532,48 @@ button.u4-room {
   cursor: not-allowed;
   filter: grayscale(0.9) brightness(0.48);
   opacity: 0.76;
+}
+
+/* 답사 기록. 다음 지점을 고르는 자리에서 읽는 사실이다. */
+.u4-survey {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.u4-survey__progress {
+  margin: 0 0 clamp(0.35rem, 0.5cqh, 0.6rem);
+  color: #c7ab7c;
+  font-size: clamp(0.85rem, 0.9cqw, 1.1rem);
+}
+
+.u4-survey__progress strong {
+  color: #f0d9a4;
+}
+
+.u4-survey__empty {
+  margin: 0;
+  color: #8e7a5c;
+  font-size: clamp(0.8rem, 0.85cqw, 1rem);
+}
+
+.u4-survey__rules {
+  display: grid;
+  row-gap: clamp(0.3rem, 0.42cqh, 0.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.u4-survey__rules li {
+  border-left: 2px solid #6b4f2c;
+  padding-left: 0.5rem;
+  color: #bda27a;
+  font-size: clamp(0.8rem, 0.84cqw, 1rem);
+  line-height: 1.45;
+}
+
+.u4-party__hint {
+  margin: clamp(0.35rem, 0.45cqh, 0.6rem) 0 0;
+  color: #8e7a5c;
+  font-size: clamp(0.75rem, 0.78cqw, 0.92rem);
 }

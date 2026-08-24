@@ -535,28 +535,6 @@ function transitionChooseAdvice(
   };
 
   /*
-   * 이 조언이 남긴 사실을 붙든다.
-   *
-   * 정산은 원정이 끝난 뒤에 온다. 그때는 사건도 조언 목록도 사라진 뒤라, 무엇을
-   * 골랐는지 물을 곳이 없다. 사라지기 전에 적어 둔다.
-   */
-  const chosen = event.advice.find((option) => option.id === resolution.decision.adviceId);
-  const record: ExpeditionRecord = {
-    observation: event.description,
-    choice: chosen?.label ?? "",
-    reactions: resolution.decision.reactions.map((one) => ({ characterId: one.characterId, reaction: one.reaction })),
-    damage: withTrust.flatMap((after) => {
-      const before = active.partyMembers.find((candidate) => candidate.id === after.id);
-      return before === undefined || before.hp === after.hp
-        ? []
-        : [{ characterId: after.id, before: before.hp, after: after.hp }];
-    }),
-    battle: battle?.battle == null
-      ? null
-      : { rounds: battle.battle.rounds, victory: battle.battle.status === "victory" },
-  };
-
-  /*
    * 무엇이 달라졌는지 사람 단위로 적어 둔다.
    *
    * 화면이 파티를 전후로 비교하지 않게 한다. 비교하려면 화면이 "언제의 파티"를
@@ -568,6 +546,24 @@ function transitionChooseAdvice(
       ? []
       : [{ characterId: after.id, before: pick(before), after: pick(after) }];
   });
+
+  /*
+   * 이 조언이 남긴 사실을 붙든다.
+   *
+   * 정산은 원정이 끝난 뒤에 온다. 그때는 사건도 조언 목록도 사라진 뒤라, 무엇을
+   * 골랐는지 물을 곳이 없다. 사라지기 전에 적어 둔다.
+   */
+  const chosen = event.advice.find((option) => option.id === resolution.decision.adviceId);
+  const record: ExpeditionRecord = {
+    observation: event.description,
+    choice: chosen?.label ?? "",
+    reactions: resolution.decision.reactions.map((one) => ({ characterId: one.characterId, reaction: one.reaction })),
+    damage: changesOf((member) => member.hp),
+    trustChanges: changesOf((member) => member.trust),
+    battle: battle?.battle == null
+      ? null
+      : { rounds: battle.battle.rounds, victory: battle.battle.status === "victory" },
+  };
 
   const pendingOutcome: ExpeditionOutcome = {
     event,
@@ -667,6 +663,12 @@ function transitionEnterBoss(
    *
    * 고른 것은 무엇을 믿고 들어갔는가다. `E4` 가 실제로 적용한 믿음만 센다.
    */
+  const bossChangesOf = (pick: (member: Character) => number) => withTrust.flatMap((after) => {
+    const before = active.partyMembers.find((candidate) => candidate.id === after.id);
+    return before === undefined || pick(before) === pick(after)
+      ? []
+      : [{ characterId: after.id, before: pick(before), after: pick(after) }];
+  });
   const applied = resolved.bossResult.applications.length;
   const bossRecord: ExpeditionRecord = {
     observation: "보스방에 들었다",
@@ -678,12 +680,8 @@ function transitionEnterBoss(
       characterId: one.characterId,
       reaction: one.action,
     })),
-    damage: withTrust.flatMap((after) => {
-      const before = active.partyMembers.find((candidate) => candidate.id === after.id);
-      return before === undefined || before.hp === after.hp
-        ? []
-        : [{ characterId: after.id, before: before.hp, after: after.hp }];
-    }),
+    damage: bossChangesOf((member) => member.hp),
+    trustChanges: bossChangesOf((member) => member.trust),
     battle: {
       rounds: resolved.bossResult.battle.rounds,
       victory: resolved.bossResult.status === "cleared",

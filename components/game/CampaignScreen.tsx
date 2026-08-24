@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { NodeId, PromotionMethod } from "@/lib/domain";
+import type { ActiveExpeditionContext, NodeId, PromotionMethod } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { screenForPhase } from "@/lib/store/campaign-store";
 import { useCampaignStore } from "./CampaignStoreProvider";
@@ -18,6 +18,8 @@ import {
   eventReplayFor,
   expeditionEndViewFor,
   logFor,
+  memberChangesFor,
+  surveyViewFor,
   progressViewFor,
   publicKindByNodeId,
   statusFor,
@@ -189,6 +191,7 @@ function ExpeditionScreens() {
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={bossReplayFor(campaign, active) ?? undefined}
+        changesByMemberId={changesByMemberId(active)}
         onAcknowledge={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
         acknowledgeLabel="정산으로"
       />
@@ -210,6 +213,7 @@ function ExpeditionScreens() {
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={eventReplayFor(campaign, active) ?? undefined}
+        changesByMemberId={changesByMemberId(active)}
         onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });
         }}
@@ -231,6 +235,8 @@ function ExpeditionScreens() {
       })}
       layout={createU4DungeonMapLayout(active.expedition.map)}
       party={createU4PartyMemberViews(active.partyMembers)}
+      survey={surveyViewFor(campaign, active)}
+      changesByMemberId={changesByMemberId(active)}
       selectedNextNodeId={selected}
       onSelectNextNode={setSelected}
       onMove={(nodeId) => {
@@ -246,6 +252,20 @@ function ExpeditionScreens() {
       }}
     />
   );
+}
+
+/**
+ * 파티원마다 이 원정에서 있었던 일.
+ *
+ * 카드를 뒤집으면 보인다. 지금 수치만 보고는 무엇 때문에 그렇게 됐는지 알 수
+ * 없는데, 신뢰가 왜 깎였는지가 곧 다음 조언이 먹힐지를 가른다.
+ */
+function changesByMemberId(active: ActiveExpeditionContext) {
+  const byId: Record<string, ReturnType<typeof memberChangesFor>> = {};
+  for (const member of active.partyMembers) {
+    byId[String(member.id)] = memberChangesFor(active, member.id);
+  }
+  return byId;
 }
 
 export function RejectionNotice({

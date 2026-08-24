@@ -14,7 +14,7 @@ import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import {
   adviceIdForSlotIn, bossReplayFor, ecologyViewFor, eventReplayFor, expeditionEndViewFor, logFor,
-  progressViewFor, publicKindByNodeId, statusFor,
+  memberChangesFor, progressViewFor, publicKindByNodeId, statusFor, surveyViewFor,
 } from "./campaign-adapters";
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
@@ -529,5 +529,96 @@ describe("보스전도 같은 화면에서 본다", () => {
     /* 실제로 죽은 사람이 있어야 이 검사에 뜻이 있다. */
     expect(active.partyMembers.some((member) => !member.alive)
       || active.expedition.bossResult!.status === "cleared").toBe(true);
+  });
+});
+
+/** 보스전을 치른 직후. 위 describe 의 것과 같은 걸음이다. */
+function afterBossFight() {
+  for (let index = 0; index < 30; index += 1) {
+    const run = driven(`boss-screen-${index}`);
+    run.act({ type: "OPEN_BOARD" });
+    const offer = run.state().campaign.offers.find((one) => one.lockReason === null)!;
+    run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
+    run.act({ type: "START_EXPEDITION", expeditionId: "b", ...createExpeditionForOffer(run.state().campaign, offer) });
+
+    for (let step = 0; step < 40; step += 1) {
+      const active = run.state().context.activeExpedition;
+      if (active === null) break;
+      if (active.expedition.bossResult !== null) return run;
+      if (active.expedition.result !== null) break;
+      if (active.pendingOutcome !== null) { run.act({ type: "ACKNOWLEDGE_OUTCOME" }); continue; }
+      if (active.pendingEvent !== null) {
+        run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+        continue;
+      }
+      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
+      const next: NodeId | undefined = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
+      if (next === undefined) { run.act({ type: "ENTER_BOSS" }); continue; }
+      run.act({ type: "VISIT_NODE", nodeId: next });
+      if (next === active.expedition.map.bossNodeId) run.act({ type: "ENTER_BOSS" });
+    }
+  }
+  throw new Error("보스전에 닿지 못했다");
+}
+
+describe("원정 중에 되짚어 볼 수 있다", () => {
+  it("파티원마다 이 원정의 변화를 낸다", () => {
+    const run = atEvent();
+    const before = run.state().context.activeExpedition!;
+    run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, before) });
+    const active = run.state().context.activeExpedition!;
+
+    const withChanges = active.partyMembers
+      .map((member) => memberChangesFor(active, member.id))
+      .filter((changes) => changes.length > 0);
+
+    /* 조언 하나에 아무도 반응하지 않을 수는 없다. */
+    expect(withChanges.length).toBeGreaterThan(0);
+    for (const changes of withChanges) {
+      for (const change of changes) expect(change.cause.length).toBeGreaterThan(0);
+    }
+  });
+
+  /* 아무 일도 없었던 자리는 적지 않는다. 나열하면 무엇이 바꿨는지가 묻힌다. */
+  it("걷기만 한 원정에는 변화가 없다", () => {
+    const run = contracted();
+    const active = run.state().context.activeExpedition!;
+
+    for (const member of active.partyMembers) {
+      expect(memberChangesFor(active, member.id)).toEqual([]);
+    }
+  });
+
+  it("답사 기록이 공개된 규칙과 지나온 지점을 낸다", () => {
+    const run = contracted();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const survey = surveyViewFor(campaign, active);
+
+    expect(survey.total).toBeGreaterThan(0);
+    expect(survey.visited).toBeLessThanOrEqual(survey.total);
+    expect(survey.disclosedRules).toEqual(ecologyViewFor(campaign, active).disclosedRules);
+    /* 규칙 문구가 그대로 와야 한다. 식별자가 새면 안 된다. */
+    for (const rule of survey.disclosedRules) expect(rule).not.toMatch(/^rule-/);
+  });
+
+  /*
+   * 재생하는 동안 옆에 선 파티는 그 싸움에 들어갈 때의 모습이어야 한다.
+   *
+   * 이미 "사망" 으로 회색이면 재생이 시작하기도 전에 결말이 서 있는 셈이다.
+   */
+  it("보스전 재생 옆의 파티가 미리 죽어 있지 않다", () => {
+    const run = afterBossFight();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const view = expeditionEndViewFor(campaign, active);
+
+    const fought = new Set(active.records.at(-1)!.damage.map((one) => String(one.characterId)));
+    for (const member of view.party) {
+      if (!fought.has(member.id)) continue;
+      expect(member.alive).toBe(true);
+      expect(member.hp).toBeGreaterThan(0);
+    }
+    expect(fought.size).toBeGreaterThan(0);
   });
 });

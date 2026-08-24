@@ -118,18 +118,29 @@ describe("U4 fixed 16:9 canvas contract", () => {
   });
 
   /*
-   * 우측 패널은 덩어리를 위에서부터 쌓고, 어느 쪽도 늘리지 않는다.
+   * 우측 패널은 앞 두 덩어리를 내용 높이로 쌓고, 마지막이 남는 자리를 받는다.
    *
    * 전에는 2fr : 1fr 로 나눠 다음 지점을 아래 3분의 1 에 붙였다. 그러면 파티
-   * 칸이 내용보다 커져 카드 아래가 빈 상자로 남는다. U3 처럼 두 덩어리 모두
-   * 내용 높이에 맞추고, 남는 자리는 상자가 아니라 패널 바탕으로 둔다.
+   * 칸이 내용보다 커져 카드 아래가 빈 상자로 남는다. 그래서 둘 다 내용 높이로
+   * 두었는데, 이번에는 그 아래가 통째로 비어 보였다.
+   *
+   * 답사 기록이 그 자리를 받는다. 늘려도 빈 상자가 되지 않는 유일한 덩어리라
+   * 그렇다 - 알아낸 규칙이 쌓이고, 넘치면 그 안에서 스크롤한다. 앞 둘은 그대로
+   * 내용 높이다.
    */
-  it("stacks the right panel from the top without stretching either block", () => {
+  it("stacks the right panel and lets only the last block take the rest", () => {
     const base = readFileSync("app/u4-dungeon-map.css", "utf8");
     const rule = base.match(/\.u4-right-panel\s*\{([^}]*)\}/)?.[1] ?? "";
 
-    expect(rule).toMatch(/grid-template-rows:\s*auto auto/);
-    expect(rule).toMatch(/align-content:\s*start/);
+    expect(rule).toMatch(/grid-template-rows:\s*auto auto minmax\(0, 1fr\)/);
+    /* 마지막이 자리를 받아야 하므로 위로 몰지 않는다. */
+    expect(rule).not.toMatch(/align-content:\s*start/);
+
+    /* 늘어난 덩어리는 제 안에서 스크롤한다. 패널을 밀어내지 않는다. */
+    const survey = base.match(/\.u4-survey\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(survey).toMatch(/min-height:\s*0/);
+    expect(survey).toMatch(/overflow-y:\s*auto/);
 
     const fixes = readFileSync("app/u4-dungeon-map-fixes.css", "utf8");
     const override = fixes.match(/\.u4-right-panel\s*\{([^}]*)\}/)?.[1] ?? "";

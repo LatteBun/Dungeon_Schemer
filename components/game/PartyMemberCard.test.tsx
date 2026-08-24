@@ -104,3 +104,61 @@ describe("PartyMemberCard", () => {
     expect(() => render({ hp: 0, maxHp: 0 })).not.toThrow();
   });
 });
+
+describe("카드 뒤집기", () => {
+  const member = {
+    id: "character-1",
+    name: "로자린드",
+    classLabel: "마법사",
+    personalityLabel: "신중한",
+    hp: 18,
+    maxHp: 24,
+    trust: 41,
+    gold: 12,
+    alive: true,
+  };
+
+  /* 원정 밖에는 되짚을 원정이 없다. 누를 수 없는 카드에 버튼 모양을 주지 않는다. */
+  it("변화를 주지 않으면 뒤집을 수 없다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, { member }));
+
+    expect(html).not.toContain("party-card__flip");
+    expect(html).not.toContain("party-member-changes");
+  });
+
+  it("변화를 주면 뒤집을 수 있다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [{ cause: "돌을 괴고 지나가라고 하세요", reaction: "수용", trust: { before: 38, after: 41 } }],
+    }));
+
+    expect(html).toContain("party-card__flip");
+    expect(html).toContain("돌을 괴고 지나가라고 하세요");
+    expect(html).toContain("수용 · 신뢰 38 → 41");
+  });
+
+  /* 뒤집혀도 누구인지는 남는다. 이름이 없으면 어느 카드인지 잃는다. */
+  it("뒷면에 이름이 남는다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, { member, changes: [] }));
+    const back = html.match(/party-card__back[\s\S]*?<\/div>/)?.[0] ?? "";
+
+    expect(back).toContain("로자린드");
+  });
+
+  it("아직 아무 일도 없으면 그렇게 적는다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, { member, changes: [] }));
+
+    expect(html).toContain("아직 아무 일도 없었다");
+  });
+
+  /* HP 와 신뢰가 함께 바뀐 자리는 둘 다 적는다. */
+  it("HP 와 신뢰를 함께 적는다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [{ cause: "그대로 지나가라고 하세요", hp: { before: 24, after: 18 }, trust: { before: 45, after: 41 } }],
+    }));
+
+    expect(html).toContain("HP 24 → 18");
+    expect(html).toContain("신뢰 45 → 41");
+  });
+});
