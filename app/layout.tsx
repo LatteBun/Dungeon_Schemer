@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PlayerProgressProvider } from "@/components/game/PlayerProgressProvider";
 import "./globals.css";
+import "./main-menu.css";
 import "../components/game/u3-promotion-motion.css";
 import "./u2-intro.css";
 import "./u3-board.css";
