@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e:install": "playwright install chromium",
+    "test:e2e": "playwright test",
     "backtest": "vitest run --config vitest.backtest.config.ts"
   },
   "dependencies": {
@@ -20,6 +22,7 @@
     "zustand": "5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
