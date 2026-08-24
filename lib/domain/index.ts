@@ -132,6 +132,7 @@ export {
   WORLD_TURN_ACTIVITIES,
   runWorldTurn,
 } from "./worldturn";
+export { CAMPAIGN_BALANCE } from "../balance/campaign-balance";
 export type {
   WorldTurnExecution,
   WorldTurnActivity,
