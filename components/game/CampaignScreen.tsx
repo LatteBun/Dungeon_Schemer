@@ -16,6 +16,7 @@ import {
   adviceIdForSlotIn,
   bossReplayFor,
   ecologyViewFor,
+  eventReplayFor,
   logFor,
   progressViewFor,
   publicKindByNodeId,
@@ -93,12 +94,23 @@ export function CampaignScreen() {
     return <ExpeditionScreens />;
   }
 
-  if (screen === "settlement" && last?.settlement != null) {
-    const dungeon = campaign.dungeons.find((one) => one.id === last.settlement!.dungeonId);
+  /*
+   * 월드턴 동안에도 방금 본 정산이 그대로 서 있어야 한다.
+   *
+   * `worldTurn` 단계도 정산 화면으로 온다. 그런데 그때는 `last` 가 월드턴 결과로
+   * 바뀐 뒤라 `last.settlement` 가 비어 있고, 그러면 「이 단계를 그릴 수 없다」가
+   * 뜬다. 지금은 두 액션을 한 핸들러에서 연달아 보내 그 사이에 렌더가 없어
+   * 드러나지 않지만, 월드턴이 한 번이라도 거부되면 길잡이가 오류 화면에 갇힌다.
+   *
+   * `C8-A` 가 정산을 누적하므로 마지막 정산은 통계에 남아 있다. 거기서 읽는다.
+   */
+  const shownSettlement = last?.settlement ?? campaign.statistics.settlements.at(-1) ?? null;
+  if (screen === "settlement" && shownSettlement !== null) {
+    const dungeon = campaign.dungeons.find((one) => one.id === shownSettlement.dungeonId);
     return (
       <U6SettlementScreen
         status={status}
-        settlement={createU6SettlementView(last.settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider")}
+        settlement={createU6SettlementView(shownSettlement, dungeon?.name ?? "", dungeon?.theme ?? "spider")}
         onContinue={() => {
           /*
            * 정산을 확인하면 세상이 한 턴 돈다.
@@ -153,16 +165,25 @@ function ExpeditionScreens() {
     );
   }
 
-  if (active.pendingEvent !== null) {
+  /*
+   * 고르는 중이거나 결과를 보는 중이다.
+   *
+   * 둘은 같은 화면의 두 상태다 — 상황도 파티도 그대로 있고, 조언 자리에 결과가
+   * 들어선다. 결과를 보는 동안 전투가 있었으면 그것도 함께 재생한다.
+   */
+  if (active.pendingEvent !== null || active.pendingOutcome !== null) {
+    const seeing = active.pendingOutcome !== null;
     return (
       <U5ProgressScreen
         status={status}
         progress={progressViewFor(campaign, active)!}
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
-        onSelectAdvice={(slot) => {
+        battleReplay={eventReplayFor(campaign, active) ?? undefined}
+        onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });
         }}
+        onAcknowledge={seeing ? () => dispatch({ type: "ACKNOWLEDGE_OUTCOME" }) : undefined}
       />
     );
   }

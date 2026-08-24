@@ -25,6 +25,12 @@ export interface U5ProgressScreenProps {
   ecology: U5EcologyView;
   /** 슬롯 번호로 받는다. 화면은 조언 식별자를 모른다. */
   onSelectAdvice?: (slot: number) => void;
+  /*
+   * 결과를 다 봤다고 알린다. 프리뷰에는 넘어갈 곳이 없어 주지 않는다.
+   *
+   * 다음에 무슨 일이 일어나는지는 화면이 모른다. 알리기만 한다.
+   */
+  onAcknowledge?: () => void;
   initialMode?: U5ConsoleMode;
   initialFilter?: U5LogFilter;
   readonly battleReplay?: U5BattleReplay;
@@ -159,6 +165,7 @@ export function U5ProgressScreen({
   log,
   ecology,
   onSelectAdvice,
+  onAcknowledge,
   initialMode,
   initialFilter = "all",
   battleReplay,
@@ -217,7 +224,14 @@ export function U5ProgressScreen({
                       ))}
                     </ul>
                   ) : (
-                    <Outcome outcome={progress.outcome} />
+                    <>
+                      <Outcome outcome={progress.outcome} />
+                      {onAcknowledge !== undefined && (
+                        <button type="button" className="u5-outcome-continue" onClick={onAcknowledge}>
+                          지도로 돌아간다
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               ) : (

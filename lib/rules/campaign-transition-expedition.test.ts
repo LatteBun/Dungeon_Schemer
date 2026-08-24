@@ -127,7 +127,13 @@ describe("원정 안쪽 전이", () => {
     })).toThrow(RuleError);
   });
 
-  it("조언을 고르면 사건이 닫히고 다음 지점으로 갈 수 있다", () => {
+  /*
+   * 조언을 고르면 사건이 닫히고 결과가 열린다.
+   *
+   * 결과를 보기 전에는 움직일 수 없다. 곧장 지도로 돌려보내면 자기 조언이 어떻게
+   * 됐는지 모른 채 다음 갈림길에 서게 된다.
+   */
+  it("조언을 고르면 결과가 열리고, 확인해야 움직인다", () => {
     const begun = started();
     const visited = transitionCampaign(begun.campaign, begun.context, {
       type: "VISIT_NODE", nodeId: firstStep(begun),
@@ -138,9 +144,34 @@ describe("원정 안쪽 전이", () => {
     });
 
     expect(chosen.context.activeExpedition!.pendingEvent).toBeNull();
+    expect(chosen.context.activeExpedition!.pendingOutcome).not.toBeNull();
     expect(() => transitionCampaign(chosen.campaign, chosen.context, {
       type: "VISIT_NODE", nodeId: firstStep(chosen),
+    })).toThrow(/확인하지 않은 결과/);
+
+    const seen = transitionCampaign(chosen.campaign, chosen.context, { type: "ACKNOWLEDGE_OUTCOME" });
+
+    expect(seen.context.activeExpedition!.pendingOutcome).toBeNull();
+    expect(() => transitionCampaign(seen.campaign, seen.context, {
+      type: "VISIT_NODE", nodeId: firstStep(seen),
     })).not.toThrow();
+  });
+
+  /* 결과에는 반응과 결과 문장이 실제로 들어 있어야 한다. 빈 화면이면 뜻이 없다. */
+  it("결과가 반응과 결과 문장을 담는다", () => {
+    const begun = started();
+    const visited = transitionCampaign(begun.campaign, begun.context, {
+      type: "VISIT_NODE", nodeId: firstStep(begun),
+    });
+    const event = visited.context.activeExpedition!.pendingEvent!;
+    const chosen = transitionCampaign(visited.campaign, visited.context, {
+      type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
+    });
+    const outcome = chosen.context.activeExpedition!.pendingOutcome!;
+
+    expect(outcome.resultText.length).toBeGreaterThan(0);
+    expect(outcome.reactions.length).toBeGreaterThan(0);
+    expect(outcome.event.id).toBe(event.id);
   });
 
   /*
@@ -168,6 +199,8 @@ describe("원정 안쪽 전이", () => {
       state = transitionCampaign(state.campaign, state.context, {
         type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
       });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      state = transitionCampaign(state.campaign, state.context, { type: "ACKNOWLEDGE_OUTCOME" });
     }
 
     expect(sizes.length).toBeGreaterThan(1);
@@ -193,6 +226,8 @@ describe("원정 안쪽 전이", () => {
       state = transitionCampaign(state.campaign, state.context, {
         type: "CHOOSE_ADVICE", adviceId: event.advice[0]!.id,
       });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      state = transitionCampaign(state.campaign, state.context, { type: "ACKNOWLEDGE_OUTCOME" });
     }
 
     expect(seen.length).toBeGreaterThan(1);
