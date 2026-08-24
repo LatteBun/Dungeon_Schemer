@@ -4,6 +4,8 @@
 /.next/
 /out/
 /coverage/
+/playwright-report/
+/test-results/
 .env*
 .vercel
 *.tsbuildinfo
