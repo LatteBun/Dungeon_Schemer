@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { createU6EndingView } from "@/components/game/u6-ending-adapter";
 import type { CampaignState, CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
-import { createU6EndingView } from "@/components/game/u6-ending-adapter";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import type { CampaignStoreState } from "./campaign-store";
 import { createCampaignStore, screenForPhase } from "./campaign-store";
@@ -17,7 +17,7 @@ import { firstChoosableAdvice } from "./legal-advice";
  */
 
 /** 지금 상태를 보고 다음 한 걸음을 정한다. 액션 목록을 미리 적지 않는다. */
-function runToEnd(seed: string, limit = 400, onStep: (state: CampaignStoreState) => void = () => {}) {
+function runToEnd(seed: string, limit = 800, onStep: (state: CampaignStoreState) => void = () => {}) {
   const store = createCampaignStore(seed);
   const taken: CampaignTransition["type"][] = [];
   const act = (action: CampaignTransition) => {
@@ -182,7 +182,7 @@ describe("막다른 길이 없다", () => {
     }
 
     expect(stuck).toEqual([]);
-  });
+  }, 15_000);
 });
 
 /**

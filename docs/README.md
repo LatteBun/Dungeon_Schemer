@@ -109,6 +109,14 @@
 - [E3 경로별 몬스터 최소 보장 설계](superpowers/specs/2026-08-24-lattebun-e3-monster-path-minimum-design.md): 위험도별 실제 선택 경로의 몬스터 하한과 결정적 전역 배정 계약
 - [E3 경로별 몬스터 최소 보장 구현 계획](superpowers/plans/2026-08-24-lattebun-e3-monster-path-minimum.md): E3 동시 제약 배정·실제 프로필 회귀의 테스트 우선 실행 순서
 - [캠페인 개편 설계](superpowers/specs/2026-08-19-lattebun-campaign-rework-design.md): 확정 규칙, 폐기 규칙, 문서 개정 지도
+- [B1 현행 캠페인 백테스트 설계](superpowers/specs/2026-08-24-lattebun-b1-current-campaign-backtest-design.md): 실제 Store 기반 3전략×2정확도 calibration·holdout 진단과 조건부 B1-B 경계
+- [B1 현행 캠페인 백테스트 구현 계획](superpowers/plans/2026-08-24-lattebun-b1-current-campaign-backtest.md): 공개 정보 전략·실제 Store driver·calibration 승인·독립 holdout의 테스트 우선 실행 순서
+- [B1-B 캠페인 생존 밸런스 재설계](superpowers/specs/2026-08-24-lattebun-b1-balance-redesign-design.md): B1-A 전 조합 완주율 0%를 해소하는 재도전·월드턴·보스·조언 누적 규칙과 재측정 기준
+- [B1-B 캠페인 생존 밸런스 구현 계획](superpowers/plans/2026-08-24-lattebun-b1-balance-redesign.md): 공통 설정부터 조언 압력·전투·계측·단계별 calibration·독립 holdout까지의 테스트 우선 실행 순서
+- [B1 위험도별 던전 클리어율 보정 설계](superpowers/specs/2026-08-25-lattebun-b1-risk-clearance-calibration-design.md): 첫 시도·초기 위험도 기준 목표 곡선과 보스 병목 분리, calibration·holdout 판정 기준
+- [B1 위험도별 던전 클리어율 보정 구현 계획](superpowers/plans/2026-08-25-lattebun-b1-risk-clearance-calibration.md): 원정 trace·위험도별 funnel·acceptance gate·단계별 보스 배율 calibration과 승인 뒤 holdout 실행 순서
+  - `backtest:structure`(조합당 50시드 구조 검증), `backtest:tune`(100시드 1차 보정), `backtest:quick`(200시드 최종 calibration), `backtest`(승인 뒤 조합당 2,000시드 holdout)을 사용한다.
+- [B1-C 캠페인 손실 원인 판정·보정 설계](superpowers/specs/2026-08-25-lattebun-b1-campaign-depletion-attribution-design.md): 원정·월드턴·캠페인 종료 손실을 같은 원장으로 계측하고, 지배 원인 하나만 보정하는 경계와 재측정 기준
 - [C4 원정 정산 설계](superpowers/specs/2026-08-23-lattebun-c4-expedition-settlement-design.md): 정산 계약, 유품, 응급 편성, C7·C8·U6 경계
 - [C4 원정 정산 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-expedition-settlement.md): C4와 연계 계약의 테스트 우선 구현 순서
 - [C4 PR 리뷰 수정 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-pr-review-fixes.md): 전멸 전용 다음 보상과 중상 경계 판정 수정 순서

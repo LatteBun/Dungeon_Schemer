@@ -1,4 +1,5 @@
 import type { Rng } from "@/lib/rng";
+import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
 
 import type { Character } from "./character";
 import type { CharacterPool, ExpeditionParty } from "./pool";
@@ -19,7 +20,7 @@ export const FORCED_REST_HP_RATIO = 0.5;
 /** 처리 후 HP가 최대의 이 비율 미만이면 중상이다. */
 export const GRAVELY_WOUNDED_HP_RATIO = 0.2;
 /** 휴식 회복량은 최대 HP 비례다. 현재 HP 비례는 크게 다칠수록 덜 회복한다. */
-export const REST_RECOVERY_RATIO = 0.15;
+export const REST_RECOVERY_RATIO = CAMPAIGN_BALANCE.worldTurn.restRecoveryRatio;
 export const REST_RECOVERY_MIN = 2;
 /** 백그라운드 원정에서는 사망하지 않는다. */
 export const BACKGROUND_HP_FLOOR = 1;
@@ -206,7 +207,10 @@ function applyWorldTurnAssignment(
   worldturnRng: Rng,
 ): AppliedWorldTurn {
   if (assignment.activity === "background") {
-    const lossPercent = worldturnRng.int(10, 20);
+    const lossPercent = worldturnRng.int(
+      CAMPAIGN_BALANCE.worldTurn.backgroundLossPercent.min,
+      CAMPAIGN_BALANCE.worldTurn.backgroundLossPercent.max,
+    );
     const hpLoss = Math.max(1, Math.round((member.maxHp * lossPercent) / 100));
     const nextHp = Math.max(BACKGROUND_HP_FLOOR, member.hp - hpLoss);
     const goldDelta = worldturnRng.int(5, 15);

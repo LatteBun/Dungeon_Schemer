@@ -2,6 +2,7 @@ import { INITIAL_DUNGEON_SLOTS, type CampaignDungeonSlot } from "@/lib/content/c
 import { generateCharacterPool } from "@/lib/content/character-pool";
 import { THEMES, selectThemeBoss } from "@/lib/content/themes";
 import { createRng } from "@/lib/rng";
+import { validateCampaignBalance } from "@/lib/rules/balance-validation";
 import {
   CAMPAIGN_DUNGEON_COUNT,
   createCampaignHistory,
@@ -97,6 +98,7 @@ function assignEcologyProfiles(seed: string): ReadonlyMap<CampaignDungeonSlot["i
 
 /** C1에서 시드 하나로 첫 캠페인 상태를 만든다. */
 export function initializeCampaign(seed: string): CampaignState {
+  validateCampaignBalance();
   const ecologyByDungeon = assignEcologyProfiles(seed);
   const dungeons = INITIAL_DUNGEON_SLOTS.map((slot) => {
     const profile = ecologyByDungeon.get(slot.id);

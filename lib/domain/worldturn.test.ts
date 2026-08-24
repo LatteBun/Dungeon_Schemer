@@ -161,12 +161,12 @@ describe("월드턴 활동 배정", () => {
 });
 
 describe("월드턴 상태 적용", () => {
-  it("휴식은 최대 HP의 15%를 최소 2만큼 회복하고 maxHp를 넘지 않는다", () => {
+  it("휴식은 최대 HP의 20%를 최소 2만큼 회복하고 maxHp를 넘지 않는다", () => {
     const member = character({ id: "rest" as CharacterId, hp: 40, maxHp: 100 });
     const result = runWorldTurn(makePool([member]), emptyParty, 0, fixedRng);
 
-    expect(result.pool.byId[member.id].hp).toBe(55);
-    expect(result.result.outcomes[0].hpDelta).toBe(15);
+    expect(result.pool.byId[member.id].hp).toBe(60);
+    expect(result.result.outcomes[0].hpDelta).toBe(20);
     expect(result.result.outcomes[0].goldDelta).toBe(0);
   });
 
@@ -188,28 +188,45 @@ describe("월드턴 상태 적용", () => {
       (entry) => entry.characterId === ("background" as CharacterId),
     );
 
-    expect(result.pool.byId["background" as CharacterId].hp).toBe(40);
+    expect(result.pool.byId["background" as CharacterId].hp).toBe(45);
     expect(result.pool.byId["background" as CharacterId].gold).toBe(35);
-    expect(outcome?.hpDelta).toBe(-10);
+    expect(outcome?.hpDelta).toBe(-5);
     expect(outcome?.goldDelta).toBe(5);
+  });
+
+  it.each([[5, 45], [10, 40]])("백그라운드 %s%% 손실 경계를 적용한다", (percent, hp) => {
+    const edgeRng = {
+      ...fixedRng,
+      int: (min: number, max: number) => percent === 5 ? min : max,
+    };
+    const members = [
+      character({ id: "rest" as CharacterId }),
+      character({ id: "background" as CharacterId, hp: 50 }),
+    ];
+
+    expect(
+      runWorldTurn(makePool(members), emptyParty, 0, edgeRng).pool.byId[
+        "background" as CharacterId
+      ].hp,
+    ).toBe(hp);
   });
 });
 
 describe("중상 경계와 해제", () => {
-  it("처리 후 HP가 20% 미만이면 새 중상으로 기록한다", () => {
+  it("강제 휴식으로 HP가 20% 이상이면 중상이 아니다", () => {
     const member = character({ id: "below" as CharacterId, hp: 1 });
     const result = runWorldTurn(makePool([member]), emptyParty, 0, fixedRng);
 
-    expect(result.pool.byId[member.id].hp).toBe(16);
-    expect(result.pool.byId[member.id].gravelyWounded).toBe(true);
-    expect(result.result.outcomes[0].becameGravelyWounded).toBe(true);
+    expect(result.pool.byId[member.id].hp).toBe(21);
+    expect(result.pool.byId[member.id].gravelyWounded).toBe(false);
+    expect(result.result.outcomes[0].becameGravelyWounded).toBe(false);
   });
 
   it("처리 후 HP가 정확히 20%면 중상이 아니다", () => {
     const member = character({ id: "exact" as CharacterId, hp: 5 });
     const result = runWorldTurn(makePool([member]), emptyParty, 0, fixedRng);
 
-    expect(result.pool.byId[member.id].hp).toBe(20);
+    expect(result.pool.byId[member.id].hp).toBe(25);
     expect(result.pool.byId[member.id].gravelyWounded).toBe(false);
   });
 
@@ -221,7 +238,7 @@ describe("중상 경계와 해제", () => {
     });
     const result = runWorldTurn(makePool([member]), emptyParty, 0, fixedRng);
 
-    expect(result.pool.byId[member.id].hp).toBe(25);
+    expect(result.pool.byId[member.id].hp).toBe(30);
     expect(result.pool.byId[member.id].gravelyWounded).toBe(false);
     expect(result.result.outcomes[0].becameGravelyWounded).toBe(false);
   });

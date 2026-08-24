@@ -1,10 +1,12 @@
 import { eventsForTheme } from "@/lib/content/event-registry";
+import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
 import { createRng } from "@/lib/rng";
 import { RuleError } from "@/lib/domain";
 import { consumePendingMerchantEffect } from "@/lib/rules/merchant";
 import { resolveBattle, type BattleResolution } from "@/lib/rules/battle-engine";
 import { expandEncounter, resolveEncounter } from "@/lib/rules/encounter";
-import type { AdviceDecision, Character, ClassDef, EncounterModifier, EventKind, ImmediateEventEffect, MaterializedNodeEvent, MonsterDef, PendingMerchantEffect, PreparedExpeditionEvents, PreparedNodePlan, SituationEvent, StrongLinkPlan, ThemeContent } from "@/lib/domain";
+import { combatMultipliersForAdvicePressure } from "@/lib/rules/advice-pressure";
+import type { AdviceDecision, AdvicePressure, Character, ClassDef, EncounterModifier, EventKind, ImmediateEventEffect, MaterializedNodeEvent, MonsterDef, PendingMerchantEffect, PreparedExpeditionEvents, PreparedNodePlan, SituationEvent, StrongLinkPlan, ThemeContent } from "@/lib/domain";
 import type { ClueId, DungeonId, EventId, MonsterId, NodeId, RuleId } from "@/lib/domain";
 import type { GeneratedMap, RiskLevel } from "@/lib/domain";
 
@@ -14,11 +16,6 @@ function invalid(message: string, details: Record<string, unknown> = {}): never 
 
 function cloneState(state: PreparedExpeditionEvents, patch: Partial<PreparedExpeditionEvents>): PreparedExpeditionEvents {
   return { ...state, ...patch };
-}
-
-export function retryCombatMultiplier(retrySteps: number): number {
-  if (!Number.isInteger(retrySteps) || retrySteps < 0) invalid("retrySteps가 유효하지 않다", { retrySteps });
-  return 1 + retrySteps * 0.1;
 }
 
 function cutDepths(riskLevel: RiskLevel, layerCount: number): readonly number[] {
@@ -617,8 +614,8 @@ export function resolveMonsterEventBattle(input: {
   readonly members: readonly Character[];
   readonly classDefs: readonly ClassDef[];
   readonly seed: string;
+  readonly advicePressure: AdvicePressure;
   readonly pendingMerchantEffect: PendingMerchantEffect | null;
-  readonly retrySteps: number;
 }): { readonly battle: BattleResolution | null; readonly pendingMerchantEffect: PendingMerchantEffect | null } {
   if (input.modifier.avoidCombat === true) {
     return { battle: null, pendingMerchantEffect: input.pendingMerchantEffect };
@@ -627,10 +624,11 @@ export function resolveMonsterEventBattle(input: {
   const resolved = resolveEncounter({ base: input.event.encounter, modifier: input.modifier, activeMonsterIds: input.activeMonsterIds });
   const expanded = expandEncounter(resolved);
   const defs = new Map(input.monsterDefs.map((monster) => [monster.id, monster]));
-  const retryMultiplier = retryCombatMultiplier(input.retrySteps);
+  const pressure = combatMultipliersForAdvicePressure(input.advicePressure);
   const consumed = consumePendingMerchantEffect(input.pendingMerchantEffect);
   const partyDamageMultiplier = consumed.nextBattle?.partyDamageMultiplier;
   const incomingDamageMultiplier = consumed.nextBattle?.incomingDamageMultiplier;
+  const generalMonsterMultiplier = CAMPAIGN_BALANCE.generalMonsterBaseStatMultiplier;
   const classById = new Map(input.classDefs.map((classDef) => [classDef.id, classDef]));
   const battle = resolveBattle({
     seed: input.seed,
@@ -645,16 +643,14 @@ export function resolveMonsterEventBattle(input: {
       return {
         id: enemy.id,
         monsterId: enemy.monsterId,
-        hp: monster.maxHp ?? enemy.maxHp,
-        maxHp: monster.maxHp ?? enemy.maxHp,
-        baseDamage: monster.baseDamage ?? enemy.baseDamage,
+        hp: Math.max(1, Math.round((monster.maxHp ?? enemy.maxHp) * generalMonsterMultiplier)),
+        maxHp: Math.max(1, Math.round((monster.maxHp ?? enemy.maxHp) * generalMonsterMultiplier)),
+        baseDamage: Math.max(1, Math.round((monster.baseDamage ?? enemy.baseDamage) * generalMonsterMultiplier)),
         targetWeightMultipliers: monster.targetWeightMultipliers,
       };
     }),
-    partyDamageMultiplier: (input.modifier.partyDamageMultiplier ?? 1) * (partyDamageMultiplier ?? 1),
-    incomingDamageMultiplier: (input.modifier.incomingDamageMultiplier ?? 1) * (incomingDamageMultiplier ?? 1),
-    enemyHpMultiplier: retryMultiplier,
-    enemyDamageMultiplier: retryMultiplier,
+    partyDamageMultiplier: (input.modifier.partyDamageMultiplier ?? 1) * (partyDamageMultiplier ?? 1) * pressure.outgoingDamageMultiplier,
+    incomingDamageMultiplier: (input.modifier.incomingDamageMultiplier ?? 1) * (incomingDamageMultiplier ?? 1) * pressure.incomingDamageMultiplier,
   });
   return { battle, pendingMerchantEffect: consumed.pendingMerchantEffect };
 }
