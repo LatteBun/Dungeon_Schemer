@@ -88,12 +88,15 @@ describe("백테스트 캠페인 driver", () => {
   });
 
   it("인력 소진 종료에는 가용 직업 경계를 넘긴 선행 손실과 전멸 source를 보존한다", () => {
-    const result = runCampaign({
-      seed: "b1b-calibration-v1/000000",
+    /* 지도 배정은 진화해도, 실제로 인력 소진한 실행의 원장 의미는 고정한다. */
+    const result = Array.from({ length: 40 }, (_, index) => runCampaign({
+      seed: `b1b-calibration-v1/${String(index).padStart(6, "0")}`,
       strategy: createStrategy("survival"),
       accuracy: 0.7,
-    });
-    if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
+    })).find((candidate) => candidate.ok && candidate.campaign.ending?.kind === "exhausted");
+
+    expect(result).toBeDefined();
+    if (result === undefined || !result.ok) throw new Error("인력 소진 실행을 찾지 못했다");
 
     expect(result.campaign.ending?.kind).toBe("exhausted");
     expect(result.trace.terminationEvidence).toMatchObject({
@@ -186,8 +189,15 @@ describe("백테스트 캠페인 driver", () => {
   });
 
   it("실제 상인 조언의 골드와 효과 소비를 모두 기록한다", () => {
-    const result = runCampaign({ seed: "driver-smoke", strategy: createStrategy("survival"), accuracy: 0.7 });
+    /* 상인 칸의 위치는 지도 규칙에 따라 달라진다. 효과가 실제 발동한 실행을 찾는다. */
+    const result = Array.from({ length: 40 }, (_, index) => runCampaign({
+      seed: `driver-merchant-effect-${index}`,
+      strategy: createStrategy("survival"),
+      accuracy: 0.7,
+    })).find((candidate) => candidate.trace.merchantGoldSpent > 0 && candidate.trace.merchantEffectsConsumed > 0);
 
+    expect(result).toBeDefined();
+    if (result === undefined) throw new Error("상인 효과를 소비한 실행을 찾지 못했다");
     expect(result.trace.merchantGoldSpent).toBeGreaterThan(0);
     expect(result.trace.merchantEffectsConsumed).toBeGreaterThan(0);
   });

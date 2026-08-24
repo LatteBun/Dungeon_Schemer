@@ -24,6 +24,44 @@ function cutDepths(riskLevel: RiskLevel, layerCount: number): readonly number[] 
   return Array.from({ length: count }, (_, index) => Math.min(layerCount - 2, first + index));
 }
 
+function minimumMonsterCount(riskLevel: RiskLevel): number {
+  return riskLevel <= 2 ? 2 : 3;
+}
+
+function normalPaths(map: GeneratedMap): readonly (readonly NodeId[])[] {
+  const nodesById = new Map(map.nodes.map((node) => [node.id, node]));
+  const visit = (nodeId: NodeId, path: readonly NodeId[]): readonly (readonly NodeId[])[] => {
+    if (nodeId === map.bossNodeId) return [path];
+    const node = nodesById.get(nodeId);
+    if (node === undefined) invalid("monster 경로 검사 중 지도 node가 없다", { nodeId });
+    return [...node.nextNodeIds].sort().flatMap((nextNodeId) => visit(
+      nextNodeId,
+      node.kind === "normal" ? [...path, node.id] : path,
+    ));
+  };
+  return visit(map.entryNodeId, []);
+}
+
+function hasPathMonsterMinimum(input: {
+  readonly map: GeneratedMap;
+  readonly plans: ReadonlyMap<NodeId, PreparedNodePlan>;
+  readonly minimum: number;
+}): boolean {
+  return normalPaths(input.map).every((path) => path.filter((nodeId) => input.plans.get(nodeId)?.category === "monster").length >= input.minimum);
+}
+
+function hasPathMonsterPotential(input: {
+  readonly map: GeneratedMap;
+  readonly plans: ReadonlyMap<NodeId, PreparedNodePlan>;
+  readonly unassignedNodeIds: ReadonlySet<NodeId>;
+  readonly categoryChoices: ReadonlyMap<NodeId, readonly EventKind[]>;
+  readonly minimum: number;
+}): boolean {
+  return normalPaths(input.map).every((path) => path.filter((nodeId) => input.unassignedNodeIds.has(nodeId)
+    ? input.categoryChoices.get(nodeId)?.includes("monster") === true
+    : input.plans.get(nodeId)?.category === "monster").length >= input.minimum);
+}
+
 function reachableNodes(map: GeneratedMap, start: NodeId, blocked?: NodeId): ReadonlySet<NodeId> {
   const nodes = new Map(map.nodes.map((node) => [node.id, node]));
   const visited = new Set<NodeId>();
@@ -154,7 +192,6 @@ function reserveStrongLinkCategories(input: {
     const free = input.map.nodes
       .filter((node) => node.kind === "normal" && !taken.has(node.id) && input.plans.has(node.id))
       .map((node) => node.id);
-
     let pair: readonly [NodeId, NodeId] | undefined;
     for (const predecessorId of free) {
       const predecessorLayer = input.layerByNode.get(predecessorId) ?? -1;
@@ -285,15 +322,19 @@ export function prepareExpeditionEvents(input: {
     plans.set(link.predecessorNodeId, { ...predecessorPlan, hiddenRole: "strongPredecessor", plannedClueId: link.clueId });
     strongLinks.push(link);
   }
-  repairNormalCategoryCapacity({
+  assignNormalCategories({
     plans,
     map: input.map,
     strongLinks,
     eligibleEvents,
     strongClues: new Set(strongClues),
+    minimumMonsterCount: minimumMonsterCount(input.riskLevel),
     rng,
     categories,
   });
+  if (!hasPathMonsterMinimum({ map: input.map, plans, minimum: minimumMonsterCount(input.riskLevel) })) {
+    invalid("경로별 monster 최소치가 충족되지 않는다", { minimum: minimumMonsterCount(input.riskLevel) });
+  }
   return {
     nodePlans: plans,
     bossInfoCuts,
@@ -401,17 +442,18 @@ function categoryCapacityDeficit(input: {
 }
 
 /**
- * 후보 풀이 모자라는 공개 분류만, seeded order를 tie-breaker로 삼아 완전 탐색한다.
+ * 경로 monster 하한과 후보 수용량을 seeded order의 완전 탐색으로 함께 만족시킨다.
  * 아직 배정하지 않은 normal node는 partial 검사에서 빼므로 이미 확정한 역할·분류가
  * 후보 풀을 넘는 가지에만 pruning한다. EventId를 예약하거나 방문 시점에 분류를
  * 바꾸지 않고, strong-link와 bossInfo 예약 노드는 고정한다.
  */
-function repairNormalCategoryCapacity(input: {
+function assignNormalCategories(input: {
   readonly plans: Map<NodeId, PreparedNodePlan>;
   readonly map: GeneratedMap;
   readonly strongLinks: readonly StrongLinkPlan[];
   readonly eligibleEvents: readonly SituationEvent[];
   readonly strongClues: ReadonlySet<ClueId>;
+  readonly minimumMonsterCount: number;
   readonly rng: ReturnType<typeof createRng>;
   readonly categories: readonly EventKind[];
 }): void {
@@ -419,7 +461,11 @@ function repairNormalCategoryCapacity(input: {
   const mutableNodeIds = input.map.nodes
     .filter((node) => node.kind === "normal" && !linkedNodeIds.has(node.id) && input.plans.get(node.id)?.hiddenRole === "normal")
     .map((node) => node.id);
-  if (categoryCapacityDeficit(input) === 0) return;
+  if (categoryCapacityDeficit(input) === 0 && hasPathMonsterMinimum({
+    map: input.map,
+    plans: input.plans,
+    minimum: input.minimumMonsterCount,
+  })) return;
 
   const nodeOrder = input.rng.shuffle(mutableNodeIds);
   const categoryChoices = new Map<NodeId, readonly EventKind[]>();
@@ -449,15 +495,31 @@ function repairNormalCategoryCapacity(input: {
   const assignment = findDeterministicCapacityAssignment({
     nodeOrder,
     categoryChoices,
-    hasPotential: (partial) => categoryCapacityDeficit({
-      ...input,
-      plans: plansWith(partial),
-      ignoredNormalNodeIds: new Set(mutableNodeIds.filter((nodeId) => !partial.has(nodeId))),
-    }) === 0,
-    isValid: (complete) => categoryCapacityDeficit({ ...input, plans: plansWith(complete) }) === 0,
+    hasPotential: (partial) => {
+      const plans = plansWith(partial);
+      const unassignedNodeIds = new Set(mutableNodeIds.filter((nodeId) => !partial.has(nodeId)));
+      return hasPathMonsterPotential({
+        map: input.map,
+        plans,
+        unassignedNodeIds,
+        categoryChoices,
+        minimum: input.minimumMonsterCount,
+      }) && categoryCapacityDeficit({
+        ...input,
+        plans,
+        ignoredNormalNodeIds: unassignedNodeIds,
+      }) === 0;
+    },
+    isValid: (complete) => {
+      const plans = plansWith(complete);
+      return hasPathMonsterMinimum({ map: input.map, plans, minimum: input.minimumMonsterCount })
+        && categoryCapacityDeficit({ ...input, plans }) === 0;
+    },
   });
   if (assignment === undefined) {
-    invalid("경로별 사건 후보 용량을 만족하는 정상 분류를 만들 수 없다");
+    invalid("경로별 monster 최소치와 사건 후보 용량을 함께 만족하는 정상 분류를 만들 수 없다", {
+      minimumMonsterCount: input.minimumMonsterCount,
+    });
   }
   for (const [nodeId, category] of assignment) {
     const plan = input.plans.get(nodeId);

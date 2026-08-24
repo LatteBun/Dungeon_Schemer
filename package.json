@@ -13,7 +13,9 @@
     "backtest:structure": "B1_SOURCE_REVISION=$(git rev-parse --short HEAD) B1_BACKTEST_MODE=calibration B1_BACKTEST_SEEDS=50 vitest run --config vitest.backtest.config.ts",
     "backtest:tune": "B1_SOURCE_REVISION=$(git rev-parse --short HEAD) B1_BACKTEST_MODE=calibration B1_BACKTEST_SEEDS=100 vitest run --config vitest.backtest.config.ts",
     "backtest:quick": "B1_SOURCE_REVISION=$(git rev-parse --short HEAD) B1_BACKTEST_MODE=calibration B1_BACKTEST_SEEDS=200 vitest run --config vitest.backtest.config.ts",
-    "backtest": "B1_SOURCE_REVISION=$(git rev-parse --short HEAD) B1_BACKTEST_MODE=holdout B1_BACKTEST_SEEDS=2000 vitest run --config vitest.backtest.config.ts"
+    "backtest": "B1_SOURCE_REVISION=$(git rev-parse --short HEAD) B1_BACKTEST_MODE=holdout B1_BACKTEST_SEEDS=2000 vitest run --config vitest.backtest.config.ts",
+    "test:e2e:install": "playwright install chromium",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "framer-motion": "^13.1.1",
@@ -23,6 +25,7 @@
     "zustand": "5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

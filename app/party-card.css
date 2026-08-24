@@ -226,3 +226,159 @@
   min-width: 0;
   min-height: 0;
 }
+
+/*
+ * 뒤집히는 카드.
+ *
+ * 3D 회전을 쓰지 않는다. 카드가 좁고 세로로 긴 데다 뒤집는 동안 글자가 읽히지
+ * 않는 구간이 생긴다. 앞면을 덮고 뒷면을 얹는 편이 눈으로 좇기 쉽다.
+ */
+.party-card__flip {
+  display: block;
+  width: 100%;
+  padding: 0;
+  cursor: pointer;
+  border: 0;
+  background: none;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+}
+
+.party-card__flip:focus-visible {
+  outline: 2px solid #d9c37c;
+  outline-offset: 2px;
+}
+
+.party-card__flip:hover .party-card {
+  border-color: #7a5a33;
+}
+
+.party-card {
+  position: relative;
+}
+
+.party-card__back {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: none;
+  overflow-y: auto;
+  padding: clamp(0.55rem, 0.7cqw, 0.95rem);
+  background: linear-gradient(180deg, #1b140e, #100b08);
+  text-align: left;
+}
+
+.party-card.is-flipped .party-card__back {
+  display: block;
+}
+
+.party-card__back h4 {
+  display: grid;
+  row-gap: 0.05rem;
+  margin: 0 0 0.45rem;
+  border-bottom: 1px solid #4d3922;
+  padding-bottom: 0.35rem;
+}
+
+.party-card__back h4 strong {
+  color: #ecd6a5;
+  font-size: clamp(0.88rem, 0.92cqw, 1.08rem);
+  font-weight: 600;
+}
+
+
+
+.party-card__back-empty {
+  margin: 0;
+  color: #9c8a6b;
+  font-size: clamp(0.78rem, 0.8cqw, 0.95rem);
+}
+
+.party-card__changes {
+  display: grid;
+  row-gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.party-card__changes li {
+  display: grid;
+  row-gap: 0.1rem;
+  border-left: 2px solid #6b4f2c;
+  padding-left: 0.45rem;
+}
+
+.party-card__changes strong {
+  color: #e2cfa6;
+  font-size: clamp(0.76rem, 0.78cqw, 0.92rem);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.party-card__change-detail {
+  color: #a8906a;
+  font-size: clamp(0.72rem, 0.74cqw, 0.88rem);
+}
+
+/*
+ * 이 원정의 총합을 먼저 크게 보여준다.
+ *
+ * 한 줄씩 훑어 더해야 얼마나 상했는지 알 수 있으면 되짚는 뜻이 없다. 사슬은 그
+ * 아래에서 "왜" 를 말한다.
+ */
+/*
+ * 한 줄에 하나씩 쌓는다.
+ *
+ * 두 칸을 옆으로 두었더니 카드가 좁아 "-12" 와 "24 → 12" 가 서로 다른 줄로
+ * 밀렸다. 세로로 쌓으면 한 줄이 카드 폭을 온전히 써서 이름 · 변화량 · 전후가
+ * 한 줄에 선다.
+ */
+.party-card__net {
+  display: grid;
+  row-gap: clamp(0.22rem, 0.3cqh, 0.35rem);
+  margin: 0 0 clamp(0.45rem, 0.6cqh, 0.8rem);
+}
+
+.party-card__net > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: clamp(0.3rem, 0.4cqw, 0.55rem);
+  border: 1px solid #4d3922;
+  border-radius: 0.2rem;
+  padding: clamp(0.24rem, 0.32cqh, 0.42rem) clamp(0.36rem, 0.5cqw, 0.7rem);
+  background: linear-gradient(180deg, #1d150e, #120c08);
+}
+
+.party-card__net dt {
+  color: #9c8a6b;
+  font-size: clamp(0.7rem, 0.72cqw, 0.85rem);
+  letter-spacing: 0.04em;
+}
+
+.party-card__net dd {
+  display: contents;
+  margin: 0;
+}
+
+/* 변화량이 주인공이라 가운데에서 왼쪽으로 붙여 크게 둔다. */
+.party-card__net b {
+  justify-self: start;
+  font-size: clamp(1.02rem, 1.1cqw, 1.4rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+/* 전후는 줄 끝에 작게. 얼마나 달라졌는지를 먼저 읽고 그다음 어디서 어디로다. */
+.party-card__net small {
+  justify-self: end;
+  color: #8a7657;
+  font-size: clamp(0.68rem, 0.7cqw, 0.82rem);
+  white-space: nowrap;
+}
+
+/* 오른 것과 깎인 것은 색으로 갈린다. 숫자를 읽기 전에 안다. */
+.party-card__net .is-down b { color: #d98b6a; }
+.party-card__net .is-up b { color: #8fc07a; }

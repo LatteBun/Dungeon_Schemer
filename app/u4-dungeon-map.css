@@ -125,10 +125,27 @@
   opacity: 0.94;
 }
 
+/*
+ * 테마 배경은 그 던전의 실제 장면이다.
+ *
+ * 장면 자체는 방과 통로보다 훨씬 복잡해서, 그대로 깔면 지도를 읽을 수 없다.
+ * 어디에 들어와 있는지는 알아볼 만큼 남기고, 눈길은 방이 가져가도록 어둡게
+ * 눌러 뒤로 물린다.
+ */
+.u4-map-surface__background.is-themed {
+  opacity: 0.66;
+  filter: brightness(0.58) saturate(1.1) blur(0.05rem);
+}
+
 .u4-map-surface__atmosphere {
   z-index: 1;
   object-fit: cover;
   opacity: 0.72;
+}
+
+/* 장면 배경 위에는 폐허 소품이 한 겹 더 얹혀 지저분해진다. 덜어낸다. */
+.u4-map-surface__background.is-themed ~ .u4-map-surface__atmosphere {
+  opacity: 0.3;
 }
 
 .u4-map-surface__vignette {
@@ -295,13 +312,61 @@ button.u4-room {
   transition: transform 120ms ease, filter 120ms ease;
 }
 
+/*
+ * 짚어 보는 것과 고른 것은 다르게 보여야 한다.
+ *
+ * 전에는 hover 와 선택이 같은 모양이었다 — 커서를 얹었다 떼면 무엇을 골랐는지
+ * 알 수 없었다. hover 는 살짝 들어 올리기만 하고, 고른 것에만 테를 두른다.
+ */
 .u4-room.is-selectable:hover,
-.u4-room.is-selectable:focus-visible,
+.u4-room.is-selectable:focus-visible {
+  z-index: 8;
+  outline: none;
+  transform: translate(-50%, -50%) scale(1.05);
+  filter: drop-shadow(0 0 0.7rem rgb(224 179 74 / 62%));
+}
+
+/*
+ * 빛으로만 알리지 않는다.
+ *
+ * 번짐을 크게 주었더니 그 빛이 아이콘 위로 올라와 무슨 지점인지 도리어 가렸다.
+ * 테와 크기와 표로 알리고 번짐은 은은하게 남긴다.
+ */
 .u4-room.is-selectable[aria-pressed="true"] {
   z-index: 10;
   outline: none;
-  transform: translate(-50%, -50%) scale(1.08);
-  filter: drop-shadow(0 0 0.85rem rgb(224 179 74 / 82%));
+  transform: translate(-50%, -50%) scale(1.12);
+  filter: drop-shadow(0 0 0.5rem rgb(240 200 96 / 55%));
+}
+
+/* 고른 지점 위에 세우는 표. */
+.u4-room__chosen-marker {
+  position: absolute;
+  bottom: 84%;
+  left: 50%;
+  width: 46%;
+  height: auto;
+  transform: translateX(-50%) rotate(90deg);
+  filter: drop-shadow(0 0 0.3rem rgb(0 0 0 / 70%));
+  pointer-events: none;
+}
+
+/*
+ * 고른 자리에 테를 두른다. 커서를 떼도 남는 표시다.
+ *
+ * 맥동시키지 않는다. 이 스타일시트에는 미디어 질의를 두지 않기로 되어 있어
+ * 움직임을 줄이려는 사람을 배려할 길이 없고, 지도 위에서 늘 뛰는 것이 하나
+ * 있으면 눈이 그쪽으로 끌려간다. 테와 크기만으로 충분히 갈린다.
+ */
+.u4-room.is-selectable[aria-pressed="true"]::before {
+  position: absolute;
+  inset: -0.42rem;
+  z-index: -1;
+  border: 2px solid #f1d88c;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(241 216 140 / 18%), transparent 68%);
+  content: "";
+  pointer-events: none;
 }
 
 .u4-room.is-selectable:focus-visible::after {
@@ -316,9 +381,8 @@ button.u4-room {
 
 .u4-right-panel {
   display: grid;
-  /* 두 덩어리 모두 내용 높이다. 남는 자리는 패널 바탕으로 둔다. */
-  grid-template-rows: auto auto;
-  align-content: start;
+  /* 파티 · 답사 · 목적지 순서다. 가운데 답사만 남는 높이를 받아 넘치면 스크롤한다. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: clamp(0.55rem, 0.8cqh, 0.7rem);
   height: 100%;
   min-height: 0;
@@ -326,6 +390,7 @@ button.u4-room {
 
 .u4-party {
   display: grid;
+  grid-row: 1;
   grid-template-rows: auto auto;
   min-height: 0;
 }
@@ -333,61 +398,104 @@ button.u4-room {
 .u4-destination {
   position: relative;
   display: grid;
+  grid-row: 3;
   grid-template-rows: auto auto auto;
 }
 
+/*
+ * 칸을 내용에 맞춘다.
+ *
+ * 최소 높이를 크게 잡아 두어, 두 줄짜리 내용 옆으로 빈 판이 넓게 남았다. 여기서
+ * 할 말은 "무슨 지점을 골랐는가" 하나뿐이다.
+ */
+/*
+ * 액자는 잘라 쓴다.
+ *
+ * 이미지를 판 전체에 늘려 씌우면 네 귀퉁이 문양까지 함께 늘어난다. `border-image`
+ * 는 귀퉁이를 그대로 두고 변만 늘리므로 폭이 달라져도 문양이 상하지 않는다.
+ */
 .u4-destination__panel {
+  --u4-destination-thumb: clamp(3.4rem, 4.4cqw, 5.6rem);
+
   position: relative;
-  min-height: clamp(5.2rem, 7.2cqh, 6.4rem);
-  overflow: hidden;
+  min-height: clamp(4.1rem, 5.6cqh, 5rem);
+  border: clamp(0.7rem, 1cqw, 1.3rem) solid transparent;
+  border-image: url("/assets/u4/navigation/destination_panel_frame.png") 42 fill / clamp(0.7rem, 1cqw, 1.3rem) / 0 stretch;
   background: #0b0806;
 }
 
-.u4-destination__panel-frame {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  pointer-events: none;
-}
 
+
+/*
+ * 썸네일 자리를 그림 폭에 맞춘다.
+ *
+ * 액자를 제 비율로 되돌리면서 썸네일이 넓어졌는데 열 너비는 그대로여서 글자
+ * 위로 넘어왔다 - "특수 사건" 이 "수 사건" 으로 잘렸다. 두 값을 한 곳에서
+ * 정해 다시 갈라지지 않게 한다.
+ */
 .u4-destination__summary {
   position: relative;
   z-index: 3;
   display: grid;
-  grid-template-columns: clamp(4.4rem, 5.2cqw, 5.5rem) minmax(0, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: var(--u4-destination-thumb) minmax(0, 1fr);
+  gap: clamp(0.55rem, 0.8cqw, 1.1rem);
   align-items: center;
   height: 100%;
-  min-height: clamp(5.2rem, 7.2cqh, 6.4rem);
-  padding: 0.52rem 0.75rem;
+  padding: 0.3rem 0.2rem;
 }
 
+/*
+ * 자산의 제 비율로 둔다.
+ *
+ * 244x119 짜리 액자를 정사각 칸에 넣어 두어, 늘리면 찌그러지고 맞추면 위아래가
+ * 비었다. 칸을 그림에 맞추면 둘 다 없다.
+ */
+/*
+ * 네모난 칸에 아이콘을 크게 세운다.
+ *
+ * 액자 자산이 244x119 라 정사각 칸에 넣으면 늘어나고, 제 비율로 두면 좌우로
+ * 길어 아이콘이 작아 보인다. 여기서 필요한 것은 분류 하나뿐이라 그림 액자를
+ * 버리고 테두리만 두른다.
+ */
 .u4-destination__thumbnail {
   position: relative;
-  aspect-ratio: 1;
-}
-
-.u4-destination__room,
-.u4-destination__frame {
-  position: absolute;
-  inset: 0;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 52%, var(--color-edge));
+  border-radius: 0.2rem;
+  background:
+    radial-gradient(circle at 50% 40%, rgb(70 50 26 / 34%), transparent 68%),
+    linear-gradient(180deg, #1b140d, #100b07);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 55%);
 }
 
+
+
+
+
+/*
+ * 무슨 지점인지 말하는 것은 아이콘이다.
+ *
+ * 방 밑그림이 돌문이라 어두운 아치 안에 아이콘이 묻혔다. 문이 앞을 가리는
+ * 것처럼 보인 까닭이다. 문은 배경으로 물리고 아이콘을 키워 앞에 세운다.
+ */
 .u4-destination__icon {
   position: absolute;
   top: 50%;
   left: 50%;
-  z-index: 2;
-  width: 34%;
-  height: 34%;
+  z-index: 4;
+
+  /*
+   * 크기는 여기서만 정한다.
+   *
+   * 한동안 u4-dungeon-map-fixes.css 가 같은 규칙을 42%로 덮어써서, 여기 적힌
+   * 값이 무엇이든 화면에는 닿지 않았다. 아이콘을 키워도 그대로였던 까닭이다.
+   */
+  width: 82%;
+  height: 82%;
   object-fit: contain;
-  transform: translate(-50%, -55%);
+  filter: drop-shadow(0 0 0.28rem rgb(0 0 0 / 85%)) drop-shadow(0 0 0.6rem rgb(0 0 0 / 55%));
+  transform: translate(-50%, -50%);
 }
 
 .u4-destination__frame {
@@ -499,4 +607,67 @@ button.u4-room {
   cursor: not-allowed;
   filter: grayscale(0.9) brightness(0.48);
   opacity: 0.76;
+}
+
+/* 답사 기록. 다음 지점을 고르는 자리에서 읽는 사실이다. */
+.u4-survey {
+  grid-row: 2;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* 걸으면서 쌓이는 것이라 답사 아래에 둔다. */
+.u4-survey__progress {
+  margin: clamp(0.45rem, 0.6cqh, 0.8rem) 0 0;
+  border-top: 1px solid #4d3922;
+  padding-top: clamp(0.35rem, 0.45cqh, 0.6rem);
+  color: #c7ab7c;
+  font-size: clamp(0.85rem, 0.9cqw, 1.1rem);
+}
+
+.u4-survey__progress strong {
+  color: #f0d9a4;
+}
+
+.u4-survey__empty {
+  margin: 0;
+  color: #8e7a5c;
+  font-size: clamp(0.8rem, 0.85cqw, 1rem);
+}
+
+.u4-survey__rules {
+  display: grid;
+  row-gap: clamp(0.3rem, 0.42cqh, 0.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.u4-survey__rules li {
+  border-left: 2px solid #6b4f2c;
+  padding-left: 0.5rem;
+  color: #bda27a;
+  font-size: clamp(0.8rem, 0.84cqw, 1rem);
+  line-height: 1.45;
+}
+
+.u4-party__hint {
+  margin: clamp(0.35rem, 0.45cqh, 0.6rem) 0 0;
+  color: #8e7a5c;
+  font-size: clamp(0.75rem, 0.78cqw, 0.92rem);
+}
+
+/*
+ * 누르는 동안에만 켜지는 판.
+ *
+ * 눌린 상태의 그림이 따로 있는데 쓰지 않고 있었다. 평소에는 감춰 두고 눌릴 때만
+ * 겹친다.
+ */
+.u4-move-button__center--active {
+  opacity: 0;
+  transition: opacity 90ms ease;
+}
+
+.u4-move-button:not(:disabled):active .u4-move-button__center--active {
+  opacity: 1;
 }

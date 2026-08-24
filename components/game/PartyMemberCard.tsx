@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * 파티원 카드 — 파티 상태를 보여주는 모든 화면이 함께 쓴다.
  *
@@ -12,6 +14,8 @@
  * 쓰게 한다. 소지 골드는 라벨 문구 없이 아이콘과 금액을 붙여 둔다. 골드는
  * 이름을 붙이지 않아도 아이콘으로 읽힌다.
  */
+
+import { useState } from "react";
 
 export interface PartyMemberCardView {
   id: string;
@@ -28,26 +32,89 @@ export interface PartyMemberCardView {
   alive?: boolean;
 }
 
+export interface PartyMemberChangeEntry {
+  /** 무엇 때문에 그렇게 됐는가. */
+  readonly cause: string;
+  readonly reaction?: string;
+  readonly hp?: { readonly before: number; readonly after: number };
+  readonly trust?: { readonly before: number; readonly after: number };
+}
+
 export interface PartyMemberCardProps {
   member: PartyMemberCardView;
   /** 화면별 접두사. U3 는 순번을 함께 보여준다. */
   index?: number;
   testId?: string;
+  /*
+   * 이 원정에서 그 사람에게 일어난 일.
+   *
+   * 주면 카드를 뒤집을 수 있다. 원정 밖 화면에는 되짚을 원정이 없으므로 주지
+   * 않고, 그때는 카드가 뒤집히지 않는다.
+   */
+  changes?: readonly PartyMemberChangeEntry[];
 }
 
 const GOLD_ICON = "/assets/u2/status-gold.svg";
+
+/** 이 원정에서 얼마나 달라졌는가. 처음 값과 마지막 값만 본다. */
+function netOf(
+  changes: readonly PartyMemberChangeEntry[],
+  pick: (entry: PartyMemberChangeEntry) => { readonly before: number; readonly after: number } | undefined,
+): { readonly before: number; readonly after: number } | undefined {
+  const seen = changes.map(pick).filter((one) => one !== undefined);
+  const first = seen[0];
+  const last = seen[seen.length - 1];
+  return first === undefined || last === undefined ? undefined : { before: first.before, after: last.after };
+}
+
+function NetChange({ changes }: { changes: readonly PartyMemberChangeEntry[] }) {
+  const hp = netOf(changes, (entry) => entry.hp);
+  const trust = netOf(changes, (entry) => entry.trust);
+  if (hp === undefined && trust === undefined) return null;
+
+  return (
+    <dl className="party-card__net">
+      {hp === undefined ? null : (
+        <div className={hp.after < hp.before ? "is-down" : "is-up"}>
+          <dt>HP</dt>
+          <dd>
+            <b>{hp.after - hp.before > 0 ? `+${hp.after - hp.before}` : hp.after - hp.before}</b>
+            <small>{hp.before} → {hp.after}</small>
+          </dd>
+        </div>
+      )}
+      {trust === undefined ? null : (
+        <div className={trust.after < trust.before ? "is-down" : "is-up"}>
+          <dt>신뢰</dt>
+          <dd>
+            <b>{trust.after - trust.before > 0 ? `+${trust.after - trust.before}` : trust.after - trust.before}</b>
+            <small>{trust.before} → {trust.after}</small>
+          </dd>
+        </div>
+      )}
+    </dl>
+  );
+}
 
 function percent(value: number, max: number): number {
   if (max <= 0) return 0;
   return Math.max(0, Math.min(100, (value / max) * 100));
 }
 
-export function PartyMemberCard({ member, index, testId }: PartyMemberCardProps) {
+export function PartyMemberCard({ member, index, testId, changes }: PartyMemberCardProps) {
   const alive = member.alive ?? true;
+  const [flipped, setFlipped] = useState(false);
+  const canFlip = changes !== undefined;
 
-  return (
+  /*
+   * 뒤집을 수 있는 카드만 누를 수 있게 한다.
+   *
+   * 원정 밖에서는 되짚을 원정이 없다. 누를 수 없는 카드에 버튼 모양을 주면
+   * 눌러 보고서야 아무 일도 없다는 것을 안다.
+   */
+  const face = (
     <article
-      className={`party-card${alive ? "" : " is-dead"}`}
+      className={`party-card${alive ? "" : " is-dead"}${flipped ? " is-flipped" : ""}`}
       data-testid={testId ?? "party-member"}
     >
       <div className="party-card__portrait" aria-hidden={member.portraitSrc === undefined}>
@@ -100,6 +167,58 @@ export function PartyMemberCard({ member, index, testId }: PartyMemberCardProps)
           </div>
         </dl>
       </div>
+
+      {canFlip && (
+        <div className="party-card__back" data-testid="party-member-changes">
+          {/*
+            * 뒤집혀도 누구인지는 남는다. 이름이 없으면 어느 카드인지 잃는다.
+            *
+            * 「이 원정에서」는 적지 않는다 - 아래 총합과 사슬이 이미 이 원정의
+            * 것이고, 뒤집어 놓고 다시 설명할 자리가 아니다.
+            */}
+          <h4><strong>{member.name}</strong></h4>
+
+          {/*
+            * 이 원정의 총합을 먼저 크게 보여준다.
+            *
+            * 한 줄씩 훑어 더해야 얼마나 상했는지 알 수 있으면 되짚는 뜻이 없다.
+            * 사슬은 그 아래에서 "왜" 를 말한다.
+            */}
+          <NetChange changes={changes} />
+          {changes.length === 0 ? (
+            <p className="party-card__back-empty">아직 아무 일도 없었다.</p>
+          ) : (
+            <ol className="party-card__changes">
+              {changes.map((change, position) => (
+                <li key={`${change.cause}-${position}`}>
+                  <strong>{change.cause}</strong>
+                  <span className="party-card__change-detail">
+                    {[
+                      change.reaction,
+                      change.hp === undefined ? undefined : `HP ${change.hp.before} → ${change.hp.after}`,
+                      change.trust === undefined ? undefined : `신뢰 ${change.trust.before} → ${change.trust.after}`,
+                    ].filter((one) => one !== undefined).join(" · ")}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
     </article>
+  );
+
+  if (!canFlip) return face;
+
+  return (
+    <button
+      type="button"
+      className="party-card__flip"
+      aria-pressed={flipped}
+      aria-label={`${member.name} 카드 ${flipped ? "덮기" : "뒤집기"}`}
+      onClick={() => setFlipped((current) => !current)}
+    >
+      {face}
+    </button>
   );
 }

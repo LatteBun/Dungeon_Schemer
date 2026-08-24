@@ -34,6 +34,8 @@ export interface ExpeditionRecord {
     readonly reaction: MemberReaction["reaction"] | BossInfoVerificationAction;
   }[];
   readonly damage: readonly { readonly characterId: CharacterId; readonly before: number; readonly after: number }[];
+  /** 그 자리에서 오간 신뢰. 사람마다 전후를 남긴다. */
+  readonly trustChanges: readonly { readonly characterId: CharacterId; readonly before: number; readonly after: number }[];
   /** 그 자리에서 싸웠다면 그 결과. 싸우지 않았으면 `null` 이다. */
   readonly battle: { readonly rounds: number; readonly victory: boolean } | null;
 }

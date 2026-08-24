@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CampaignEnding, CampaignState } from "@/lib/domain";
 import { createCampaignHistory } from "@/lib/domain";
-import { appendCampaignEvent, deriveTurningPoints, toTrustCollapsedEventDraft } from "@/lib/rules/campaign-history";
+import { appendCampaignEvent, deriveTurningPoints, toAdviceResolvedEventDraft, toBossBattleResolvedEventDraft, toTrustCollapsedEventDraft } from "@/lib/rules/campaign-history";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createU6EndingView } from "./u6-ending-adapter";
 
@@ -94,5 +94,46 @@ describe("엔딩 어댑터", () => {
     const view = createU6EndingView(campaign, endingOf());
 
     expect(view.turningPoint).toEqual({ label: "신뢰 붕괴", detail: "7회차" });
+  });
+});
+
+describe("조언 총계", () => {
+  /* 이력 전체를 세면 보스전이 조언 수에 섞인다. */
+  it("조언이 아닌 이력은 세지 않는다", () => {
+    let history = createCampaignHistory();
+    const advice = 3;
+    for (let index = 0; index < advice; index += 1) {
+      history = appendCampaignEvent(history, {
+        campaignTurn: 1,
+        event: toAdviceResolvedEventDraft({
+          expeditionId: "exp",
+          dungeonId: CAMPAIGN.dungeons[0]!.id,
+          sourceEventId: `event-${index}` as never,
+          decision: {
+            adviceId: `choice-${index}` as never,
+            outcome: "help",
+            /* 이력 무결성이 실행 여부와 반응의 일치를 요구한다. */
+            executed: true,
+            reactions: [{ characterId: CAMPAIGN.pool.order[index]!, reaction: "accepted" }],
+            delayedRecords: [],
+            trustChanges: [],
+          } as never,
+        }),
+      });
+    }
+    history = appendCampaignEvent(history, {
+      campaignTurn: 1,
+      event: toBossBattleResolvedEventDraft({
+        expeditionId: "exp",
+        dungeonId: CAMPAIGN.dungeons[0]!.id,
+        bossId: CAMPAIGN.dungeons[0]!.bossId,
+        result: { status: "cleared", survivorIds: [], battle: null, applications: [], verifications: [], cues: [] } as never,
+      }),
+    });
+
+    const view = createU6EndingView({ ...CAMPAIGN, history }, endingOf());
+
+    expect(history.events).toHaveLength(advice + 1);
+    expect(view.adviceTotal).toBe(advice);
   });
 });

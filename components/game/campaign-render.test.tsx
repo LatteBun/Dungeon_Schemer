@@ -6,6 +6,7 @@ import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rul
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
+import { RejectionNotice } from "./CampaignScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
@@ -14,7 +15,8 @@ import { U6SettlementScreen } from "./U6SettlementScreen";
 import { CampaignScreen } from "./CampaignScreen";
 import { CampaignStoreProvider } from "./CampaignStoreProvider";
 import {
-  adviceIdForSlotIn, ecologyViewFor, eventReplayFor, logFor, progressViewFor, publicKindByNodeId, statusFor,
+  adviceIdForSlotIn, bossReplayFor, ecologyViewFor, eventReplayFor, expeditionEndViewFor, logFor,
+  memberChangesFor, progressViewFor, publicKindByNodeId, statusFor, surveyViewFor,
 } from "./campaign-adapters";
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
@@ -464,5 +466,277 @@ describe("게시판에서 공고를 다시 고른다", () => {
 
     expect(store.getState().rejected).not.toBeNull();
     expect(store.getState().context.selectedOffer?.id).toBe(free[0]!.id);
+  });
+});
+
+describe("거부 알림", () => {
+  /*
+   * 규칙이 거부하면 그렇게 말한다.
+   *
+   * 지금 화면의 모든 경로는 잘 막혀 있어 이 알림이 뜰 일이 없다 — 승급 버튼은
+   * 자격이 없으면 비활성이고, 게시판은 취소를 대신 밟는다. 그래도 두는 것은
+   * 뒤로가기로 되살아난 낡은 화면이 보내는 조작이 여기로 오기 때문이고,
+   * 앞으로 생길 막힌 길이 또 조용하지 않게 하기 위해서다.
+   */
+  it("거부 사유를 그대로 보여준다", () => {
+    const reason = "아직 확인하지 않은 결과가 있다";
+    const markup = renderToStaticMarkup(createElement(RejectionNotice, { reason, onDismiss: noop }));
+
+    assertClean(markup, "거부 알림");
+    expect(markup).toContain(reason);
+    /* 스스로 읽어 주는 알림이라야 화면을 보지 않는 사람에게도 닿는다. */
+    expect(markup).toContain('role="alert"');
+    expect(markup).toContain("확인");
+  });
+
+  /* 규칙이 내는 사유가 그대로 뜬다. 화면이 다시 쓰지 않는다. */
+  it("실제 거부 사유가 사람이 읽을 수 있는 문장이다", () => {
+    const store = createCampaignStore("rejection-copy");
+    store.getState().dispatch({ type: "CHOOSE_ADVICE", adviceId: "없는-조언" as never });
+    const rejected = store.getState().rejected!;
+
+    expect(rejected.reason).not.toMatch(/[a-z]{4,}/);
+    expect(renderToStaticMarkup(createElement(RejectionNotice, { reason: rejected.reason, onDismiss: noop })))
+      .toContain(rejected.reason);
+  });
+});
+
+describe("보스전도 같은 화면에서 본다", () => {
+  /** 보스전을 치른 직후. */
+  function afterBoss() {
+    for (let index = 0; index < 30; index += 1) {
+      const run = driven(`boss-screen-${index}`);
+      run.act({ type: "OPEN_BOARD" });
+      const offer = run.state().campaign.offers.find((one) => one.lockReason === null)!;
+      run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
+      run.act({ type: "START_EXPEDITION", expeditionId: "b", ...createExpeditionForOffer(run.state().campaign, offer) });
+
+      for (let step = 0; step < 40; step += 1) {
+        const active = run.state().context.activeExpedition;
+        if (active === null) break;
+        if (active.expedition.bossResult !== null) return run;
+        if (active.expedition.result !== null) break;
+        if (active.pendingOutcome !== null) { run.act({ type: "ACKNOWLEDGE_OUTCOME" }); continue; }
+        if (active.pendingEvent !== null) {
+          run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+          continue;
+        }
+        const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
+        const next: NodeId | undefined = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
+        if (next === undefined) { run.act({ type: "ENTER_BOSS" }); continue; }
+        run.act({ type: "VISIT_NODE", nodeId: next });
+        if (next === active.expedition.map.bossNodeId) run.act({ type: "ENTER_BOSS" });
+      }
+    }
+    throw new Error("보스전에 닿지 못했다");
+  }
+
+  it("상단 상태와 파티가 함께 선다", () => {
+    const run = afterBoss();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+
+    const markup = renderToStaticMarkup(createElement(U5ProgressScreen, {
+      status: statusFor(campaign, active),
+      progress: expeditionEndViewFor(campaign, active),
+      log: logFor(campaign, active),
+      ecology: ecologyViewFor(campaign, active),
+      battleReplay: bossReplayFor(campaign, active) ?? undefined,
+      onAcknowledge: noop,
+      acknowledgeLabel: "정산으로",
+    }));
+
+    assertClean(markup, "보스전 화면");
+    /* 전에는 전투 장면만 덩그러니 떴다. 셸이 함께 서야 같은 화면이다. */
+    expect(markup).toContain("u5-party");
+    expect(markup).toContain("u5-console");
+    expect(markup).toContain("u5-battle-scene");
+    expect(markup).toContain("정산으로");
+    for (const member of active.partyMembers) expect(markup).toContain(member.name);
+  });
+
+  /*
+   * 싸움에 든 사람은 그때 살아 있었다.
+   *
+   * 전투 후 상태로 초상화를 고르면 이 싸움에서 죽을 사람이 첫 프레임부터 죽은
+   * 그림으로 선다. 살아서 시작하는데 미리 회색인 것이다.
+   */
+  it("전투를 시작할 때는 아무도 죽은 그림이 아니다", () => {
+    const run = afterBoss();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const replay = bossReplayFor(campaign, active)!;
+    const party = replay.participants.filter((one) => one.side === "party");
+
+    expect(party.length).toBeGreaterThan(0);
+    for (const participant of party) expect(participant.imageSrc).not.toContain("/dead/");
+    /* 실제로 죽은 사람이 있어야 이 검사에 뜻이 있다. */
+    expect(active.partyMembers.some((member) => !member.alive)
+      || active.expedition.bossResult!.status === "cleared").toBe(true);
+  });
+});
+
+/** 보스전을 치른 직후. 위 describe 의 것과 같은 걸음이다. */
+function afterBossFight() {
+  for (let index = 0; index < 30; index += 1) {
+    const run = driven(`boss-screen-${index}`);
+    run.act({ type: "OPEN_BOARD" });
+    const offer = run.state().campaign.offers.find((one) => one.lockReason === null)!;
+    run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
+    run.act({ type: "START_EXPEDITION", expeditionId: "b", ...createExpeditionForOffer(run.state().campaign, offer) });
+
+    for (let step = 0; step < 40; step += 1) {
+      const active = run.state().context.activeExpedition;
+      if (active === null) break;
+      if (active.expedition.bossResult !== null) return run;
+      if (active.expedition.result !== null) break;
+      if (active.pendingOutcome !== null) { run.act({ type: "ACKNOWLEDGE_OUTCOME" }); continue; }
+      if (active.pendingEvent !== null) {
+        run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+        continue;
+      }
+      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
+      const next: NodeId | undefined = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
+      if (next === undefined) { run.act({ type: "ENTER_BOSS" }); continue; }
+      run.act({ type: "VISIT_NODE", nodeId: next });
+      if (next === active.expedition.map.bossNodeId) run.act({ type: "ENTER_BOSS" });
+    }
+  }
+  throw new Error("보스전에 닿지 못했다");
+}
+
+describe("원정 중에 되짚어 볼 수 있다", () => {
+  it("파티원마다 이 원정의 변화를 낸다", () => {
+    const run = atEvent();
+    const before = run.state().context.activeExpedition!;
+    run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, before) });
+    const active = run.state().context.activeExpedition!;
+
+    const withChanges = active.partyMembers
+      .map((member) => memberChangesFor(active, member.id))
+      .filter((changes) => changes.length > 0);
+
+    /* 조언 하나에 아무도 반응하지 않을 수는 없다. */
+    expect(withChanges.length).toBeGreaterThan(0);
+    for (const changes of withChanges) {
+      for (const change of changes) expect(change.cause.length).toBeGreaterThan(0);
+    }
+  });
+
+  /* 아무 일도 없었던 자리는 적지 않는다. 나열하면 무엇이 바꿨는지가 묻힌다. */
+  it("걷기만 한 원정에는 변화가 없다", () => {
+    const run = contracted();
+    const active = run.state().context.activeExpedition!;
+
+    for (const member of active.partyMembers) {
+      expect(memberChangesFor(active, member.id)).toEqual([]);
+    }
+  });
+
+  it("답사 기록이 공개된 규칙과 지나온 지점을 낸다", () => {
+    const run = contracted();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const survey = surveyViewFor(campaign, active);
+
+    expect(survey.total).toBeGreaterThan(0);
+    expect(survey.visited).toBeLessThanOrEqual(survey.total);
+    expect(survey.disclosedRules).toEqual(ecologyViewFor(campaign, active).disclosedRules);
+    /* 규칙 문구가 그대로 와야 한다. 식별자가 새면 안 된다. */
+    for (const rule of survey.disclosedRules) expect(rule).not.toMatch(/^rule-/);
+  });
+
+  /*
+   * 재생하는 동안 옆에 선 파티는 그 싸움에 들어갈 때의 모습이어야 한다.
+   *
+   * 이미 "사망" 으로 회색이면 재생이 시작하기도 전에 결말이 서 있는 셈이다.
+   */
+  it("보스전 재생 옆의 파티가 미리 죽어 있지 않다", () => {
+    const run = afterBossFight();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const view = expeditionEndViewFor(campaign, active);
+
+    const fought = new Set(active.records.at(-1)!.damage.map((one) => String(one.characterId)));
+    for (const member of view.party) {
+      if (!fought.has(member.id)) continue;
+      expect(member.alive).toBe(true);
+      expect(member.hp).toBeGreaterThan(0);
+    }
+    expect(fought.size).toBeGreaterThan(0);
+  });
+});
+
+describe("승급 결과를 닫는다", () => {
+  /*
+   * 승급하면 이미 게시판이다.
+   *
+   * `PROMOTE_GUIDE` 가 단계를 `board` 로 돌려놓으므로, 결과창을 닫으려고
+   * `CANCEL_PROMOTION` 을 또 보내면 규칙이 거부한다. 그러면 승급하고도 넘어가지지
+   * 않는다.
+   */
+  it("승급 뒤에는 취소를 보낼 수 없다", () => {
+    const run = driven("promotion-dismiss");
+    run.act({ type: "OPEN_BOARD" });
+    run.store.setState({ campaign: { ...run.state().campaign, gold: 500, reputation: 100 } });
+    run.act({ type: "OPEN_PROMOTION" });
+    run.act({ type: "PROMOTE_GUIDE", method: "gold" });
+
+    /* 승급 자체는 게시판으로 돌려놓는다. */
+    expect(run.state().campaign.phase).toBe("board");
+    expect(run.state().last?.promotion).not.toBeNull();
+
+    /* 여기서 취소를 보내면 거부된다. 화면이 이 길로 가면 안 된다. */
+    run.store.getState().dispatch({ type: "CANCEL_PROMOTION" });
+
+    expect(run.store.getState().rejected?.reason).toContain("허용되지 않은");
+  });
+
+  /* 닫는 것은 규칙의 일이 아니다. 무엇을 이미 봤는지는 화면의 것이다. */
+  it("결과를 닫아도 규칙을 건드리지 않는다", () => {
+    const run = driven("promotion-dismiss-2");
+    run.act({ type: "OPEN_BOARD" });
+    run.store.setState({ campaign: { ...run.state().campaign, gold: 500, reputation: 100 } });
+    run.act({ type: "OPEN_PROMOTION" });
+    run.act({ type: "PROMOTE_GUIDE", method: "gold" });
+    const after = run.state().campaign;
+
+    /* 화면이 하는 일은 "봤다" 를 기억하는 것뿐이다. */
+    expect(run.state().rejected).toBeNull();
+    expect(after.rank).not.toBe("C");
+  });
+});
+
+describe("계약 중에 승급을 연다", () => {
+  /*
+   * 규칙은 `contract` 에서 `OPEN_PROMOTION` 을 받지 않는다.
+   *
+   * 계약을 검토하다 말고 승급 창으로 넘어가면 무엇을 하던 중이었는지 잃기
+   * 때문이다. 물러서는 것은 길잡이의 몫이고, 등급 칸을 누르는 것이 곧 그 뜻이라
+   * 화면이 두 걸음을 대신 밟는다.
+   */
+  it("계약을 고른 채로 승급을 열면 거부된다", () => {
+    const run = driven("contract-promotion");
+    run.act({ type: "OPEN_BOARD" });
+    const offer = run.state().campaign.offers.find((one) => one.lockReason === null)!;
+    run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
+
+    run.store.getState().dispatch({ type: "OPEN_PROMOTION" });
+
+    expect(run.store.getState().rejected?.reason).toContain("계약에서 허용되지 않은");
+  });
+
+  /* 물러선 뒤에는 열린다. 화면이 밟는 두 걸음이 이것이다. */
+  it("물러선 뒤에는 승급이 열린다", () => {
+    const run = driven("contract-promotion-2");
+    run.act({ type: "OPEN_BOARD" });
+    const offer = run.state().campaign.offers.find((one) => one.lockReason === null)!;
+    run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
+
+    run.act({ type: "CANCEL_CONTRACT" });
+    run.act({ type: "OPEN_PROMOTION" });
+
+    expect(run.state().campaign.phase).toBe("promotion");
+    expect(run.state().rejected).toBeNull();
   });
 });

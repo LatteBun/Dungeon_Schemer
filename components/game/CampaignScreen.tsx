@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { NodeId, PromotionMethod } from "@/lib/domain";
+import type { ActiveExpeditionContext, NodeId, PromotionMethod, PromotionResult } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { screenForPhase } from "@/lib/store/campaign-store";
 import { useCampaignStore } from "./CampaignStoreProvider";
 import { IntroScreen } from "./IntroScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
-import { U5BattleScene } from "./U5BattleScene";
 import { U5ProgressScreen } from "./U5ProgressScreen";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
@@ -17,7 +16,10 @@ import {
   bossReplayFor,
   ecologyViewFor,
   eventReplayFor,
+  expeditionEndViewFor,
   logFor,
+  memberChangesFor,
+  surveyViewFor,
   progressViewFor,
   publicKindByNodeId,
   statusFor,
@@ -37,7 +39,36 @@ import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
  * 되살아난 문서도 다시 그릴 때 현재 `phase` 를 보므로, 계약을 맺은 뒤 게시판이
  * `계약 전` 모습으로 되살아나는 일이 없다.
  */
+/**
+ * 규칙이 거부하면 그렇게 말한다.
+ *
+ * 거부는 값으로만 남고 아무 화면도 읽지 않았다. 그래서 규칙이 막는 조작은
+ * **눌러도 아무 일이 없을 뿐**이었다 - 게시판에서 두 번째 공고가 안 골라지던
+ * 것이 그 증상이었고, 같은 일이 또 생기면 또 조용할 것이었다.
+ */
 export function CampaignScreen() {
+  const rejected = useCampaignStore((state) => state.rejected);
+  const clearRejected = useCampaignStore((state) => state.clearRejected);
+
+  return (
+    <>
+      <CurrentScreen />
+      {rejected !== null && <RejectionNotice reason={rejected.reason} onDismiss={clearRejected} />}
+    </>
+  );
+}
+
+function CurrentScreen() {
+  /*
+   * 승급 결과를 덮었는지는 화면이 기억한다.
+   *
+   * `PROMOTE_GUIDE` 는 이미 게시판으로 돌려놓으므로, 결과창을 닫으려고
+   * `CANCEL_PROMOTION` 을 또 보내면 규칙이 「게시판에서 허용되지 않은 전이다」로
+   * 거부한다. 그러면 승급하고도 넘어가지지 않는다 - 실제로 그랬다.
+   *
+   * 닫는 것은 규칙의 일이 아니다. 무엇을 이미 봤는지는 화면의 것이다.
+   */
+  const [seenPromotion, setSeenPromotion] = useState<string | null>(null);
   const campaign = useCampaignStore((state) => state.campaign);
   const context = useCampaignStore((state) => state.context);
   const last = useCampaignStore((state) => state.last);
@@ -57,7 +88,11 @@ export function CampaignScreen() {
         status={status}
         board={createU3BoardView(campaign, campaign.offers)}
         selectedOfferId={context.selectedOffer?.id ?? ""}
-        promotion={createU3PromotionView(getGuidePromotionEligibility(campaign), campaign.phase, last?.promotion ?? null)}
+        promotion={createU3PromotionView(
+          getGuidePromotionEligibility(campaign),
+          campaign.phase,
+          promotionKey(last?.promotion ?? null) === seenPromotion ? null : last?.promotion ?? null,
+        )}
         onSelectOffer={(offerId) => {
           /*
            * 이미 고른 것이 있으면 물러선 뒤에 고른다.
@@ -82,10 +117,21 @@ export function CampaignScreen() {
           const built = createExpeditionForOffer(campaign, offer);
           dispatch({ type: "START_EXPEDITION", expeditionId: `${offer.id}:${campaign.worldTurn}`, ...built });
         }}
-        onOpenPromotion={() => dispatch({ type: "OPEN_PROMOTION" })}
+        onOpenPromotion={() => {
+          /*
+           * 계약을 고르던 중이면 물러선 뒤에 연다.
+           *
+           * 규칙은 `contract` 에서 `OPEN_PROMOTION` 을 받지 않는다 - 계약을
+           * 검토하다 말고 승급 창으로 넘어가면 무엇을 하던 중이었는지 잃는다.
+           * 물러서는 것은 길잡이의 몫이고, 등급 칸을 누르는 것이 곧 그 뜻이다.
+           * 게시판에서 다른 공고를 누를 때와 같은 두 걸음이다.
+           */
+          if (context.selectedOffer !== null) dispatch({ type: "CANCEL_CONTRACT" });
+          dispatch({ type: "OPEN_PROMOTION" });
+        }}
         onCancelPromotion={() => dispatch({ type: "CANCEL_PROMOTION" })}
         onConfirmPromotion={(method: PromotionMethod) => dispatch({ type: "PROMOTE_GUIDE", method })}
-        onDismissPromotionResult={() => dispatch({ type: "CANCEL_PROMOTION" })}
+        onDismissPromotionResult={() => setSeenPromotion(promotionKey(last?.promotion ?? null))}
       />
     );
   }
@@ -154,14 +200,26 @@ function ExpeditionScreens() {
    * 보스전을 치렀거나 도중에 전멸했으면 더 걸을 곳이 없다. 정산 입력은 규칙이
    * 만든다 - 화면이 무엇이 최종 파티인지 판단하지 않는다.
    */
+  /*
+   * 원정이 끝났다. 정산으로 넘긴다.
+   *
+   * 보스전도 같은 화면에서 본다 - 상단 상태도 파티도 진행 기록도 그대로 있어야
+   * `/u5-2-test` 에서 보던 것과 같은 화면이 된다. 전에는 전투 장면만 덩그러니
+   * 띄웠다.
+   */
   const finished = active.pendingOutcome === null
     && (active.expedition.bossResult !== null || active.expedition.result !== null);
   if (finished) {
-    const replay = bossReplayFor(campaign, active);
     return (
-      <ExpeditionEnd
-        replay={replay}
-        onSettle={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
+      <U5ProgressScreen
+        status={status}
+        progress={expeditionEndViewFor(campaign, active)}
+        log={logFor(campaign, active)}
+        ecology={ecologyViewFor(campaign, active)}
+        battleReplay={bossReplayFor(campaign, active) ?? undefined}
+        changesByMemberId={changesByMemberId(active)}
+        onAcknowledge={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
+        acknowledgeLabel="정산으로"
       />
     );
   }
@@ -181,6 +239,7 @@ function ExpeditionScreens() {
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={eventReplayFor(campaign, active) ?? undefined}
+        changesByMemberId={changesByMemberId(active)}
         onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });
         }}
@@ -193,6 +252,7 @@ function ExpeditionScreens() {
     <U4DungeonMapScreen
       status={status}
       dungeonName={dungeon?.name ?? ""}
+      themeId={dungeon?.theme}
       riskLevel={active.expedition.riskLevel}
       nodes={createU4MapNodeViews({
         map: active.expedition.map,
@@ -202,6 +262,8 @@ function ExpeditionScreens() {
       })}
       layout={createU4DungeonMapLayout(active.expedition.map)}
       party={createU4PartyMemberViews(active.partyMembers)}
+      survey={surveyViewFor(campaign, active)}
+      changesByMemberId={changesByMemberId(active)}
       selectedNextNodeId={selected}
       onSelectNextNode={setSelected}
       onMove={(nodeId) => {
@@ -220,24 +282,35 @@ function ExpeditionScreens() {
 }
 
 /**
- * 보스전을 보여 주고 정산으로 넘긴다.
+ * 파티원마다 이 원정에서 있었던 일.
  *
- * 전멸로 끝난 원정에는 보스전이 없다. 그때는 재생할 것이 없으므로 넘어가는 길만
- * 남는다.
+ * 카드를 뒤집으면 보인다. 지금 수치만 보고는 무엇 때문에 그렇게 됐는지 알 수
+ * 없는데, 신뢰가 왜 깎였는지가 곧 다음 조언이 먹힐지를 가른다.
  */
-function ExpeditionEnd({
-  replay,
-  onSettle,
+/** 어느 승급의 결과인지. 같은 등급 이동은 한 번뿐이라 이것으로 갈린다. */
+function promotionKey(result: PromotionResult | null): string | null {
+  return result === null ? null : `${result.fromRank}->${result.toRank}`;
+}
+
+function changesByMemberId(active: ActiveExpeditionContext) {
+  const byId: Record<string, ReturnType<typeof memberChangesFor>> = {};
+  for (const member of active.partyMembers) {
+    byId[String(member.id)] = memberChangesFor(active, member.id);
+  }
+  return byId;
+}
+
+export function RejectionNotice({
+  reason,
+  onDismiss,
 }: {
-  readonly replay: ReturnType<typeof bossReplayFor>;
-  readonly onSettle: () => void;
+  readonly reason: string;
+  readonly onDismiss: () => void;
 }) {
   return (
-    <div className="u5-battle-host">
-      {replay !== null && <U5BattleScene replay={replay} />}
-      <button type="button" className="u5-battle-settle" onClick={onSettle}>
-        정산으로
-      </button>
+    <div className="campaign-rejection" role="alert" data-testid="campaign-rejection">
+      <p className="campaign-rejection__reason">{reason}</p>
+      <button type="button" onClick={onDismiss}>확인</button>
     </div>
   );
 }

@@ -171,6 +171,23 @@ function causeInputsFromExpedition(): { choice: string; reactions: string; damag
 const causeInputs = causeInputsFromExpedition();
 
 /**
+ * 피해 줄은 그 판의 최종 파티에서 만든다.
+ *
+ * 한 번 만들어 모든 변형에 돌려 쓰고 있었다. 그러면 전멸 정산에도 "피해 없이
+ * 지나갔다" 가 실린다 - 셋이 다 죽었는데. 프리뷰가 거짓을 말하면 프리뷰를 보고
+ * 고친 화면도 거짓을 담는다.
+ */
+function damageLineFor(finalMembers: readonly Character[]): string {
+  const before = new Map(party.map((member) => [String(member.id), member]));
+  const hurt = finalMembers.flatMap((after) => {
+    const start = before.get(String(after.id));
+    if (start === undefined || start.hp === after.hp) return [];
+    return [`${after.name} HP ${start.hp} → ${after.hp}`];
+  });
+  return hurt.length === 0 ? "피해 없이 지나갔다" : hurt.join(" · ");
+}
+
+/**
  * 원정을 실제로 여러 번 정산해 캠페인 이력을 쌓는다.
  *
  * 엔딩 화면은 누적 통계를 보여준다. 그런데 `initializeCampaign` 만으로는
@@ -220,7 +237,7 @@ function playedThrough(
       party: { memberIds: trio.map((member) => member.id) },
       finalMembers,
       status: wiped ? "wiped" : "cleared",
-      causeInputs,
+      causeInputs: { ...causeInputs, damage: damageLineFor(finalMembers) },
     });
     current = {
       ...execution.campaign,
@@ -246,7 +263,7 @@ function settlementFor(input: {
     party: { memberIds: party.map((member) => member.id) },
     finalMembers: input.finalMembers,
     status: input.status,
-    causeInputs,
+    causeInputs: { ...causeInputs, damage: damageLineFor(input.finalMembers) },
   };
   const execution = settleExpedition(input.campaign, snapshot);
   return {

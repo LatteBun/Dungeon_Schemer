@@ -272,7 +272,17 @@ export function eventReplayFor(
       ...active.partyMembers.map((member) => ({
         id: String(member.id),
         name: member.name,
-        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: member.alive }),
+        /*
+         * 싸움에 든 사람은 그때 살아 있었다.
+         *
+         * `partyMembers` 는 전투가 끝난 뒤의 상태다. 그것으로 초상화를 고르면
+         * 이 싸움에서 죽을 사람이 **첫 프레임부터** 죽은 그림으로 서 있다.
+         * 살아서 시작하는데 미리 회색인 것이다.
+         *
+         * 쓰러지는 것은 재생이 프레임마다 보여준다 - `defeatedParticipantIds`
+         * 가 그 순간에 흐려 준다. 초상화가 그것을 앞질러서는 안 된다.
+         */
+        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: true }),
       })),
       /* 적의 이름은 콘텐츠에서 온다. 화면이 지어내지 않는다. */
       ...resolution.enemies.map((enemy) => ({
@@ -343,6 +353,93 @@ export function logFor(campaign: CampaignState, active: ActiveExpeditionContext)
 
 
 /**
+ * 원정이 끝난 자리의 진행 View.
+ *
+ * 보스전도 같은 화면에서 본다. 전에는 전투 장면만 덩그러니 띄우고 상단 상태도
+ * 파티도 없어, `/u5-2-test` 에서 보던 것과 다른 화면이 되었다. 규칙이 남긴 보스
+ * 기록에 재료가 다 있으므로 그것을 옮겨 적는다.
+ */
+export function expeditionEndViewFor(
+  campaign: CampaignState,
+  active: ActiveExpeditionContext,
+): U5ProgressView {
+  const dungeon = campaign.dungeons.find((one) => one.id === active.expedition.dungeonId);
+  if (dungeon === undefined) throw new Error(`원정 던전을 찾을 수 없다: ${active.expedition.dungeonId}`);
+
+  const boss = active.expedition.bossResult;
+  const record = active.records.at(-1) ?? null;
+  const survivors = active.partyMembers.filter((member) => member.alive).length;
+  const nameOf = (characterId: Character["id"]) =>
+    active.partyMembers.find((member) => member.id === characterId)?.name ?? String(characterId);
+
+  return {
+    dungeonName: dungeon.name,
+    theme: dungeon.theme,
+    /* 보스전은 monster 장면을 쓴다. 전용 장면 자산이 따로 없다. */
+    sceneKind: "monster",
+    nodeLabel: boss === null ? "원정 종료" : "보스방",
+    situation: boss === null
+      ? "더 나아갈 수 없다. 남은 사람을 데리고 돌아간다."
+      : record?.choice ?? "보스방에 들었다",
+    /* 고를 것이 없다. 결과만 남았다. */
+    advice: [],
+    outcome: {
+      /* 보스전의 반응은 그 믿음이 옳았는지다. `E4` 가 판정한 것을 옮긴다. */
+      reactions: (record?.reactions ?? []).map((one) => ({
+        memberName: nameOf(one.characterId),
+        reaction: one.reaction === "accepted" || one.reaction === "suspected" || one.reaction === "exposed"
+          ? one.reaction
+          : "accepted",
+        note: REACTION_WORD[one.reaction] ?? String(one.reaction),
+      })),
+      resultText: boss === null
+        ? `${survivors}명이 남았다.`
+        : boss.status === "cleared"
+          ? `보스를 넘어섰다. ${survivors}명이 살아 남았다.`
+          : "보스방을 넘지 못했다. 아무도 돌아오지 못했다.",
+      changes: (record?.damage ?? []).length === 0
+        ? [{ label: "변화", detail: "수치가 그대로다." }]
+        : (record?.damage ?? []).map((one) => ({
+          label: "HP",
+          detail: `${nameOf(one.characterId)} ${one.before} → ${one.after}`,
+        })),
+    },
+    /*
+     * 싸움에 들어갈 때의 파티를 보여준다.
+     *
+     * 이 화면은 방금 벌어진 일의 재생이다. 옆에 선 파티가 이미 "사망" 으로
+     * 회색이면 재생이 시작하기도 전에 결말이 서 있는 셈이고, 화면이 깨진 것처럼
+     * 보인다. 무슨 일이 있었는지는 아래 결과가 말한다.
+     */
+    party: partyViewsFor(rewound(active)),
+  };
+}
+
+/**
+ * 마지막 기록을 되감아 그 자리에 들어갈 때의 파티를 만든다.
+ *
+ * 기록이 사람마다 전후를 남기므로 "전" 을 되짚을 수 있다. 화면이 파티를 따로
+ * 들고 있을 필요가 없다.
+ */
+function rewound(active: ActiveExpeditionContext): readonly Character[] {
+  const record = active.records.at(-1);
+  if (record === undefined) return active.partyMembers;
+
+  const hpBefore = new Map(record.damage.map((one) => [String(one.characterId), one.before]));
+  const trustBefore = new Map(record.trustChanges.map((one) => [String(one.characterId), one.before]));
+  return active.partyMembers.map((member) => {
+    const hp = hpBefore.get(String(member.id)) ?? member.hp;
+    return {
+      ...member,
+      hp,
+      trust: trustBefore.get(String(member.id)) ?? member.trust,
+      /* 그 자리에 들어간 사람은 그때 살아 있었다. */
+      alive: hp > 0,
+    };
+  });
+}
+
+/**
  * 보스전 재생을 만든다.
  *
  * 이름과 그림만 붙인다. 무슨 일이 일어났는지는 `E4` 가 이미 정했다 — 어느
@@ -369,7 +466,17 @@ export function bossReplayFor(
       ...active.partyMembers.map((member) => ({
         id: String(member.id),
         name: member.name,
-        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: member.alive }),
+        /*
+         * 싸움에 든 사람은 그때 살아 있었다.
+         *
+         * `partyMembers` 는 전투가 끝난 뒤의 상태다. 그것으로 초상화를 고르면
+         * 이 싸움에서 죽을 사람이 **첫 프레임부터** 죽은 그림으로 서 있다.
+         * 살아서 시작하는데 미리 회색인 것이다.
+         *
+         * 쓰러지는 것은 재생이 프레임마다 보여준다 - `defeatedParticipantIds`
+         * 가 그 순간에 흐려 준다. 초상화가 그것을 앞질러서는 안 된다.
+         */
+        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: true }),
       })),
       /* 적의 이름은 콘텐츠에서 온다. 화면이 보스 이름을 지어내지 않는다. */
       ...result.battle.enemies.map((enemy) => ({
@@ -378,5 +485,60 @@ export function bossReplayFor(
         imageSrc: enemyBattleAssetSrc(String(enemy.monsterId)),
       })),
     ],
+  });
+}
+
+/**
+ * 지도에서 읽는 답사 기록.
+ *
+ * 공개된 생태 규칙은 다음 지점을 고를 때 쓰라고 `E2` 가 준 사실인데, 그동안
+ * 진행 화면의 기록 탭에만 있었다. 정작 고르는 자리는 지도다.
+ */
+export function surveyViewFor(campaign: CampaignState, active: ActiveExpeditionContext) {
+  const theme = themeOf(campaign, active);
+  const text = new Map(theme.rules.map((rule) => [rule.id, rule.text]));
+
+  return {
+    visited: active.expedition.visitedNodeIds.length,
+    /* 입구와 보스방을 뺀 지점 수다. 걸어서 고를 수 있는 자리만 센다. */
+    total: active.expedition.map.nodes.filter((node) => node.kind === "normal").length,
+    disclosedRules: active.expedition.disclosedRuleIds.map((id) => text.get(id) ?? String(id)),
+  };
+}
+
+export interface PartyMemberChangeView {
+  /** 무엇을 보고 무엇을 골랐는지. 그 사람에게 일어난 일의 이유다. */
+  readonly cause: string;
+  /** 그 사람이 어떻게 받아들였는지. 반응하지 않았으면 없다. */
+  readonly reaction?: string;
+  readonly hp?: { readonly before: number; readonly after: number };
+  readonly trust?: { readonly before: number; readonly after: number };
+}
+
+/**
+ * 이 원정에서 그 사람에게 일어난 일.
+ *
+ * 파티 카드를 뒤집으면 보이는 것이다. 지금 수치만 보고는 무엇 때문에 그렇게
+ * 됐는지 알 수 없다 — 신뢰가 왜 깎였는지가 곧 다음 조언이 먹힐지를 가른다.
+ *
+ * 아무 일도 없었던 자리는 적지 않는다. 지나온 지점을 전부 나열하면 정작 무엇이
+ * 그 사람을 바꿨는지가 묻힌다.
+ */
+export function memberChangesFor(
+  active: ActiveExpeditionContext,
+  characterId: Character["id"],
+): readonly PartyMemberChangeView[] {
+  return active.records.flatMap((record) => {
+    const reaction = record.reactions.find((one) => one.characterId === characterId);
+    const hp = record.damage.find((one) => one.characterId === characterId);
+    const trust = record.trustChanges.find((one) => one.characterId === characterId);
+    if (reaction === undefined && hp === undefined && trust === undefined) return [];
+
+    return [{
+      cause: record.choice === "" ? record.observation : record.choice,
+      ...(reaction === undefined ? {} : { reaction: REACTION_WORD[reaction.reaction] ?? reaction.reaction }),
+      ...(hp === undefined ? {} : { hp: { before: hp.before, after: hp.after } }),
+      ...(trust === undefined ? {} : { trust: { before: trust.before, after: trust.after } }),
+    }];
   });
 }

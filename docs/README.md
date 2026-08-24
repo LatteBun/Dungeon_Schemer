@@ -100,6 +100,12 @@
 
 ## 이번 개편 설계
 
+- [U4 지도 우측 패널 순서 개선 설계](superpowers/specs/2026-08-25-lattebun-u4-map-right-panel-order-design.md): 계약 전 답사를 선택 지점 위로 옮기고 이동 CTA를 우측 최하단에 고정하는 배치 기준
+- [U4 지도 우측 패널 순서 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u4-map-right-panel-order.md): DOM 읽기 순서와 3행 CSS 계약을 테스트 우선으로 변경하고 실제 캠페인 지도에서 확인하는 순서
+- [브라우저 안정성 스모크 테스트 설계](superpowers/specs/2026-08-25-lattebun-browser-stability-smoke-design.md): 공개 경로·첫 사건 클릭 흐름·공식 viewport의 Chromium 회귀 계약
+- [브라우저 안정성 스모크 테스트 구현 계획](superpowers/plans/2026-08-25-lattebun-browser-stability-smoke.md): Playwright 실행 기반부터 경로·캠페인·캔버스·문서 검증까지의 테스트 우선 순서
+- [E3 경로별 몬스터 최소 보장 설계](superpowers/specs/2026-08-24-lattebun-e3-monster-path-minimum-design.md): 위험도별 실제 선택 경로의 몬스터 하한과 결정적 전역 배정 계약
+- [E3 경로별 몬스터 최소 보장 구현 계획](superpowers/plans/2026-08-24-lattebun-e3-monster-path-minimum.md): E3 동시 제약 배정·실제 프로필 회귀의 테스트 우선 실행 순서
 - [캠페인 개편 설계](superpowers/specs/2026-08-19-lattebun-campaign-rework-design.md): 확정 규칙, 폐기 규칙, 문서 개정 지도
 - [B1 현행 캠페인 백테스트 설계](superpowers/specs/2026-08-24-lattebun-b1-current-campaign-backtest-design.md): 실제 Store 기반 3전략×2정확도 calibration·holdout 진단과 조건부 B1-B 경계
 - [B1 현행 캠페인 백테스트 구현 계획](superpowers/plans/2026-08-24-lattebun-b1-current-campaign-backtest.md): 공개 정보 전략·실제 Store driver·calibration 승인·독립 holdout의 테스트 우선 실행 순서

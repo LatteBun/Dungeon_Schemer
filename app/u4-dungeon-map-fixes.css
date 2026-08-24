@@ -72,8 +72,8 @@
   filter: grayscale(0.58) brightness(0.9) contrast(1.04);
 }
 
-/* Give the selected destination roughly the lower third of the right panel,
- * which moves its top edge upward while leaving three readable party cards. */
+/* 이 오버라이드는 우측 패널 사이 간격만 조금 줄인다.
+ * 3행 배치는 기본 스타일시트가 제어한다. */
 .u4-right-panel {
   gap: clamp(0.42rem, 0.58cqh, 0.54rem);
 }
@@ -101,11 +101,6 @@
   grid-template-columns: clamp(4.4rem, 5cqw, 5.2rem) minmax(0, 1fr);
   min-height: clamp(5.15rem, 7.1cqh, 6.05rem);
   padding: 0.52rem 0.94rem;
-}
-
-.u4-destination__icon {
-  width: 42%;
-  height: 42%;
 }
 
 .u4-destination__summary span,

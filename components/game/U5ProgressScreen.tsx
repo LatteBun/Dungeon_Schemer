@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { GameShell } from "./GameShell";
-import { PartyMemberCard } from "./PartyMemberCard";
+import { PartyMemberCard, type PartyMemberChangeEntry } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
 import {
   U5_LOG_FILTERS,
@@ -31,6 +31,10 @@ export interface U5ProgressScreenProps {
    * 다음에 무슨 일이 일어나는지는 화면이 모른다. 알리기만 한다.
    */
   onAcknowledge?: () => void;
+  /** 넘어가는 버튼의 문구. 자리마다 다음이 다르다. */
+  acknowledgeLabel?: string;
+  /** 파티원별 이 원정의 변화. 주면 카드를 뒤집을 수 있다. */
+  changesByMemberId?: Readonly<Record<string, readonly PartyMemberChangeEntry[]>>;
   initialMode?: U5ConsoleMode;
   initialFilter?: U5LogFilter;
   readonly battleReplay?: U5BattleReplay;
@@ -86,6 +90,15 @@ function Outcome({ outcome }: { outcome: NonNullable<U5ProgressView["outcome"]> 
     <div className="u5-outcome" data-testid="u5-outcome">
       <section className="u5-outcome__step" aria-labelledby="u5-reactions-title">
         <h4 id="u5-reactions-title">파티원별 반응</h4>
+        {/*
+          * 반응이 없으면 없다고 적는다.
+          *
+          * 빈 상자만 남으면 화면이 깨진 것처럼 보인다. 보스방에 아무 믿음도 들고
+          * 가지 않았으면 검증할 것이 없고, 그것도 하나의 사실이다.
+          */}
+        {outcome.reactions.length === 0 && (
+          <p className="u5-reactions__empty">확인할 반응이 없다.</p>
+        )}
         <ul className="u5-reactions">
           {outcome.reactions.map((reaction) => (
             <li key={reaction.memberName} className={`u5-reaction is-${reaction.reaction}`}>
@@ -176,6 +189,8 @@ export function U5ProgressScreen({
   ecology,
   onSelectAdvice,
   onAcknowledge,
+  acknowledgeLabel = "지도로 돌아간다",
+  changesByMemberId,
   initialMode,
   initialFilter = "all",
   battleReplay,
@@ -235,14 +250,7 @@ export function U5ProgressScreen({
                       ))}
                     </ul>
                   ) : (
-                    <>
-                      <Outcome outcome={progress.outcome} />
-                      {onAcknowledge !== undefined && (
-                        <button type="button" className="u5-outcome-continue" onClick={onAcknowledge}>
-                          지도로 돌아간다
-                        </button>
-                      )}
-                    </>
+                    <Outcome outcome={progress.outcome} />
                   )}
                 </div>
               ) : (
@@ -252,16 +260,39 @@ export function U5ProgressScreen({
           </div>
         }
         rightPanel={
-          <section className="panel-section u5-party" data-testid="u5-party" aria-labelledby="u5-party-title">
-            <h3 id="u5-party-title">파티 상태</h3>
-            <ul className="party-list">
-              {progress.party.map((member, index) => (
-                <li key={member.id}>
-                  <PartyMemberCard member={member} index={index} testId="u5-party-member" />
-                </li>
-              ))}
-            </ul>
-          </section>
+          <div className="u5-right-panel">
+            <section className="panel-section u5-party" data-testid="u5-party" aria-labelledby="u5-party-title">
+              <h3 id="u5-party-title">파티 상태</h3>
+              <ul className="party-list">
+                {progress.party.map((member, index) => (
+                  <li key={member.id}>
+                    <PartyMemberCard
+                      member={member}
+                      index={index}
+                      testId="u5-party-member"
+                      changes={changesByMemberId?.[member.id]}
+                    />
+                  </li>
+                ))}
+              </ul>
+              {changesByMemberId !== undefined && (
+                <p className="u5-party__hint">카드를 누르면 이 원정에서 있었던 일을 봅니다.</p>
+              )}
+            </section>
+
+            {/*
+              * 넘어가는 버튼은 오른쪽 아래에 둔다.
+              *
+              * 왼쪽 콘솔 안에 두면 결과 문장 바로 밑에 붙어 읽는 자리를 좁히고,
+              * 오른쪽 아래는 비어 있었다. 다음으로 가는 길은 화면의 끝에 있는
+              * 편이 찾기 쉽다.
+              */}
+            {onAcknowledge !== undefined && (
+              <button type="button" className="u5-outcome-continue" onClick={onAcknowledge}>
+                {acknowledgeLabel}
+              </button>
+            )}
+          </div>
         }
         rightPanelLabel="파티 상태"
       />

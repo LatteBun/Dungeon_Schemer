@@ -104,3 +104,112 @@ describe("PartyMemberCard", () => {
     expect(() => render({ hp: 0, maxHp: 0 })).not.toThrow();
   });
 });
+
+describe("카드 뒤집기", () => {
+  const member = {
+    id: "character-1",
+    name: "로자린드",
+    classLabel: "마법사",
+    personalityLabel: "신중한",
+    hp: 18,
+    maxHp: 24,
+    trust: 41,
+    gold: 12,
+    alive: true,
+  };
+
+  /* 원정 밖에는 되짚을 원정이 없다. 누를 수 없는 카드에 버튼 모양을 주지 않는다. */
+  it("변화를 주지 않으면 뒤집을 수 없다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, { member }));
+
+    expect(html).not.toContain("party-card__flip");
+    expect(html).not.toContain("party-member-changes");
+  });
+
+  it("변화를 주면 뒤집을 수 있다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [{ cause: "돌을 괴고 지나가라고 하세요", reaction: "수용", trust: { before: 38, after: 41 } }],
+    }));
+
+    expect(html).toContain("party-card__flip");
+    expect(html).toContain("돌을 괴고 지나가라고 하세요");
+    expect(html).toContain("수용 · 신뢰 38 → 41");
+  });
+
+  /* 뒤집혀도 누구인지는 남는다. 이름이 없으면 어느 카드인지 잃는다. */
+  it("뒷면에 이름이 남는다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, { member, changes: [] }));
+    const back = html.match(/party-card__back[\s\S]*?<\/div>/)?.[0] ?? "";
+
+    expect(back).toContain("로자린드");
+  });
+
+  it("아직 아무 일도 없으면 그렇게 적는다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, { member, changes: [] }));
+
+    expect(html).toContain("아직 아무 일도 없었다");
+  });
+
+  /* HP 와 신뢰가 함께 바뀐 자리는 둘 다 적는다. */
+  it("HP 와 신뢰를 함께 적는다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [{ cause: "그대로 지나가라고 하세요", hp: { before: 24, after: 18 }, trust: { before: 45, after: 41 } }],
+    }));
+
+    expect(html).toContain("HP 24 → 18");
+    expect(html).toContain("신뢰 45 → 41");
+  });
+});
+
+describe("이 원정의 총합", () => {
+  const member = {
+    id: "character-1",
+    name: "로자린드",
+    classLabel: "마법사",
+    personalityLabel: "신중한",
+    hp: 12,
+    maxHp: 24,
+    trust: 30,
+    gold: 12,
+    alive: true,
+  };
+
+  /* 한 줄씩 훑어 더해야 알 수 있으면 되짚는 뜻이 없다. */
+  it("여러 자리의 변화를 처음과 마지막으로 합친다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [
+        { cause: "첫 자리", hp: { before: 24, after: 18 }, trust: { before: 45, after: 40 } },
+        { cause: "둘째 자리", hp: { before: 18, after: 12 }, trust: { before: 40, after: 30 } },
+      ],
+    }));
+
+    /* 24 에서 12 로, 45 에서 30 으로. 중간값은 총합에 나오지 않는다. */
+    expect(html).toContain("-12");
+    expect(html).toContain("24 → 12");
+    expect(html).toContain("-15");
+    expect(html).toContain("45 → 30");
+  });
+
+  it("오른 것은 더하기로 적는다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [{ cause: "쉬어 갔다", hp: { before: 12, after: 20 } }],
+    }));
+
+    expect(html).toContain("+8");
+  });
+
+  /* 아무것도 달라지지 않았으면 총합 칸을 두지 않는다. */
+  it("변화가 없으면 총합이 없다", () => {
+    const html = renderToStaticMarkup(createElement(PartyMemberCard, {
+      member,
+      changes: [{ cause: "반응만 했다", reaction: "수용" }],
+    }));
+
+    expect(html).not.toContain("party-card__net");
+    expect(html).toContain("반응만 했다");
+  });
+});

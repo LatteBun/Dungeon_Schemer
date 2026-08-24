@@ -43,6 +43,7 @@ const settlement = (over: Partial<U6SettlementView> = {}): U6SettlementView => (
   riskBefore: 3,
   riskAfter: 3,
   riskCapped: false,
+  members: [],
   reputationDelta: 9,
   goldDelta: 19,
   relicGold: 0,

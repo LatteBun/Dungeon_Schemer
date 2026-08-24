@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -189,5 +190,108 @@ describe("U5ProgressScreen", () => {
 
     expect(html).toContain('data-testid="u5-outcome"');
     expect(html).not.toContain('data-testid="u5-log"');
+  });
+});
+
+describe("반응이 없을 때", () => {
+  /* 빈 상자만 남으면 화면이 깨진 것처럼 보인다. */
+  it("반응이 없으면 없다고 적는다", () => {
+    const html = render({
+      outcome: { reactions: [], resultText: "보스방을 넘지 못했다.", changes: [{ label: "HP", detail: "오린 24 → 0" }] },
+    });
+
+    expect(html).toContain("확인할 반응이 없다");
+    expect(html).toContain("보스방을 넘지 못했다");
+  });
+
+  it("반응이 있으면 그 줄은 없다", () => {
+    const html = render({
+      outcome: {
+        reactions: [{ memberName: "오린", reaction: "accepted", note: "고개를 끄덕인다." }],
+        resultText: "지나갔다.",
+        changes: [{ label: "변화", detail: "그대로다." }],
+      },
+    });
+
+    expect(html).not.toContain("확인할 반응이 없다");
+    expect(html).toContain("오린");
+  });
+});
+
+describe("넘어가는 버튼", () => {
+  const outcome = {
+    reactions: [],
+    resultText: "지나갔다.",
+    changes: [{ label: "변화", detail: "그대로다." }],
+  };
+
+  /*
+   * 버튼은 하나다.
+   *
+   * 오른쪽 아래로 옮기면서 왼쪽 콘솔의 것을 지웠는데, 병합 과정에서 되살아나
+   * 화면에 둘이 서 있었다. 문구가 서로 달라 어느 쪽이 진짜인지도 갈렸다.
+   */
+  it("결과 화면에 넘어가는 버튼이 하나만 있다", () => {
+    const html = render({ outcome }, { onAcknowledge: () => undefined });
+    const count = html.split("u5-outcome-continue").length - 1;
+
+    expect(count).toBe(1);
+  });
+
+  it("문구를 주면 그대로 쓴다", () => {
+    const html = render({ outcome }, { onAcknowledge: () => undefined, acknowledgeLabel: "정산으로" });
+
+    expect(html).toContain("정산으로");
+    expect(html).not.toContain("지도로 돌아간다");
+  });
+
+  it("주지 않으면 버튼이 없다", () => {
+    expect(render({ outcome })).not.toContain("u5-outcome-continue");
+  });
+});
+
+describe("잠긴 조언", () => {
+  const blocked = {
+    ...base,
+    advice: [
+      { slot: 0 as const, text: "값을 치르고 사세요", rationale: "지금은 그럴 값이 없다", goldCost: 40, unavailableReason: "골드가 모자란다" },
+      { slot: 1 as const, text: "그냥 지나가세요", rationale: "돈을 쓰지 않는다" },
+      { slot: 2 as const, text: "값을 깎아 보라고 하세요", rationale: "해 볼 만하다" },
+    ],
+  };
+
+  /*
+   * 잠긴 조언은 잠긴 것처럼 보여야 한다.
+   *
+   * 누를 수 있는 것과 똑같이 생기면 눌러도 아무 일이 없으니 "선택이 안 된다" 로
+   * 보인다. 실제로 그렇게 보였다.
+   */
+  it("잠긴 버튼과 이유가 함께 나온다", () => {
+    const html = render(blocked);
+
+    expect(html).toContain("disabled");
+    expect(html).toContain("골드가 모자란다");
+    expect(html).toContain("u5-advice__blocked");
+  });
+
+  it("잠기지 않은 조언은 그대로 누를 수 있다", () => {
+    const html = render(blocked);
+    const buttons = html.split("u5-advice__button").length - 1;
+
+    expect(buttons).toBe(3);
+    /* 잠긴 것은 하나뿐이다. */
+    expect(html.split('disabled=""').length - 1).toBe(1);
+  });
+});
+
+describe("잠긴 모양", () => {
+  /* 모양이 없으면 잠긴 것과 누를 수 있는 것이 같아 보인다. */
+  it("잠긴 버튼에 제 모양이 있다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+
+    expect(sheet).toMatch(/\.u5-advice__button:disabled\s*\{/);
+    expect(sheet).toMatch(/\.u5-advice__blocked\s*\{/);
+    /* 잠긴 버튼에는 hover 가 걸리지 않는다. */
+    expect(sheet).toMatch(/\.u5-advice__button:hover:not\(:disabled\)/);
   });
 });
