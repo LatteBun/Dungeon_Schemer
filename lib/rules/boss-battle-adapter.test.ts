@@ -254,8 +254,8 @@ describe("E4 보스 BattleEngine adapter", () => {
 
   it("초기 위험도의 공통 보정만 보스 능력치에 적용한다", () => {
     const expected = {
-      maxHp: Math.max(1, Math.round(SPIDER_BOSSES[0].maxHp * 1.125)),
-      baseDamage: Math.max(1, Math.round(SPIDER_BOSSES[0].baseDamage * 1.125)),
+      maxHp: Math.max(1, Math.round(SPIDER_BOSSES[0].maxHp * 1.10)),
+      baseDamage: Math.max(1, Math.round(SPIDER_BOSSES[0].baseDamage * 1.10)),
     };
 
     expect(balancedBossStats(SPIDER_BOSSES[0], 1)).toEqual(expected);
