@@ -1,6 +1,7 @@
 import {
   BOSS_MULTIPLIER_CALIBRATION,
   CAMPAIGN_BALANCE,
+  GENERAL_MONSTER_MULTIPLIER_CALIBRATION,
   type AdvicePressure,
   type CampaignBalance,
 } from "@/lib/balance/campaign-balance";
@@ -44,6 +45,16 @@ function requireBossMultiplierCalibration(value: unknown, field: string): number
   return multiplier;
 }
 
+function requireGeneralMonsterMultiplierCalibration(value: unknown, field: string): number {
+  const multiplier = requireFinitePositive(value, field);
+  const { min, max, step } = GENERAL_MONSTER_MULTIPLIER_CALIBRATION;
+  const steps = (multiplier - min) / step;
+  if (multiplier < min || multiplier > max || Math.abs(steps - Math.round(steps)) >= 1e-9) {
+    invalidBalance("캠페인 밸런스 값이 승인 범위를 벗어난다", { field, value, min, max, step });
+  }
+  return multiplier;
+}
+
 function requireRecord(value: unknown, field: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return invalidBalance("캠페인 밸런스 객체가 유효하지 않다", { field, value });
@@ -65,6 +76,7 @@ function validateExactKeys(
 
 export function validateCampaignBalance(profile: CampaignBalance = CAMPAIGN_BALANCE): void {
   const root = requireRecord(profile, "profile");
+  requireGeneralMonsterMultiplierCalibration(root.generalMonsterBaseStatMultiplier, "generalMonsterBaseStatMultiplier");
   const worldTurn = requireRecord(root.worldTurn, "worldTurn");
   validateExactKeys(worldTurn, ["restRecoveryRatio", "backgroundLossPercent"], "worldTurn");
   requireFiniteInRange(worldTurn.restRecoveryRatio, 0.20, 0.25, "worldTurn.restRecoveryRatio");

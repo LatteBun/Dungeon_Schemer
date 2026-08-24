@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
 import { activateStrongFollower, applyImmediateEffect, findDeterministicCapacityAssignment, prepareExpeditionEvents, materializeNodeEvent, resolveMonsterEventBattle } from "@/lib/rules/expedition-events";
-import { THEMES } from "@/lib/content/themes";
+import { SPIDER_BOSSES, THEMES } from "@/lib/content/themes";
 import { eventsForTheme } from "@/lib/content/event-registry";
 import { CLASSES } from "@/lib/content/classes";
+import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
+import { balancedBossStats } from "@/lib/rules/boss-battle-adapter";
 import { RuleError } from "@/lib/domain";
 import type { ChoiceId, ClueId, DungeonId, GeneratedMap, MonsterId, NodeId, PreparedExpeditionEvents, PreparedNodePlan, RuleId, SituationEvent, StrongLinkPlan } from "@/lib/domain";
 import type { CharacterId, ClassId } from "@/lib/domain";
@@ -209,6 +211,42 @@ describe("E3 원정 사건 준비와 물질화", () => {
     const member = { id: "member-1" as CharacterId, name: "전사", classId: "warrior" as ClassId, personality: "prudent" as const, maxHp: 45, hp: 45, trust: 50, gold: 10, alive: true, gravelyWounded: false };
     const result = resolveMonsterEventBattle({ event: event as typeof event & { readonly kind: "monster" }, activeMonsterIds: monsterDefs.map((monster) => monster.id), monsterDefs, members: [member], classDefs: CLASSES, seed: "battle-adapter-weight", modifier: {}, pendingMerchantEffect: null, advicePressure: 0 });
     expect(result.battle?.enemies[0]?.targetWeightMultipliers).toEqual({ mage: 3 });
+  });
+
+  it("일반 몬스터의 HP와 기본 피해에 공통 보정 배율을 한 번만 적용한다", () => {
+    const event = eventsForTheme("spider").find((candidate) => candidate.kind === "monster" && candidate.encounter !== undefined);
+    if (event?.kind !== "monster" || event.encounter === undefined) throw new Error("monster encounter 없음");
+    const monsterDefs = THEMES[0].monsters.map((monster) => ({ ...monster, maxHp: 100, baseDamage: 10 }));
+    const member = { id: "member-1" as CharacterId, name: "전사", classId: "warrior" as ClassId, personality: "prudent" as const, maxHp: 999, hp: 999, trust: 50, gold: 10, alive: true, gravelyWounded: false };
+    const classDefs = CLASSES.map((classDef) => classDef.id === "warrior" ? { ...classDef, attack: 1 } : classDef);
+    const balance = CAMPAIGN_BALANCE as { generalMonsterBaseStatMultiplier: number };
+    const originalMultiplier = balance.generalMonsterBaseStatMultiplier;
+    const originalWorldTurn = CAMPAIGN_BALANCE.worldTurn;
+    const originalBossStats = balancedBossStats(SPIDER_BOSSES[0], 1);
+
+    balance.generalMonsterBaseStatMultiplier = 1.10;
+    try {
+      const result = resolveMonsterEventBattle({
+        event: event as typeof event & { readonly kind: "monster" },
+        modifier: {},
+        activeMonsterIds: monsterDefs.map((monster) => monster.id),
+        monsterDefs,
+        members: [member],
+        classDefs,
+        seed: "general-monster-calibration",
+        advicePressure: 0,
+        pendingMerchantEffect: null,
+      });
+
+      expect(result.battle?.enemies).toEqual(expect.arrayContaining([
+        expect.objectContaining({ maxHp: 110, baseDamage: 11 }),
+      ]));
+      expect(result.battle?.enemies.every((enemy) => enemy.maxHp === 110 && enemy.baseDamage === 11)).toBe(true);
+      expect(CAMPAIGN_BALANCE.worldTurn).toBe(originalWorldTurn);
+      expect(balancedBossStats(SPIDER_BOSSES[0], 1)).toEqual(originalBossStats);
+    } finally {
+      balance.generalMonsterBaseStatMultiplier = originalMultiplier;
+    }
   });
 });
 

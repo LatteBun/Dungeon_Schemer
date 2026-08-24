@@ -106,6 +106,22 @@ describe("validateCampaignBalance", () => {
     }
   });
 
+  it("일반 몬스터 배율에 0.70~1.10 범위와 0.025 grid를 적용한다", () => {
+    for (const multiplier of [0.70, 1.10]) {
+      expect(() => validateCampaignBalance({
+        ...CAMPAIGN_BALANCE,
+        generalMonsterBaseStatMultiplier: multiplier,
+      })).not.toThrow();
+    }
+
+    for (const multiplier of [0.71, 1.125]) {
+      expectInvalid({
+        ...CAMPAIGN_BALANCE,
+        generalMonsterBaseStatMultiplier: multiplier,
+      });
+    }
+  });
+
   it("유한한 양수가 아닌 multiplier와 뒤집힌 clamp 범위를 생성 오류로 거부한다", () => {
     expectInvalid({
       ...CAMPAIGN_BALANCE,

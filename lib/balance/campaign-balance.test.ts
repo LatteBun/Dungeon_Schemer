@@ -10,6 +10,20 @@ describe("CAMPAIGN_BALANCE", () => {
     expect(() => validateCampaignBalance(CAMPAIGN_BALANCE)).not.toThrow();
   });
 
+  it.each([0.70, 1.10])("일반 몬스터 배율 %p를 calibration 계약으로 허용한다", (multiplier) => {
+    expect(() => validateCampaignBalance({
+      ...CAMPAIGN_BALANCE,
+      generalMonsterBaseStatMultiplier: multiplier,
+    })).not.toThrow();
+  });
+
+  it.each([0.71, 1.125])("일반 몬스터 배율 %p를 calibration 계약으로 거부한다", (multiplier) => {
+    expect(() => validateCampaignBalance({
+      ...CAMPAIGN_BALANCE,
+      generalMonsterBaseStatMultiplier: multiplier,
+    })).toThrow();
+  });
+
   it.each([0.199, 1.201, 0.81, Number.NaN, Number.POSITIVE_INFINITY])(
     "보스 배율 %p를 calibration 계약으로 거부한다",
     (multiplier) => {
@@ -44,6 +58,7 @@ describe("CAMPAIGN_BALANCE", () => {
 
   it("B1-B 초기 월드턴, 보스, 조언 압력 설정을 제공한다", () => {
     expect(CAMPAIGN_BALANCE.revision).toBe("b1b-risk-curve-v1");
+    expect(CAMPAIGN_BALANCE.generalMonsterBaseStatMultiplier).toBe(1.00);
     expect(CAMPAIGN_BALANCE.worldTurn).toEqual({
       restRecoveryRatio: 0.2,
       backgroundLossPercent: { min: 5, max: 10 },

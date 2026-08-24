@@ -11,8 +11,15 @@ export const BOSS_MULTIPLIER_CALIBRATION = {
   step: 0.025,
 } as const;
 
+export const GENERAL_MONSTER_MULTIPLIER_CALIBRATION = {
+  min: 0.70,
+  max: 1.10,
+  step: 0.025,
+} as const;
+
 export interface CampaignBalance {
   readonly revision: string;
+  readonly generalMonsterBaseStatMultiplier: number;
   readonly worldTurn: {
     readonly restRecoveryRatio: number;
     readonly backgroundLossPercent: { readonly min: number; readonly max: number };
@@ -30,6 +37,7 @@ export interface CampaignBalance {
 
 export const CAMPAIGN_BALANCE = {
   revision: "b1b-risk-curve-v1",
+  generalMonsterBaseStatMultiplier: 1.00,
   worldTurn: { restRecoveryRatio: 0.20, backgroundLossPercent: { min: 5, max: 10 } },
   bossBaseStatMultiplierByInitialRisk: { 1: 1.125, 2: 0.85, 3: 0.675, 4: 0.575, 5: 0.625 },
   advicePressure: {
@@ -54,7 +62,24 @@ function isCalibrationStep(value: number): boolean {
   return Math.abs(steps - Math.round(steps)) < 1e-9;
 }
 
+function isGeneralMonsterCalibrationStep(value: number): boolean {
+  const steps = (value - GENERAL_MONSTER_MULTIPLIER_CALIBRATION.min)
+    / GENERAL_MONSTER_MULTIPLIER_CALIBRATION.step;
+  return Math.abs(steps - Math.round(steps)) < 1e-9;
+}
+
 export function validateCampaignBalance(balance: CampaignBalance): void {
+  const generalMonsterMultiplier = balance.generalMonsterBaseStatMultiplier;
+  if (
+    !Number.isFinite(generalMonsterMultiplier)
+    || generalMonsterMultiplier <= 0
+    || generalMonsterMultiplier < GENERAL_MONSTER_MULTIPLIER_CALIBRATION.min
+    || generalMonsterMultiplier > GENERAL_MONSTER_MULTIPLIER_CALIBRATION.max
+    || !isGeneralMonsterCalibrationStep(generalMonsterMultiplier)
+  ) {
+    throw new Error("일반 몬스터 기본 능력치 배율이 calibration 계약을 벗어난다");
+  }
+
   const multipliers = balance.bossBaseStatMultiplierByInitialRisk;
   const keys = Object.keys(multipliers).sort();
   const expectedKeys = INITIAL_RISK_LEVELS.map(String);

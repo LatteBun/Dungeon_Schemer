@@ -1,4 +1,5 @@
 import { eventsForTheme } from "@/lib/content/event-registry";
+import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
 import { createRng } from "@/lib/rng";
 import { RuleError } from "@/lib/domain";
 import { consumePendingMerchantEffect } from "@/lib/rules/merchant";
@@ -565,6 +566,7 @@ export function resolveMonsterEventBattle(input: {
   const consumed = consumePendingMerchantEffect(input.pendingMerchantEffect);
   const partyDamageMultiplier = consumed.nextBattle?.partyDamageMultiplier;
   const incomingDamageMultiplier = consumed.nextBattle?.incomingDamageMultiplier;
+  const generalMonsterMultiplier = CAMPAIGN_BALANCE.generalMonsterBaseStatMultiplier;
   const classById = new Map(input.classDefs.map((classDef) => [classDef.id, classDef]));
   const battle = resolveBattle({
     seed: input.seed,
@@ -579,9 +581,9 @@ export function resolveMonsterEventBattle(input: {
       return {
         id: enemy.id,
         monsterId: enemy.monsterId,
-        hp: monster.maxHp ?? enemy.maxHp,
-        maxHp: monster.maxHp ?? enemy.maxHp,
-        baseDamage: monster.baseDamage ?? enemy.baseDamage,
+        hp: Math.max(1, Math.round((monster.maxHp ?? enemy.maxHp) * generalMonsterMultiplier)),
+        maxHp: Math.max(1, Math.round((monster.maxHp ?? enemy.maxHp) * generalMonsterMultiplier)),
+        baseDamage: Math.max(1, Math.round((monster.baseDamage ?? enemy.baseDamage) * generalMonsterMultiplier)),
         targetWeightMultipliers: monster.targetWeightMultipliers,
       };
     }),
