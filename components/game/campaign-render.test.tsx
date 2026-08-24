@@ -12,6 +12,8 @@ import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
+import { CampaignScreen } from "./CampaignScreen";
+import { CampaignStoreProvider } from "./CampaignStoreProvider";
 import {
   adviceIdForSlotIn, bossReplayFor, ecologyViewFor, eventReplayFor, expeditionEndViewFor, logFor,
   memberChangesFor, progressViewFor, publicKindByNodeId, statusFor, surveyViewFor,
@@ -56,8 +58,8 @@ function driven(seed = SEED) {
   return { store, act, state: () => store.getState() };
 }
 
-function contracted() {
-  const run = driven();
+function contracted(seed = SEED) {
+  const run = driven(seed);
   run.act({ type: "OPEN_BOARD" });
   const offer = run.state().campaign.offers.find((one) => one.lockReason === null)!;
   run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
@@ -318,6 +320,48 @@ describe("엔딩이 실제 캠페인으로 그려진다", () => {
 });
 
 describe("결과 화면이 실제 판정으로 그려진다", () => {
+  it("전투 전멸 뒤에도 정산보다 결과를 먼저 그린다", () => {
+    const run = contracted("party-roster-1");
+    for (let step = 0; step < 10; step += 1) {
+      const active = run.state().context.activeExpedition!;
+      if (active.pendingEvent !== null) break;
+      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
+      run.act({ type: "VISIT_NODE", nodeId: here.nextNodeIds[0]! });
+    }
+    const before = run.state();
+    const active = before.context.activeExpedition!;
+    const event = active.pendingEvent!;
+    if (event.kind !== "monster") throw new Error("monster 사건 fixture가 아니다");
+    const dungeon = before.campaign.dungeons.find((candidate) => candidate.id === active.expedition.dungeonId)!;
+    run.store.setState({
+      context: {
+        ...before.context,
+        activeExpedition: {
+          ...active,
+          partyMembers: active.partyMembers.map((member) => ({ ...member, hp: 1, alive: true })),
+          pendingEvent: {
+            ...event,
+            encounter: { enemies: [{ monsterId: dungeon.activeMonsterIds[0]!, count: 50 }] },
+            advice: event.advice.map((option) => ({ ...option, encounterModifier: {} })),
+            defaultEncounterModifier: {},
+          },
+        },
+      },
+    });
+    const lethal = run.state().context.activeExpedition!.pendingEvent!;
+    run.act({ type: "CHOOSE_ADVICE", adviceId: lethal.advice.find((option) => option.outcome === "harm")!.id });
+    expect(run.state().context.activeExpedition!.expedition.result).toMatchObject({ status: "wiped" });
+
+    const store = { ...run.store, getInitialState: () => run.store.getState() };
+    const markup = renderToStaticMarkup(createElement(CampaignStoreProvider as never, {
+      seed: "render-wipe-outcome",
+      store,
+    }, createElement(CampaignScreen)));
+
+    expect(markup).toContain("u5-outcome");
+    expect(markup).not.toContain("u5-battle-settle");
+  });
+
   /** 조언 하나를 고른 직후. 결과를 보는 중이다. */
   function atOutcome() {
     const run = atEvent();

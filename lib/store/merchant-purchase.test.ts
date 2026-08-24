@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
-import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
+import { SHARED_MERCHANT_EVENTS } from "@/lib/content/shared-merchant-events";
+import { applyAcceptedMerchantAdvice, getMerchantAdviceAvailability } from "@/lib/rules/merchant";
 import { createCampaignStore } from "./campaign-store";
 import { firstChoosableAdvice } from "./legal-advice";
 
@@ -42,6 +43,45 @@ function atMerchant(startSeed = 0) {
 }
 
 describe("상인에게 산 것을 치른다", () => {
+  it("사망한 파티원을 보존하고 살아 있는 사람에게만 회복을 적용한다", () => {
+    const { store } = atMerchant();
+    const advice = SHARED_MERCHANT_EVENTS[0]!.advice.find((option) => option.outcome === "help")!;
+    const before = store.getState().context.activeExpedition!.partyMembers;
+    const members = before.map((member, index) => index === 0
+      ? { ...member, hp: 0, alive: false }
+      : { ...member, hp: Math.max(1, member.hp - 4) });
+
+    const applied = applyAcceptedMerchantAdvice({
+      advice,
+      gold: 99,
+      members,
+      pendingMerchantEffect: null,
+    });
+
+    expect(applied.members).toHaveLength(3);
+    expect(applied.members[0]).toMatchObject({ id: members[0]!.id, hp: 0, alive: false });
+    expect(applied.members.slice(1).every((member, index) => member.hp > members[index + 1]!.hp)).toBe(true);
+  });
+
+  it("생존 상태와 HP가 어긋난 파티원은 거부한다", () => {
+    const { store } = atMerchant();
+    const advice = SHARED_MERCHANT_EVENTS[0]!.advice.find((option) => option.outcome === "help")!;
+    const members = store.getState().context.activeExpedition!.partyMembers;
+
+    expect(() => applyAcceptedMerchantAdvice({
+      advice,
+      gold: 99,
+      members: [{ ...members[0]!, hp: 0, alive: true }, ...members.slice(1)],
+      pendingMerchantEffect: null,
+    })).toThrow("파티원의 HP가 유효하지 않다");
+    expect(() => applyAcceptedMerchantAdvice({
+      advice,
+      gold: 99,
+      members: [{ ...members[0]!, hp: 1, alive: false }, ...members.slice(1)],
+      pendingMerchantEffect: null,
+    })).toThrow("파티원의 HP가 유효하지 않다");
+  });
+
   it("고른 조언의 값만큼 골드가 준다", () => {
     const { store, act, event, active } = atMerchant();
     const priced = event.advice.find((option) => {

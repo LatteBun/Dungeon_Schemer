@@ -60,6 +60,21 @@ function openBoard(campaign = initializeCampaign("c7-transition")) {
   return transitionCampaign(campaign, createCampaignTransitionContext(), { type: "OPEN_BOARD" });
 }
 
+function rankLockedCampaign(seed: string): CampaignState {
+  const initial = initializeCampaign(seed);
+  return {
+    ...initial,
+    rank: "C",
+    reputation: 0,
+    gold: 0,
+    dungeons: initial.dungeons.map((dungeon) => ({
+      ...dungeon,
+      status: "unexplored" as const,
+      riskLevel: 5 as const,
+    })),
+  };
+}
+
 function expeditionFlow(seed = "c7-transition") {
   const board = openBoard(initializeCampaign(seed));
   const offer = board.campaign.offers.find((candidate) => candidate.lockReason === null)!;
@@ -89,6 +104,54 @@ describe("C7 캠페인 전이", () => {
     expect(result.context).toEqual(context);
     expect(campaign).toEqual(beforeCampaign);
     expect(context).toEqual(beforeContext);
+  });
+
+  it("승급할 수 없는 전부 rankTooLow 공고는 게시판 진입에서 실직으로 끝낸다", () => {
+    // Break caught: OPEN_BOARD used to expose a board with no selectable contract.
+    const campaign = rankLockedCampaign("c7-open-board-unemployed");
+
+    const result = transitionCampaign(campaign, createCampaignTransitionContext(), { type: "OPEN_BOARD" });
+
+    expect(result.campaign).toMatchObject({ phase: "ended", ending: { kind: "unemployed" } });
+    expect(result.ending).toEqual(result.campaign.ending);
+    expect(result.campaign.history.events.at(-1)?.type).toBe("CAMPAIGN_ENDED");
+  });
+
+  it("승급 취소도 선택 불가능한 기존 rankTooLow 게시판으로 돌아가지 않는다", () => {
+    // Break caught: CANCEL_PROMOTION used to restore an unusable board without re-checking its ending.
+    const base = rankLockedCampaign("c7-cancel-promotion-unemployed");
+    const campaign: CampaignState = {
+      ...base,
+      phase: "promotion",
+      offers: createBoardOffers(base),
+    };
+
+    const result = transitionCampaign(campaign, createCampaignTransitionContext(), { type: "CANCEL_PROMOTION" });
+
+    expect(result.campaign).toMatchObject({ phase: "ended", ending: { kind: "unemployed" } });
+    expect(result.ending).toEqual(result.campaign.ending);
+    expect(result.campaign.history.events.at(-1)?.type).toBe("CAMPAIGN_ENDED");
+  });
+
+  it("승급 뒤 새로 만든 전부 rankTooLow 공고도 실직으로 끝낸다", () => {
+    // Break caught: a successful promotion used to create an unusable board without evaluating endings.
+    const base = rankLockedCampaign("c7-promote-unemployed");
+    const campaign: CampaignState = {
+      ...base,
+      rank: "B",
+      reputation: 120,
+      phase: "promotion",
+      offers: createBoardOffers({ ...base, rank: "B", reputation: 120 }),
+    };
+
+    const result = transitionCampaign(campaign, createCampaignTransitionContext(), {
+      type: "PROMOTE_GUIDE",
+      method: "reputation",
+    });
+
+    expect(result.campaign).toMatchObject({ phase: "ended", ending: { kind: "unemployed" } });
+    expect(result.ending).toEqual(result.campaign.ending);
+    expect(result.campaign.history.events.at(-1)?.type).toBe("CAMPAIGN_ENDED");
   });
 
   it("공고를 선택하고 계약과 일치하는 원정을 시작한다", () => {

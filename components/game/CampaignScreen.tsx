@@ -182,7 +182,8 @@ function ExpeditionScreens() {
    * `/u5-2-test` 에서 보던 것과 같은 화면이 된다. 전에는 전투 장면만 덩그러니
    * 띄웠다.
    */
-  const finished = active.expedition.bossResult !== null || active.expedition.result !== null;
+  const finished = active.pendingOutcome === null
+    && (active.expedition.bossResult !== null || active.expedition.result !== null);
   if (finished) {
     return (
       <U5ProgressScreen
