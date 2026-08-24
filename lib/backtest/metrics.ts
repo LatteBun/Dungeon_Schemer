@@ -238,6 +238,7 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
   });
   const bossGroups = new Map<string, { entries: number; clears: number; wipes: number; hpRatios: number[] }>();
   for (const { expedition, entry } of bossEntries) {
+    if (!Number.isFinite(expedition.initialRiskLevel)) throw new AggregationError(`유효하지 않은 초기 위험도: ${id}`);
     const groupId = `${expedition.initialRiskLevel}/${expedition.theme}`;
     const group = bossGroups.get(groupId) ?? { entries: 0, clears: 0, wipes: 0, hpRatios: [] };
     group.entries += 1;

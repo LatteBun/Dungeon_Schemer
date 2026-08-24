@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { runCampaign } from "./campaign-driver";
 import { aggregateRuns, metricsForRun, type BacktestAggregate, type CampaignRunMetrics } from "./metrics";
-import { evaluateFixedGates, renderBacktestReport, type AdjustableAcceptanceCriteria } from "./report";
+import { evaluateFixedGates, renderBacktestReport } from "./report";
 import { STRATEGY_IDS, createStrategy } from "./strategies";
 import type { Accuracy, StrategyId } from "./public-state";
 
@@ -11,7 +11,6 @@ export interface BacktestSuiteOptions {
   readonly mode: "calibration" | "holdout";
   readonly seedsPerCombination: 200 | 2000;
   readonly namespace: "b1-calibration-v1" | "b1-holdout-v1";
-  readonly criteria: AdjustableAcceptanceCriteria | null;
 }
 
 export function campaignSeed(namespace: BacktestSuiteOptions["namespace"], index: number): string {
@@ -52,21 +51,19 @@ function optionsFromEnvironment(): BacktestSuiteOptions {
     mode,
     seedsPerCombination: seedsPerCombination as 200 | 2000,
     namespace: mode === "calibration" ? "b1-calibration-v1" : "b1-holdout-v1",
-    criteria: null,
   };
 }
 
 function runCli(): void {
   const options = optionsFromEnvironment();
   const aggregate = runBacktestSuite(options);
-  const gates = evaluateFixedGates(aggregate, options.criteria);
+  const gates = evaluateFixedGates(aggregate);
   const report = renderBacktestReport({
     mode: options.mode,
     namespace: options.namespace,
     sourceRevision: process.env.B1_SOURCE_REVISION ?? "working-tree",
     aggregate,
     fixedGates: gates,
-    adjustableCriteria: options.criteria,
   });
   writeFileSync(resolve(process.cwd(), "docs/technical/BACKTEST_REPORT.md"), report, "utf8");
   if (options.mode === "holdout" && gates.some((gate) => !gate.passed)) process.exitCode = 1;

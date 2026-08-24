@@ -22,11 +22,15 @@ function metric(strategyId: StrategyId, accuracy: Accuracy, completed: boolean, 
   } as CampaignRunMetrics;
 }
 
-function aggregateAtExactBandEdges() {
-  const combinations: readonly [StrategyId, Accuracy, number, number | null][] = [
+function aggregateAtExactBandEdges(edge: "lower" | "upper" = "lower") {
+  const combinations: readonly [StrategyId, Accuracy, number, number | null][] = edge === "lower" ? [
     ["survival", 0.7, 12, 2], ["survival", 0.4, 6, 3],
     ["opportunist", 0.7, 8, null], ["opportunist", 0.4, 4, null],
     ["selective-betrayal", 0.7, 4, 3], ["selective-betrayal", 0.4, 1, 3],
+  ] : [
+    ["survival", 0.7, 16, 3], ["survival", 0.4, 8, 4],
+    ["opportunist", 0.7, 12, null], ["opportunist", 0.4, 6, null],
+    ["selective-betrayal", 0.7, 8, 4], ["selective-betrayal", 0.4, 3, 4],
   ];
   const runs = combinations.flatMap(([strategyId, accuracy, completedCount, completedWipes]) =>
     Array.from({ length: 20 }, (_, index) => metric(strategyId, accuracy, index < completedCount, index < completedCount ? completedWipes ?? 0 : 0, `${strategyId}-${accuracy}-${index}`)),
@@ -35,8 +39,13 @@ function aggregateAtExactBandEdges() {
 }
 
 describe("B1-B 승인 gate", () => {
-  it("완주율과 완료 전멸 평균의 양 끝 경계를 통과시킨다", () => {
-    const gates = evaluateB1BAcceptance(aggregateAtExactBandEdges());
+  it("완주율과 완료 전멸 평균의 하한 경계를 통과시킨다", () => {
+    const gates = evaluateB1BAcceptance(aggregateAtExactBandEdges("lower"));
+    expect(gates.every((gate) => gate.passed)).toBe(true);
+  });
+
+  it("여섯 완주율과 완료 전멸 평균의 상한 경계를 통과시킨다", () => {
+    const gates = evaluateB1BAcceptance(aggregateAtExactBandEdges("upper"));
     expect(gates.every((gate) => gate.passed)).toBe(true);
   });
 

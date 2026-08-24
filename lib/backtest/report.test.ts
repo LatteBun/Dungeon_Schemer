@@ -21,7 +21,6 @@ describe("백테스트 gate와 보고서", () => {
       sourceRevision: "test-revision",
       aggregate,
       fixedGates: gates,
-      adjustableCriteria: null,
     };
     const first = renderBacktestReport(input);
     const second = renderBacktestReport({ ...input, aggregate: aggregateRuns([...aggregate.runs].reverse()) });

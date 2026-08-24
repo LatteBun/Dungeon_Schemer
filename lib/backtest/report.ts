@@ -17,22 +17,12 @@ export interface FixedGateResult {
   readonly evidence: string;
 }
 
-export interface AdjustableAcceptanceCriteria {
-  readonly completionRateByCombination: Readonly<Record<CombinationId, readonly [number, number]>>;
-  readonly minimumAccuracyEffect: number;
-  readonly maximumEndingConcentration: number;
-  readonly minimumStrategySeparation: number;
-  readonly betrayalAttemptRate: readonly [number, number];
-}
-
 export interface BacktestReportInput {
   readonly mode: "calibration" | "holdout";
   readonly namespace: "b1-calibration-v1" | "b1-holdout-v1";
   readonly sourceRevision: string;
   readonly aggregate: BacktestAggregate;
   readonly fixedGates: readonly FixedGateResult[];
-  /** @deprecated B1-B 보고서는 승인 대기 기준을 렌더링하지 않는다. */
-  readonly adjustableCriteria: AdjustableAcceptanceCriteria | null;
 }
 
 const STRATEGIES: readonly StrategyId[] = ["survival", "opportunist", "selective-betrayal"];
@@ -59,7 +49,7 @@ function pairedCompleted(aggregate: BacktestAggregate, strategy: StrategyId): Pa
   return pairedLeft.length < 2 ? null : pairedMeanDifference(pairedRight, pairedLeft);
 }
 
-export function evaluateFixedGates(aggregate: BacktestAggregate, _criteria: AdjustableAcceptanceCriteria | null = null): readonly FixedGateResult[] {
+export function evaluateFixedGates(aggregate: BacktestAggregate): readonly FixedGateResult[] {
   const noErrors: FixedGateResult = {
     id: "no-run-errors", passed: aggregate.errorCount === 0,
     evidence: `실행 오류 ${aggregate.errorCount}건`,

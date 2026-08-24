@@ -94,4 +94,13 @@ describe("백테스트 통계", () => {
   it("원정 압력 표본이 없으면 0으로 위장하지 않고 집계 오류를 낸다", () => {
     expect(() => aggregateRuns([metric({ balanceExpeditions: [] })])).toThrow("원정 밸런스 지표가 없다");
   });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY])("유한하지 않은 초기 위험도 %p는 보스 병목 키로 만들지 않고 집계 오류를 낸다", (initialRiskLevel) => {
+    expect(() => aggregateRuns([metric({
+      balanceExpeditions: [{
+        expeditionId: "invalid-risk", dungeonId: "dungeon-invalid-risk" as never, theme: "spider", initialRiskLevel: initialRiskLevel as never,
+        startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: { advicePressure: 0, aliveCount: 3, hp: 30, maxHp: 60 }, endAdvicePressure: 0, result: "cleared",
+      }],
+    })])).toThrow("유효하지 않은 초기 위험도");
+  });
 });
