@@ -67,7 +67,8 @@ describe("GameShell", () => {
     expect(html).toContain("등급");
     expect(html).toContain("명성");
     expect(html).toContain("골드");
-    expect(html).toContain("승급 가능");
+    /* 짧게 적되 색 말고 문구로 갈린다. */
+    expect(html).toContain("가능");
     expect(html).toContain("남은 던전");
     expect(html).toContain("거미굴 3번");
   });

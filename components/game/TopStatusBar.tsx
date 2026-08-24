@@ -77,11 +77,17 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
    * 두 숫자의 관계도 슬래시로는 읽히지 않았다. 알고 싶은 것은 "올릴 수 있는가,
    * 아니면 얼마나 더 필요한가" 하나다.
    */
+  /*
+   * 짧게 적는다.
+   *
+   * "B까지 명성 30 더" 는 한 칸에 담기에 길어 상태 바가 문장처럼 읽혔다. 옆 칸이
+   * 이미 현재 명성을 말하고 있으므로 여기서는 목표 등급과 남은 수만 있으면 된다.
+   */
   const promotionLabel = status.canPromote
-    ? `${status.nextPromotion?.rank ?? ""} 승급 가능`.trim()
+    ? `${status.nextPromotion?.rank ?? ""} 가능`.trim()
     : status.nextPromotion
-      ? `${status.nextPromotion.rank}까지 명성 ${Math.max(0, status.nextPromotion.reputationRequired - status.reputation)} 더`
-      : "최고 등급";
+      ? `${status.nextPromotion.rank} · ${Math.max(0, status.nextPromotion.reputationRequired - status.reputation)} 남음`
+      : "최고";
 
   return (
     <header

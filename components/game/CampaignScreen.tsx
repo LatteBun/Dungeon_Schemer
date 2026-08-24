@@ -117,7 +117,18 @@ function CurrentScreen() {
           const built = createExpeditionForOffer(campaign, offer);
           dispatch({ type: "START_EXPEDITION", expeditionId: `${offer.id}:${campaign.worldTurn}`, ...built });
         }}
-        onOpenPromotion={() => dispatch({ type: "OPEN_PROMOTION" })}
+        onOpenPromotion={() => {
+          /*
+           * 계약을 고르던 중이면 물러선 뒤에 연다.
+           *
+           * 규칙은 `contract` 에서 `OPEN_PROMOTION` 을 받지 않는다 - 계약을
+           * 검토하다 말고 승급 창으로 넘어가면 무엇을 하던 중이었는지 잃는다.
+           * 물러서는 것은 길잡이의 몫이고, 등급 칸을 누르는 것이 곧 그 뜻이다.
+           * 게시판에서 다른 공고를 누를 때와 같은 두 걸음이다.
+           */
+          if (context.selectedOffer !== null) dispatch({ type: "CANCEL_CONTRACT" });
+          dispatch({ type: "OPEN_PROMOTION" });
+        }}
         onCancelPromotion={() => dispatch({ type: "CANCEL_PROMOTION" })}
         onConfirmPromotion={(method: PromotionMethod) => dispatch({ type: "PROMOTE_GUIDE", method })}
         onDismissPromotionResult={() => setSeenPromotion(promotionKey(last?.promotion ?? null))}

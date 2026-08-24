@@ -469,8 +469,8 @@ button.u4-room {
   top: 50%;
   left: 50%;
   z-index: 4;
-  width: 54%;
-  height: 54%;
+  width: 76%;
+  height: 76%;
   object-fit: contain;
   filter: drop-shadow(0 0 0.28rem rgb(0 0 0 / 85%)) drop-shadow(0 0 0.6rem rgb(0 0 0 / 55%));
   transform: translate(-50%, -50%);
