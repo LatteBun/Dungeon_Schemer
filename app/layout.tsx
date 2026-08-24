@@ -16,6 +16,7 @@ import "./u5-battle.css";
 import "./u6-result.css";
 import "./u4-dungeon-map.css";
 import "./u4-dungeon-map-fixes.css";
+import "./achievements.css";
 
 export const metadata: Metadata = {
   title: "Dungeon Schemer",
