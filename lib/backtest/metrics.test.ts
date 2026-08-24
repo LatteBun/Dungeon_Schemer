@@ -86,6 +86,17 @@ describe("백테스트 통계", () => {
     expect(metrics.termination).toBeDefined();
   });
 
+  it("성공 실행에 campaign 또는 trace 종료 사유가 없으면 metrics 변환을 거절한다", () => {
+    const run = runCampaign({ seed: "metrics-missing-termination", strategy: createStrategy("survival"), accuracy: 0.7 });
+    if (!run.ok) throw new Error(`${run.errorKind}: ${run.message}`);
+    const missingCampaignEnding = { ...run, campaign: { ...run.campaign, ending: null } };
+    const missingTraceTermination = { ...run, trace: { ...run.trace } } as unknown as { trace: { termination?: unknown } };
+    delete missingTraceTermination.trace.termination;
+
+    expect(() => metricsForRun(missingCampaignEnding)).toThrow("성공 실행에 종료 사유가 없다");
+    expect(() => metricsForRun(missingTraceTermination as typeof run)).toThrow("손실 trace에 종료 사유가 없다");
+  });
+
   it("run-error의 이미 확정된 손실 trace와 종료 사유를 보존한다", () => {
     const run = runCampaign({ seed: "metrics-run-error", strategy: createStrategy("survival"), accuracy: 0.7, stepLimit: 30 });
     if (run.ok) throw new Error("step limit fixture가 실행 오류를 만들지 않았다");

@@ -67,6 +67,7 @@ export interface CampaignRunTrace {
   readonly merchantEffectsConsumed: number;
   readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
   readonly depletion: readonly DepletionTraceEntry[];
+  readonly termination: EndingKind | "run-error";
   readonly steps: number;
 }
 
@@ -181,9 +182,14 @@ export function merchantTraceDeltaFor(
   };
 }
 
-function freezeTrace(trace: MutableTrace, active: ActiveExpeditionContext | null): CampaignRunTrace {
+function freezeTrace(
+  trace: MutableTrace,
+  active: ActiveExpeditionContext | null,
+  termination: EndingKind | "run-error",
+): CampaignRunTrace {
   return {
     ...trace,
+    termination,
     actionTypes: [...trace.actionTypes],
     adviceSelections: [...trace.adviceSelections],
     betrayalExpeditionIds: [...trace.betrayalExpeditionIds],
@@ -430,7 +436,9 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
       const state = store.getState();
       const { campaign, context } = state;
       if (campaign.phase === "ended") {
-        return { ok: true, campaign, trace: freezeTrace(trace, context.activeExpedition) };
+        const ending = campaign.ending;
+        if (ending === null) throw new DriverFailure("stall", "종료된 캠페인에 종료 사유가 없다");
+        return { ok: true, campaign, trace: freezeTrace(trace, context.activeExpedition, ending.kind) };
       }
       const currentSignature = signature(campaign, context.activeExpedition);
       if (currentSignature === previousSignature) fail("stall", "같은 캠페인 상태가 반복되었다");
@@ -583,7 +591,7 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
       errorKind: failure.kind,
       message: failure.message,
       phase: current.campaign.phase,
-      trace: freezeTrace(trace, current.context.activeExpedition),
+      trace: freezeTrace(trace, current.context.activeExpedition, "run-error"),
     };
   }
 }

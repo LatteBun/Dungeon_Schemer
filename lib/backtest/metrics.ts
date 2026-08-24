@@ -185,6 +185,7 @@ function terminationForEnding(ending: EndingKind | "run-error"): CampaignTermina
 }
 
 function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetrics {
+  if (run.trace.termination !== "run-error") throw new AggregationError("실행 오류 trace의 종료 사유가 유효하지 않다");
   const members = run.campaign.pool.order.map((id) => run.campaign.pool.byId[id]).filter((member): member is NonNullable<typeof member> => member !== undefined);
   return {
     seed: run.trace.seed, strategyId: run.trace.strategyId, accuracy: run.trace.accuracy,
@@ -207,11 +208,14 @@ function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetri
     adviceTotal: run.trace.adviceSelections.length, errorKind: run.errorKind,
     balanceExpeditions: run.trace.balanceExpeditions,
     depletion: run.trace.depletion,
-    termination: "run-error",
+    termination: terminationForEnding(run.trace.termination),
   };
 }
 
 function successfulMetrics(campaign: CampaignState, run: Extract<CampaignRun, { ok: true }>): CampaignRunMetrics {
+  if (campaign.ending === null) throw new AggregationError("성공 실행에 종료 사유가 없다");
+  if (run.trace.termination === undefined) throw new AggregationError("손실 trace에 종료 사유가 없다");
+  if (run.trace.termination !== campaign.ending.kind) throw new AggregationError("성공 실행의 종료 사유가 일치하지 않는다");
   const members = campaign.pool.order.map((id) => campaign.pool.byId[id]).filter((member): member is NonNullable<typeof member> => member !== undefined);
   const trusts = members.map((member) => member.trust);
   const hpRatios = members.map((member) => member.hp / member.maxHp);
@@ -227,7 +231,7 @@ function successfulMetrics(campaign: CampaignState, run: Extract<CampaignRun, { 
   const promotionEvents = campaign.history.events.filter((event): event is Extract<typeof event, { type: "GUIDE_PROMOTED" }> => event.type === "GUIDE_PROMOTED");
   return {
     seed: run.trace.seed, strategyId: run.trace.strategyId, accuracy: run.trace.accuracy,
-    ending: campaign.ending?.kind ?? "unemployed", completed: campaign.ending?.kind === "completed",
+    ending: campaign.ending.kind, completed: campaign.ending.kind === "completed",
     finalRank: campaign.rank, reachedRankS: campaign.rank === "S",
     totalExpeditions: campaign.statistics.totalExpeditions,
     clearedExpeditions: campaign.statistics.clearedExpeditions,
@@ -262,7 +266,7 @@ function successfulMetrics(campaign: CampaignState, run: Extract<CampaignRun, { 
     errorKind: null,
     balanceExpeditions: run.trace.balanceExpeditions,
     depletion: run.trace.depletion,
-    termination: terminationForEnding(campaign.ending?.kind ?? "unemployed"),
+    termination: terminationForEnding(run.trace.termination),
   };
 }
 
