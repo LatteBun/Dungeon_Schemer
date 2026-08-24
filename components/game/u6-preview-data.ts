@@ -1,3 +1,4 @@
+import { PROMOTION_GOLD, PROMOTION_REPUTATION } from "@/lib/domain";
 import { CLASSES } from "@/lib/content/classes";
 import { SPIDER_THEME } from "@/lib/content/themes";
 import type {
@@ -418,8 +419,20 @@ const exhaustedCampaign = judged("exhausted", withPool(playedCampaign, (member) 
  * 공고가 0 개면 이 판정 자체가 성립하지 않으므로 먼저 게시판을 만든다.
  */
 const boardedCampaign: CampaignState = { ...playedCampaign, offers: createBoardOffers(playedCampaign) };
+/*
+ * 올라갈 수도 없어야 실직이다.
+ *
+ * 공고가 전부 잠긴 것만으로는 부족하다 — 지금 승급할 수 있으면 그 공고들이
+ * 열리므로 `C6` 는 실직으로 보지 않는다. 전에는 이 픽스처가 명성과 골드를 넉넉히
+ * 들고 있었고, 그런데도 실직으로 판정되던 것이 규칙 쪽 결함이었다.
+ *
+ * 승급 문턱(명성 60 · 골드 150)에 못 미치게 낮춘다. 손으로 정한 값이 아니라
+ * 문턱에서 끌어온다.
+ */
 const unemployedCampaign = judged("unemployed", {
   ...boardedCampaign,
+  reputation: PROMOTION_REPUTATION.B - 1,
+  gold: PROMOTION_GOLD.B - 1,
   offers: boardedCampaign.offers.map((offer) => ({ ...offer, lockReason: "rankTooLow" as const })),
 });
 
