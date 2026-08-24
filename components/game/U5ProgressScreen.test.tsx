@@ -238,6 +238,45 @@ describe("넘어가는 버튼", () => {
     expect(count).toBe(1);
   });
 
+  it("일반전 재생 중 우측 하단에는 건너뛰기 하나만 둔다", () => {
+    const html = render(
+      { outcome },
+      {
+        battleReplay,
+        battleExitPolicy: "after-playback",
+        onAcknowledge: () => undefined,
+      },
+    );
+
+    expect(html.split("u5-outcome-continue").length - 1).toBe(1);
+    expect(html).toContain("전투 건너뛰기");
+    expect(html).not.toContain("지도로 돌아간다");
+  });
+
+  it("정산 CTA에는 일반전 게이트를 적용하지 않는다", () => {
+    const html = render(
+      { outcome },
+      { battleReplay, onAcknowledge: () => undefined, acknowledgeLabel: "정산으로" },
+    );
+
+    expect(html).toContain("정산으로");
+    expect(html).not.toContain("전투 건너뛰기");
+  });
+
+  it("frame이 빈 replay에는 전투 장면과 건너뛰기를 만들지 않는다", () => {
+    const html = render(
+      { outcome },
+      {
+        battleReplay: { ...battleReplay, frames: [] },
+        battleExitPolicy: "after-playback",
+        onAcknowledge: () => undefined,
+      },
+    );
+
+    expect(html).not.toContain('data-testid="u5-battle-scene"');
+    expect(html).not.toContain("전투 건너뛰기");
+  });
+
   it("문구를 주면 그대로 쓴다", () => {
     const html = render({ outcome }, { onAcknowledge: () => undefined, acknowledgeLabel: "정산으로" });
 

@@ -42,7 +42,21 @@ test("캠페인이 인트로에서 첫 사건 결과까지 진행된다", async 
   await expect(outcome).toBeVisible();
   await expect(outcome.getByRole("heading", { name: "사건 결과" })).toBeVisible();
   await expect(outcome.getByRole("heading", { name: "수치·신뢰 변화" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "지도로 돌아간다" })).toBeEnabled();
+  const skip = page.getByRole("button", { name: "전투 건너뛰기" });
+  await expect(skip).toBeEnabled();
+  await expect(page.getByRole("button", { name: "지도로 돌아간다" })).toHaveCount(0);
+
+  await skip.click();
+  const returnToMap = page.getByRole("button", { name: "지도로 돌아간다" });
+  await expect(returnToMap).toBeEnabled();
+
+  await page.getByRole("button", { name: "다시 보기" }).click();
+  await expect(page.getByRole("button", { name: "지도로 돌아간다" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "전투 건너뛰기" })).toBeEnabled();
+
+  await page.getByRole("button", { name: "전투 건너뛰기" }).click();
+  await page.getByRole("button", { name: "지도로 돌아간다" }).click();
+  await expect(page.getByRole("region", { name: "던전 지도" })).toBeVisible();
   await expect(page.getByTestId("campaign-rejection")).toHaveCount(0);
   expectNoBrowserErrors(failures, `campaign ${page.url()}`);
 });

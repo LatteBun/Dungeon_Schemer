@@ -18,6 +18,7 @@ import type { U5BattleReplay } from "./u5-battle-replay";
 import { useU5BattlePlayback } from "./use-u5-battle-playback";
 
 export type U5ConsoleMode = "advice" | "log";
+export type U5BattleExitPolicy = "after-playback";
 
 export interface U5ProgressScreenProps {
   status: TopStatusView;
@@ -39,6 +40,7 @@ export interface U5ProgressScreenProps {
   initialMode?: U5ConsoleMode;
   initialFilter?: U5LogFilter;
   readonly battleReplay?: U5BattleReplay;
+  readonly battleExitPolicy?: U5BattleExitPolicy;
 }
 
 const REACTION_LABEL = {
@@ -195,6 +197,7 @@ export function U5ProgressScreen({
   initialMode,
   initialFilter = "all",
   battleReplay,
+  battleExitPolicy,
 }: U5ProgressScreenProps) {
   /*
    * 행동 / 조언을 전면에 둔다. 선택 뒤 결과(반응 → 결과 → 변화)도 이 모드에
@@ -204,6 +207,15 @@ export function U5ProgressScreen({
   const [mode, setMode] = useState<U5ConsoleMode>(initialMode ?? "advice");
   const [filter, setFilter] = useState<U5LogFilter>(initialFilter);
   const battlePlayback = useU5BattlePlayback(battleReplay);
+  const gateMapExit = battleExitPolicy === "after-playback"
+    && battleReplay !== undefined
+    && battlePlayback.frame !== undefined
+    && !battlePlayback.isComplete;
+  const rightAction = gateMapExit
+    ? { label: "전투 건너뛰기", onClick: battlePlayback.skipToComplete }
+    : onAcknowledge === undefined
+      ? null
+      : { label: acknowledgeLabel, onClick: onAcknowledge };
 
   return (
     <div className="expedition-screen u5-progress-screen" data-testid="u5-progress">
@@ -295,9 +307,9 @@ export function U5ProgressScreen({
               * 오른쪽 아래는 비어 있었다. 다음으로 가는 길은 화면의 끝에 있는
               * 편이 찾기 쉽다.
               */}
-            {onAcknowledge !== undefined && (
-              <button type="button" className="u5-outcome-continue" onClick={onAcknowledge}>
-                {acknowledgeLabel}
+            {rightAction === null ? null : (
+              <button type="button" className="u5-outcome-continue" onClick={rightAction.onClick}>
+                {rightAction.label}
               </button>
             )}
           </div>
