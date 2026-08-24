@@ -12,9 +12,25 @@ describe("백테스트 캠페인 driver", () => {
     expect(result.trace.steps).toBeLessThanOrEqual(800);
   });
 
+  it("실제 원정의 조언 압력과 보스 진입 상태를 추적한다", () => {
+    const result = runCampaign({ seed: "driver-balance-trace", strategy: createStrategy("survival"), accuracy: 0.7 });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.trace.balanceExpeditions.length).toBeGreaterThanOrEqual(result.campaign.statistics.totalExpeditions);
+    expect(result.trace.balanceExpeditions.filter((one) => one.result !== null)).toHaveLength(
+      result.campaign.statistics.totalExpeditions,
+    );
+    expect(result.trace.balanceExpeditions.every((one) => one.startAdvicePressure === 0)).toBe(true);
+    expect(result.trace.balanceExpeditions.every((one) => one.maxAdvicePressure >= 0 && one.maxAdvicePressure <= 3)).toBe(true);
+    expect(result.trace.balanceExpeditions.filter((one) => one.bossEntry !== null)
+      .every((one) => one.bossEntry!.hp <= one.bossEntry!.maxHp)).toBe(true);
+  });
+
   it("같은 seed·전략·정확도는 같은 trace와 결과를 만든다", () => {
     const first = runCampaign({ seed: "driver-repeat", strategy: createStrategy("opportunist"), accuracy: 0.4 });
     const second = runCampaign({ seed: "driver-repeat", strategy: createStrategy("opportunist"), accuracy: 0.4 });
+    expect(second.trace).toEqual(first.trace);
     expect(second).toEqual(first);
   });
 

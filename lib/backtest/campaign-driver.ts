@@ -3,11 +3,16 @@ import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { RuleError } from "@/lib/domain";
 import type {
+  AdvicePressure,
   AdviceOutcome,
   CampaignState,
   CampaignTransition,
+  DungeonId,
   EndingKind,
+  ExpeditionStatus,
   InfoReaction,
+  RiskLevel,
+  ThemeId,
 } from "@/lib/domain";
 import { selectAdviceByAccuracy, InvalidStrategyDecisionError, type AccuracySelection } from "./accuracy-selector";
 import { projectAdviceDecision, projectBoardDecision, projectMapDecision, type Accuracy, type PublicNodeCategory } from "./public-state";
@@ -35,7 +40,25 @@ export interface CampaignRunTrace {
   readonly reactionCounts: Readonly<Record<InfoReaction, number>>;
   readonly merchantGoldSpent: number;
   readonly merchantEffectsConsumed: number;
+  readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
   readonly steps: number;
+}
+
+export interface ExpeditionBalanceTrace {
+  readonly expeditionId: string;
+  readonly dungeonId: DungeonId;
+  readonly theme: ThemeId;
+  readonly initialRiskLevel: RiskLevel;
+  readonly startAdvicePressure: 0;
+  readonly maxAdvicePressure: AdvicePressure;
+  readonly bossEntry: null | {
+    readonly advicePressure: AdvicePressure;
+    readonly aliveCount: number;
+    readonly hp: number;
+    readonly maxHp: number;
+  };
+  readonly endAdvicePressure: AdvicePressure | null;
+  readonly result: ExpeditionStatus | null;
 }
 
 export interface CampaignRunSuccess {
@@ -61,6 +84,10 @@ export interface CampaignRunOptions {
   readonly stepLimit?: number;
 }
 
+type MutableExpeditionBalanceTrace = {
+  -readonly [Key in keyof ExpeditionBalanceTrace]: ExpeditionBalanceTrace[Key];
+};
+
 class DriverFailure extends Error {
   constructor(readonly kind: RunErrorKind, message: string) {
     super(message);
@@ -81,6 +108,7 @@ type MutableTrace = {
   reactionCounts: Record<InfoReaction, number>;
   merchantGoldSpent: number;
   merchantEffectsConsumed: number;
+  balanceExpeditions: MutableExpeditionBalanceTrace[];
   steps: number;
 };
 
@@ -99,6 +127,7 @@ function initialTrace(options: CampaignRunOptions): MutableTrace {
     reactionCounts: { accepted: 0, suspected: 0, exposed: 0 },
     merchantGoldSpent: 0,
     merchantEffectsConsumed: 0,
+    balanceExpeditions: [],
     steps: 0,
   };
 }
@@ -113,7 +142,17 @@ function freezeTrace(trace: MutableTrace): CampaignRunTrace {
     intendedAdviceCounts: { ...trace.intendedAdviceCounts },
     selectedAdviceCounts: { ...trace.selectedAdviceCounts },
     reactionCounts: { ...trace.reactionCounts },
+    balanceExpeditions: trace.balanceExpeditions.map((expedition) => ({
+      ...expedition,
+      bossEntry: expedition.bossEntry === null ? null : { ...expedition.bossEntry },
+    })),
   };
+}
+
+function balanceTraceFor(trace: MutableTrace, expeditionId: string): MutableExpeditionBalanceTrace {
+  const expedition = trace.balanceExpeditions.find((candidate) => candidate.expeditionId === expeditionId);
+  if (expedition === undefined) throw new DriverFailure("stall", `원정 밸런스 trace가 없다: ${expeditionId}`);
+  return expedition;
 }
 
 function signature(campaign: CampaignState, active: ReturnType<ReturnType<typeof createCampaignStore>["getState"]>["context"]["activeExpedition"]): string {
@@ -215,6 +254,22 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
         if (pendingBetrayal) trace.betrayalExpeditionIds.push(expeditionId);
         pendingBetrayal = false;
         act({ type: "START_EXPEDITION", expeditionId, ...prepared });
+        const started = store.getState();
+        const active = started.context.activeExpedition;
+        if (active === null) throw new DriverFailure("stall", "원정 시작 뒤 활성 원정이 없다");
+        const dungeon = started.campaign.dungeons.find((candidate) => candidate.id === active.expedition.dungeonId);
+        if (dungeon === undefined) throw new DriverFailure("stall", `원정 던전이 없다: ${active.expedition.dungeonId}`);
+        trace.balanceExpeditions.push({
+          expeditionId,
+          dungeonId: active.expedition.dungeonId,
+          theme: dungeon.theme,
+          initialRiskLevel: dungeon.initialRiskLevel,
+          startAdvicePressure: 0,
+          maxAdvicePressure: active.expedition.advicePressure,
+          bossEntry: null,
+          endAdvicePressure: null,
+          result: null,
+        });
         continue;
       }
       if (campaign.phase !== "expedition") throw new DriverFailure("stall", `처리할 수 없는 phase: ${campaign.phase}`);
@@ -222,6 +277,9 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
       if (active === null) throw new DriverFailure("stall", "expedition phase에 활성 원정이 없다");
       const betrayed = trace.betrayalExpeditionIds.includes(active.expeditionId);
       if (active.expedition.result !== null || active.expedition.bossResult !== null) {
+        const entry = balanceTraceFor(trace, active.expeditionId);
+        entry.endAdvicePressure = active.expedition.advicePressure;
+        entry.result = active.expedition.result?.status ?? active.expedition.bossResult?.status ?? null;
         act({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) });
         continue;
       }
@@ -242,6 +300,10 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
         trace.intendedAdviceCounts[intent] += 1;
         trace.selectedAdviceCounts[selection.selectedOutcome] += 1;
         act({ type: "CHOOSE_ADVICE", adviceId: selection.adviceId });
+        const updated = store.getState().context.activeExpedition;
+        if (updated === null) throw new DriverFailure("stall", "조언 처리 뒤 활성 원정이 없다");
+        const entry = balanceTraceFor(trace, updated.expeditionId);
+        entry.maxAdvicePressure = Math.max(entry.maxAdvicePressure, updated.expedition.advicePressure) as AdvicePressure;
         continue;
       }
       const mapView = projectMapDecision(campaign, active, betrayed);
@@ -249,6 +311,14 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
       const next = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
       if (next === undefined) {
         if (active.expedition.currentNodeId !== active.expedition.map.bossNodeId) fail("stall", `원정이 갇혔다: ${active.expedition.currentNodeId}`);
+        const entry = balanceTraceFor(trace, active.expeditionId);
+        const living = active.partyMembers.filter((member) => member.alive);
+        entry.bossEntry = {
+          advicePressure: active.expedition.advicePressure,
+          aliveCount: living.length,
+          hp: living.reduce((sum, member) => sum + member.hp, 0),
+          maxHp: living.reduce((sum, member) => sum + member.maxHp, 0),
+        };
         act({ type: "ENTER_BOSS" });
         continue;
       }
