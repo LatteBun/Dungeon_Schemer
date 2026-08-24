@@ -21,13 +21,24 @@ export function recordCampaignCompletion(
   if (completed !== null) record(completed, unlockedAt);
 }
 
+export function createCampaignCompletionMount(
+  randomUUID: () => string = () => crypto.randomUUID(),
+) {
+  const runId = createCampaignRunId(randomUUID);
+  return {
+    record(campaign: CampaignState, record: RecordCampaign, unlockedAt: string): void {
+      recordCampaignCompletion(campaign, runId, record, unlockedAt);
+    },
+  };
+}
+
 export function CampaignCompletionRecorder({ campaign }: { readonly campaign: CampaignState }) {
-  const [runId] = useState(createCampaignRunId);
+  const [completionMount] = useState(createCampaignCompletionMount);
   const record = usePlayerProgressStore((state) => state.record);
 
   useEffect(() => {
-    recordCampaignCompletion(campaign, runId, record, new Date().toISOString());
-  }, [campaign, record, runId]);
+    completionMount.record(campaign, record, new Date().toISOString());
+  }, [campaign, completionMount, record]);
 
   return null;
 }

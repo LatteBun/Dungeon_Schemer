@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CampaignState } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createPlayerProgressStore } from "@/lib/store/player-progress-store";
-import { recordCampaignCompletion } from "./CampaignCompletionRecorder";
+import { createCampaignCompletionMount } from "./CampaignCompletionRecorder";
 
 function memoryStorage() {
   const values = new Map<string, string>();
@@ -32,10 +32,10 @@ describe("캠페인 완료 기록 effect", () => {
   it("엔딩 전 effect는 같은 mount의 업적 기록을 바꾸지 않는다", () => {
     const store = createPlayerProgressStore();
     store.getState().hydrate(memoryStorage());
+    const mount = createCampaignCompletionMount(() => "mounted-run-1");
 
-    recordCampaignCompletion(
+    mount.record(
       initializeCampaign("recorder-open"),
-      "mounted-run-1",
       store.getState().record,
       "2026-08-25T10:00:00.000Z",
     );
@@ -49,15 +49,17 @@ describe("캠페인 완료 기록 effect", () => {
     store.getState().hydrate(memoryStorage());
     const campaign = endedCampaign("recorder-ended");
     const record = store.getState().record;
+    const firstMount = createCampaignCompletionMount(() => "mounted-run-1");
 
-    recordCampaignCompletion(campaign, "mounted-run-1", record, "2026-08-25T10:00:00.000Z");
-    recordCampaignCompletion(campaign, "mounted-run-1", record, "2026-08-25T10:00:01.000Z");
-    recordCampaignCompletion({ ...campaign }, "mounted-run-1", record, "2026-08-25T10:00:02.000Z");
+    firstMount.record(campaign, record, "2026-08-25T10:00:00.000Z");
+    firstMount.record(campaign, record, "2026-08-25T10:00:01.000Z");
+    firstMount.record({ ...campaign }, record, "2026-08-25T10:00:02.000Z");
 
     expect(store.getState().progress.totals.completedCampaigns).toBe(1);
     expect(store.getState().progress.recordedRunIds).toEqual(["mounted-run-1"]);
 
-    recordCampaignCompletion(campaign, "mounted-run-2", record, "2026-08-25T10:01:00.000Z");
+    const secondMount = createCampaignCompletionMount(() => "mounted-run-2");
+    secondMount.record(campaign, record, "2026-08-25T10:01:00.000Z");
 
     expect(store.getState().progress.totals.completedCampaigns).toBe(2);
     expect(store.getState().progress.recordedRunIds).toEqual(["mounted-run-1", "mounted-run-2"]);
