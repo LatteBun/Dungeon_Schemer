@@ -1,5 +1,11 @@
 import type { BacktestAggregate, CombinationId } from "./metrics";
 
+/**
+ * holdout은 승인된 calibration 설정을 동결한 뒤에만 열어야 한다.
+ * 이 값을 true로 바꾸는 변경은 사용자 승인을 포함한다.
+ */
+export const B1B_HOLDOUT_APPROVED = false;
+
 export const B1B_ACCEPTANCE = {
   completionRateByCombination: {
     "survival@0.7": [0.60, 0.80],

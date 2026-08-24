@@ -19,7 +19,7 @@ export interface FixedGateResult {
 
 export interface BacktestReportInput {
   readonly mode: "calibration" | "holdout";
-  readonly namespace: "b1-calibration-v1" | "b1-holdout-v1";
+  readonly namespace: "b1b-calibration-v1" | "b1b-holdout-v1";
   readonly sourceRevision: string;
   readonly aggregate: BacktestAggregate;
   readonly fixedGates: readonly FixedGateResult[];

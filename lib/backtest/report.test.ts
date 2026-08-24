@@ -17,7 +17,7 @@ describe("백테스트 gate와 보고서", () => {
     const gates = evaluateFixedGates(aggregate);
     const input = {
       mode: "calibration" as const,
-      namespace: "b1-calibration-v1" as const,
+      namespace: "b1b-calibration-v1" as const,
       sourceRevision: "test-revision",
       aggregate,
       fixedGates: gates,

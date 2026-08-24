@@ -1,6 +1,7 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { B1B_HOLDOUT_APPROVED, evaluateB1BAcceptance } from "./acceptance";
 import { runCampaign } from "./campaign-driver";
 import { aggregateRuns, metricsForRun, type BacktestAggregate, type CampaignRunMetrics } from "./metrics";
 import { evaluateFixedGates, renderBacktestReport } from "./report";
@@ -9,8 +10,8 @@ import type { Accuracy, StrategyId } from "./public-state";
 
 export interface BacktestSuiteOptions {
   readonly mode: "calibration" | "holdout";
-  readonly seedsPerCombination: 200 | 2000;
-  readonly namespace: "b1-calibration-v1" | "b1-holdout-v1";
+  readonly seedsPerCombination: 2 | 50 | 100 | 200 | 2000;
+  readonly namespace: "b1b-calibration-v1" | "b1b-holdout-v1";
 }
 
 export function campaignSeed(namespace: BacktestSuiteOptions["namespace"], index: number): string {
@@ -42,15 +43,25 @@ export function runBacktestSuite(options: BacktestSuiteOptions): BacktestAggrega
   return aggregateRuns(runs);
 }
 
-function optionsFromEnvironment(): BacktestSuiteOptions {
-  const mode = process.env.B1_BACKTEST_MODE;
+type BacktestEnvironment = Partial<Pick<NodeJS.ProcessEnv, "B1_BACKTEST_MODE" | "B1_BACKTEST_SEEDS" | "NODE_ENV">>;
+
+export function optionsFromEnvironment(env?: NodeJS.ProcessEnv): BacktestSuiteOptions;
+export function optionsFromEnvironment(env?: BacktestEnvironment): BacktestSuiteOptions;
+export function optionsFromEnvironment(env: BacktestEnvironment = process.env): BacktestSuiteOptions {
+  const mode = env.B1_BACKTEST_MODE;
   if (mode !== "calibration" && mode !== "holdout") throw new Error("B1_BACKTEST_MODE는 calibration 또는 holdout이어야 한다");
-  const seedsPerCombination = process.env.NODE_ENV === "test" && process.env.B1_BACKTEST_SEEDS === "2" ? 2 : mode === "calibration" ? 200 : 2000;
-  if (mode === "holdout") throw new Error("holdout 승인 기준이 아직 연결되지 않았다");
+  const seedText = env.B1_BACKTEST_SEEDS ?? (mode === "calibration" ? "200" : "2000");
+  const seedsPerCombination = Number(seedText);
+  const calibrationSeedCount = seedsPerCombination === 50 || seedsPerCombination === 100 || seedsPerCombination === 200;
+  const testSeedCount = env.NODE_ENV === "test" && seedsPerCombination === 2;
+  if ((mode === "calibration" && !calibrationSeedCount && !testSeedCount) || (mode === "holdout" && seedsPerCombination !== 2000)) {
+    throw new Error("B1_BACKTEST_SEEDS는 calibration에서 50, 100, 200(테스트에서는 2), holdout에서 2000이어야 한다");
+  }
+  if (mode === "holdout" && !B1B_HOLDOUT_APPROVED) throw new Error("B1-B holdout은 calibration 승인 전이다");
   return {
     mode,
-    seedsPerCombination: seedsPerCombination as 200 | 2000,
-    namespace: mode === "calibration" ? "b1-calibration-v1" : "b1-holdout-v1",
+    seedsPerCombination: seedsPerCombination as BacktestSuiteOptions["seedsPerCombination"],
+    namespace: mode === "calibration" ? "b1b-calibration-v1" : "b1b-holdout-v1",
   };
 }
 
@@ -66,7 +77,8 @@ function runCli(): void {
     fixedGates: gates,
   });
   writeFileSync(resolve(process.cwd(), "docs/technical/BACKTEST_REPORT.md"), report, "utf8");
-  if (options.mode === "holdout" && gates.some((gate) => !gate.passed)) process.exitCode = 1;
+  const acceptanceGates = evaluateB1BAcceptance(aggregate);
+  if (options.mode === "holdout" && [...gates, ...acceptanceGates].some((gate) => !gate.passed)) process.exitCode = 1;
 }
 
 if (process.env.B1_BACKTEST_MODE !== undefined) {
