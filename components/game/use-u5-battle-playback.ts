@@ -21,25 +21,39 @@ export interface U5BattlePlayback {
 
 export function u5ReplaySignature(replay: U5BattleReplay | undefined): string {
   if (replay === undefined) return "none";
-  return [
-    replay.frames.length,
-    replay.outcome,
-    replay.termination,
-    replay.participants
-      .map((one) => `${one.id}@${one.initialHp}/${one.finalHp}`)
-      .join(","),
-    replay.frames
-      .map((one) => [
-        one.phase,
-        one.actionIndex,
-        one.actorId,
-        one.targetId,
-        one.damage,
-        Object.entries(one.hpByParticipantId).map(([id, hp]) => `${id}@${hp}`).join(";"),
-        one.defeatedParticipantIds.join(";"),
-      ].join(":"))
-      .join(","),
-  ].join("|");
+  return JSON.stringify({
+    outcome: replay.outcome,
+    termination: replay.termination,
+    participants: replay.participants.map((one) => ({
+      id: one.id,
+      side: one.side,
+      name: one.name,
+      imageSrc: one.imageSrc,
+      maxHp: one.maxHp,
+      initialHp: one.initialHp,
+      finalHp: one.finalHp,
+    })),
+    frames: replay.frames.map((one) => ({
+      phase: one.phase,
+      actionIndex: one.actionIndex,
+      actorId: one.actorId,
+      targetId: one.targetId,
+      damage: one.damage,
+      hpByParticipantId: Object.entries(one.hpByParticipantId).sort(([left], [right]) => left.localeCompare(right)),
+      defeatedParticipantIds: [...one.defeatedParticipantIds].sort(),
+      cues: one.cues.map((cue) => ({
+        characterId: cue.characterId,
+        axis: cue.axis,
+        direction: cue.direction,
+        presentationKey: cue.presentationKey,
+      })),
+    })),
+    verifications: replay.verifications.map((one) => ({
+      characterId: one.characterId,
+      action: one.action,
+      applied: one.applied,
+    })),
+  });
 }
 
 export function nextU5BattleFrameIndex(replay: U5BattleReplay, current: number): number {
