@@ -272,7 +272,17 @@ export function eventReplayFor(
       ...active.partyMembers.map((member) => ({
         id: String(member.id),
         name: member.name,
-        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: member.alive }),
+        /*
+         * 싸움에 든 사람은 그때 살아 있었다.
+         *
+         * `partyMembers` 는 전투가 끝난 뒤의 상태다. 그것으로 초상화를 고르면
+         * 이 싸움에서 죽을 사람이 **첫 프레임부터** 죽은 그림으로 서 있다.
+         * 살아서 시작하는데 미리 회색인 것이다.
+         *
+         * 쓰러지는 것은 재생이 프레임마다 보여준다 - `defeatedParticipantIds`
+         * 가 그 순간에 흐려 준다. 초상화가 그것을 앞질러서는 안 된다.
+         */
+        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: true }),
       })),
       /* 적의 이름은 콘텐츠에서 온다. 화면이 지어내지 않는다. */
       ...resolution.enemies.map((enemy) => ({
@@ -343,6 +353,62 @@ export function logFor(campaign: CampaignState, active: ActiveExpeditionContext)
 
 
 /**
+ * 원정이 끝난 자리의 진행 View.
+ *
+ * 보스전도 같은 화면에서 본다. 전에는 전투 장면만 덩그러니 띄우고 상단 상태도
+ * 파티도 없어, `/u5-2-test` 에서 보던 것과 다른 화면이 되었다. 규칙이 남긴 보스
+ * 기록에 재료가 다 있으므로 그것을 옮겨 적는다.
+ */
+export function expeditionEndViewFor(
+  campaign: CampaignState,
+  active: ActiveExpeditionContext,
+): U5ProgressView {
+  const dungeon = campaign.dungeons.find((one) => one.id === active.expedition.dungeonId);
+  if (dungeon === undefined) throw new Error(`원정 던전을 찾을 수 없다: ${active.expedition.dungeonId}`);
+
+  const boss = active.expedition.bossResult;
+  const record = active.records.at(-1) ?? null;
+  const survivors = active.partyMembers.filter((member) => member.alive).length;
+  const nameOf = (characterId: Character["id"]) =>
+    active.partyMembers.find((member) => member.id === characterId)?.name ?? String(characterId);
+
+  return {
+    dungeonName: dungeon.name,
+    theme: dungeon.theme,
+    /* 보스전은 monster 장면을 쓴다. 전용 장면 자산이 따로 없다. */
+    sceneKind: "monster",
+    nodeLabel: boss === null ? "원정 종료" : "보스방",
+    situation: boss === null
+      ? "더 나아갈 수 없다. 남은 사람을 데리고 돌아간다."
+      : record?.choice ?? "보스방에 들었다",
+    /* 고를 것이 없다. 결과만 남았다. */
+    advice: [],
+    outcome: {
+      /* 보스전의 반응은 그 믿음이 옳았는지다. `E4` 가 판정한 것을 옮긴다. */
+      reactions: (record?.reactions ?? []).map((one) => ({
+        memberName: nameOf(one.characterId),
+        reaction: one.reaction === "accepted" || one.reaction === "suspected" || one.reaction === "exposed"
+          ? one.reaction
+          : "accepted",
+        note: REACTION_WORD[one.reaction] ?? String(one.reaction),
+      })),
+      resultText: boss === null
+        ? `${survivors}명이 남았다.`
+        : boss.status === "cleared"
+          ? `보스를 넘어섰다. ${survivors}명이 살아 남았다.`
+          : "보스방을 넘지 못했다. 아무도 돌아오지 못했다.",
+      changes: (record?.damage ?? []).length === 0
+        ? [{ label: "변화", detail: "수치가 그대로다." }]
+        : (record?.damage ?? []).map((one) => ({
+          label: "HP",
+          detail: `${nameOf(one.characterId)} ${one.before} → ${one.after}`,
+        })),
+    },
+    party: partyViewsFor(active.partyMembers),
+  };
+}
+
+/**
  * 보스전 재생을 만든다.
  *
  * 이름과 그림만 붙인다. 무슨 일이 일어났는지는 `E4` 가 이미 정했다 — 어느
@@ -369,7 +435,17 @@ export function bossReplayFor(
       ...active.partyMembers.map((member) => ({
         id: String(member.id),
         name: member.name,
-        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: member.alive }),
+        /*
+         * 싸움에 든 사람은 그때 살아 있었다.
+         *
+         * `partyMembers` 는 전투가 끝난 뒤의 상태다. 그것으로 초상화를 고르면
+         * 이 싸움에서 죽을 사람이 **첫 프레임부터** 죽은 그림으로 서 있다.
+         * 살아서 시작하는데 미리 회색인 것이다.
+         *
+         * 쓰러지는 것은 재생이 프레임마다 보여준다 - `defeatedParticipantIds`
+         * 가 그 순간에 흐려 준다. 초상화가 그것을 앞질러서는 안 된다.
+         */
+        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: true }),
       })),
       /* 적의 이름은 콘텐츠에서 온다. 화면이 보스 이름을 지어내지 않는다. */
       ...result.battle.enemies.map((enemy) => ({

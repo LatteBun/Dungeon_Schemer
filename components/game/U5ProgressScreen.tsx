@@ -31,6 +31,8 @@ export interface U5ProgressScreenProps {
    * 다음에 무슨 일이 일어나는지는 화면이 모른다. 알리기만 한다.
    */
   onAcknowledge?: () => void;
+  /** 넘어가는 버튼의 문구. 자리마다 다음이 다르다. */
+  acknowledgeLabel?: string;
   initialMode?: U5ConsoleMode;
   initialFilter?: U5LogFilter;
   readonly battleReplay?: U5BattleReplay;
@@ -86,6 +88,15 @@ function Outcome({ outcome }: { outcome: NonNullable<U5ProgressView["outcome"]> 
     <div className="u5-outcome" data-testid="u5-outcome">
       <section className="u5-outcome__step" aria-labelledby="u5-reactions-title">
         <h4 id="u5-reactions-title">파티원별 반응</h4>
+        {/*
+          * 반응이 없으면 없다고 적는다.
+          *
+          * 빈 상자만 남으면 화면이 깨진 것처럼 보인다. 보스방에 아무 믿음도 들고
+          * 가지 않았으면 검증할 것이 없고, 그것도 하나의 사실이다.
+          */}
+        {outcome.reactions.length === 0 && (
+          <p className="u5-reactions__empty">확인할 반응이 없다.</p>
+        )}
         <ul className="u5-reactions">
           {outcome.reactions.map((reaction) => (
             <li key={reaction.memberName} className={`u5-reaction is-${reaction.reaction}`}>
@@ -176,6 +187,7 @@ export function U5ProgressScreen({
   ecology,
   onSelectAdvice,
   onAcknowledge,
+  acknowledgeLabel = "지도로 돌아간다",
   initialMode,
   initialFilter = "all",
   battleReplay,
@@ -239,7 +251,7 @@ export function U5ProgressScreen({
                       <Outcome outcome={progress.outcome} />
                       {onAcknowledge !== undefined && (
                         <button type="button" className="u5-outcome-continue" onClick={onAcknowledge}>
-                          지도로 돌아간다
+                          {acknowledgeLabel}
                         </button>
                       )}
                     </>

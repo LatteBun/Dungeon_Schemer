@@ -393,3 +393,10 @@
   outline: 2px solid var(--color-parchment);
   outline-offset: 2px;
 }
+
+/* 반응이 없을 때의 한 줄. 빈 상자만 남지 않게 한다. */
+.u5-reactions__empty {
+  margin: 0;
+  color: #a68f6d;
+  font-size: clamp(0.85rem, 0.9cqw, 1.1rem);
+}

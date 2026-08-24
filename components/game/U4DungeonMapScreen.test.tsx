@@ -188,3 +188,41 @@ describe("U4DungeonMapScreen", () => {
     expect(nextSelectableNodeId(nodes, layout, REST, "left")).toBe(MONSTER);
   });
 });
+
+describe("선택한 다음 지점", () => {
+  /* 파티 카드에도 `small` 이 있다. 목적지 요약 안에서만 찾는다. */
+  const hintOf = (html: string) => {
+    const summary = html.match(/u4-destination__summary[\s\S]*?<\/section>/)?.[0] ?? "";
+    return summary.match(/<small>([^<]*)<\/small>/)?.[1] ?? "";
+  };
+
+  /*
+   * 고른 지점이 무엇인지 말해야 한다.
+   *
+   * 전에는 어디를 고르든 "현재 위치에서 이동 가능한 지점" 이라고만 적혀 있었다.
+   * 늘 같은 문장은 아무것도 알려 주지 않는다.
+   */
+  it("분류마다 다른 설명이 붙는다", () => {
+    const monster = hintOf(render(MONSTER));
+    const rest = hintOf(render(REST));
+
+    expect(monster.length).toBeGreaterThan(0);
+    expect(rest.length).toBeGreaterThan(0);
+    expect(monster).not.toBe(rest);
+    for (const line of [monster, rest]) expect(line).not.toContain("이동 가능한 지점");
+  });
+
+  /* 그 안에 무슨 사건이 있는지는 밟아 봐야 안다. 미리 알면 고를 이유가 없다. */
+  it("숨은 것을 미리 알려 주지 않는다", () => {
+    const html = render(MONSTER);
+
+    for (const leak of ["bossInfo", "strongPredecessor", "strongFollower", "-help", "-harm"]) {
+      expect(html).not.toContain(leak);
+    }
+  });
+
+  /* 고르지 않았으면 고르라고만 한다. */
+  it("고르지 않았으면 안내만 남는다", () => {
+    expect(render(null)).toContain("다음 지점을 선택하세요");
+  });
+});
