@@ -99,6 +99,7 @@ export interface CampaignRunSuccess {
 
 export interface CampaignRunFailure {
   readonly ok: false;
+  readonly campaign: CampaignState;
   readonly errorKind: RunErrorKind;
   readonly message: string;
   readonly phase: CampaignState["phase"];
@@ -239,6 +240,55 @@ function poolDelta(
   });
 }
 
+function expeditionPoolDelta(before: CampaignStoreState, after: CampaignStoreState): PoolDelta {
+  const beforeActive = before.context.activeExpedition;
+  const afterActive = after.context.activeExpedition;
+  if (beforeActive === null || afterActive === null) {
+    throw new DriverFailure("stall", "원정 손실을 비교할 활성 원정이 없다");
+  }
+  const afterById = new Map(afterActive.partyMembers.map((member) => [member.id, member]));
+  return beforeActive.partyMembers.reduce<PoolDelta>((delta, beforeMember) => {
+    const afterMember = afterById.get(beforeMember.id);
+    if (afterMember === undefined) return delta;
+    return {
+      hpLost: delta.hpLost + Math.max(0, beforeMember.hp - afterMember.hp),
+      hpRecovered: delta.hpRecovered + Math.max(0, afterMember.hp - beforeMember.hp),
+      deaths: delta.deaths + Number(beforeMember.alive && !afterMember.alive),
+      seriousInjuriesStarted: delta.seriousInjuriesStarted + Number(!beforeMember.gravelyWounded && afterMember.gravelyWounded),
+      seriousInjuriesCleared: delta.seriousInjuriesCleared + Number(beforeMember.gravelyWounded && !afterMember.gravelyWounded),
+      trustZeroed: delta.trustZeroed + Number(beforeMember.trust > 0 && afterMember.trust === 0),
+    };
+  }, {
+    hpLost: 0,
+    hpRecovered: 0,
+    deaths: 0,
+    seriousInjuriesStarted: 0,
+    seriousInjuriesCleared: 0,
+    trustZeroed: 0,
+  });
+}
+
+function expeditionSettlementDelta(before: CampaignStoreState, after: CampaignStoreState): PoolDelta {
+  const active = before.context.activeExpedition;
+  if (active === null) throw new DriverFailure("stall", "정산 손실을 비교할 활성 원정이 없다");
+  return active.partyMembers.reduce<PoolDelta>((delta, beforeMember) => {
+    const afterMember = after.campaign.pool.byId[beforeMember.id];
+    if (afterMember === undefined) return delta;
+    return {
+      ...delta,
+      seriousInjuriesStarted: delta.seriousInjuriesStarted + Number(!beforeMember.gravelyWounded && afterMember.gravelyWounded),
+      seriousInjuriesCleared: delta.seriousInjuriesCleared + Number(beforeMember.gravelyWounded && !afterMember.gravelyWounded),
+    };
+  }, {
+    hpLost: 0,
+    hpRecovered: 0,
+    deaths: 0,
+    seriousInjuriesStarted: 0,
+    seriousInjuriesCleared: 0,
+    trustZeroed: 0,
+  });
+}
+
 function expeditionLocator(
   trace: MutableTrace,
   expeditionId: string,
@@ -258,23 +308,32 @@ function appendDepletionFor(
   after: CampaignStoreState,
   trace: MutableTrace,
 ): void {
-  const appendExpedition = (source: Extract<DepletionSource, "expedition-general" | "expedition-boss">): void => {
+  const appendExpedition = (
+    source: Extract<DepletionSource, "expedition-general" | "expedition-boss">,
+    delta = expeditionPoolDelta(before, after),
+  ): void => {
     const active = before.context.activeExpedition;
     if (active === null) throw new DriverFailure("stall", "원정 손실을 기록할 활성 원정이 없다");
     trace.depletion.push({
       source,
       worldTurn: after.campaign.worldTurn,
       ...expeditionLocator(trace, active.expeditionId),
-      ...poolDelta(before, after),
+      ...delta,
     });
   };
 
-  if (action.type === "CHOOSE_ADVICE" && before.context.activeExpedition?.pendingEvent?.kind === "monster") {
+  if (action.type === "CHOOSE_ADVICE") {
     appendExpedition("expedition-general");
     return;
   }
   if (action.type === "ENTER_BOSS") {
     appendExpedition("expedition-boss");
+    return;
+  }
+  if (action.type === "COMPLETE_EXPEDITION") {
+    const active = before.context.activeExpedition;
+    if (active === null) throw new DriverFailure("stall", "정산 손실을 기록할 활성 원정이 없다");
+    appendExpedition(active.expedition.bossResult === null ? "expedition-general" : "expedition-boss", expeditionSettlementDelta(before, after));
     return;
   }
   if (action.type !== "COMPLETE_WORLD_TURN") return;
@@ -520,6 +579,7 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
           : new DriverFailure("generation", error instanceof Error ? error.message : String(error));
     return {
       ok: false,
+      campaign: current.campaign,
       errorKind: failure.kind,
       message: failure.message,
       phase: current.campaign.phase,

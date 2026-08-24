@@ -74,6 +74,17 @@ describe("백테스트 캠페인 driver", () => {
       Number.isInteger(entry.hpLost) && entry.hpLost >= 0
       && Number.isInteger(entry.hpRecovered) && entry.hpRecovered >= 0,
     )).toBe(true);
+    const totals = result.trace.depletion.reduce((sum, entry) => ({
+      deaths: sum.deaths + entry.deaths,
+      trustZeroed: sum.trustZeroed + entry.trustZeroed,
+      seriousInjuriesStarted: sum.seriousInjuriesStarted + entry.seriousInjuriesStarted,
+      seriousInjuriesCleared: sum.seriousInjuriesCleared + entry.seriousInjuriesCleared,
+    }), { deaths: 0, trustZeroed: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0 });
+    const members = result.campaign.pool.order.map((id) => result.campaign.pool.byId[id]!);
+    expect(totals.deaths).toBe(result.campaign.statistics.totalDeaths);
+    expect(totals.trustZeroed).toBe(members.filter((member) => member.trust === 0).length);
+    expect(totals.seriousInjuriesStarted - totals.seriousInjuriesCleared)
+      .toBe(members.filter((member) => member.gravelyWounded).length);
   });
 
   it("원정마다 초기·현재 위험도와 던전별 시도 번호를 기록한다", () => {

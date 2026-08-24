@@ -16,6 +16,8 @@ function metric(strategyId: StrategyId, accuracy: Accuracy, completed: boolean, 
     intendedAdviceCounts: { help: 0, harm: 0, neutral: 0 }, selectedAdviceCounts: { help: 0, harm: 0, neutral: 0 }, reactionCounts: { accepted: 0, suspected: 0, exposed: 0 },
     betrayalAttempts: 0, betrayalWipes: 0, betrayalCompletions: 0, merchantGoldSpent: 0, merchantEffectsConsumed: 0,
     adviceHits: 0, adviceTotal: 0, errorKind: null,
+    termination: completed ? "completed" : "pool-exhausted",
+    depletion: [],
     balanceExpeditions: [{
       expeditionId: seed, dungeonId: `dungeon-${seed}` as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
       startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: { advicePressure: 0, aliveCount: 3, hp: 100, maxHp: 100 }, endAdvicePressure: 0, result: "cleared",
@@ -100,7 +102,7 @@ describe("B1-B 승인 gate", () => {
   it("완주가 없으면 완료 전멸 gate를 실패시킨다", () => {
     const aggregate = aggregateAtExactBandEdges();
     const withoutCompletion = aggregateRuns(aggregate.runs.map((run) =>
-      run.strategyId === "survival" && run.accuracy === 0.7 ? { ...run, completed: false, ending: "exhausted" as const } : run,
+      run.strategyId === "survival" && run.accuracy === 0.7 ? { ...run, completed: false, ending: "exhausted" as const, termination: "pool-exhausted" as const } : run,
     ));
     expect(evaluateB1BAcceptance(withoutCompletion).find((gate) => gate.id === "completed-wipe-mean:survival@0.7")).toMatchObject({ passed: false });
   });

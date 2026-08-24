@@ -23,7 +23,7 @@ function metricsEqual(left: CampaignRunMetrics, right: CampaignRunMetrics): bool
 }
 
 function nondeterministic(metrics: CampaignRunMetrics): CampaignRunMetrics {
-  return { ...metrics, ending: "run-error", completed: false, errorKind: "nondeterminism" };
+  return { ...metrics, ending: "run-error", termination: "run-error", completed: false, errorKind: "nondeterminism" };
 }
 
 export function runBacktestSuite(options: BacktestSuiteOptions): BacktestAggregate {

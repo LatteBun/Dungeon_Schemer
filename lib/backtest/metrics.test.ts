@@ -3,7 +3,16 @@ import { runCampaign } from "./campaign-driver";
 import { createStrategy } from "./strategies";
 import { aggregateRuns, metricsForRun, pairedMeanDifference, wilsonInterval, type CampaignRunMetrics } from "./metrics";
 
-function metric({ balanceExpeditions: balanceOverrides, depletion: depletionOverrides, ending: endingOverride, termination: terminationOverride, ...overrides }: Partial<CampaignRunMetrics> = {}): CampaignRunMetrics {
+function metric({
+  balanceExpeditions: balanceOverrides,
+  depletion: depletionOverrides,
+  ending: endingOverride,
+  termination: terminationOverride,
+  totalDeaths: totalDeathsOverride,
+  zeroTrustCount: zeroTrustCountOverride,
+  gravelyWoundedCount: gravelyWoundedCountOverride,
+  ...overrides
+}: Partial<CampaignRunMetrics> = {}): CampaignRunMetrics {
   const balanceExpeditions = balanceOverrides ?? [{
     expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
     startAdvicePressure: 0, maxAdvicePressure: 0, bossEntry: null, endAdvicePressure: 0, result: "wiped",
@@ -24,11 +33,14 @@ function metric({ balanceExpeditions: balanceOverrides, depletion: depletionOver
     denounced: "denounced",
     "run-error": "run-error",
   } as const)[ending];
+  const totalDeaths = totalDeathsOverride ?? depletion.reduce((sum, entry) => sum + entry.deaths, 0);
+  const zeroTrustCount = zeroTrustCountOverride ?? depletion.reduce((sum, entry) => sum + entry.trustZeroed, 0);
+  const gravelyWoundedCount = gravelyWoundedCountOverride ?? depletion.reduce((sum, entry) => sum + entry.seriousInjuriesStarted - entry.seriousInjuriesCleared, 0);
   return {
     seed: "fixture", strategyId: "survival", accuracy: 0.7,
     ending, completed: false, finalRank: "C", reachedRankS: false,
-    totalExpeditions: 0, clearedExpeditions: 0, wipedExpeditions: 0, totalDeaths: 0,
-    aliveCount: 0, deployableCount: 0, zeroTrustCount: 0, gravelyWoundedCount: 0,
+    totalExpeditions: 0, clearedExpeditions: 0, wipedExpeditions: 0, totalDeaths,
+    aliveCount: 0, deployableCount: 0, zeroTrustCount, gravelyWoundedCount,
     finalReputation: 0, finalGold: 0, contractGold: 0, relicGold: 0, cumulativeGold: 0,
     meanTrust: 0, medianTrust: 0, meanHpRatio: 0, medianHpRatio: 0,
     reputationPromotions: 0, goldPromotions: 0, firstRankAtExpedition: {},
@@ -125,6 +137,49 @@ describe("백테스트 통계", () => {
 
     expect(dominant.depletionVerdict).toMatchObject({ kind: "dominant", source: "expedition-general" });
     expect(mixed.depletionVerdict).toMatchObject({ kind: "mixed" });
+  });
+
+  it("사망 0 HP 손실 우세는 종료 최다 원인이 충돌하면 mixed로 남긴다", () => {
+    const aggregate = aggregateRuns([metric({
+      ending: "completed",
+      depletion: [
+        { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 60, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+        { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 40, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+      ],
+    })]).combinations["survival@0.7"]!;
+
+    expect(aggregate.depletionVerdict).toMatchObject({ kind: "mixed" });
+  });
+
+  it("사망 0 HP 손실 우세는 종료 최다 원인이 동률이면 mixed로 남긴다", () => {
+    const depletion: CampaignRunMetrics["depletion"] = [
+      { source: "expedition-general", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 60, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+      { source: "expedition-boss", worldTurn: 1, expeditionId: "fixture", dungeonId: "dungeon-fixture" as never, initialRiskLevel: 1, attemptNumber: 1, hpLost: 40, hpRecovered: 0, deaths: 0, seriousInjuriesStarted: 0, seriousInjuriesCleared: 0, trustZeroed: 0 },
+    ];
+    const aggregate = aggregateRuns([
+      metric({ depletion, ending: "exhausted" }),
+      metric({ depletion, ending: "unemployed" }),
+    ]).combinations["survival@0.7"]!;
+
+    expect(aggregate.depletionVerdict).toMatchObject({ kind: "mixed" });
+  });
+
+  it.each([
+    ["사망", { totalDeaths: 5 }],
+    ["신뢰 0", { zeroTrustCount: 2 }],
+    ["중상", { gravelyWoundedCount: 1 }],
+  ])("손실 원장과 최종 풀 %s 수치가 모순되면 집계 오류를 낸다", (_, overrides) => {
+    expect(() => aggregateRuns([metric(overrides)])).toThrow("손실 원장과 최종 풀 상태가 모순된다");
+  });
+
+  it("손실 원장 또는 명시 종료 사유가 없으면 집계 오류를 낸다", () => {
+    const missingDepletion: { depletion?: unknown } = { ...metric() };
+    const missingTermination: { termination?: unknown } = { ...metric() };
+    delete missingDepletion.depletion;
+    delete missingTermination.termination;
+
+    expect(() => aggregateRuns([missingDepletion as unknown as CampaignRunMetrics])).toThrow("손실 원장이 없다");
+    expect(() => aggregateRuns([missingTermination as unknown as CampaignRunMetrics])).toThrow("종료 사유가 없다");
   });
 
   it("월드턴 백그라운드 손실의 사망을 거절한다", () => {

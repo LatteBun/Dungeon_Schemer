@@ -66,8 +66,8 @@ export interface CampaignRunMetrics {
   readonly adviceTotal: number;
   readonly errorKind: RunErrorKind | null;
   readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
-  readonly depletion?: readonly DepletionTraceEntry[];
-  readonly termination?: CampaignTerminationReason;
+  readonly depletion: readonly DepletionTraceEntry[];
+  readonly termination: CampaignTerminationReason;
 }
 
 export interface WilsonInterval {
@@ -185,11 +185,15 @@ function terminationForEnding(ending: EndingKind | "run-error"): CampaignTermina
 }
 
 function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetrics {
+  const members = run.campaign.pool.order.map((id) => run.campaign.pool.byId[id]).filter((member): member is NonNullable<typeof member> => member !== undefined);
   return {
     seed: run.trace.seed, strategyId: run.trace.strategyId, accuracy: run.trace.accuracy,
     ending: "run-error", completed: false, finalRank: "C", reachedRankS: false,
-    totalExpeditions: 0, clearedExpeditions: 0, wipedExpeditions: 0, totalDeaths: 0,
-    aliveCount: 0, deployableCount: 0, zeroTrustCount: 0, gravelyWoundedCount: 0,
+    totalExpeditions: 0, clearedExpeditions: 0, wipedExpeditions: 0, totalDeaths: run.campaign.statistics.totalDeaths,
+    aliveCount: members.filter((member) => member.alive).length,
+    deployableCount: members.filter((member) => member.alive && member.trust > 0 && !member.gravelyWounded).length,
+    zeroTrustCount: members.filter((member) => member.trust === 0).length,
+    gravelyWoundedCount: members.filter((member) => member.gravelyWounded).length,
     finalReputation: 0, finalGold: 0, contractGold: 0, relicGold: 0, cumulativeGold: 0,
     meanTrust: 0, medianTrust: 0, meanHpRatio: 0, medianHpRatio: 0,
     reputationPromotions: 0, goldPromotions: 0, firstRankAtExpedition: {},
@@ -354,23 +358,16 @@ function validDepletionCount(value: number): boolean {
   return Number.isInteger(value) && value >= 0;
 }
 
-function depletionForRun(run: CampaignRunMetrics): readonly DepletionTraceEntry[] {
-  return run.depletion ?? [];
-}
-
-function terminationForRun(run: CampaignRunMetrics): CampaignTerminationReason {
-  return run.termination ?? terminationForEnding(run.ending);
-}
-
 function validateDepletionTraces(runs: readonly CampaignRunMetrics[], id: CombinationId): void {
   for (const run of runs) {
-    if (run.depletion !== undefined && !Array.isArray(run.depletion)) throw new AggregationError(`손실 원장이 없다: ${id}`);
-    const termination = terminationForRun(run);
-    if (!TERMINATION_REASONS.includes(termination)
-      || termination !== terminationForEnding(run.ending)) {
+    if (!Array.isArray(run.depletion)) throw new AggregationError(`손실 원장이 없다: ${id}`);
+    if (run.termination === undefined) throw new AggregationError(`종료 사유가 없다: ${id}`);
+    if (!TERMINATION_REASONS.includes(run.termination)
+      || run.termination !== terminationForEnding(run.ending)) {
       throw new AggregationError(`유효하지 않은 종료 사유: ${id}`);
     }
-    for (const entry of depletionForRun(run)) {
+    const totals = { ...emptyDepletionTotals() };
+    for (const entry of run.depletion) {
       if (!DEPLETION_SOURCES.includes(entry.source)
         || !Number.isInteger(entry.worldTurn)
         || entry.worldTurn < 0
@@ -402,13 +399,24 @@ function validateDepletionTraces(runs: readonly CampaignRunMetrics[], id: Combin
       if (entry.source === "world-turn-background" && entry.deaths !== 0) {
         throw new AggregationError(`월드턴 백그라운드 손실에 사망이 있다: ${id}`);
       }
+      totals.hpLost += entry.hpLost;
+      totals.hpRecovered += entry.hpRecovered;
+      totals.deaths += entry.deaths;
+      totals.seriousInjuriesStarted += entry.seriousInjuriesStarted;
+      totals.seriousInjuriesCleared += entry.seriousInjuriesCleared;
+      totals.trustZeroed += entry.trustZeroed;
+    }
+    if (totals.deaths !== run.totalDeaths
+      || totals.trustZeroed !== run.zeroTrustCount
+      || totals.seriousInjuriesStarted - totals.seriousInjuriesCleared !== run.gravelyWoundedCount) {
+      throw new AggregationError(`손실 원장과 최종 풀 상태가 모순된다: ${id}`);
     }
   }
 }
 
 function sumDepletion(runs: readonly CampaignRunMetrics[]): Readonly<Record<DepletionSource, DepletionTotals>> {
   const totals = Object.fromEntries(DEPLETION_SOURCES.map((source) => [source, emptyDepletionTotals()])) as Record<DepletionSource, DepletionTotals>;
-  for (const entry of runs.flatMap(depletionForRun)) {
+  for (const entry of runs.flatMap((run) => run.depletion)) {
     const total = totals[entry.source];
     totals[entry.source] = {
       hpLost: total.hpLost + entry.hpLost,
@@ -422,7 +430,16 @@ function sumDepletion(runs: readonly CampaignRunMetrics[]): Readonly<Record<Depl
   return totals;
 }
 
-function depletionVerdictFor(depletionBySource: Readonly<Record<DepletionSource, DepletionTotals>>): DepletionVerdict {
+function dominantTerminationFor(terminationCounts: Readonly<Record<CampaignTerminationReason, number>>): CampaignTerminationReason | null {
+  const maximum = Math.max(...TERMINATION_REASONS.map((reason) => terminationCounts[reason]));
+  const dominant = TERMINATION_REASONS.filter((reason) => terminationCounts[reason] === maximum);
+  return maximum > 0 && dominant.length === 1 ? dominant[0]! : null;
+}
+
+function depletionVerdictFor(
+  depletionBySource: Readonly<Record<DepletionSource, DepletionTotals>>,
+  terminationCounts: Readonly<Record<CampaignTerminationReason, number>>,
+): DepletionVerdict {
   const lossSources = DEPLETION_SOURCES.filter((source) => source !== "world-turn-rest");
   const totalDeaths = lossSources.reduce((total, source) => total + depletionBySource[source].deaths, 0);
   if (totalDeaths > 0) {
@@ -438,7 +455,16 @@ function depletionVerdictFor(depletionBySource: Readonly<Record<DepletionSource,
     const source = lossSources.find((candidate) => depletionBySource[candidate].hpLost / totalHpLost >= 0.6);
     if (source !== undefined) {
       const hpLost = depletionBySource[source].hpLost;
-      return { kind: "dominant", source, evidence: `사망 0건, HP 손실 ${hpLost}/${totalHpLost} (${(hpLost / totalHpLost * 100).toFixed(1)}%)` };
+      const termination = dominantTerminationFor(terminationCounts);
+      if (termination === "pool-exhausted" || termination === "no-eligible-party") {
+        return { kind: "dominant", source, evidence: `사망 0건, HP 손실 ${hpLost}/${totalHpLost} (${(hpLost / totalHpLost * 100).toFixed(1)}%), 종료 ${termination}` };
+      }
+      return {
+        kind: "mixed",
+        evidence: termination === null
+          ? `사망 0건, HP 손실 ${hpLost}/${totalHpLost}이나 종료 최다 원인이 동률이다`
+          : `사망 0건, HP 손실 ${hpLost}/${totalHpLost}이나 종료 ${termination}과 충돌한다`,
+      };
     }
     return { kind: "mixed", evidence: `사망 0건, HP 손실 60% 이상 source 없음 (총 ${totalHpLost})` };
   }
@@ -481,7 +507,6 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
   validateExpeditionTraces(runs, id);
   validateDepletionTraces(runs, id);
   const depletionBySource = sumDepletion(runs);
-  const depletionVerdict = depletionVerdictFor(depletionBySource);
   const expeditionPressures = runs.flatMap((run) => {
     if (!Array.isArray(run.balanceExpeditions)) throw new AggregationError(`원정 밸런스 지표가 없다: ${id}`);
     return run.balanceExpeditions.map((expedition) => expedition.maxAdvicePressure);
@@ -515,7 +540,8 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
   const endingCounts = emptyCounts(ENDINGS);
   for (const run of runs) endingCounts[run.ending] += 1;
   const terminationCounts = emptyCounts(TERMINATION_REASONS);
-  for (const run of runs) terminationCounts[terminationForRun(run)] += 1;
+  for (const run of runs) terminationCounts[run.termination] += 1;
+  const depletionVerdict = depletionVerdictFor(depletionBySource, terminationCounts);
   const sum = (selector: (run: CampaignRunMetrics) => number) => runs.reduce((total, run) => total + selector(run), 0) / runs.length;
   const allExpeditions = runs.flatMap((run) => run.balanceExpeditions);
   const firstAttempts = allExpeditions.filter((expedition) => expedition.attemptNumber === 1);
