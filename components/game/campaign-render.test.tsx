@@ -11,7 +11,7 @@ import { U5ProgressScreen } from "./U5ProgressScreen";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import {
-  adviceIdForSlotIn, ecologyViewFor, logFor, progressViewFor, publicKindByNodeId, statusFor,
+  adviceIdForSlotIn, ecologyViewFor, eventReplayFor, logFor, progressViewFor, publicKindByNodeId, statusFor,
 } from "./campaign-adapters";
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
@@ -87,6 +87,8 @@ function settled() {
     }
     if (active.pendingEvent !== null) {
       run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+      /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+      run.act({ type: "ACKNOWLEDGE_OUTCOME" });
       continue;
     }
     const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
@@ -116,6 +118,8 @@ function ended(seed: string) {
       }
       if (active.pendingEvent !== null) {
         run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent.advice[0]!.id });
+        /* 결과를 확인해야 움직일 수 있다. 길잡이가 하는 것과 같다. */
+        run.act({ type: "ACKNOWLEDGE_OUTCOME" });
         continue;
       }
       const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
@@ -307,5 +311,78 @@ describe("엔딩이 실제 캠페인으로 그려진다", () => {
     }
 
     expect(kinds.size).toBeGreaterThan(0);
+  });
+});
+
+describe("결과 화면이 실제 판정으로 그려진다", () => {
+  /** 조언 하나를 고른 직후. 결과를 보는 중이다. */
+  function atOutcome() {
+    const run = atEvent();
+    const active = run.state().context.activeExpedition!;
+    run.act({ type: "CHOOSE_ADVICE", adviceId: active.pendingEvent!.advice[0]!.id });
+    return run;
+  }
+
+  it("반응과 결과 문장이 찍힌다", () => {
+    const run = atOutcome();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const outcome = active.pendingOutcome!;
+
+    const markup = renderToStaticMarkup(createElement(U5ProgressScreen, {
+      status: statusFor(campaign, active),
+      progress: progressViewFor(campaign, active)!,
+      log: logFor(campaign, active),
+      ecology: ecologyViewFor(campaign, active),
+      battleReplay: eventReplayFor(campaign, active) ?? undefined,
+      onAcknowledge: noop,
+    }));
+
+    assertClean(markup, "결과 화면");
+    expect(markup).toContain(outcome.resultText.slice(0, 15));
+    for (const reaction of outcome.reactions) {
+      const name = active.partyMembers.find((one) => one.id === reaction.characterId)!.name;
+      expect(markup).toContain(name);
+    }
+    /*
+     * 길잡이가 읽는 것은 사람의 태도지 규칙의 상태가 아니다.
+     *
+     * `is-accepted` 같은 class 는 꾸밈용 훅이라 그대로 둔다 — 반응은 어차피
+     * 화면에 드러나는 것이라 감출 정보가 아니다. 다만 **읽는 자리**에는 우리말이
+     * 와야 한다.
+     */
+    const verdicts = markup.match(/u5-reaction__verdict">([^<]*)</g) ?? [];
+    expect(verdicts.length).toBe(outcome.reactions.length);
+    for (const verdict of verdicts) expect(verdict).toMatch(/수용|의심|적발/);
+    expect(markup).toContain("지도로 돌아간다");
+  });
+
+  /* 결과를 보는 중에는 조언을 다시 고를 수 없어야 한다. */
+  it("결과를 보는 중에는 조언 목록이 없다", () => {
+    const run = atOutcome();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+
+    const markup = renderToStaticMarkup(createElement(U5ProgressScreen, {
+      status: statusFor(campaign, active),
+      progress: progressViewFor(campaign, active)!,
+      log: logFor(campaign, active),
+      ecology: ecologyViewFor(campaign, active),
+      onAcknowledge: noop,
+    }));
+
+    expect(markup).toContain("u5-outcome");
+    expect(markup).not.toContain("u5-advice-list");
+  });
+
+  /* 결과를 보는 동안에도 상황은 그대로 있어야 한다. 무엇에 대한 결과인지 알아야 한다. */
+  it("결과를 보는 동안에도 상황이 남는다", () => {
+    const run = atOutcome();
+    const { campaign, context } = run.state();
+    const active = context.activeExpedition!;
+    const view = progressViewFor(campaign, active)!;
+
+    expect(view.situation).toBe(active.pendingOutcome!.event.description);
+    expect(view.nodeLabel).toBe(active.pendingOutcome!.event.title);
   });
 });

@@ -14,6 +14,7 @@ import type {
   CampaignTransitionContext,
   CampaignTransitionResult,
   Character,
+  ExpeditionOutcome,
   ExpeditionRecord,
   ExpeditionState,
   SettlementSnapshot,
@@ -252,6 +253,10 @@ function transitionVisitNode(
   nodeId: NodeId,
 ): CampaignTransitionResult {
   const expedition = active.expedition;
+  /* 결과를 보기 전에는 움직이지 않는다. 안 그러면 그 화면을 건너뛸 수 있다. */
+  if (active.pendingOutcome !== null) {
+    invalidTransition("아직 확인하지 않은 결과가 있다", { nodeId: expedition.currentNodeId });
+  }
   if (active.pendingEvent !== null) {
     invalidTransition("아직 조언을 고르지 않은 지점이 있다", { nodeId: expedition.currentNodeId });
   }
@@ -354,14 +359,22 @@ function transitionChooseAdvice(
 
   /* 보스 정보는 지연형이다. 즉시 신뢰를 확정하지 않고 기록만 쌓는다. */
   const isBossInfo = event.targetBossId !== undefined;
+  /*
+   * 결과 문장은 규칙이 고른다.
+   *
+   * 한 명이라도 수용하면 그 조언의 결과이고, 아무도 수용하지 않으면 파티가 자기
+   * 방식대로 처리한 기본 결과다. 화면이 이 값을 뒤집으면 "아무도 수용하지 않음"
+   * 옆에 수용 반응이 나란히 서는 일이 생긴다. 전에 실제로 그랬다.
+   *
+   * 분기 밖에서 붙든다 — 결과 화면이 이 문장을 그대로 읽는다.
+   */
+  let resultText = event.defaultResultText;
   const resolution = isBossInfo
     ? resolveBossInfoAdvice({ ...decideInput, dungeon })
     : (() => {
       const decision = decideImmediateAdvice(decideInput);
       const chosen = event.advice.find((candidate) => candidate.id === adviceId);
-      const resultText = decision.executed
-        ? chosen?.resultText ?? event.defaultResultText
-        : event.defaultResultText;
+      if (decision.executed) resultText = chosen?.resultText ?? event.defaultResultText;
       return finalizeImmediateAdviceTrust({ decision, members: living, applied: { executed: decision.executed, resultText } });
     })();
 
@@ -447,13 +460,42 @@ function transitionChooseAdvice(
       : { rounds: battle.battle.rounds, victory: battle.battle.status === "victory" },
   };
 
+  /*
+   * 무엇이 달라졌는지 사람 단위로 적어 둔다.
+   *
+   * 화면이 파티를 전후로 비교하지 않게 한다. 비교하려면 화면이 "언제의 파티"를
+   * 들고 있어야 하고, 그 순간 화면이 상태를 소유하게 된다.
+   */
+  const changesOf = (pick: (member: Character) => number) => withTrust.flatMap((after) => {
+    const before = active.partyMembers.find((candidate) => candidate.id === after.id);
+    return before === undefined || pick(before) === pick(after)
+      ? []
+      : [{ characterId: after.id, before: pick(before), after: pick(after) }];
+  });
+
+  const pendingOutcome: ExpeditionOutcome = {
+    event,
+    reactions: resolution.decision.reactions.map((one) => ({ ...one })),
+    resultText,
+    hpChanges: changesOf((member) => member.hp),
+    trustChanges: changesOf((member) => member.trust),
+    battle: battle?.battle ?? null,
+  };
+
   return emptyResult(withHistory, {
     ...context,
     activeExpedition: {
       ...active,
       expedition: nextExpedition,
       partyMembers: withTrust,
+      /*
+       * 사건은 끝났지만 결과를 아직 안 봤다.
+       *
+       * 곧장 지도로 돌려보내면 자기 조언이 어떻게 됐는지 모른 채 다음 갈림길에
+       * 선다. `ACKNOWLEDGE_OUTCOME` 이 그 자리를 닫는다.
+       */
       pendingEvent: null,
+      pendingOutcome,
       records: [...active.records, record],
     },
   });
@@ -476,6 +518,7 @@ function transitionEnterBoss(
     invalidTransition("보스방이 아니다", { nodeId: expedition.currentNodeId });
   }
   if (expedition.bossResult !== null) invalidTransition("이미 치른 보스전이다", { expeditionId: active.expeditionId });
+  if (active.pendingOutcome !== null) invalidTransition("아직 확인하지 않은 결과가 있다", {});
   if (active.pendingEvent !== null) invalidTransition("아직 조언을 고르지 않은 지점이 있다", {});
 
   const dungeon = campaign.dungeons.find((candidate) => candidate.id === expedition.dungeonId);
@@ -593,7 +636,7 @@ export function createSettlementSnapshotFor(
   const nameOf = (characterId: Character["id"]) =>
     active.partyMembers.find((member) => member.id === characterId)?.name ?? String(characterId);
   const word: Readonly<Record<string, string>> = {
-    accepted: "수용", suspected: "의심", detected: "적발",
+    accepted: "수용", suspected: "의심", exposed: "적발",
     /* `E4` 가 보스전 뒤에 그 믿음이 옳았는지 판정한 결과다. */
     adviceHelped: "믿음이 맞았다", adviceHarmed: "믿음이 틀렸다",
     suspicionWasCorrect: "의심이 맞았다", suspicionWasCostly: "의심이 손해였다",
@@ -696,6 +739,7 @@ function copyActiveExpedition(
     preparedEvents: prepareFor(campaign, action.expedition, attemptOf(campaign, action.expedition)),
     pendingEvent: null,
     records: [],
+    pendingOutcome: null,
   };
 }
 
@@ -859,6 +903,13 @@ export function transitionCampaign(
         ),
         settlement: execution.result,
       };
+    }
+    if (action.type === "ACKNOWLEDGE_OUTCOME") {
+      if (active.pendingOutcome === null) invalidTransition("확인할 결과가 없다", { expeditionId: active.expeditionId });
+      return emptyResult(campaign, {
+        ...context,
+        activeExpedition: { ...active, pendingOutcome: null },
+      });
     }
     return invalidTransition("원정에서 허용되지 않은 전이다", { type: action.type });
   }
