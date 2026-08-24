@@ -72,6 +72,68 @@ describe("플레이어 업적 프로필", () => {
     expect(perfect.unlocked["first-record"]?.unlockedAt).toBe("2026-08-24T10:00:00.000Z");
   });
 
+  it("각 결과형 업적의 직전 값은 잠기고 도달 값은 열린다", () => {
+    const firstBefore = createEmptyPlayerProgress();
+    expect(firstBefore.unlocked["first-record"]).toBeUndefined();
+    const firstAt = recordCompletedCampaign(firstBefore, {
+      ...completed,
+      runId: "first-at",
+      ending: "exhausted",
+    }, "2026-08-24T10:00:00.000Z");
+    expect(firstAt.unlocked["first-record"]).toBeDefined();
+
+    const conquerorBefore = recordCompletedCampaign(createEmptyPlayerProgress(), {
+      ...completed,
+      runId: "conqueror-before",
+      ending: "exhausted",
+    }, "2026-08-24T10:00:00.000Z");
+    expect(conquerorBefore.unlocked["dungeon-conqueror"]).toBeUndefined();
+    const conquerorAt = recordCompletedCampaign(conquerorBefore, {
+      ...completed,
+      runId: "conqueror-at",
+      ending: "completed",
+    }, "2026-08-24T10:00:00.000Z");
+    expect(conquerorAt.unlocked["dungeon-conqueror"]).toBeDefined();
+
+    const rankBefore = recordCompletedCampaign(createEmptyPlayerProgress(), {
+      ...completed,
+      runId: "rank-before",
+      ending: "completed",
+      finalRank: "A",
+    }, "2026-08-24T10:00:00.000Z");
+    expect(rankBefore.unlocked["s-rank-guide"]).toBeUndefined();
+    const rankAt = recordCompletedCampaign(rankBefore, {
+      ...completed,
+      runId: "rank-at",
+      ending: "completed",
+      finalRank: "S",
+    }, "2026-08-24T10:00:00.000Z");
+    expect(rankAt.unlocked["s-rank-guide"]).toBeDefined();
+
+    const returnedBefore = recordCompletedCampaign(createEmptyPlayerProgress(), {
+      ...completed,
+      runId: "returned-before",
+      ending: "completed",
+      deaths: 1,
+    }, "2026-08-24T10:00:00.000Z");
+    expect(returnedBefore.unlocked["everyone-returned"]).toBeUndefined();
+    const returnedAt = recordCompletedCampaign(returnedBefore, {
+      ...completed,
+      runId: "returned-at",
+      ending: "completed",
+      deaths: 0,
+    }, "2026-08-24T10:00:00.000Z");
+    expect(returnedAt.unlocked["everyone-returned"]).toBeDefined();
+
+    const rankSWithBadEnding = recordCompletedCampaign(createEmptyPlayerProgress(), {
+      ...completed,
+      runId: "rank-s-bad-ending",
+      ending: "exhausted",
+      finalRank: "S",
+    }, "2026-08-24T10:00:00.000Z");
+    expect(rankSWithBadEnding.unlocked["s-rank-guide"]).toBeUndefined();
+  });
+
   it("엔딩 다섯 종류의 마지막 기록에서 숨은 업적을 연다", () => {
     const endings = ["distrust", "denounced", "completed", "exhausted", "unemployed"] as const;
     const result = endings.reduce(
@@ -83,6 +145,25 @@ describe("플레이어 업적 프로필", () => {
       createEmptyPlayerProgress(),
     );
     expect(result.unlocked["five-endings"]).toBeDefined();
+  });
+
+  it("다섯 엔딩 중 네 종류는 직전이고 다섯 번째에서 숨은 업적이 열린다", () => {
+    const fourEndings = ["distrust", "denounced", "completed", "exhausted"] as const;
+    const before = fourEndings.reduce(
+      (progress, ending, index) => recordCompletedCampaign(progress, {
+        ...completed,
+        runId: `four-endings-${index}`,
+        ending,
+      }, "2026-08-24T10:00:00.000Z"),
+      createEmptyPlayerProgress(),
+    );
+    expect(before.unlocked["five-endings"]).toBeUndefined();
+    const at = recordCompletedCampaign(before, {
+      ...completed,
+      runId: "five-endings-at",
+      ending: "unemployed",
+    }, "2026-08-24T10:00:00.000Z");
+    expect(at.unlocked["five-endings"]).toBeDefined();
   });
 
   it.each([
@@ -99,6 +180,31 @@ describe("플레이어 업적 프로필", () => {
       ...totals,
     }, "2026-08-24T10:00:00.000Z");
     expect(result.unlocked[id]).toBeDefined();
+  });
+
+  it.each([
+    ["hundred-advices", { advices: 99 }, { advices: 1 }],
+    ["seasoned-expedition", { clearedExpeditions: 29 }, { clearedExpeditions: 1 }],
+    ["death-in-the-plan", { wipedExpeditions: 9 }, { wipedExpeditions: 1 }],
+  ] as const)("%s는 직전 값에서 잠기고 도달 값에서 열린다", (id, beforeTotals, atTotals) => {
+    const before = recordCompletedCampaign(createEmptyPlayerProgress(), {
+      ...completed,
+      runId: `${id}-before`,
+      advices: 0,
+      clearedExpeditions: 0,
+      wipedExpeditions: 0,
+      ...beforeTotals,
+    }, "2026-08-24T10:00:00.000Z");
+    expect(before.unlocked[id]).toBeUndefined();
+    const at = recordCompletedCampaign(before, {
+      ...completed,
+      runId: `${id}-at`,
+      advices: 0,
+      clearedExpeditions: 0,
+      wipedExpeditions: 0,
+      ...atTotals,
+    }, "2026-08-24T10:00:00.000Z");
+    expect(at.unlocked[id]).toBeDefined();
   });
 
   it("카탈로그 순서와 공개 누적 진행도를 제공한다", () => {
@@ -159,6 +265,49 @@ describe("플레이어 업적 프로필", () => {
     expect(() => recordCompletedCampaign(createEmptyPlayerProgress(), {
       ...completed,
       runId: "",
+    }, "2026-08-24T10:00:00.000Z")).toThrow(TypeError);
+  });
+
+  it("누적 합계와 엔딩 수가 안전 정수를 넘으면 프로필을 거부한다", () => {
+    const totalFields = [
+      "completedCampaigns",
+      "expeditions",
+      "clearedExpeditions",
+      "wipedExpeditions",
+      "deaths",
+      "advices",
+    ] as const;
+    for (const field of totalFields) {
+      const current = createEmptyPlayerProgress();
+      const overflowing = {
+        ...current,
+        totals: { ...current.totals, [field]: Number.MAX_SAFE_INTEGER },
+      };
+      expect(() => recordCompletedCampaign(overflowing, {
+        ...completed,
+        runId: `overflow-${field}`,
+        totalExpeditions: field === "expeditions" ? 1 : 0,
+        clearedExpeditions: field === "clearedExpeditions" ? 1 : 0,
+        wipedExpeditions: field === "wipedExpeditions" ? 1 : 0,
+        deaths: field === "deaths" ? 1 : 0,
+        advices: field === "advices" ? 1 : 0,
+      }, "2026-08-24T10:00:00.000Z")).toThrow(TypeError);
+    }
+
+    const current = createEmptyPlayerProgress();
+    const overflowingEndingCount = {
+      ...current,
+      endingCounts: { ...current.endingCounts, completed: Number.MAX_SAFE_INTEGER },
+    };
+    expect(() => recordCompletedCampaign(overflowingEndingCount, {
+      ...completed,
+      runId: "overflow-ending-count",
+      ending: "completed",
+      totalExpeditions: 0,
+      clearedExpeditions: 0,
+      wipedExpeditions: 0,
+      deaths: 0,
+      advices: 0,
     }, "2026-08-24T10:00:00.000Z")).toThrow(TypeError);
   });
 });

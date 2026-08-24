@@ -58,6 +58,17 @@ export interface AchievementDefinition {
 const isNonNegativeSafeInteger = (value: number): boolean =>
   Number.isSafeInteger(value) && value >= 0;
 
+function addSafeCounter(current: number, increment: number, name: string): number {
+  if (!isNonNegativeSafeInteger(current) || !isNonNegativeSafeInteger(increment)) {
+    throw new TypeError(`${name} must remain a non-negative safe integer`);
+  }
+  const result = current + increment;
+  if (!isNonNegativeSafeInteger(result)) {
+    throw new TypeError(`${name} overflowed the safe integer range`);
+  }
+  return result;
+}
+
 function validateRecord(record: CompletedCampaignRecord): void {
   if (record.runId.length === 0) {
     throw new TypeError("runId must not be empty");
@@ -192,19 +203,26 @@ export function recordCompletedCampaign(
     return current;
   }
 
+  const totals = {
+    completedCampaigns: addSafeCounter(current.totals.completedCampaigns, 1, "completedCampaigns"),
+    expeditions: addSafeCounter(current.totals.expeditions, record.totalExpeditions, "expeditions"),
+    clearedExpeditions: addSafeCounter(
+      current.totals.clearedExpeditions,
+      record.clearedExpeditions,
+      "clearedExpeditions",
+    ),
+    wipedExpeditions: addSafeCounter(current.totals.wipedExpeditions, record.wipedExpeditions, "wipedExpeditions"),
+    deaths: addSafeCounter(current.totals.deaths, record.deaths, "deaths"),
+    advices: addSafeCounter(current.totals.advices, record.advices, "advices"),
+  };
+  const endingCount = addSafeCounter(current.endingCounts[record.ending], 1, `${record.ending} ending count`);
+
   const next: PlayerProgressV1 = {
     version: PLAYER_PROGRESS_VERSION,
-    totals: {
-      completedCampaigns: current.totals.completedCampaigns + 1,
-      expeditions: current.totals.expeditions + record.totalExpeditions,
-      clearedExpeditions: current.totals.clearedExpeditions + record.clearedExpeditions,
-      wipedExpeditions: current.totals.wipedExpeditions + record.wipedExpeditions,
-      deaths: current.totals.deaths + record.deaths,
-      advices: current.totals.advices + record.advices,
-    },
+    totals,
     endingCounts: {
       ...current.endingCounts,
-      [record.ending]: current.endingCounts[record.ending] + 1,
+      [record.ending]: endingCount,
     },
     unlocked: { ...current.unlocked },
     recordedRunIds: [...current.recordedRunIds, record.runId],
