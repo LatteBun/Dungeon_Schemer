@@ -68,7 +68,7 @@ export function createPlayerProgressStore() {
 
     clear() {
       const progress = createEmptyPlayerProgress();
-      if (storage === null || get().status === "unavailable") {
+      if (storage === null) {
         set({ progress });
         return;
       }

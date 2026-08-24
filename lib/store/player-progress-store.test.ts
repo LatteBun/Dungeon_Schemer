@@ -83,6 +83,22 @@ describe("플레이어 업적 Store", () => {
     expect(storage.value(PLAYER_PROGRESS_STORAGE_KEY)).toBe(futureRaw);
   });
 
+  it("미래 버전 기록도 명시적 초기화로 두 저장 키를 지운다", () => {
+    const storage = memoryStorage({
+      [PLAYER_PROGRESS_STORAGE_KEY]: JSON.stringify({ version: 2 }),
+      "dungeon-schemer.player-progress.corrupt-backup": "{broken",
+    });
+    const store = createPlayerProgressStore();
+
+    store.getState().hydrate(storage);
+    store.getState().clear();
+
+    expect(storage.value(PLAYER_PROGRESS_STORAGE_KEY)).toBeUndefined();
+    expect(storage.value("dungeon-schemer.player-progress.corrupt-backup")).toBeUndefined();
+    expect(store.getState().progress.totals.completedCampaigns).toBe(0);
+    expect(store.getState().status).toBe("ready");
+  });
+
   it("초기화 저장소 제거가 실패해도 메모리는 빈 기록으로 돌아간다", () => {
     const storage = {
       ...memoryStorage(),
