@@ -12,6 +12,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.run.ts"],
+    testTimeout: 0,
+    hookTimeout: 0,
+    maxWorkers: 1,
     // 보고서를 파일로 쓰므로 진행 상황만 보이면 된다.
     reporters: ["default"],
   },
