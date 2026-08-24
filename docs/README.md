@@ -100,6 +100,8 @@
 
 ## 이번 개편 설계
 
+- [U6 정산 복귀 CTA 크기 개선 설계](superpowers/specs/2026-08-25-lattebun-u6-settlement-continue-size-design.md): 공통 다음 단계 CTA 크기를 유지하면서 정산 복귀 버튼을 내용 폭으로 줄이는 배치 기준
+- [U6 정산 복귀 CTA 크기 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u6-settlement-continue-size.md): CSS 계약 테스트부터 내용 폭 우측 정렬과 실제 정산 화면 검증까지의 테스트 우선 순서
 - [U4 지도 우측 패널 순서 개선 설계](superpowers/specs/2026-08-25-lattebun-u4-map-right-panel-order-design.md): 계약 전 답사를 선택 지점 위로 옮기고 이동 CTA를 우측 최하단에 고정하는 배치 기준
 - [U4 지도 우측 패널 순서 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u4-map-right-panel-order.md): DOM 읽기 순서와 3행 CSS 계약을 테스트 우선으로 변경하고 실제 캠페인 지도에서 확인하는 순서
 - [브라우저 안정성 스모크 테스트 설계](superpowers/specs/2026-08-25-lattebun-browser-stability-smoke-design.md): 공개 경로·첫 사건 클릭 흐름·공식 viewport의 Chromium 회귀 계약
