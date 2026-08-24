@@ -40,6 +40,20 @@ function materializeEveryPath(input: {
   visit(input.map.entryNodeId, input.prepared);
 }
 
+function normalPaths(map: ReturnType<typeof generateDungeonMap>): readonly (readonly NodeId[])[] {
+  const nodesById = new Map(map.nodes.map((node) => [node.id, node]));
+  const visit = (nodeId: NodeId, path: readonly NodeId[]): readonly (readonly NodeId[])[] => {
+    if (nodeId === map.bossNodeId) return [path];
+    const node = nodesById.get(nodeId);
+    if (node === undefined) throw new Error("campaign profile map node가 없다");
+    return node.nextNodeIds.flatMap((nextNodeId) => visit(
+      nextNodeId,
+      node.kind === "normal" ? [...path, node.id] : path,
+    ));
+  };
+  return visit(map.entryNodeId, []);
+}
+
 describe("실제 캠페인 생태 프로필의 사건 물질화", () => {
   it("3개 시드의 모든 던전과 두 attempt에서 준비와 선택 경로가 생성 오류 없이 이어진다", () => {
     for (const campaignSeed of ["issue-114-a", "issue-114-b", "issue-114-c"]) {
@@ -65,6 +79,12 @@ describe("실제 캠페인 생태 프로필의 사건 물질화", () => {
             activeRuleIds: dungeon.activeRuleIds,
             activeMonsterIds: dungeon.activeMonsterIds,
           });
+
+          const minimumMonsterCount = dungeon.riskLevel <= 2 ? 2 : 3;
+          for (const path of normalPaths(map)) {
+            const monsterCount = path.filter((nodeId) => prepared.nodePlans.get(nodeId)?.category === "monster").length;
+            expect(monsterCount).toBeGreaterThanOrEqual(minimumMonsterCount);
+          }
 
           expect(() => materializeEveryPath({ campaignSeed, dungeon, attempt, theme, map, prepared })).not.toThrow();
         }
