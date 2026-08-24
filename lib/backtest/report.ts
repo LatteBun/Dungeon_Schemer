@@ -29,6 +29,8 @@ export interface BacktestReportInput {
 const STRATEGIES: readonly StrategyId[] = ["survival", "opportunist", "selective-betrayal"];
 const ACCURACIES: readonly Accuracy[] = [0.4, 0.7];
 const ENDINGS: readonly EndingKind[] = ["completed", "exhausted", "unemployed", "denounced", "distrust"];
+const DEPLETION_SOURCES = ["expedition-general", "expedition-boss", "world-turn-background", "world-turn-rest"] as const;
+const TERMINATION_REASONS = ["completed", "pool-exhausted", "no-eligible-party", "distrust", "denounced", "run-error"] as const;
 
 function combinationId(strategy: StrategyId, accuracy: Accuracy): CombinationId {
   return `${strategy}@${accuracy}` as CombinationId;
@@ -143,10 +145,18 @@ export function renderBacktestReport(input: BacktestReportInput): string {
   const eventualClearRows: string[] = [];
   const themeFunnelRows: string[] = [];
   const endingRows: string[] = [];
+  const depletionRows: string[] = [];
+  const terminationRows: string[] = [];
   for (const strategy of STRATEGIES) {
     for (const accuracy of ACCURACIES) {
       const combination = aggregate.combinations[combinationId(strategy, accuracy)];
       if (combination === undefined) continue;
+      for (const source of DEPLETION_SOURCES) {
+        const totals = combination.depletionBySource[source];
+        const verdict = combination.depletionVerdict;
+        depletionRows.push(`| ${strategy} | ${accuracy} | ${source} | ${totals.hpLost} | ${totals.hpRecovered} | ${totals.deaths} | ${totals.seriousInjuriesStarted} | ${totals.seriousInjuriesCleared} | ${totals.trustZeroed} | ${verdict.kind}${verdict.kind === "dominant" ? ` (${verdict.source})` : ""} | ${verdict.evidence} |`);
+      }
+      terminationRows.push(`| ${strategy} | ${accuracy} | ${TERMINATION_REASONS.map((reason) => combination.terminationCounts[reason]).join(" | ")} | ${combination.means.totalDeaths.toFixed(4)} | ${combination.means.aliveCount.toFixed(4)} |`);
       for (const risk of [1, 2, 3, 4, 5] as const) {
         const funnel = combination.firstAttemptByInitialRisk[risk];
         firstAttemptFunnelRows.push(`| ${strategy} | ${accuracy} | ${risk} | ${funnel.starts} | ${funnel.bossEntries} | ${funnel.clears} | ${funnel.wipes} | ${funnel.interrupted} | ${funnel.preBossFailures} | ${funnel.bossFailures} | ${nullable(funnel.clearRate)} | ${nullable(funnel.bossReachRate)} | ${nullable(funnel.bossConversionRate)} | ${nullable(funnel.meanBossEntryHpRatio)} | ${nullable(funnel.meanBossEntryAliveCount)} | ${nullableInterval(funnel.clearRateWilson95)} |`);
@@ -222,6 +232,18 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "| 전략 | 정확도 | 표본 | 완주율 | 완주 전멸 평균 | 5+ 전멸 비율 | 평균 최대 압력 | 보스 진입 HP 비율 |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...rows,
+    "",
+    "## 캠페인 손실 원인 판정",
+    "",
+    "| 전략 | 정확도 | source | HP 손실 | HP 회복 | 사망 | 중상 시작 | 중상 해제 | 신뢰 0 | 판정 | 근거 |",
+    "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+    ...depletionRows,
+    "",
+    "## 종료 사유와 최종 풀 상태",
+    "",
+    "| 전략 | 정확도 | 완료 | 풀 소진 | 출전 불가 | 불신 | 고발 | 실행 오류 | 평균 사망 | 평균 생존 |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...terminationRows,
     "",
     "## 초기 위험도별 첫 시도 던전 funnel",
     "",
