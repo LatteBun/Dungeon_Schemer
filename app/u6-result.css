@@ -18,6 +18,12 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  /* 정산은 뒤에 던전을 깔므로 셸이 덮지 않게 비운다. */
+  background: transparent;
+}
+
+.u6-result-screen--ending .game-shell,
+.u6-result-screen:not(.u6-result-screen--settlement) .game-shell {
   background: #090705;
 }
 
@@ -46,7 +52,12 @@
 /* ── 정산 좌측: 원인 사슬 ── */
 
 .u6-settlement-main {
-  grid-template-rows: auto minmax(0, 1fr);
+  /*
+   * 결과 한 줄 · 구분선 · 원인 사슬 셋이다.
+   *
+   * 둘로 두었더니 구분선이 남는 자리를 차지해 사슬이 화면 아래로 밀렸다.
+   */
+  grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 .u6-outcome {
@@ -68,7 +79,13 @@
 
 .u6-cause-chain {
   display: grid;
-  grid-template-rows: repeat(5, minmax(0, 1fr));
+  /*
+   * 칸은 내용만큼만 차지한다.
+   *
+   * 전에는 다섯 칸이 남는 높이를 똑같이 나눠 가져서, 한 줄짜리 문장 아래로
+   * 빈자리가 크게 남았다. 사슬은 위에서부터 이어지면 된다.
+   */
+  grid-auto-rows: min-content;
   gap: clamp(0.4rem, 0.5cqw, 0.8rem);
   margin: 0;
   padding: 0;
@@ -89,12 +106,14 @@
 }
 
 .u6-cause__order {
+  position: relative;
   display: grid;
-  width: clamp(1.6rem, 1.7cqw, 2.5rem);
-  height: clamp(1.6rem, 1.7cqw, 2.5rem);
+  width: clamp(2.2rem, 2.4cqw, 3.2rem);
+  height: clamp(2.2rem, 2.4cqw, 3.2rem);
   place-items: center;
   border: 1px solid var(--color-shell-gold);
   border-radius: 999px;
+  background: radial-gradient(circle, rgb(60 44 24 / 55%), rgb(20 14 9 / 75%));
   color: var(--color-shell-gold);
   font-size: clamp(0.85rem, 0.85cqw, 1.25rem);
   font-weight: 700;
@@ -265,7 +284,14 @@
   background: var(--u6-ending-backdrop);
 }
 
-.u6-ending-shell > *:not(.u6-ending-backdrop) {
+/*
+ * 바탕과 모서리는 흐름 밖에 둔다.
+ *
+ * 이 규칙이 `position: relative` 를 덮어써서 모서리 장식이 흐름에 끼어들었고,
+ * 넷이 왼쪽 위에 겹쳐 쌓이면서 아래 내용을 밀어냈다. 장식은 자리를 차지하지
+ * 않아야 장식이다.
+ */
+.u6-ending-shell > *:not(.u6-ending-backdrop):not(.u6-ending-corner) {
   position: relative;
   z-index: 1;
   min-height: 0;
@@ -600,4 +626,205 @@
 .u6-ending-cta:focus-visible {
   outline: 2px solid var(--color-parchment);
   outline-offset: 2px;
+}
+
+/* ── 정산: 자산을 쓰는 자리 ── */
+
+/*
+ * 방금 나온 던전을 본문 바탕에 깐다.
+ *
+ * 셸 뒤에 따로 깔면 셸 안쪽이 덮는다. 본문 자신의 배경으로 주면 겹침과 싸울 일이
+ * 없다. 글자가 서는 위쪽은 짙게, 아무것도 없는 아래는 옅게 눌러 던전이 남게 한다.
+ */
+.u6-result-screen--settlement .game-shell__main {
+  background-image:
+    linear-gradient(180deg, rgb(9 7 5 / 88%) 0%, rgb(9 7 5 / 72%) 48%, rgb(9 7 5 / 34%) 100%),
+    var(--u6-settlement-scene);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+/* 칸마다 제 문양. 번호는 문양 위에 작게 얹는다. */
+.u6-cause__order img {
+  width: 68%;
+  height: 68%;
+  object-fit: contain;
+  opacity: 0.9;
+}
+
+.u6-cause__order b {
+  position: absolute;
+  right: -0.15rem;
+  bottom: -0.15rem;
+  display: grid;
+  width: clamp(1rem, 1.05cqw, 1.4rem);
+  height: clamp(1rem, 1.05cqw, 1.4rem);
+  place-items: center;
+  border: 1px solid var(--color-shell-gold);
+  border-radius: 999px;
+  background: #140e09;
+  font-size: clamp(0.62rem, 0.65cqw, 0.85rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.u6-changes {
+  position: relative;
+}
+
+/* 가로로만 늘린다. 높이를 놔두면 장식이 제목만큼 커진다. */
+.u6-changes__divider {
+  width: 100%;
+  height: clamp(0.5rem, 0.7cqh, 0.9rem);
+  margin-bottom: clamp(0.35rem, 0.45cqh, 0.6rem);
+  object-fit: contain;
+  opacity: 0.6;
+}
+
+/* 길드에 넘기는 문서다. 봉인이 찍혀야 끝난 문서로 읽힌다. */
+.u6-changes__seal {
+  position: absolute;
+  right: clamp(0.6rem, 0.8cqw, 1.2rem);
+  bottom: clamp(0.6rem, 0.8cqh, 1.2rem);
+  width: clamp(2.6rem, 3cqw, 4.2rem);
+  height: auto;
+  opacity: 0.78;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+.u6-deltas dt {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.u6-deltas dt img {
+  width: clamp(1rem, 1.1cqw, 1.5rem);
+  height: auto;
+}
+
+/* ── 엔딩: 자산을 쓰는 자리 ── */
+
+/*
+ * 길잡이의 방을 뒤에 깐다.
+ *
+ * 인트로에서 조언을 적던 그 책상이다. 처음과 끝이 같은 방이면 한 판이 닫힌다.
+ * 결말의 색을 그 위에 겹쳐 판마다 다른 공기를 만든다.
+ */
+.u6-ending-backdrop img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.22;
+  filter: saturate(0.55) brightness(0.72);
+}
+
+.u6-ending-backdrop {
+  overflow: hidden;
+}
+
+/* 네 모서리를 여민다. 문서로 읽히게 하는 것은 테두리다. */
+.u6-ending-corner {
+  position: absolute;
+  /* 모서리는 셸을 기준으로 붙는다. */
+  z-index: 2;
+  width: clamp(3.2rem, 4cqw, 6rem);
+  height: auto;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.u6-ending-corner--tl { top: 0.6rem; left: 0.6rem; }
+.u6-ending-corner--tr { top: 0.6rem; right: 0.6rem; transform: scaleX(-1); }
+.u6-ending-corner--bl { bottom: 0.6rem; left: 0.6rem; transform: scaleY(-1); }
+.u6-ending-corner--br { bottom: 0.6rem; right: 0.6rem; transform: scale(-1); }
+
+/* 문양 뒤에 결말의 색을 깐다. */
+.u6-ending-emblem {
+  position: relative;
+}
+
+.u6-ending-emblem__banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  width: clamp(7.5rem, 11cqw, 16rem);
+  height: auto;
+  opacity: 0.42;
+  transform: translate(-50%, -52%);
+  pointer-events: none;
+}
+
+/* 표제와 본문을 가르는 문양. */
+.u6-ending-rule {
+  width: clamp(9rem, 14cqw, 20rem);
+  height: auto;
+  margin: clamp(0.2rem, 0.35cqh, 0.5rem) auto 0;
+  opacity: 0.55;
+}
+
+/* 돌아가는 버튼의 판. 글자와 문양이 그 위에 얹힌다. */
+.u6-ending-cta {
+  position: relative;
+}
+
+.u6-ending-cta__plate {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+/*
+ * 완주는 큰 별, 그 밖은 작은 별. 무게가 다르다.
+ *
+ * 흐름 안에 둔다. 표제 위에 겹쳐 놓았더니 "캠페인 종료" 글자를 가렸다.
+ */
+.u6-ending-star {
+  display: block;
+  width: clamp(1.4rem, 1.9cqw, 2.8rem);
+  height: auto;
+  margin: clamp(0.15rem, 0.25cqh, 0.4rem) auto 0;
+  opacity: 0.72;
+}
+
+/* 등급 글자를 감싸는 월계관. 문양 안의 잎과 다른 바깥 테두리다. */
+.u6-ending-emblem__rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.3rem, 0.45cqw, 0.7rem);
+}
+
+.u6-ending-emblem__laurel {
+  width: clamp(1.1rem, 1.5cqw, 2.2rem);
+  height: auto;
+  opacity: 0.72;
+}
+
+/* 이야기와 숫자를 가르는 큰 구분선. */
+.u6-ending-divider {
+  width: min(100%, 46cqw);
+  height: clamp(0.55rem, 0.8cqh, 1.1rem);
+  margin: clamp(0.1rem, 0.2cqh, 0.3rem) auto;
+  object-fit: contain;
+  opacity: 0.5;
+}
+
+/* 정산 제목 아래 가는 선. */
+.u6-settlement-rule {
+  width: 100%;
+  height: clamp(0.35rem, 0.5cqh, 0.7rem);
+  margin-bottom: clamp(0.2rem, 0.3cqh, 0.4rem);
+  object-fit: contain;
+  opacity: 0.5;
 }

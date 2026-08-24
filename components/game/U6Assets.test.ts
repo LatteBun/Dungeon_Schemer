@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { pngAlphaPadding, pngDimensions } from "./png-alpha";
@@ -44,6 +44,18 @@ const USED_ASSETS = [
   "controls/icon_check_on.png",
   "controls/icon_check_off.png",
   "controls/icon_arrow.png",
+  /* 오래 그려만 두었던 것들. 이제 화면이 실제로 쓴다. */
+  "emblems/emblem_banner_green.png",
+  "emblems/emblem_banner_red.png",
+  "emblems/emblem_banner_black.png",
+  "emblems/emblem_banner_blue.png",
+  "decorations/corner_deco.png",
+  "decorations/divider_small.png",
+  "decorations/ornament_arrow.png",
+  "controls/button_back.png",
+  "controls/icon_button_handshake.png",
+  "controls/quote_left.png",
+  "controls/quote_right.png",
 ] as const;
 
 function assetPath(name: string): string {
@@ -81,5 +93,60 @@ describe("U6 결과 화면 자산", () => {
     });
 
     expect(Math.max(...ratios) - Math.min(...ratios)).toBeGreaterThan(0.05);
+  });
+});
+
+/**
+ * 만들어 둔 자산이 놀지 않게 한다.
+ *
+ * 결과 화면용으로 서른여덟 장을 그려 두고 여덟 장을 쓰지 않고 있었다. 배너 넉
+ * 장과 모서리 장식, 작은 구분선, 화살 문양, 돌아가기 판이 그랬다. 자산이 놀면
+ * 화면이 밋밋해지는데, 그 사실은 폴더를 세어 보기 전에는 드러나지 않는다.
+ */
+const NOT_FOR_SCREEN = new Set(["_source"]);
+
+function assetFiles(): readonly string[] {
+  return readdirSync(ROOT, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !NOT_FOR_SCREEN.has(entry.name))
+    .flatMap((dir) => readdirSync(join(ROOT, dir.name))
+      .filter((name) => name.endsWith(".png"))
+      .map((name) => `${dir.name}/${name}`));
+}
+
+function screenSources(): string {
+  const roots = ["components/game", "app"];
+  const read = (dir: string): string => readdirSync(dir, { withFileTypes: true })
+    .map((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) return read(path);
+      if (!/\.(tsx?|css)$/.test(entry.name) || entry.name.includes(".test.")) return "";
+      return readFileSync(path, "utf8");
+    })
+    .join("\n");
+  return roots.map(read).join("\n");
+}
+
+describe("U6 자산", () => {
+  it("그려 둔 자산을 화면이 모두 쓴다", () => {
+    const sources = screenSources();
+    const idle = assetFiles().filter((file) => {
+      const base = file.split("/")[1]!.replace(".png", "");
+      if (sources.includes(base)) return false;
+      /*
+       * 마지막 조각을 떼어 낸 접두사로 다시 찾는다.
+       *
+       * `icon_check_off` 는 `icon_check_` 로, `star_large` 는 `star_` 로 찾는다.
+       * 조각이 하나뿐인 이름까지 줄이지는 않는다 - 그러면 아무 이름에나 걸린다.
+       */
+      const parts = base.split("_");
+      return !parts.slice(0, -1).length || !sources.includes(`${parts.slice(0, -1).join("_")}_`);
+    });
+
+    expect(idle.join(" ")).toBe("");
+  });
+
+  /* 세어 두지 않으면 자산이 늘 때 검사가 조용히 헐거워진다. */
+  it("결과 화면 자산이 서른여덟 장이다", () => {
+    expect(assetFiles()).toHaveLength(38);
   });
 });

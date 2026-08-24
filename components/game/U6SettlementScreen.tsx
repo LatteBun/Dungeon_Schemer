@@ -14,6 +14,11 @@ export interface U6SettlementScreenProps {
   onContinue?: () => void;
 }
 
+const ASSET = "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL";
+
+/** 방금 나온 던전이 뒤에 남아 있다. 정산은 그 문 앞에서 셈하는 자리다. */
+const SCENE = "/assets/u5/dungeon-progress-scenes";
+
 function riskStars(level: number): string {
   return `★${level}`;
 }
@@ -23,6 +28,21 @@ function signed(value: number): string {
 }
 
 /** 원인 순서. 숫자를 나열하지 않고 왜 그렇게 됐는지를 따라간다. */
+/*
+ * 칸마다 제 문양을 준다.
+ *
+ * 다섯 칸이 번호만 다른 같은 상자였다. 원인 사슬은 "무엇을 골랐고 → 어떻게
+ * 받아들였고 → 얼마나 다쳤고 → 무엇을 얻거나 잃었고 → 캠페인이 어떻게
+ * 달라졌는가" 인데, 그 뜻이 문양으로도 읽혀야 한 눈에 따라갈 수 있다.
+ */
+const CAUSE_ICON: Readonly<Record<number, string>> = {
+  1: `${ASSET}/stats/icon_advice.png`,
+  2: `${ASSET}/stats/icon_trust.png`,
+  3: `${ASSET}/stats/icon_dead.png`,
+  4: `${ASSET}/stats/icon_gold.png`,
+  5: `${ASSET}/stats/icon_reputation.png`,
+};
+
 function CauseChain({ settlement }: { settlement: U6SettlementView }) {
   const wiped = settlement.survivors === 0;
 
@@ -30,7 +50,10 @@ function CauseChain({ settlement }: { settlement: U6SettlementView }) {
     <ol className="u6-cause-chain" data-testid="u6-cause-chain">
       {settlement.causeChain.map((step) => (
         <li className="u6-cause" key={step.order}>
-          <span className="u6-cause__order" aria-hidden="true">{step.order}</span>
+          <span className="u6-cause__order" aria-hidden="true">
+            <img src={CAUSE_ICON[step.order] ?? CAUSE_ICON[1]!} alt="" />
+            <b>{step.order}</b>
+          </span>
           <div className="u6-cause__body">
             <strong>{step.label}</strong>
             <p>{step.detail}</p>
@@ -50,6 +73,7 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
   return (
     <section className="panel-section u6-changes" aria-labelledby="u6-changes-title">
       <h3 id="u6-changes-title">캠페인 변화</h3>
+      <img className="u6-changes__divider" src={`${ASSET}/decorations/divider_small.png`} alt="" aria-hidden="true" />
 
       <div className="u6-risk-change" data-testid="u6-risk-change">
         <span>던전 위험도</span>
@@ -67,13 +91,14 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
         </small>
       </div>
 
+      {/* 문양을 붙인다. 명성과 골드는 캠페인 내내 같은 그림으로 읽힌다. */}
       <dl className="u6-deltas">
         <div>
-          <dt>명성</dt>
+          <dt><img src={`${ASSET}/stats/icon_reputation.png`} alt="" aria-hidden="true" />명성</dt>
           <dd>{signed(settlement.reputationDelta)}</dd>
         </div>
         <div>
-          <dt>골드</dt>
+          <dt><img src={`${ASSET}/stats/icon_gold.png`} alt="" aria-hidden="true" />골드</dt>
           <dd>{signed(settlement.goldDelta + settlement.relicGold)}</dd>
         </div>
       </dl>
@@ -84,6 +109,13 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
           <strong>골드 {settlement.nextReward.gold}</strong>
         </p>
       )}
+
+      {/*
+        * 봉인으로 닫는다.
+        *
+        * 정산은 길드에 넘기는 문서다. 봉인이 찍혀야 끝난 문서로 읽힌다.
+        */}
+      <img className="u6-changes__seal" src={`${ASSET}/emblems/wax_seal.png`} alt="" aria-hidden="true" />
     </section>
   );
 }
@@ -92,7 +124,17 @@ export function U6SettlementScreen({ status, settlement, onContinue }: U6Settlem
   const wiped = settlement.survivors === 0;
 
   return (
-    <div className="u6-result-screen u6-result-screen--settlement" data-testid="u6-settlement">
+    /*
+     * 방금 나온 던전을 본문 바탕에 깐다.
+     *
+     * 맨 바탕 위에서 셈하면 어느 던전에서 돌아온 정산인지가 문장에만 남는다.
+     * 셸 뒤에 따로 깔면 셸 안쪽이 덮으므로, 본문 자신의 배경으로 준다.
+     */
+    <div
+      className="u6-result-screen u6-result-screen--settlement"
+      data-testid="u6-settlement"
+      style={{ ["--u6-settlement-scene" as string]: `url("${SCENE}/${settlement.themeId}/entry.png")` }}
+    >
       <GameShell
         status={status}
         screenTitle={`정산 · ${settlement.dungeonName}`}
@@ -106,6 +148,7 @@ export function U6SettlementScreen({ status, settlement, onContinue }: U6Settlem
                   : "생존 인원 비율만큼 계약 보상을 받는다"}
               </small>
             </p>
+            <img className="u6-settlement-rule" src={`${ASSET}/decorations/divider_line.png`} alt="" aria-hidden="true" />
             <CauseChain settlement={settlement} />
             {onContinue !== undefined && (
               <button type="button" className="u6-settlement-continue" onClick={onContinue}>
