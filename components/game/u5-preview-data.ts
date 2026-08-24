@@ -391,7 +391,7 @@ function buildLog(): readonly U5LogEntry[] {
     classDefs: CLASSES,
     seed: `${PREVIEW_SEED}/${PREVIEW_DUNGEON}/log`,
     pendingMerchantEffect: null,
-    retrySteps: 0,
+    advicePressure: 0,
   }).battle;
 
   const disclosed = disclosedRuleIds({

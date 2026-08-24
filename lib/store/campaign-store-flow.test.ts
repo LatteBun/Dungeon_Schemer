@@ -50,6 +50,7 @@ describe("스토어로 걷는 흐름", () => {
       map,
       currentNodeId: map.entryNodeId,
       visitedNodeIds: [map.entryNodeId],
+      advicePressure: 0,
       infoRecords: [],
       pendingMerchantEffect: null,
       bossResult: null,
