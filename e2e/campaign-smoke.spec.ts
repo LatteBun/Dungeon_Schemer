@@ -60,3 +60,28 @@ test("캠페인이 인트로에서 첫 사건 결과까지 진행된다", async 
   await expect(page.getByTestId("campaign-rejection")).toHaveCount(0);
   expectNoBrowserErrors(failures, `campaign ${page.url()}`);
 });
+
+test("연속 전투 결과는 React key 경고 없이 표시된다", async ({ page }) => {
+  const failures = watchBrowserErrors(page);
+  await page.goto("/campaign?seed=dungeon-schemer");
+
+  await page.getByRole("button", { name: "길드 게시판으로" }).click();
+  const board = page.getByRole("region", { name: "길드 게시판" });
+  await board.getByRole("button").filter({ hasText: "진입 가능" }).first().click();
+  await page.getByRole("button", { name: "이 공고 계약하기" }).click();
+
+  const enterFirstBattle = async () => {
+    const map = page.getByRole("region", { name: "던전 지도" });
+    await map.getByRole("button", { name: "전투 지점 선택" }).first().click();
+    await page.getByRole("button", { name: "이 지점으로 이동" }).click();
+    await page.getByTestId("u5-advice-list").getByRole("button").first().click();
+  };
+
+  await enterFirstBattle();
+  await page.getByRole("button", { name: "전투 건너뛰기" }).click();
+  await page.getByRole("button", { name: "지도로 돌아간다" }).click();
+
+  await enterFirstBattle();
+  await expect(page.getByRole("button", { name: "지도로 돌아간다" })).toBeEnabled({ timeout: 10_000 });
+  expectNoBrowserErrors(failures, `campaign ${page.url()}`);
+});

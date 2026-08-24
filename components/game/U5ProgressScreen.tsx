@@ -130,8 +130,8 @@ function Outcome({ outcome }: { outcome: NonNullable<U5ProgressView["outcome"]> 
       <section className="u5-outcome__step" aria-labelledby="u5-changes-title">
         <h4 id="u5-changes-title">수치·신뢰 변화</h4>
         <dl className="u5-changes">
-          {outcome.changes.map((change) => (
-            <div key={change.label}>
+          {outcome.changes.map((change, index) => (
+            <div key={`${change.label}-${index}`}>
               <dt>{change.label}</dt>
               <dd>{change.detail}</dd>
             </div>
