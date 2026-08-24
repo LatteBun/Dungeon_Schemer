@@ -4,6 +4,7 @@ import type { InfoRecord } from "./info";
 import type { ChoiceId, CharacterId, ClueId, DungeonId, EventId, NodeId, RuleId } from "./ids";
 import type { EventKind, SituationEvent } from "./content";
 import type { BattleResolution } from "./battle";
+import type { AdvicePressure } from "../balance/campaign-balance";
 
 export type ExpeditionStatus = "cleared" | "wiped";
 
@@ -83,6 +84,8 @@ export interface ExpeditionState {
   map: GeneratedMap;
   currentNodeId: NodeId;
   visitedNodeIds: readonly NodeId[];
+  /** 현재 원정에서 실행한 조언이 누적한 전투 압력. */
+  readonly advicePressure: AdvicePressure;
   /** 보스전 뒤 검증할 지연형 조언의 개인별 반응이다. accepted와 suspected를 보존한다. */
   infoRecords: readonly InfoRecord[];
   pendingMerchantEffect: PendingMerchantEffect | null;

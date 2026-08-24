@@ -133,6 +133,7 @@ export {
   runWorldTurn,
 } from "./worldturn";
 export { CAMPAIGN_BALANCE } from "../balance/campaign-balance";
+export type { AdvicePressure } from "../balance/campaign-balance";
 export type {
   WorldTurnExecution,
   WorldTurnActivity,

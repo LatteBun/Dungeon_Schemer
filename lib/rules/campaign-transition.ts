@@ -46,6 +46,7 @@ import {
 import { settleExpedition } from "./settlement";
 import { runWorldTurn } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
+import { assertAdvicePressure } from "./advice-pressure";
 
 function invalidTransition(message: string, details: Record<string, unknown> = {}): never {
   throw new RuleError("INVALID_TRANSITION", message, details);
@@ -656,6 +657,7 @@ export function createExpeditionForOffer(
       map,
       currentNodeId: map.entryNodeId,
       visitedNodeIds: [map.entryNodeId],
+      advicePressure: 0,
       infoRecords: [],
       pendingMerchantEffect: null,
       bossResult: null,
@@ -675,6 +677,7 @@ function copyActiveExpedition(
   action: Extract<CampaignTransition, { type: "START_EXPEDITION" }>,
   offer: BoardOffer,
 ): NonNullable<CampaignTransitionContext["activeExpedition"]> {
+  assertAdvicePressure(action.expedition.advicePressure);
   return {
     expeditionId: action.expeditionId,
     offer: {

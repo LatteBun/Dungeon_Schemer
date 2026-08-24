@@ -54,6 +54,7 @@ function started(): CampaignTransitionResult {
     map,
     currentNodeId: map.entryNodeId,
     visitedNodeIds: [map.entryNodeId],
+    advicePressure: 0,
     infoRecords: [],
     pendingMerchantEffect: null,
     bossResult: null,
@@ -245,6 +246,7 @@ describe("공고에서 원정 상태를 만든다", () => {
     expect(built.partyMembers).toHaveLength(3);
     expect(built.expedition.map.entryNodeId).toBe(built.expedition.currentNodeId);
     expect(built.expedition.visitedNodeIds).toEqual([built.expedition.map.entryNodeId]);
+    expect(built.expedition.advicePressure).toBe(0);
     /* 계약 시점의 위험도다. 던전이 올라도 이 원정은 이 값으로 정산한다. */
     expect(built.expedition.riskLevel).toBe(dungeon.riskLevel);
     /* 공개 규칙 수는 위험도가 정한다. 활성 3개 중 일부만 나온다. */
@@ -273,6 +275,20 @@ describe("공고에서 원정 상태를 만든다", () => {
     expect(() => transitionCampaign(selected.campaign, selected.context, {
       type: "START_EXPEDITION", expeditionId: "exp-built-01", ...built,
     })).not.toThrow();
+  });
+
+  it("잘못된 조언 압력으로 START_EXPEDITION 하면 상태 오류다", () => {
+    const { campaign, context } = boardedCampaign();
+    const offer = campaign.offers.find((one) => one.lockReason === null)!;
+    const selected = transitionCampaign(campaign, context, { type: "SELECT_CONTRACT", offerId: offer.id });
+    const built = createExpeditionForOffer(selected.campaign, offer);
+
+    expect(() => transitionCampaign(selected.campaign, selected.context, {
+      type: "START_EXPEDITION",
+      expeditionId: "exp-invalid-pressure-01",
+      ...built,
+      expedition: { ...built.expedition, advicePressure: 4 as never },
+    })).toThrowError(expect.objectContaining({ code: "INVALID_STATE" }));
   });
 });
 
