@@ -147,15 +147,15 @@
  * 이 그렇게 두고 있고, 나란히 놓여야 셋을 한눈에 견주게 된다. 위아래로 쌓으면
  * 먼저 읽은 것이 기준이 되어 순서가 판단에 끼어든다.
  *
- * 카드는 남는 세로 공간을 모두 쓴다. 카드 밖에 빈 자리를 남기면 콘솔 아래가
- * 통째로 비어 화면이 미완성으로 읽힌다. 다만 안에서 위아래로 벌리지는 않는다.
- * 벌리면 구분선이 허공에 뜨고 근거가 바닥에 붙어 늘어난 티가 난다. 번호부터
- * 근거까지를 한 덩어리로 묶어 카드 가운데에 둔다.
+ * 카드는 낮은 금속 명패로 중앙에 모은다. 남는 세로 공간을 명패가 다 차지하면
+ * 근거가 너무 멀어져 비교가 어려워진다. 번호부터 근거까지를 한 덩어리로 묶어
+ * 명패 가운데에 둔다.
  */
 .u5-advice-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-content: center;
   gap: clamp(0.4rem, 0.55cqw, 0.85rem);
   margin: 0;
   padding: 0;
@@ -165,8 +165,8 @@
 
 .u5-advice {
   display: grid;
+  height: clamp(10.5rem, 23cqh, 14rem);
   min-width: 0;
-  min-height: 0;
 }
 
 /* 세 개가 같은 모양이어야 한다. 슬롯별 변형을 두지 않는다. */
@@ -179,15 +179,38 @@
   width: 100%;
   height: 100%;
   min-height: 0;
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 40%, var(--color-edge));
-  border-radius: 0.22rem;
-  background: linear-gradient(180deg, rgb(30 22 15 / 90%), rgb(17 13 9 / 94%));
+  position: relative;
+  border: 0.125rem solid color-mix(in srgb, var(--color-shell-metal) 72%, var(--color-edge));
+  clip-path: polygon(7% 0, 93% 0, 100% 10%, 100% 90%, 93% 100%, 7% 100%, 0 90%, 0 10%);
+  background: linear-gradient(145deg, rgb(40 27 16 / 96%), rgb(20 14 9 / 98%));
+  box-shadow: inset 0 0 0 0.18rem #120c07, inset 0 0 0 0.25rem #87673c;
   color: inherit;
   padding: clamp(0.4rem, 0.55cqw, 0.85rem) clamp(0.6rem, 0.8cqw, 1.2rem);
   cursor: pointer;
   text-align: center;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
+
+.u5-advice__rivets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.u5-advice__rivet {
+  position: absolute;
+  width: 0.42rem;
+  height: 0.42rem;
+  border: 1px solid #a68a59;
+  border-radius: 50%;
+  background: #392a1b;
+  box-shadow: inset 0 0.06rem 0.08rem #d4bd87;
+}
+
+.u5-advice__rivet.is-top-left { top: 0.55rem; left: 0.72rem; }
+.u5-advice__rivet.is-top-right { top: 0.55rem; right: 0.72rem; }
+.u5-advice__rivet.is-bottom-left { bottom: 0.55rem; left: 0.72rem; }
+.u5-advice__rivet.is-bottom-right { right: 0.72rem; bottom: 0.55rem; }
 
 /* 자리 번호. 셋이 같은 색이어야 한다. 색이 갈리면 그것이 단서가 된다. */
 .u5-advice__slot {

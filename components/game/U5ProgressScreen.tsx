@@ -72,6 +72,12 @@ function AdviceOption({ slot, text, rationale, goldCost, unavailableReason, onSe
         disabled={unavailableReason !== undefined}
         onClick={() => onSelect?.(slot)}
       >
+        <span className="u5-advice__rivets" aria-hidden="true">
+          <i className="u5-advice__rivet is-top-left" />
+          <i className="u5-advice__rivet is-top-right" />
+          <i className="u5-advice__rivet is-bottom-left" />
+          <i className="u5-advice__rivet is-bottom-right" />
+        </span>
         {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
         <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
         <strong className="u5-advice__text">{text}</strong>

@@ -137,7 +137,18 @@ describe("U5ProgressScreen", () => {
       expect(item).toContain('class="u5-advice__button"');
       expect(item).toContain('class="u5-advice__text"');
       expect(item).toContain('class="u5-advice__rationale"');
+      expect(item.match(/class="u5-advice__rivet(?:\s|")/g)).toHaveLength(4);
     }
+  });
+
+  it("조언 카드는 남은 높이를 채우지 않고 A1 금속 명패로 중앙 정렬한다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+
+    expect(sheet).toMatch(/\.u5-advice-list\s*\{[^}]*align-content:\s*center/);
+    expect(sheet).toMatch(/\.u5-advice\s*\{[^}]*height:\s*clamp\(/);
+    expect(sheet).toMatch(/\.u5-advice__button\s*\{[^}]*clip-path:\s*polygon\(/);
+    expect(sheet).toMatch(/\.u5-advice__button\s*\{[^}]*box-shadow:[^}]*inset/);
+    expect(sheet).toMatch(/\.u5-advice__rivets\s*\{/);
   });
 
   it("조언 마크업에 판정 어휘가 새지 않는다", () => {
