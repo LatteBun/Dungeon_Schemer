@@ -14,7 +14,6 @@ import type {
   SettlementResult,
   SettlementSnapshot,
 } from "@/lib/domain";
-import { rewardForSurvivors } from "@/lib/domain";
 
 export interface SettlementExecution {
   readonly campaign: CampaignState;
@@ -172,7 +171,6 @@ export function settleExpedition(
     riskBefore,
     riskAfter,
     riskCapped: wiped && riskBefore === RISK_LEVEL_MAX,
-    nextReward: wiped ? rewardForSurvivors(riskAfter, 3) : null,
     causeChain: createCauseChain(snapshot, survivorCount, reputationDelta, goldDelta, relicGold, riskBefore, riskAfter),
   };
   return { campaign: nextCampaign, result };

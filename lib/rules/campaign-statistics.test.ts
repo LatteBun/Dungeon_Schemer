@@ -70,7 +70,6 @@ function settlementFixture(
     riskBefore: 3,
     riskAfter: 3,
     riskCapped: false,
-    nextReward: null,
     causeChain: {
       choice: "선택",
       reactions: "반응",
@@ -181,7 +180,6 @@ describe("recordSettlementStatistics", () => {
       goldDelta: 0,
       relicGold: 45,
       riskAfter: 4,
-      nextReward: { reputation: 21, gold: 45 },
     });
 
     const result = recordSettlementStatistics(createCampaignStatistics(), wiped, dungeon(4));

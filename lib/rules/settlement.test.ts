@@ -87,7 +87,6 @@ describe("settleExpedition", () => {
       reputationDelta: reputation,
       goldDelta: gold,
       relicGold: 0,
-      nextReward: null,
     });
     expect(resultCampaign).toMatchObject({ reputation: 30 + reputation, gold: 10 + gold, cumulativeGold: gold });
   });
@@ -118,7 +117,6 @@ describe("settleExpedition", () => {
       relicGold: 90,
       riskBefore: 2,
       riskAfter: 3,
-      nextReward: { reputation: 15, gold: 32 },
     });
     expect(resultCampaign.reputation).toBe(0);
     expect(resultCampaign.gold).toBe(100);

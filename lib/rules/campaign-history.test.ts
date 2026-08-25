@@ -81,7 +81,6 @@ function settlementFixture(expeditionId = "exp-1"): SettlementResult {
     riskBefore: 3,
     riskAfter: 4,
     riskCapped: false,
-    nextReward: { reputation: 10, gold: 30 },
     causeChain: {
       choice: "choice",
       reactions: "reactions",

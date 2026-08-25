@@ -82,12 +82,7 @@ export {
   REPUTATION_START,
 } from "./campaign";
 
-export {
-  FULL_SURVIVOR_REWARDS,
-  rewardForSurvivors,
-} from "./settlement";
 export type {
-  Reward,
   SettlementCauseChain,
   SettlementCauseInputs,
   SettlementMemberChange,

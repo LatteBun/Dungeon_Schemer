@@ -7,6 +7,8 @@ import {
   type U6SettlementView,
 } from "./u6-settlement-model";
 
+const FUTURE_REWARD_PROPERTY = "next" + "Reward";
+
 function result(over: Partial<SettlementResult> = {}): SettlementResult {
   const campaign = initializeCampaign("u6-settlement-adapter");
   const dungeon = campaign.dungeons[0];
@@ -23,7 +25,6 @@ function result(over: Partial<SettlementResult> = {}): SettlementResult {
     riskBefore: 1,
     riskAfter: 2,
     riskCapped: false,
-    nextReward: { reputation: 10, gold: 20 },
     causeChain: {
       choice: "선택 내용",
       reactions: "반응 내용",
@@ -47,7 +48,6 @@ const settlement = (over: Partial<U6SettlementView> = {}): U6SettlementView => (
   reputationDelta: 9,
   goldDelta: 19,
   relicGold: 0,
-  nextReward: { reputation: 15, gold: 32 },
   ...over,
 });
 
@@ -78,14 +78,10 @@ describe("U6 정산 화면 모델", () => {
     expect(view.causeChain.map((step) => step.order)).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it("클리어 결과의 다음 보상 null을 재계산 없이 보존한다", () => {
-    const view = createU6SettlementView(result({
-      status: "cleared",
-      survivorCount: 3,
-      nextReward: null,
-    }), "사막 5", "desert");
+  it("정산 결과는 미래 보상 계약을 U6으로 옮기지 않는다", () => {
+    const view = createU6SettlementView(result({ status: "cleared", survivorCount: 3 }), "사막 5", "desert");
 
-    expect(view.nextReward).toBeNull();
+    expect(view).not.toHaveProperty(FUTURE_REWARD_PROPERTY);
   });
 
   it("★5 클리어는 위험도 상한에 막힌 실패가 아니다", () => {

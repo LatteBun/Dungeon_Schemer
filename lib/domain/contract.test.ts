@@ -29,7 +29,6 @@ import {
   isContractRewardInRange,
   createCampaignTransitionContext,
   createCampaignStatistics,
-  rewardForSurvivors,
 } from "@/lib/domain";
 import type {
   BoardOffer,
@@ -163,12 +162,6 @@ describe("출전 가능 판정", () => {
   it("신뢰 1은 출전할 수 있다", () => {
     // 신뢰 0만 후보에서 빠진다. 낮은 신뢰는 위험할 뿐 자격이 아니다.
     expect(canDeploy(character({ trust: 1 }))).toBe(true);
-  });
-
-  it("위험도와 생존 인원으로 계약 보상을 계산한다", () => {
-    expect(rewardForSurvivors(3, 3)).toEqual({ reputation: 15, gold: 32 });
-    expect(rewardForSurvivors(3, 2)).toEqual({ reputation: 9, gold: 19 });
-    expect(rewardForSurvivors(3, 1)).toEqual({ reputation: 4, gold: 9 });
   });
 
   it("응급 후보는 중상을 포함하지만 사망자와 신뢰 0은 제외한다", () => {

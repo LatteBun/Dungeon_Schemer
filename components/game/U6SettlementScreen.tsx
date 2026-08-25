@@ -128,22 +128,6 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
       </dl>
 
       {/*
-        * 다음 계약이 정해져 있다는 말이 아니다.
-        *
-        * 이 값은 전멸했을 때만 나온다. 던전은 그대로 남고 위험도만 올랐으므로,
-        * 그 던전을 다시 맡으면 얼마를 받는지가 정해진다 - 보상표가 위험도와
-        * 생존 인원의 함수이기 때문이다. 「다음 계약 보상」이라고만 적으면
-        * 게시판의 다음 공고가 이미 정해진 것처럼 읽힌다.
-        */}
-      {settlement.nextReward === null ? null : (
-        <p className="u6-next-reward">
-          <span>이 던전을 다시 맡으면 · 3명 생환 기준</span>
-          <strong>명성 {settlement.nextReward.reputation}</strong>
-          <strong>골드 {settlement.nextReward.gold}</strong>
-        </p>
-      )}
-
-      {/*
         * 봉인으로 닫는다.
         *
         * 정산은 길드에 넘기는 문서다. 봉인이 찍혀야 끝난 문서로 읽힌다.
