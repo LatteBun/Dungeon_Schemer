@@ -67,7 +67,7 @@ GameShell
 - 애니메이션이 끝나야 규칙 결과가 확정되는 구조를 만들지 않는다. 규칙 상태가 먼저 확정되고 화면이 그 결과를 순차적으로 보여준다.
 - 애니메이션을 빠르게 재생하거나 건너뛰어도 같은 최종 상태에 도달해야 한다.
 
-재생 속도는 활성 원정 화면 mount가 소유하는 로컬 상태다. replay identity나 campaign Store가 속도를 소유하지 않는다. `×2`는 phase별 frame 대기 시간뿐 아니라 Attack Lunge, Hit Shake, 쓰러짐, 피해 숫자, 보스 cue, HP Bar와 idle의 모든 유한 animation 시간을 같은 비율로 줄인다. `prefers-reduced-motion`에서 0인 duration은 그대로 유지한다. 속도 전환, 다시 보기, 건너뛰기는 확정된 기록의 표시 순서와 시간만 바꾸며 E3/E4 결과, RNG, HP, 신뢰, 승패를 다시 계산하거나 변경하지 않는다.
+재생 속도는 루트의 전투 재생 속도 Provider가 소유하는 앱 실행 중 메모리 상태다. 메뉴와 U5·U5-2 전투 화면은 같은 `×1`·`×2` 값을 읽고 어느 쪽에서 바꿔도 즉시 동기화한다. Next route 전환에는 값이 남지만 localStorage·sessionStorage에는 저장하지 않으므로 새로고침·탭 종료·새 탭에서는 `×1`로 돌아간다. replay identity와 campaign Store는 속도를 소유하지 않는다. `×2`는 phase별 frame 대기 시간뿐 아니라 Attack Lunge, Hit Shake, 쓰러짐, 피해 숫자, 보스 cue, HP Bar와 idle의 모든 유한 animation 시간을 같은 비율로 줄인다. `prefers-reduced-motion`에서 0인 duration은 그대로 유지한다. 속도 전환, 다시 보기, 건너뛰기는 확정된 기록의 표시 순서와 시간만 바꾸며 E3/E4 결과, RNG, HP, 신뢰, 승패를 다시 계산하거나 변경하지 않는다.
 
 일반 몬스터 전투와 보스전의 재생 상태는 진행 화면의 우측 하단 CTA와 연결한다. 재생 중에는 그 자리에 `전투 건너뛰기`를 두고 다음 단계 이동 콜백을 노출하지 않는다. complete frame에 도달한 뒤에만 일반전은 같은 자리를 `지도로 돌아간다`, 보스전은 `정산으로`로 바꾼다. `다시 보기`는 이미 확정된 기록의 로컬 frame index만 처음으로 되돌리며, 다시 complete frame에 도달할 때까지 다음 단계 이동을 잠근다. 호출부는 일반전과 보스전의 게이트를 명시적으로 지정하고, 적용 여부나 다음 CTA를 replay 존재 여부 또는 버튼 문구로 추측하지 않는다. 비전투 사건의 CTA는 이 게이트를 사용하지 않는다.
 

@@ -3,13 +3,14 @@
 - 작성자: sbh3821
 - 작성 도구: Codex
 - 작성일: 2026-08-26
-- 상태: 구현 완료
+- 수정일: 2026-08-26
+- 상태: 후속 개선 검토 요청
 
 ## 1. 목적
 
 Dungeon Schemer의 모든 화면에서 같은 BGM을 끊김 없이 듣고, 우측 상단의 작은
-메뉴에서 BGM과 UI 효과음을 각각 켜고 끌 수 있게 한다. 같은 메뉴에서 업적 기록을
-열되 진행 중인 캠페인을 잃지 않고 원래 화면으로 돌아올 수 있어야 한다.
+메뉴에서 BGM·UI 효과음과 전투 재생 속도를 조절할 수 있게 한다. 같은 메뉴에서
+업적 기록을 열되 진행 중인 캠페인을 잃지 않고 원래 화면으로 돌아올 수 있어야 한다.
 
 이 기능은 플레이어의 게임 선택이나 캠페인 규칙을 바꾸지 않는다. 다크 판타지
 길드의 분위기를 보강하고 메타 기능에 일관된 진입점을 제공하는 앱 공통 계층이다.
@@ -24,6 +25,8 @@ Dungeon Schemer의 모든 화면에서 같은 BGM을 끊김 없이 듣고, 우�
 - BGM과 효과음의 독립 ON/OFF
 - 둘 다 OFF인 최초 기본값
 - 같은 브라우저에 오디오 설정 저장
+- 현재 앱 실행 동안 공유하는 전투 재생 속도 `×1`·`×2`
+- 메뉴와 전투 장면의 재생 속도 조작 동기화
 - 현재 화면 위에 여는 업적 기록 오버레이
 - 독립 `/achievements` 페이지의 `이전 화면으로` 동작
 
@@ -34,6 +37,7 @@ Dungeon Schemer의 모든 화면에서 같은 BGM을 끊김 없이 듣고, 우�
 - 음량 슬라이더와 세부 믹서
 - 음원 스트리밍, 외부 CDN, 서버 저장, 계정 동기화
 - 캠페인 Store의 새로고침·탭 종료 뒤 복원
+- 전투 재생 속도의 localStorage·sessionStorage 저장과 `×0.5`·`×3` 이상의 추가 단계
 - 전투 행동별 효과음과 캐릭터 음성
 
 ## 3. 핵심 결정
@@ -45,6 +49,9 @@ Dungeon Schemer의 모든 화면에서 같은 BGM을 끊김 없이 듣고, 우�
 5. 전역 메뉴의 업적 기록은 라우트 이동이 아니라 오버레이다.
 6. 독립 업적 페이지도 `메인 메뉴로` 대신 `이전 화면으로`를 쓴다.
 7. 캠페인 규칙과 상태는 오디오·메뉴 계층을 알지 않는다.
+8. 메뉴 trigger는 설정 전용 톱니바퀴가 아니라 세로 점 3개인 quick-menu 기호다.
+9. 패널의 보이는 제목은 없애고 네 항목을 같은 높이·같은 우측 값 칸으로 정렬한다.
+10. 전투 속도는 루트 Provider의 메모리 상태이며 route 전환에는 남고 새로고침에는 `×1`로 돌아간다.
 
 ## 4. 앱 구조
 
@@ -53,11 +60,12 @@ Dungeon Schemer의 모든 화면에서 같은 BGM을 끊김 없이 듣고, 우�
 ```text
 game-canvas 1920×1080
 └─ AppAudioProvider
-   └─ AppFrame
-      ├─ AppScreenSlot
-      │  └─ 현재 route 화면
-      ├─ GlobalQuickMenu
-      └─ AchievementOverlay (열렸을 때만)
+   └─ AppBattlePlaybackRateProvider
+      └─ AppFrame
+         ├─ AppScreenSlot
+         │  └─ 현재 route 화면
+         ├─ GlobalQuickMenu
+         └─ AchievementOverlay (열렸을 때만)
 ```
 
 `AppFrame`이 단일 최상위 DOM 요소가 되어 현재의 고정 캔버스 전체 점유 계약을
@@ -67,6 +75,12 @@ game-canvas 1920×1080
 `AppAudioProvider`는 `app/layout.tsx` 아래에서 한 번만 만들어진다. 따라서
 `/`에서 `/campaign`으로 이동하거나 캠페인 안에서 화면 단계가 바뀌어도 BGM
 element가 다시 만들어지지 않는다.
+
+`AppBattlePlaybackRateProvider`도 루트 레이아웃에서 한 번만 만들어져 메뉴와
+U5·U5-2 전투 장면에 같은 `playbackRate`와 toggle을 제공한다. 초기값은 `1`이고
+React 메모리 외 저장소에는 쓰지 않는다. Next route 전환에는 Provider가 유지되므로
+속도가 남지만 새로고침·탭 종료·새 탭에서는 다시 `×1`이다. 속도는 확정된 전투
+기록의 표시 시간만 바꾸며 campaign Store·E3·E4 결과를 수정하지 않는다.
 
 ## 5. 오디오 설정 계약
 
@@ -168,9 +182,11 @@ UI 선택음은 둔한 목재·양피지 감촉, 메뉴음은 짧은 금속 걸�
 
 - 메인 메뉴와 모든 캠페인 화면의 우측 상단에 둔다.
 - 1920×1080 캔버스 기준 상태 칩과 겹치지 않는 안전 여백을 둔다.
-- 작은 검은 금속 길드 문장 버튼과 금색 테두리를 사용한다.
-- 플랫 SaaS 톱니바퀴 모양과 화면을 가리는 큰 설정 모달은 쓰지 않는다.
+- 작은 검은 금속 버튼 안에 세로 점 3개를 넣고 금색 테두리를 사용한다.
+- 업적 진입까지 포함하므로 설정 전용 톱니바퀴와 길드 문장·방패를 쓰지 않는다.
 - 패널은 버튼 바로 아래에 열리는 짧은 세로형 철제 패널이다.
+- `길드 장부`·`설정` 같은 보이는 제목과 장식 header는 두지 않는다. panel의
+  접근성 이름 `빠른 메뉴`는 유지한다.
 - 크기는 `rem`, 캔버스 상대 위치는 `cqw`·`cqh`를 쓰며 `vw`·`vh`와 미디어
   쿼리는 추가하지 않는다.
 
@@ -179,15 +195,22 @@ UI 선택음은 둔한 목재·양피지 감촉, 메뉴음은 짧은 금속 걸�
 ```text
 [BGM        OFF]
 [효과음     OFF]
+[전투 속도   ×1]
 [업적 기록     >]
 ```
 
 스위치는 실제 `button`에 `role="switch"`, `aria-checked`를 제공한다. ON/OFF를
 항상 텍스트로 적어 색에만 기대지 않는다.
 
+네 행은 같은 높이와 같은 2열 grid를 쓰고 우측 값 칸도 같은 폭으로 고정한다.
+업적 행만 별도 위 여백·높이·넓이를 갖지 않는다. 전투 속도는 ON/OFF가 아니므로
+일반 button으로 두고 현재 `×1` 또는 `×2`를 텍스트와 접근성 이름으로 알린다.
+메뉴에서 바꾸면 현재 전투 장면의 속도 버튼도 즉시 같은 값으로 바뀌고, 전투
+장면에서 바꾸면 열린 메뉴와 다음 전투에도 같은 값이 보인다.
+
 메뉴 버튼은 `aria-expanded`, `aria-controls`를 가진다. 바깥 클릭과 `Escape`로
 닫히며 닫힌 뒤 포커스는 메뉴 버튼으로 돌아간다. 메뉴가 열린 동안 Tab 이동은
-패널의 세 항목과 닫기 가능한 경계 안에서 예측 가능해야 한다.
+패널의 네 항목과 닫기 가능한 경계 안에서 예측 가능해야 한다.
 
 독립 `/achievements` 페이지에서는 전역 메뉴를 숨긴다. 업적 오버레이가 열린
 동안에도 아래 화면의 전역 메뉴는 조작할 수 없다.
@@ -219,6 +242,8 @@ route 화면과 `/campaign`의 `CampaignStoreProvider`는 unmount되지 않는�
 ## 10. 기존 컴포넌트 변경 경계
 
 - `app/layout.tsx`: Provider와 AppFrame을 한 번 연결
+- `components/game/AppBattlePlaybackRateProvider.tsx`: route 전환에 남고 reload에는
+  초기화되는 `×1`·`×2` 메모리 상태
 - `components/game/AchievementScreen.tsx`: 카드 화면과 복귀 동작을 분리해 route와
   overlay가 공유
 - `components/game/MainMenuScreen.tsx`: 독립 업적 CTA에 안전한 `returnTo` 추가
@@ -230,6 +255,10 @@ route 화면과 `/campaign`의 `CampaignStoreProvider`는 unmount되지 않는�
 기존 `GameShell`, 각 U2~U6 화면과 캠페인 규칙의 props를 메뉴 때문에 늘리지
 않는다. 공통 chrome은 화면 바깥에서 합성한다.
 
+`use-u5-battle-playback.ts`의 frame duration 계산과 `U5BattlePlaybackRate` 타입은
+그대로 재사용한다. 기존 화면별 `useU5BattlePlaybackRate` 소유권만 루트 Provider로
+옮기며, 전투 화면의 `×1`·`×2` 버튼은 제거하지 않는다.
+
 ## 11. 오류와 경계 상황
 
 - SSR에서는 OFF 자리와 같은 크기의 메뉴를 그린 뒤 hydration에서 저장 설정을
@@ -240,6 +269,8 @@ route 화면과 `/campaign`의 `CampaignStoreProvider`는 unmount되지 않는�
   강제하지 않는다. 메뉴에는 ON 설정을 보이되 `재생 대기`를 알 수 있게 한다.
 - 오버레이를 연 동안 캠페인 phase와 화면 로컬 상태는 바꾸지 않는다.
 - 업적 초기화는 오디오 설정을 지우지 않고, 오디오 초기화도 업적을 지우지 않는다.
+- 전투 속도는 오디오 V1 payload에 추가하지 않는다. 새로고침 뒤 `×1` 복귀는
+  의도한 동작이며 저장 실패 메시지를 만들지 않는다.
 
 ## 12. 테스트 계약
 
@@ -266,6 +297,9 @@ route 화면과 `/campaign`의 `CampaignStoreProvider`는 unmount되지 않는�
 
 - 메뉴 버튼의 `aria-expanded`와 패널 연결
 - BGM·효과음 `role="switch"`와 ON/OFF 문구
+- 세로 점 3개 trigger와 보이는 panel header 부재
+- 전투 속도 `×1`·`×2` 표기와 메뉴·전투 장면 양방향 동기화
+- 업적을 포함한 네 행의 같은 높이·우측 값 칸 폭
 - 바깥 클릭·Escape 닫기와 포커스 복귀
 - 업적 오버레이가 현재 route를 바꾸지 않음
 - 오버레이 닫기 뒤 아래 화면 유지
@@ -277,6 +311,8 @@ route 화면과 `/campaign`의 `CampaignStoreProvider`는 unmount되지 않는�
 - 1920×1080, 2560×1440, 1440×900, 1280×1024에서 메뉴 위치와 레터박스
 - 상태 바·CTA·dialog와 겹치지 않음
 - `/` → `/campaign` 전환 중 BGM 지속
+- 메뉴에서 `×2` 선택 뒤 client route 전환에는 유지되고 reload 뒤 `×1`로 초기화
+- U5-2 메뉴와 장면의 속도 버튼을 어느 쪽에서 바꿔도 다른 쪽이 즉시 동기화
 - 메뉴 → 업적 → 이전 화면에서 캠페인 상태 유지
 - BGM loop 경계의 click·공백 없음
 - WAV peak·duration·sample rate 검사
@@ -289,6 +325,7 @@ route 화면과 `/campaign`의 `CampaignStoreProvider`는 unmount되지 않는�
 
 - `docs/experience/SCREEN_LAYOUT.md`: 공통 chrome과 우측 상단 안전 영역
 - `docs/experience/ONBOARDING_AND_INTERFACE.md`: 메뉴·업적 오버레이 진입과 복귀
+- `docs/experience/UI_IMPLEMENTATION_GUIDE.md`: 전투 재생 속도의 루트 세션 소유권
 - `docs/technical/SESSION_PERSISTENCE_REVIEW.md`: 오디오 설정 V1 localStorage와
   캠페인 비영속 경계
 - `docs/technical/DEVELOPMENT_ENVIRONMENT.md`: 오디오 생성 스크립트와 검증 방법
@@ -301,7 +338,9 @@ route 화면과 `/campaign`의 `CampaignStoreProvider`는 unmount되지 않는�
 
 - 사용자 선택 전에는 소리가 나지 않는다.
 - 사용자가 BGM과 효과음을 독립적으로 켜고 끌 수 있다.
-- 설정이 같은 브라우저의 다음 방문에 유지된다.
+- 메뉴와 전투 화면에서 `×1`·`×2`가 한 상태로 동기화된다.
+- 전투 속도는 route 전환에는 남고 새로고침에는 `×1`로 돌아간다.
+- BGM·효과음 설정이 같은 브라우저의 다음 방문에 유지된다.
 - BGM이 앱 route 전환에도 처음부터 다시 시작하지 않는다.
 - 전역 메뉴가 기존 화면의 상태 바와 주요 CTA를 가리지 않는다.
 - 메뉴에서 업적 기록을 열고 닫아도 캠페인이 초기화되지 않는다.
