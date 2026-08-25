@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** U6 정산 화면이 정복·전멸을 정확히 구분하고, 사망·중상·신뢰 0과 캠페인 누적 효과를 중복 없이 보여주게 한다.
+**Goal:** U6 정산 화면이 정복과 전멸을 정확히 구분하고, 사망·중상·신뢰 0과 캠페인 누적 효과를 중복 없이 보여주게 한다.
 
-**Architecture:** 정산 규칙은 구조화된 상태와 수치 및 원정 근거만 반환한다. `createU6SettlementView`가 정산 뒤 `CampaignState`와 `SettlementResult`를 받아 결과 표제, 인물 상태, 던전 결과, 신뢰 0 누적을 화면용 union으로 한 번만 분류하고, `U6SettlementScreen`은 그 View를 좌측 결과·원인·인물과 우측 캠페인 변화로 배치한다.
+**Architecture:** 정산 규칙은 구조화된 수치·상태와 원정 근거만 반환한다. `createU6SettlementView`가 정산 뒤 `CampaignState`와 `SettlementResult`를 받아 결과 표제, 인물 상태, 던전 결과, 신뢰 0 누적을 화면용 union으로 한 번만 분류하고, `U6SettlementScreen`은 그 View를 좌측 결과·원인·인물과 우측 캠페인 변화로 배치한다.
 
 **Tech Stack:** Next.js 16.3.0 App Router, React 19.2.8, TypeScript 5.x, Zustand 5.0.14, CSS Grid, Vitest 4.1.10, Playwright 1.62.1, Node.js 24.19.0, pnpm 11.21.0
 
@@ -32,7 +32,7 @@
 | --- | --- |
 | `docs/experience/SCREEN_LAYOUT.md` | 정산 좌우 정보 위계의 공식 화면 계약 |
 | `docs/experience/ONBOARDING_AND_INTERFACE.md` | 플레이어가 정산에서 읽는 순서와 피드백 계약 |
-| `docs/technical/SCREEN_ADAPTER_CONTRACT.md` | 실제 C4 결과와 U6 ViewModel의 인수인계 경계 |
+| `docs/technical/SCREEN_ADAPTER_CONTRACT.md` | C4/C6 결과와 U6 ViewModel의 인수인계 경계 |
 | `docs/README.md` | 새 설계와 계획 색인 |
 | `components/game/u6-settlement-model.ts` | 정산 뒤 캠페인과 결과를 화면용 구조로 변환 |
 | `components/game/u6-settlement-model.test.ts` | 결과 분류, 인물 상태, 신뢰 누적 ViewModel 검증 |
@@ -89,34 +89,30 @@ Expected: 변경 전 기준에서 단위 테스트 PASS, lint 오류 0개, typec
 ### Task 1: 공식 문서에 새 정산 계약 고정
 
 **Files:**
-- Modify: `docs/experience/SCREEN_LAYOUT.md`의 `### 정산·엔딩`
-- Modify: `docs/experience/ONBOARDING_AND_INTERFACE.md`의 `## 보스전과 정산`
-- Modify: `docs/technical/SCREEN_ADAPTER_CONTRACT.md`의 `## U6 정산·엔딩 ← C4 · C6 · C8`
-- Modify: `docs/README.md`의 `## 이번 개편 설계`
+- Modify: `docs/experience/SCREEN_LAYOUT.md`
+- Modify: `docs/experience/ONBOARDING_AND_INTERFACE.md`
+- Modify: `docs/technical/SCREEN_ADAPTER_CONTRACT.md`
+- Modify: `docs/README.md`
 
 **Interfaces:**
-- Consumes: 설계 문서의 4질문 정보 위계와 `createU6SettlementView(campaignAfterSettlement, settlement, dungeonName, themeId)` 계약
-- Produces: 이후 모든 구현 Task가 따라야 하는 공식 화면·어댑터 문서
+- Consumes: 설계 문서의 4질문 정보 위계와 새 어댑터 시그니처
+- Produces: 이후 구현 Task가 따르는 공식 화면·어댑터 계약
 
-- [ ] **Step 1: `SCREEN_LAYOUT.md`의 정산 부분을 새 좌우 구조로 교체한다**
+- [ ] **Step 1: `SCREEN_LAYOUT.md`의 정산 설명을 교체한다**
 
-`### 정산·엔딩`의 정산 설명을 다음 내용으로 바꾼다. 엔딩 설명이 별도로 있다면 보존한다.
+`### 정산·엔딩`에서 정산 부분을 다음 내용으로 바꾼다. 엔딩 설명은 보존한다.
 
 ```markdown
-### 정산·엔딩
-
 정산 왼쪽은 `원정 결과 표제 → 마지막 조언과 파티의 판단 → 원정대 결과 3인` 순으로 읽힌다. 고정된 다섯 단계와 번호는 사용하지 않는다. 피해 수치와 신뢰 변화는 인물별 결과에, 보상과 던전 변화는 우측 캠페인 변화에 한 번만 둔다.
 
 클리어는 던전 이름과 `정복`, 귀환 인원과 사망자 이름을 표시한다. 클리어한 던전은 게시판에서 제거되므로 위험도 유지 여부를 표시하지 않는다. 전멸에서만 위험도 전후 또는 ★5 상한과 재도전 보상을 보여준다.
 
 정산 오른쪽은 던전 결과, 명성, 계약 골드, 전멸 유품 골드, 살아 있는 신뢰 0 누적과 현재 보정만 보여준다. 살아 있는 신뢰 0 인물은 변화량이 없어도 `정체 발각`과 `원정 출전 불가`를 표시하며, 사망자는 신뢰 0 누적에서 제외한다. 승급 가능 여부는 상단 상태 바가 계속 알리고 정산 패널에 중복하지 않는다.
-
-정산을 마치고 게시판으로 돌아가는 CTA는 우측 패널의 최하단에 둔다. 다른 화면의 다음 단계 CTA와 같은 높이·글자 크기·좌우 여백을 사용하되, 패널 전체 폭으로 늘리지 않고 문구에 필요한 내용 폭으로 우측 정렬한다.
 ```
 
-- [ ] **Step 2: `ONBOARDING_AND_INTERFACE.md`의 정산 표시 순서를 교체한다**
+기존 CTA의 내용 폭·우측 최하단 계약은 그대로 둔다.
 
-기존 1~7 목록을 다음 내용으로 교체한다.
+- [ ] **Step 2: `ONBOARDING_AND_INTERFACE.md`의 정산 표시 순서를 교체한다**
 
 ```markdown
 정산은 숫자만 나열하지 않고 다음 순서로 보여준다.
@@ -131,16 +127,16 @@ Expected: 변경 전 기준에서 단위 테스트 PASS, lint 오류 0개, typec
 클리어한 던전은 다시 들어갈 수 없으므로 위험도 유지 여부를 보여주지 않는다. 살아 있는 신뢰 0 인물은 신뢰 변화가 없어도 정체 발각과 출전 불가를 표시하고, 사망자는 누적에서 제외한다.
 ```
 
-기존 `승급은 자동으로 일어나지 않는다` 문단은 그대로 둔다.
+기존 `승급은 자동으로 일어나지 않는다` 문단은 유지한다.
 
-- [ ] **Step 3: `SCREEN_ADAPTER_CONTRACT.md`의 U6 정산 경계를 현재 구현 상태로 갱신한다**
+- [ ] **Step 3: `SCREEN_ADAPTER_CONTRACT.md`의 U6 정산 경계를 갱신한다**
 
-U6 정산 subsection을 다음 계약으로 바꾼다.
+다음 설명과 시그니처를 기록한다.
 
-```markdown
+````markdown
 ### `U6SettlementView` — C4 정산과 C6 신뢰 누적
 
-U6 정산은 fixture가 아니라 실제 `SettlementResult`와 정산 뒤 `CampaignState`를 소비한다. 규칙은 보상·유품·위험도·인물 전후 상태와 원정 근거를 구조화된 값으로 내고, 어댑터가 화면용 결과 표제와 상태 union을 만든다.
+U6 정산은 실제 `SettlementResult`와 정산 뒤 `CampaignState`를 소비한다. 규칙은 보상·유품·위험도·인물 전후 상태와 원정 근거를 구조화된 값으로 내고, 어댑터가 화면용 결과 표제와 상태 union을 만든다.
 
 ```ts
 createU6SettlementView(
@@ -152,11 +148,9 @@ createU6SettlementView(
 ```
 
 화면은 생존자 수로 클리어·전멸을 재판정하지 않는다. `SettlementResult.status`를 보존한 `outcome.kind`와 `dungeonOutcome`을 사용한다. 살아 있는 신뢰 0 정산 전후 인원은 정산 뒤 캠페인과 `memberChanges.before`로 만들며, 현재 보정은 C6의 `getCampaignTrustModifier`를 그대로 옮긴다.
-```
+````
 
 - [ ] **Step 4: `docs/README.md`에 설계와 계획을 색인한다**
-
-`## 이번 개편 설계` 목록 상단에 다음 두 줄을 추가한다.
 
 ```markdown
 - [U6 정산 정보 위계 개선 설계](superpowers/specs/2026-08-25-lattebun-u6-settlement-information-hierarchy-design.md): 정복·전멸, 인물별 영구 상태, 신뢰 0 누적, 캠페인 변화를 중복 없이 보여주는 정산 화면 계약
@@ -171,7 +165,7 @@ Run:
 pnpm vitest run docs/DOCUMENT_LINKS.test.ts docs/DOCUMENT_TERMINOLOGY.test.ts
 ```
 
-Expected: 문서 링크와 용어 검사 모두 PASS.
+Expected: 두 파일의 모든 테스트 PASS.
 
 - [ ] **Step 6: 공식 문서 변경을 커밋한다**
 
@@ -194,11 +188,11 @@ git commit -m "문서: 정산 정보 위계를 개정한다" -m "정복과 전�
 **Interfaces:**
 - Consumes: 현재 `SettlementResult`, 정산 뒤 `CampaignState`, `countLivingZeroTrust`, `getCampaignTrustModifier`, `DENOUNCE_THRESHOLD`
 - Produces: `U6SettlementOutcome`, `U6SettlementCause`, `U6DungeonOutcome`, `U6TrustPressureView`, 확장된 `U6SettlementMember`, 새 4인자 `createU6SettlementView`
-- Temporary compatibility: 현재 화면이 사용하는 `causeChain`, `survivors`, `riskBefore`, `riskAfter`, `riskCapped`는 Task 3에서 화면 전환이 끝날 때까지 한 Task 동안 유지한다.
+- Temporary compatibility: Task 3이 화면 전환을 끝낼 때까지 현재 화면용 `causeChain`, `survivors`, `riskBefore`, `riskAfter`, `riskCapped`를 유지한다.
 
-- [ ] **Step 1: 결과 분류와 신뢰 누적의 실패 테스트를 작성한다**
+- [ ] **Step 1: 모델 테스트 helper를 타입 안전하게 확장한다**
 
-`components/game/u6-settlement-model.test.ts`에 다음 helper와 테스트를 추가한다. 기존 `result()` helper는 현재 `SettlementResult.causeChain`을 유지한다.
+`components/game/u6-settlement-model.test.ts`에 다음 helper를 추가한다.
 
 ```ts
 function distinctMembers(campaign: ReturnType<typeof initializeCampaign>) {
@@ -212,9 +206,13 @@ function distinctMembers(campaign: ReturnType<typeof initializeCampaign>) {
     if (members.length === 3) break;
   }
   if (members.length !== 3) throw new Error("서로 다른 직업 셋이 없다");
-  return members;
+  return members as [typeof members[number], typeof members[number], typeof members[number]];
 }
+```
 
+- [ ] **Step 2: 클리어 결과 분류의 실패 테스트를 작성한다**
+
+```ts
 it("클리어는 위험도 유지가 아니라 정복 결과로 분류한다", () => {
   const campaign = initializeCampaign("u6-cleared-view");
   const [first, second, third] = distinctMembers(campaign);
@@ -232,7 +230,7 @@ it("클리어는 위험도 유지가 아니라 정복 결과로 분류한다", (
     survivorIds: [first.id, second.id],
     memberChanges: afterMembers.map((after, index) => ({
       characterId: after.id,
-      before: [first, second, third][index],
+      before: [first, second, third][index]!,
       after,
     })),
     riskBefore: 2,
@@ -250,11 +248,19 @@ it("클리어는 위험도 유지가 아니라 정복 결과로 분류한다", (
   });
   expect(view.dungeonOutcome).toEqual({ kind: "cleared" });
 });
+```
 
+- [ ] **Step 3: 신뢰 0 누적의 실패 테스트를 작성한다**
+
+```ts
 it("살아 있는 신뢰 0의 전후 인원과 현재 보정을 만든다", () => {
   const campaign = initializeCampaign("u6-zero-trust-view");
   const [first, second, third] = distinctMembers(campaign);
-  const existingZero = { ...campaign.pool.byId[campaign.pool.order[10]], trust: 0, alive: true };
+  const outsideId = campaign.pool.order.find((id) => ![first.id, second.id, third.id].includes(id));
+  if (outsideId === undefined) throw new Error("파티 밖 인물이 없다");
+  const outside = campaign.pool.byId[outsideId];
+  if (outside === undefined) throw new Error("파티 밖 인물이 없다");
+  const existingZero = { ...outside, trust: 0, alive: true };
   const beforeById = { ...campaign.pool.byId, [existingZero.id]: existingZero };
   const beforeCampaign = { ...campaign, pool: { ...campaign.pool, byId: beforeById } };
   const afterFirst = { ...first, trust: 0 };
@@ -289,7 +295,11 @@ it("살아 있는 신뢰 0의 전후 인원과 현재 보정을 만든다", () =
     countsTowardCampaign: true,
   });
 });
+```
 
+- [ ] **Step 4: 사망한 신뢰 0 인물의 실패 테스트를 작성한다**
+
+```ts
 it("사망한 신뢰 0 인물은 누적에서 제외한다", () => {
   const campaign = initializeCampaign("u6-dead-zero-trust");
   const [first, second, third] = distinctMembers(campaign);
@@ -318,7 +328,7 @@ it("사망한 신뢰 0 인물은 누적에서 제외한다", () => {
 });
 ```
 
-- [ ] **Step 2: 테스트가 새 시그니처와 타입 부재로 실패하는지 확인한다**
+- [ ] **Step 5: 새 테스트가 올바른 이유로 실패하는지 확인한다**
 
 Run:
 
@@ -326,11 +336,11 @@ Run:
 pnpm vitest run components/game/u6-settlement-model.test.ts
 ```
 
-Expected: `createU6SettlementView`의 첫 인자와 `outcome`, `dungeonOutcome`, `trustPressure`, 인물 신뢰 플래그가 없어서 FAIL.
+Expected: 새 4인자 시그니처와 `outcome`, `dungeonOutcome`, `trustPressure`, 인물 신뢰 플래그가 없어서 FAIL.
 
-- [ ] **Step 3: 새 View 타입을 추가한다**
+- [ ] **Step 6: 새 View 타입을 추가한다**
 
-`components/game/u6-settlement-model.ts`에 설계와 동일한 타입을 추가한다.
+`components/game/u6-settlement-model.ts`에 다음 타입을 추가한다.
 
 ```ts
 export interface U6SettlementOutcome {
@@ -375,18 +385,7 @@ readonly trust: {
 };
 ```
 
-`U6SettlementView`에 다음 필드를 추가한다.
-
-```ts
-readonly outcome: U6SettlementOutcome;
-readonly causes: readonly U6SettlementCause[];
-readonly dungeonOutcome: U6DungeonOutcome;
-readonly trustPressure: U6TrustPressureView | null;
-```
-
-- [ ] **Step 4: 정산 전 신뢰 0 인원을 복원하는 helper를 구현한다**
-
-같은 파일에 다음 helper를 둔다.
+- [ ] **Step 7: 정산 전 신뢰 0 인원을 복원하는 helper를 구현한다**
 
 ```ts
 function countLivingZeroTrustBefore(
@@ -404,11 +403,9 @@ function countLivingZeroTrustBefore(
 }
 ```
 
-정산 뒤 인원은 `countLivingZeroTrust(campaignAfterSettlement)`, 현재 보정은 `getCampaignTrustModifier(campaignAfterSettlement)`, 기준은 `DENOUNCE_THRESHOLD`를 사용한다. 새 수치표를 만들지 않는다.
+정산 뒤 인원은 `countLivingZeroTrust(campaignAfterSettlement)`, 현재 보정은 `getCampaignTrustModifier(campaignAfterSettlement)`, 기준은 `DENOUNCE_THRESHOLD`를 사용한다.
 
-- [ ] **Step 5: 결과·던전·인물 View 생성 helper를 구현한다**
-
-다음 helper를 추가한다.
+- [ ] **Step 8: 결과·던전·인물 helper를 구현한다**
 
 ```ts
 function outcomeFor(
@@ -426,7 +423,7 @@ function outcomeFor(
     title: `${dungeonName} 정복`,
     summary: deadNames.length === 0
       ? "전원 귀환"
-      : `${settlement.survivorCount}명 귀환 · ${deadNames.join(" · ")} 사망`,
+      : `${settlement.survivorCount}명 귀환 · ${deadNames.join(", ")} 사망`,
   };
 }
 
@@ -437,34 +434,11 @@ function dungeonOutcomeFor(settlement: SettlementResult): U6DungeonOutcome {
 }
 ```
 
-인물 매핑은 다음 플래그를 계산한다.
+인물 매핑은 `before.alive && !after.alive`, `after.gravelyWounded`, `before.trust !== after.trust`, `after.trust === TRUST_MIN`, `before.trust > TRUST_MIN && after.trust === TRUST_MIN`, `after.alive && after.trust === TRUST_MIN`으로 각 플래그를 만든다.
 
-```ts
-const alive = after.alive;
-const isZero = after.trust === TRUST_MIN;
-return {
-  id: String(after.id),
-  name: after.name,
-  classLabel: classLabel(after.classId),
-  portraitSrc: portraitSrcForCharacter({ id: after.id, classId: after.classId, alive }),
-  alive,
-  diedThisExpedition: before.alive && !after.alive,
-  gravelyWounded: after.gravelyWounded,
-  hp: { before: before.hp, after: after.hp, max: after.maxHp },
-  trust: {
-    before: before.trust,
-    after: after.trust,
-    changed: before.trust !== after.trust,
-    isZero,
-    becameZero: before.trust > TRUST_MIN && isZero,
-    countsTowardCampaign: alive && isZero,
-  },
-};
-```
+- [ ] **Step 9: 어댑터 시그니처와 호출부를 확장한다**
 
-- [ ] **Step 6: 어댑터 시그니처와 반환값을 확장한다**
-
-함수 시그니처를 다음으로 바꾼다.
+함수 시그니처:
 
 ```ts
 export function createU6SettlementView(
@@ -475,16 +449,7 @@ export function createU6SettlementView(
 ): U6SettlementView
 ```
 
-`causes`는 현재 도메인 필드에서 다음 두 개만 만든다.
-
-```ts
-const causes: readonly U6SettlementCause[] = [
-  { kind: "choice", label: "마지막 조언", detail: settlement.causeChain.choice },
-  { kind: "reactions", label: "파티의 판단", detail: settlement.causeChain.reactions },
-];
-```
-
-`trustPressure`는 정산 전후가 모두 0일 때만 `null`로 둔다.
+신뢰 압력:
 
 ```ts
 const beforeCount = countLivingZeroTrustBefore(campaignAfterSettlement, settlement);
@@ -500,35 +465,9 @@ const trustPressure = beforeCount === 0 && afterCount === 0 ? null : {
 };
 ```
 
-기존 화면 호환 필드는 이 Task에서 유지한다.
+`CampaignScreen.tsx`는 `campaign`을 첫 인자로 넘긴다. `u6-preview-data.ts`는 `execution.campaign`을 첫 인자로 넘긴다. `campaign-render.test.tsx`와 기존 모델 테스트도 같은 순서로 바꾼다.
 
-- [ ] **Step 7: 실제 호출부를 새 시그니처로 바꾼다**
-
-`components/game/CampaignScreen.tsx`:
-
-```ts
-settlement={createU6SettlementView(
-  campaign,
-  shownSettlement,
-  dungeon?.name ?? "",
-  dungeon?.theme ?? "spider",
-)}
-```
-
-`components/game/u6-preview-data.ts`의 `settlementFor`:
-
-```ts
-view: createU6SettlementView(
-  execution.campaign,
-  execution.result,
-  dungeon.name,
-  dungeon.theme satisfies ThemeId,
-),
-```
-
-`components/game/campaign-render.test.tsx`와 기존 모델 테스트의 모든 호출도 첫 인자로 정산 뒤 캠페인을 넘긴다.
-
-- [ ] **Step 8: 대상 테스트와 타입 검사를 실행한다**
+- [ ] **Step 10: 대상 테스트와 타입 검사를 실행한다**
 
 Run:
 
@@ -537,9 +476,9 @@ pnpm vitest run components/game/u6-settlement-model.test.ts components/game/u6-p
 pnpm typecheck
 ```
 
-Expected: 대상 테스트 PASS, typecheck 성공. 기존 U6 화면은 호환 필드로 그대로 렌더링된다.
+Expected: 대상 테스트 PASS, typecheck 성공. 기존 U6 화면은 임시 호환 필드로 계속 렌더링된다.
 
-- [ ] **Step 9: ViewModel 변경을 커밋한다**
+- [ ] **Step 11: ViewModel 변경을 커밋한다**
 
 ```bash
 git add components/game/u6-settlement-model.ts components/game/u6-settlement-model.test.ts components/game/CampaignScreen.tsx components/game/u6-preview-data.ts components/game/campaign-render.test.tsx
@@ -560,9 +499,7 @@ git commit -m "화면: 정산 결과 View를 구조화한다" -m "정복·전멸
 - Consumes: Task 2의 `outcome`, `causes`, `members`, `dungeonOutcome`, `trustPressure`
 - Produces: 고정 5단계와 `다녀온 사람`을 제거한 새 U6 정산 DOM
 
-- [ ] **Step 1: 화면 의미 테스트 fixture를 새 View로 교체한다**
-
-`components/game/U6SettlementScreen.test.ts`의 `view()` 기본값을 다음 구조로 바꾼다.
+- [ ] **Step 1: 화면 테스트 fixture를 새 View로 교체한다**
 
 ```ts
 const view = (over: Partial<U6SettlementView> = {}): U6SettlementView => ({
@@ -588,9 +525,9 @@ const view = (over: Partial<U6SettlementView> = {}): U6SettlementView => ({
 });
 ```
 
-기존 `CAUSE_ORDER`, `causeChain`, `survivors`, `riskBefore`, `riskAfter`, `riskCapped` fixture를 제거한다.
+`member()` helper는 `Partial<U6SettlementMember>`를 받고 `diedThisExpedition`, `gravelyWounded`, 확장된 `trust` 기본값을 가진다.
 
-- [ ] **Step 2: 실패하는 핵심 화면 테스트를 작성한다**
+- [ ] **Step 2: 정복과 중대 상태의 실패 테스트를 작성한다**
 
 ```ts
 it("클리어는 정복과 사망자를 말하고 위험도 유지를 말하지 않는다", () => {
@@ -631,25 +568,7 @@ it("살아 있는 신뢰 0은 변화가 없어도 정체 발각과 출전 불가
   expect(html).toContain("1 / 5");
 });
 
-it("이번 원정에서 신뢰 0이 된 생존자를 강조한다", () => {
-  const html = render({
-    members: [member({
-      trust: {
-        before: 11,
-        after: 0,
-        changed: true,
-        isZero: true,
-        becameZero: true,
-        countsTowardCampaign: true,
-      },
-    })],
-  });
-
-  expect(html).toContain("신뢰 11 → 0");
-  expect(html).toContain("정체 발각");
-});
-
-it("사망자는 HP와 마지막 신뢰 변화만 남기고 누적 원인으로 표시하지 않는다", () => {
+it("사망자는 마지막 신뢰를 남기되 누적 원인으로 표시하지 않는다", () => {
   const html = render({
     members: [member({
       alive: false,
@@ -670,7 +589,11 @@ it("사망자는 HP와 마지막 신뢰 변화만 남기고 누적 원인으로 
   expect(html).toContain("마지막 신뢰 8 → 0");
   expect(html).not.toContain("이후 원정 출전 불가");
 });
+```
 
+- [ ] **Step 3: 자원 출처 분리의 실패 테스트를 작성한다**
+
+```ts
 it("전멸은 계약 보상과 유품 골드를 분리한다", () => {
   const html = render({
     outcome: { kind: "wiped", title: "원정대 전멸", summary: "3명 전원 사망 · 계약 실패" },
@@ -681,7 +604,8 @@ it("전멸은 계약 보상과 유품 골드를 분리한다", () => {
     nextReward: { reputation: 15, gold: 32 },
   });
 
-  expect(html).toContain("계약 보상 없음");
+  expect(html).toContain("계약 보상");
+  expect(html).toContain("없음");
   expect(html).toContain("유품 골드");
   expect(html).toContain("+84");
   expect(html).toContain("★2");
@@ -689,9 +613,7 @@ it("전멸은 계약 보상과 유품 골드를 분리한다", () => {
 });
 ```
 
-`member()` helper의 기본값에는 `diedThisExpedition`, `gravelyWounded`, 확장된 `trust` 필드를 모두 넣는다.
-
-- [ ] **Step 3: 테스트가 기존 5단계 화면에서 실패하는지 확인한다**
+- [ ] **Step 4: 새 화면 테스트가 기존 DOM 때문에 실패하는지 확인한다**
 
 Run:
 
@@ -699,11 +621,9 @@ Run:
 pnpm vitest run components/game/U6SettlementScreen.test.ts
 ```
 
-Expected: 새 View 필드를 렌더링하지 않고 기존 `causeChain`, `survivors`를 찾으므로 FAIL.
+Expected: 새 View 필드를 렌더링하지 않고 기존 `causeChain`, `survivors`를 사용하므로 FAIL.
 
-- [ ] **Step 4: 결과 표제와 원인 요약 컴포넌트를 구현한다**
-
-기존 `CauseChain`과 `CAUSE_ICON` 1~5 매핑을 제거하고 다음 두 컴포넌트를 둔다.
+- [ ] **Step 5: 결과 표제와 두 원인 요약을 구현한다**
 
 ```tsx
 const CAUSE_ICON = {
@@ -713,7 +633,7 @@ const CAUSE_ICON = {
 
 function Outcome({ settlement }: { settlement: U6SettlementView }) {
   return (
-    <header className={`u6-outcome is-${outcomeTone(settlement.outcome.kind, settlement.members)}`} data-testid="u6-outcome">
+    <header className="u6-outcome" data-testid="u6-outcome">
       <strong>{settlement.outcome.title}</strong>
       <small>{settlement.outcome.summary}</small>
     </header>
@@ -737,70 +657,41 @@ function CauseSummary({ settlement }: { settlement: U6SettlementView }) {
 }
 ```
 
-`outcomeTone`은 `outcome.kind === "wiped"`면 `lost`, 사망자가 있으면 `costly`, 그 외 `whole`을 반환한다. 생존자 수로 상태를 판정하지 않는다.
+- [ ] **Step 6: 좌측 `원정대 결과`를 구현한다**
 
-- [ ] **Step 5: `원정대 결과`를 좌측 본문에 구현한다**
-
-기존 `Returned`를 다음 의미로 교체한다.
+각 인물 행은 다음 문구 규칙을 지킨다.
 
 ```tsx
-function PartyResults({ settlement }: { settlement: U6SettlementView }) {
-  return (
-    <section className="u6-party-results" aria-labelledby="u6-party-results-title">
-      <h3 id="u6-party-results-title">원정대 결과</h3>
-      <ul className="u6-party-results__list">
-        {settlement.members.map((member) => (
-          <li
-            key={member.id}
-            className={[
-              member.diedThisExpedition ? "is-dead" : "",
-              member.trust.countsTowardCampaign ? "is-exposed" : "",
-              member.gravelyWounded ? "is-gravely-wounded" : "",
-            ].filter(Boolean).join(" ")}
-          >
-            <img src={member.portraitSrc} alt="" aria-hidden="true" />
-            <span className="u6-party-results__who">
-              <strong>{member.name}</strong>
-              <small>{member.classLabel}</small>
-            </span>
-            <span className="u6-party-results__state">
-              {member.diedThisExpedition ? (
-                <strong>사망 · HP {member.hp.before} → {member.hp.after}</strong>
-              ) : (
-                <strong>
-                  {member.hp.before === member.hp.after
-                    ? `HP ${member.hp.after} / ${member.hp.max}`
-                    : `HP ${member.hp.before} → ${member.hp.after} / ${member.hp.max}`}
-                </strong>
-              )}
-              {member.diedThisExpedition && member.trust.changed ? (
-                <small>마지막 신뢰 {member.trust.before} → {member.trust.after}</small>
-              ) : !member.diedThisExpedition && member.trust.isZero ? (
-                <small>
-                  {member.trust.changed ? `신뢰 ${member.trust.before} → 0` : "신뢰 0"}
-                </small>
-              ) : !member.diedThisExpedition && member.trust.changed ? (
-                <small>신뢰 {member.trust.before} → {member.trust.after}</small>
-              ) : null}
-            </span>
-            <span className="u6-party-results__flags">
-              {member.diedThisExpedition ? <em>사망</em> : null}
-              {member.gravelyWounded ? <em>중상</em> : null}
-              {member.trust.countsTowardCampaign ? <em>정체 발각 · 원정 출전 불가</em> : null}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
+{member.diedThisExpedition ? (
+  <strong>사망 · HP {member.hp.before} → {member.hp.after}</strong>
+) : (
+  <strong>
+    {member.hp.before === member.hp.after
+      ? `HP ${member.hp.after} / ${member.hp.max}`
+      : `HP ${member.hp.before} → ${member.hp.after} / ${member.hp.max}`}
+  </strong>
+)}
+
+{member.diedThisExpedition && member.trust.changed ? (
+  <small>마지막 신뢰 {member.trust.before} → {member.trust.after}</small>
+) : !member.diedThisExpedition && member.trust.isZero ? (
+  <small>{member.trust.changed ? `신뢰 ${member.trust.before} → 0` : "신뢰 0"}</small>
+) : !member.diedThisExpedition && member.trust.changed ? (
+  <small>신뢰 {member.trust.before} → {member.trust.after}</small>
+) : null}
 ```
 
-사망자는 `countsTowardCampaign`이 거짓이므로 출전 불가 문구가 나오지 않는다.
+별도 텍스트 배지는 다음 조건으로 만든다.
 
-- [ ] **Step 6: 우측 캠페인 변화와 신뢰 누적을 구현한다**
+```tsx
+{member.diedThisExpedition ? <em>사망</em> : null}
+{member.gravelyWounded ? <em>중상</em> : null}
+{member.trust.countsTowardCampaign ? <em>정체 발각 · 원정 출전 불가</em> : null}
+```
 
-던전 결과는 union으로 분기한다.
+- [ ] **Step 7: 우측 던전·자원·신뢰 누적을 구현한다**
+
+던전 결과는 union을 완전 분기한다.
 
 ```tsx
 function DungeonChange({ outcome }: { outcome: U6DungeonOutcome }) {
@@ -820,23 +711,9 @@ function DungeonChange({ outcome }: { outcome: U6DungeonOutcome }) {
 }
 ```
 
-자원은 다음처럼 출처를 나눈다.
+자원은 클리어의 `계약 골드`, 전멸의 `계약 보상 없음`, `relicGold > 0`의 `유품 골드`를 별도 `<dl>` 항목으로 만든다.
 
-```tsx
-<dl className="u6-deltas">
-  <div><dt>명성</dt><dd>{signed(settlement.reputationDelta)}</dd></div>
-  {settlement.outcome.kind === "cleared" ? (
-    <div><dt>계약 골드</dt><dd>{signed(settlement.goldDelta)}</dd></div>
-  ) : (
-    <div><dt>계약 보상</dt><dd>없음</dd></div>
-  )}
-  {settlement.relicGold > 0 ? (
-    <div><dt>유품 골드</dt><dd>{signed(settlement.relicGold)}</dd></div>
-  ) : null}
-</dl>
-```
-
-신뢰 누적 문구 helper는 구조화된 값을 그대로 포맷한다.
+신뢰 누적 상세는 구조화된 보정값을 포맷한다.
 
 ```ts
 function trustPressureDetail(pressure: U6TrustPressureView): string {
@@ -851,11 +728,9 @@ function trustPressureDetail(pressure: U6TrustPressureView): string {
 }
 ```
 
-전후 수가 다르면 `1 → 2 / 5`, 같으면 `2 / 5`를 표시한다.
+- [ ] **Step 8: 새 컴포넌트를 `GameShell`에 연결한다**
 
-- [ ] **Step 7: 좌우 배치를 새 컴포넌트로 연결한다**
-
-`GameShell.main`은 다음 순서를 사용한다.
+좌측:
 
 ```tsx
 <div className="u6-settlement-main">
@@ -865,24 +740,13 @@ function trustPressureDetail(pressure: U6TrustPressureView): string {
 </div>
 ```
 
-`rightPanel`에서는 `Changes`와 CTA만 남긴다. 기존 우측 `Returned` 호출을 제거한다.
+우측에는 `Changes`와 기존 CTA만 남긴다. 기존 우측 `Returned` 호출을 제거한다.
 
-- [ ] **Step 8: ViewModel의 임시 호환 필드를 제거한다**
+- [ ] **Step 9: 임시 호환 필드와 고정 5단계 타입을 제거한다**
 
-`components/game/u6-settlement-model.ts`에서 다음을 삭제한다.
+`u6-settlement-model.ts`에서 `CAUSE_ORDER`, `U6CauseOrder`, `U6CauseStep`, `causeChain`, `survivors`, `riskBefore`, `riskAfter`, `riskCapped`를 삭제한다. 모델 테스트의 1~5단계 fixture도 삭제한다.
 
-- `CAUSE_ORDER`
-- `U6CauseOrder`
-- `U6CauseStep`
-- `causeChain`
-- `survivors`
-- `riskBefore`
-- `riskAfter`
-- `riskCapped`
-
-`components/game/u6-settlement-model.test.ts`의 1~5단계 테스트와 legacy fixture도 삭제하고 새 union과 `outcome` 테스트만 남긴다.
-
-- [ ] **Step 9: 화면·모델 테스트와 타입 검사를 실행한다**
+- [ ] **Step 10: 화면·모델 테스트와 타입 검사를 실행한다**
 
 Run:
 
@@ -891,9 +755,9 @@ pnpm vitest run components/game/U6SettlementScreen.test.ts components/game/u6-se
 pnpm typecheck
 ```
 
-Expected: 화면과 모델 테스트 PASS, typecheck 성공. `U6SettlementScreen.tsx`에 `survivors`, `causeChain`, `riskBefore`, `riskAfter`, `riskCapped` 참조가 남지 않는다.
+Expected: 대상 테스트 PASS, typecheck 성공. 생산 화면에 legacy View 참조가 남지 않는다.
 
-- [ ] **Step 10: 화면 의미 변경을 커밋한다**
+- [ ] **Step 11: 화면 의미 변경을 커밋한다**
 
 ```bash
 git add components/game/U6SettlementScreen.tsx components/game/U6SettlementScreen.test.ts components/game/u6-settlement-model.ts components/game/u6-settlement-model.test.ts
@@ -902,7 +766,7 @@ git commit -m "화면: 정산의 영구 결과를 전면에 둔다" -m "정복�
 
 ---
 
-### Task 4: 새 정보 위계에 맞게 CSS와 프리뷰를 갱신
+### Task 4: 새 정보 위계에 맞게 CSS와 프리뷰 갱신
 
 **Files:**
 - Modify: `app/u6-result.css`
@@ -912,7 +776,7 @@ git commit -m "화면: 정산의 영구 결과를 전면에 둔다" -m "정복�
 
 **Interfaces:**
 - Consumes: Task 3의 `.u6-outcome`, `.u6-cause-summary`, `.u6-party-results`, `.u6-dungeon-change`, `.u6-trust-pressure`
-- Produces: 고정 캔버스 안에서 세 인물과 캠페인 변화가 스크롤 없이 보이는 정산 레이아웃 및 실제 규칙 프리뷰
+- Produces: 고정 캔버스 안에서 세 인물과 캠페인 변화가 스크롤 없이 보이는 레이아웃 및 실제 규칙 프리뷰
 
 - [ ] **Step 1: 현재 Next.js CSS 문서를 읽는다**
 
@@ -922,22 +786,18 @@ Run:
 sed -n '1,260p' node_modules/next/dist/docs/01-app/01-getting-started/11-css.md
 ```
 
-Expected: root layout의 전역 CSS import와 현재 프로젝트 구성이 지원되는지 확인한다. import 구조는 바꾸지 않는다.
+Expected: root layout의 전역 CSS import가 현재 Next.js에서 지원됨을 확인한다. import 구조는 바꾸지 않는다.
 
 - [ ] **Step 2: 새 정산 격자의 실패 CSS 계약 테스트를 작성한다**
-
-`components/game/U6FixedCanvas.test.ts`에 다음 테스트를 추가하고 CTA 테스트는 유지한다.
 
 ```ts
 it("정산 본문은 결과·원인·원정대 결과 세 행을 쓴다", () => {
   const rule = css.match(/\.u6-settlement-main\s*\{([^}]*)\}/)?.[1] ?? "";
-
   expect(rule).toMatch(/grid-template-rows:\s*auto\s+auto\s+minmax\(0,\s*1fr\)/);
 });
 
 it("원정대 결과 목록은 세 인물을 세로로 담고 넘치지 않는다", () => {
   const rule = css.match(/\.u6-party-results__list\s*\{([^}]*)\}/)?.[1] ?? "";
-
   expect(rule).toMatch(/display:\s*grid/);
   expect(rule).toMatch(/grid-template-rows:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
   expect(rule).toMatch(/min-height:\s*0/);
@@ -949,7 +809,9 @@ it("폐기한 다섯 단계와 다녀온 사람 선택자를 남기지 않는다
 });
 ```
 
-- [ ] **Step 3: CSS 테스트가 기존 선택자와 격자 때문에 실패하는지 확인한다**
+기존 CTA 내용 폭·우측 정렬 테스트는 유지한다.
+
+- [ ] **Step 3: CSS 테스트가 실패하는지 확인한다**
 
 Run:
 
@@ -957,11 +819,11 @@ Run:
 pnpm vitest run components/game/U6FixedCanvas.test.ts
 ```
 
-Expected: 새 `.u6-party-results__list`와 3행 계약이 없고 폐기 선택자가 남아 있어 FAIL.
+Expected: 새 목록과 3행 계약이 없고 폐기 선택자가 남아 있어 FAIL.
 
 - [ ] **Step 4: 좌측 결과·원인·인물 격자를 구현한다**
 
-`app/u6-result.css`의 정산 좌측 영역을 다음 핵심 규칙으로 교체한다.
+핵심 규칙:
 
 ```css
 .u6-settlement-main {
@@ -974,16 +836,6 @@ Expected: 새 `.u6-party-results__list`와 3행 계약이 없고 폐기 선택�
   margin: 0;
 }
 
-.u6-outcome strong {
-  color: var(--color-shell-gold);
-  font-size: clamp(1.5rem, 1.5cqw, 2.3rem);
-}
-
-.u6-outcome small {
-  color: var(--color-muted);
-  font-size: clamp(0.8rem, 0.78cqw, 1.15rem);
-}
-
 .u6-cause-summary ul {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -991,23 +843,6 @@ Expected: 새 `.u6-party-results__list`와 3행 계약이 없고 폐기 선택�
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.u6-cause-summary li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(0.5rem, 0.6cqw, 0.9rem);
-  padding: clamp(0.45rem, 0.55cqw, 0.8rem);
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 40%, var(--color-edge));
-  border-radius: 0.28rem;
-  background: linear-gradient(180deg, rgb(28 21 14 / 88%), rgb(16 12 8 / 92%));
-}
-
-.u6-cause-summary li > img {
-  width: clamp(1.8rem, 2cqw, 2.8rem);
-  height: clamp(1.8rem, 2cqw, 2.8rem);
-  object-fit: contain;
 }
 
 .u6-party-results {
@@ -1027,11 +862,9 @@ Expected: 새 `.u6-party-results__list`와 3행 계약이 없고 폐기 선택�
 }
 ```
 
-각 인물 행은 `portrait / who / state / flags` 네 열을 사용하고, `is-dead`, `is-exposed`, `is-gravely-wounded`는 서로 다른 border와 텍스트 배지를 가진다. `opacity`만으로 상태를 구분하지 않는다.
+각 인물 행은 `portrait / who / state / flags` 네 열을 사용한다. `is-dead`, `is-exposed`, `is-gravely-wounded`는 서로 다른 border와 텍스트 배지를 가지며 `opacity`만으로 상태를 구분하지 않는다.
 
 - [ ] **Step 5: 우측 캠페인 변화와 CTA 격자를 맞춘다**
-
-기존 `.u6-risk-change`를 `.u6-dungeon-change`로 바꾸고 `.u6-trust-pressure` 규칙을 추가한다.
 
 ```css
 .u6-settlement-side {
@@ -1049,31 +882,13 @@ Expected: 새 `.u6-party-results__list`와 3행 계약이 없고 폐기 선택�
 }
 ```
 
-`.u6-settlement-side .u6-settlement-continue { grid-row: 4; justify-self: end; text-align: center; }`는 그대로 유지한다.
+`.u6-settlement-side .u6-settlement-continue { grid-row: 4; justify-self: end; text-align: center; }`는 유지한다. `.u6-cause-chain`, `.u6-cause`, `.u6-cause__order`, `.u6-cause__note`, `.u6-returned*`와 피해 문양 색 연계 선택자를 삭제한다.
 
-기존 `.u6-cause-chain`, `.u6-cause`, `.u6-cause__order`, `.u6-cause__note`, `.u6-returned*` 및 피해 문양 색 연계 선택자를 삭제한다. 인주 색은 `.u6-changes__seal.is-*`만 유지한다.
+- [ ] **Step 6: 부분 생존 프리뷰에 살아 있는 신뢰 0을 넣는다**
 
-- [ ] **Step 6: 프리뷰의 부분 생존 상태에 실제 신뢰 0을 넣는다**
+`settlement-partial`의 생존자 한 명을 `trust: 0`으로 만들고 다른 한 명은 생존, 세 번째 인물은 사망으로 유지한다. 신뢰 0은 사망자가 아니라 생존자에게 둔다.
 
-`components/game/u6-preview-data.ts`의 `settlementPartial`에서 살아남는 인물 한 명이 신뢰 0에 도달하도록 만든다. 사망자를 신뢰 누적 사례로 쓰지 않는다.
-
-```ts
-const settlementPartial = settlementFor({
-  campaign: baseCampaign,
-  finalMembers: [
-    { ...first, hp: Math.max(1, first.hp - 7), trust: 0 },
-    { ...second, hp: Math.max(1, second.hp - 9) },
-    { ...third, hp: 0, alive: false },
-  ],
-  status: "cleared",
-});
-```
-
-실제 변수 순서가 다르면 생존자 2명과 사망자 1명이라는 같은 상태를 유지하되, 신뢰 0은 반드시 생존자에게 둔다.
-
-- [ ] **Step 7: 프리뷰 테스트를 새 의미로 교체한다**
-
-`components/game/u6-preview-data.test.ts`의 `causeChain` 피해 줄 describe를 삭제하고 다음 테스트로 교체한다.
+- [ ] **Step 7: 프리뷰 테스트를 새 union과 인물 상태로 교체한다**
 
 ```ts
 it("부분 생존 정산은 정복·사망·생존자 신뢰 0을 함께 담는다", () => {
@@ -1087,7 +902,7 @@ it("부분 생존 정산은 정복·사망·생존자 신뢰 0을 함께 담는�
   expect(partial.trustPressure?.afterCount).toBeGreaterThan(0);
 });
 
-it("전멸 정산은 사망자 셋과 위험도 상승을 담고 신뢰 0 누적을 만들지 않는다", () => {
+it("전멸 정산은 사망자 셋과 위험도 상승을 담는다", () => {
   const wiped = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-wipe")?.settlement;
   if (wiped === undefined) throw new Error("전멸 프리뷰가 없다");
 
@@ -1098,7 +913,7 @@ it("전멸 정산은 사망자 셋과 위험도 상승을 담고 신뢰 0 누적
 });
 ```
 
-기존 `riskBefore`, `riskAfter`, `riskCapped` 직접 검사는 `dungeonOutcome` union 검사로 바꾼다.
+기존 `causeChain` 피해 줄 테스트와 직접 `riskBefore/riskAfter/riskCapped` 검사는 삭제한다.
 
 - [ ] **Step 8: CSS·프리뷰·화면 테스트를 실행한다**
 
@@ -1109,7 +924,7 @@ pnpm vitest run components/game/U6FixedCanvas.test.ts components/game/U6Settleme
 pnpm typecheck
 ```
 
-Expected: 모든 대상 테스트 PASS, typecheck 성공.
+Expected: 대상 테스트 PASS, typecheck 성공.
 
 - [ ] **Step 9: 시각 구조와 프리뷰 변경을 커밋한다**
 
@@ -1120,7 +935,7 @@ git commit -m "화면: 정산 정보 위계를 시각적으로 정리한다" -m 
 
 ---
 
-### Task 5: 정산 도메인에서 중복 UI 문장을 제거
+### Task 5: 정산 도메인에서 중복 UI 문장 제거
 
 **Files:**
 - Modify: `lib/domain/settlement.ts`
@@ -1136,8 +951,6 @@ git commit -m "화면: 정산 정보 위계를 시각적으로 정리한다" -m 
 - Produces: `SettlementResult.causeInputs: SettlementCauseInputs`; 삭제되는 `SettlementCauseChain`, `createCauseChain`, `SettlementResult.causeChain`
 
 - [ ] **Step 1: UI 문장 제거의 실패 테스트를 작성한다**
-
-`lib/rules/settlement.test.ts`에 다음 테스트를 추가한다.
 
 ```ts
 it("정산 결과는 원정 근거만 보존하고 UI용 경제·캠페인 문장을 만들지 않는다", () => {
@@ -1170,37 +983,17 @@ Expected: `result.causeInputs`가 없고 `causeChain`이 남아 있어 FAIL.
 
 - [ ] **Step 3: 도메인 타입을 단일 원인 입력으로 바꾼다**
 
-`lib/domain/settlement.ts`에서 `SettlementCauseChain`을 삭제하고 `SettlementResult` 끝 필드를 다음으로 바꾼다.
+`SettlementCauseChain`을 삭제하고 `SettlementResult`의 마지막 필드를 다음으로 바꾼다.
 
 ```ts
-export interface SettlementResult {
-  readonly expeditionId: string;
-  readonly dungeonId: DungeonId;
-  readonly status: ExpeditionStatus;
-  readonly survivorIds: readonly CharacterId[];
-  readonly survivorCount: 0 | 1 | 2 | 3;
-  readonly memberChanges: readonly SettlementMemberChange[];
-  readonly reputationDelta: number;
-  readonly goldDelta: number;
-  readonly relicGold: number;
-  readonly riskBefore: RiskLevel;
-  readonly riskAfter: RiskLevel;
-  readonly riskCapped: boolean;
-  readonly nextReward: Reward | null;
-  readonly causeInputs: SettlementCauseInputs;
-}
+readonly causeInputs: SettlementCauseInputs;
 ```
 
-`SettlementCauseInputs`와 `SettlementSnapshot.causeInputs`는 그대로 유지한다.
+`SettlementCauseInputs`와 `SettlementSnapshot.causeInputs`는 유지한다.
 
 - [ ] **Step 4: 정산 규칙에서 문장 생성기를 제거한다**
 
-`lib/rules/settlement.ts`에서 다음을 삭제한다.
-
-- `SettlementCauseChain` import
-- `createCauseChain` 함수 전체
-
-결과 생성의 마지막 필드를 다음으로 바꾼다.
+`lib/rules/settlement.ts`에서 `SettlementCauseChain` import와 `createCauseChain` 함수를 삭제한다. 결과 생성에는 다음만 남긴다.
 
 ```ts
 causeInputs: { ...snapshot.causeInputs },
@@ -1209,8 +1002,6 @@ causeInputs: { ...snapshot.causeInputs },
 보상, 위험도, 유품, 인물 변화 코드는 수정하지 않는다.
 
 - [ ] **Step 5: U6 어댑터를 `causeInputs`로 연결한다**
-
-Task 2에서 만든 두 원인 항목을 다음으로 바꾼다.
 
 ```ts
 const causes: readonly U6SettlementCause[] = [
@@ -1226,8 +1017,6 @@ const causes: readonly U6SettlementCause[] = [
 - `components/game/u6-settlement-model.test.ts`
 - `lib/rules/campaign-statistics.test.ts`
 - `lib/rules/campaign-history.test.ts`
-
-형태는 모두 다음과 같다.
 
 ```ts
 causeInputs: {
@@ -1252,7 +1041,7 @@ pnpm vitest run \
 pnpm typecheck
 ```
 
-Expected: 대상 테스트 PASS, typecheck 성공, 코드 검색에서 생산 코드의 `SettlementCauseChain`, `causeChain.economy`, `causeChain.campaignChange`가 0건이다.
+Expected: 대상 테스트 PASS, typecheck 성공. 생산 코드에서 `SettlementCauseChain`, `causeChain.economy`, `causeChain.campaignChange` 참조가 0건이다.
 
 - [ ] **Step 8: 도메인 정리를 커밋한다**
 
@@ -1263,7 +1052,7 @@ git commit -m "정산: 결과에서 화면 문장을 제거한다" -m "선택·�
 
 ---
 
-### Task 6: 규칙부터 화면까지 통합 검증하고 실제 캔버스를 확인
+### Task 6: 규칙부터 화면까지 통합 검증하고 실제 캔버스 확인
 
 **Files:**
 - Create: `components/game/u6-settlement-integration.test.tsx`
@@ -1271,15 +1060,12 @@ git commit -m "정산: 결과에서 화면 문장을 제거한다" -m "선택·�
 - Verify: `components/game/u6-settlement-model.ts`
 - Verify: `app/u6-result.css`
 - Verify: `components/game/u6-preview-data.ts`
-- Verify: `docs/experience/SCREEN_LAYOUT.md`
 
 **Interfaces:**
 - Consumes: `settleExpedition → createU6SettlementView → U6SettlementScreen`
 - Produces: 실제 규칙 결과가 클리어와 전멸 화면에서 정확히 읽힌다는 통합 증거
 
-- [ ] **Step 1: 클리어와 전멸의 통합 테스트를 작성한다**
-
-`components/game/u6-settlement-integration.test.tsx`를 다음 구조로 만든다.
+- [ ] **Step 1: 통합 테스트 helper를 작성한다**
 
 ```tsx
 import { createElement } from "react";
@@ -1320,69 +1106,76 @@ function renderResult(campaign: CampaignState, snapshot: SettlementSnapshot): st
     ),
   }));
 }
+```
 
-describe("U6 정산 통합", () => {
-  it("2명 생환 클리어가 정복·사망·생존자 신뢰 0을 보여준다", () => {
-    const campaign = initializeCampaign("u6-integration-clear");
-    const dungeon = campaign.dungeons[0];
-    const [first, second, third] = partyMembers(campaign);
-    const finalMembers = [
-      { ...first, hp: Math.max(1, first.hp - 5), trust: 0 },
-      { ...second, hp: Math.max(1, second.hp - 3) },
-      { ...third, hp: 0, alive: false },
-    ];
-    const html = renderResult(campaign, {
-      expeditionId: "u6-integration-clear-expedition",
-      dungeonId: dungeon.id,
-      contractRisk: dungeon.riskLevel,
-      party: { memberIds: [first.id, second.id, third.id] },
-      finalMembers,
-      status: "cleared",
-      causeInputs: {
-        choice: "수상한 표식 두 건만 믿으라고 했다",
-        reactions: `${first.name} 수용 · ${second.name} 의심`,
-        damage: `${third.name} HP ${third.hp} → 0`,
-      },
-    });
+- [ ] **Step 2: 2명 생환 클리어 통합 테스트를 작성한다**
 
-    expect(html).toContain(`${dungeon.name} 정복`);
-    expect(html).toContain(`${third.name} 사망`);
-    expect(html).toContain(`신뢰 ${first.trust} → 0`);
-    expect(html).toContain("정체 발각");
-    expect(html).toContain("1 / 5");
-    expect(html).not.toContain("위험도 유지");
+```tsx
+it("2명 생환 클리어가 정복·사망·생존자 신뢰 0을 보여준다", () => {
+  const campaign = initializeCampaign("u6-integration-clear");
+  const dungeon = campaign.dungeons[0]!;
+  const [first, second, third] = partyMembers(campaign);
+  if (first === undefined || second === undefined || third === undefined) throw new Error("파티가 없다");
+  const finalMembers = [
+    { ...first, hp: Math.max(1, first.hp - 5), trust: 0 },
+    { ...second, hp: Math.max(1, second.hp - 3) },
+    { ...third, hp: 0, alive: false },
+  ];
+  const html = renderResult(campaign, {
+    expeditionId: "u6-integration-clear-expedition",
+    dungeonId: dungeon.id,
+    contractRisk: dungeon.riskLevel,
+    party: { memberIds: [first.id, second.id, third.id] },
+    finalMembers,
+    status: "cleared",
+    causeInputs: {
+      choice: "수상한 표식 두 건만 믿으라고 했다",
+      reactions: `${first.name} 수용 · ${second.name} 의심`,
+      damage: `${third.name} HP ${third.hp} → 0`,
+    },
   });
 
-  it("전멸이 계약 보상 없음·유품·위험도 상승을 보여준다", () => {
-    const campaign = initializeCampaign("u6-integration-wipe");
-    const dungeon = campaign.dungeons[0];
-    const members = partyMembers(campaign);
-    const finalMembers = members.map((member) => ({ ...member, hp: 0, alive: false }));
-    const html = renderResult(campaign, {
-      expeditionId: "u6-integration-wipe-expedition",
-      dungeonId: dungeon.id,
-      contractRisk: dungeon.riskLevel,
-      party: { memberIds: members.map((member) => member.id) },
-      finalMembers,
-      status: "wiped",
-      causeInputs: {
-        choice: "보스의 약점을 잘못 짚었다",
-        reactions: "세 명 모두 조언을 따랐다",
-        damage: finalMembers.map((member) => `${member.name} HP → 0`).join(" · "),
-      },
-    });
-
-    expect(html).toContain("원정대 전멸");
-    expect(html).toContain("계약 보상");
-    expect(html).toContain("없음");
-    expect(html).toContain("유품 골드");
-    expect(html).toContain(`★${dungeon.riskLevel}`);
-    expect(html).toContain(`★${dungeon.riskLevel + 1}`);
-  });
+  expect(html).toContain(`${dungeon.name} 정복`);
+  expect(html).toContain(`${third.name} 사망`);
+  expect(html).toContain(`신뢰 ${first.trust} → 0`);
+  expect(html).toContain("정체 발각");
+  expect(html).toContain("1 / 5");
+  expect(html).not.toContain("위험도 유지");
 });
 ```
 
-- [ ] **Step 2: 통합 테스트를 실행한다**
+- [ ] **Step 3: 전멸 통합 테스트를 작성한다**
+
+```tsx
+it("전멸이 계약 보상 없음·유품·위험도 상승을 보여준다", () => {
+  const campaign = initializeCampaign("u6-integration-wipe");
+  const dungeon = campaign.dungeons.find((candidate) => candidate.riskLevel < 5)!;
+  const members = partyMembers(campaign);
+  const finalMembers = members.map((member) => ({ ...member, hp: 0, alive: false }));
+  const html = renderResult(campaign, {
+    expeditionId: "u6-integration-wipe-expedition",
+    dungeonId: dungeon.id,
+    contractRisk: dungeon.riskLevel,
+    party: { memberIds: members.map((member) => member.id) },
+    finalMembers,
+    status: "wiped",
+    causeInputs: {
+      choice: "보스의 약점을 잘못 짚었다",
+      reactions: "세 명 모두 조언을 따랐다",
+      damage: finalMembers.map((member) => `${member.name} HP → 0`).join(" · "),
+    },
+  });
+
+  expect(html).toContain("원정대 전멸");
+  expect(html).toContain("계약 보상");
+  expect(html).toContain("없음");
+  expect(html).toContain("유품 골드");
+  expect(html).toContain(`★${dungeon.riskLevel}`);
+  expect(html).toContain(`★${dungeon.riskLevel + 1}`);
+});
+```
+
+- [ ] **Step 4: 통합 테스트를 실행한다**
 
 Run:
 
@@ -1392,14 +1185,14 @@ pnpm vitest run components/game/u6-settlement-integration.test.tsx
 
 Expected: 두 테스트 PASS.
 
-- [ ] **Step 3: 통합 테스트를 커밋한다**
+- [ ] **Step 5: 통합 테스트를 커밋한다**
 
 ```bash
 git add components/game/u6-settlement-integration.test.tsx
 git commit -m "검증: 정산 규칙과 화면을 함께 확인한다" -m "실제 클리어와 전멸 결과가 정복, 사망, 신뢰 0, 유품, 위험도 변화를 정확히 렌더링하는지 고정한다."
 ```
 
-- [ ] **Step 4: 전체 자동 검사를 실행한다**
+- [ ] **Step 6: 전체 자동 검사를 실행한다**
 
 Run:
 
@@ -1411,9 +1204,9 @@ pnpm build
 git diff --check origin/main...HEAD
 ```
 
-Expected: 전체 단위 테스트 PASS, lint 오류 0개, typecheck 성공, Next.js production build 성공, diff 공백 오류 없음.
+Expected: 전체 단위 테스트 PASS, lint 오류 0개, typecheck 성공, production build 성공, diff 공백 오류 없음.
 
-- [ ] **Step 5: 폐기된 문구와 필드가 남지 않았는지 검색한다**
+- [ ] **Step 7: 폐기된 문구와 필드를 검색한다**
 
 Run:
 
@@ -1422,9 +1215,9 @@ rg -n "던전 위험도 .*유지|SettlementCauseChain|causeChain\.economy|causeC
   app components lib docs/experience docs/technical
 ```
 
-Expected: 현재 구현·공식 문서에서 0건. 이전 설계 기록인 `docs/superpowers/specs/2026-08-22-sbh3821-u6-settlement-ending-design.md`는 역사 자료이므로 검색 범위에서 제외했다.
+Expected: 현재 구현과 공식 문서에서 0건. 이전 설계 기록인 `docs/superpowers/specs/2026-08-22-sbh3821-u6-settlement-ending-design.md`는 역사 자료이므로 검색 범위에서 제외한다.
 
-- [ ] **Step 6: 개발 서버를 실행한다**
+- [ ] **Step 8: 개발 서버를 실행한다**
 
 Run:
 
@@ -1434,45 +1227,30 @@ pnpm dev
 
 Expected: Next.js 개발 서버가 로컬 주소를 출력하고 `/u6-test`, `/campaign`을 제공한다.
 
-- [ ] **Step 7: `/u6-test`의 정산 세 상태를 확인한다**
+- [ ] **Step 9: `/u6-test`의 정산 세 상태를 확인한다**
 
 Open: `http://localhost:3000/u6-test`
 
-Verify `settlement-partial`:
+Verify:
 
-- 던전 이름과 `정복`이 가장 먼저 보인다.
-- 귀환자 수와 사망자 이름이 표제에 보인다.
-- 살아 있는 신뢰 0 인물에 `정체 발각 · 원정 출전 불가`가 보인다.
-- 우측에 신뢰 0 누적과 현재 효과가 보인다.
-- `던전 위험도 유지`가 없다.
+- `settlement-partial`: 정복, 귀환자 수, 사망자 이름, 살아 있는 신뢰 0, 누적 효과가 보이고 `던전 위험도 유지`가 없다.
+- `settlement-wipe`: 전멸, 세 사망자, 계약 보상 없음, 명성 손실, 유품 골드, 위험도 전후, 재도전 보상이 보인다.
+- `settlement-promotion`: ★5 클리어가 정복으로 보이고 위험도 상한 실패처럼 보이지 않는다. 상단 승급 가능 표시는 유지되고 우측에 승급 제어가 중복되지 않는다.
+- 세 상태 모두 스크롤, 잘림, 겹침, 콘솔 오류가 없다.
 
-Verify `settlement-wipe`:
-
-- `원정대 전멸`과 세 사망자가 보인다.
-- `계약 보상 없음`, 명성 손실, 유품 골드가 분리되어 보인다.
-- 위험도 전후와 재도전 보상이 보인다.
-- 사망자의 신뢰 0을 살아 있는 누적으로 표시하지 않는다.
-
-Verify `settlement-promotion`:
-
-- ★5 클리어가 `정복`으로 보이고 위험도 상한 실패처럼 보이지 않는다.
-- 상단 상태 바의 승급 가능 표시가 유지된다.
-- 정산 우측에 승급 제어가 중복되지 않는다.
-
-- [ ] **Step 8: 실제 `/campaign` 정산 경로를 확인한다**
+- [ ] **Step 10: 실제 `/campaign` 정산 경로를 확인한다**
 
 Open: `http://localhost:3000/campaign`
 
-한 원정을 정산까지 진행하고 다음을 확인한다.
+Verify:
 
-- 진행 화면에서 본 마지막 조언과 파티 반응이 정산에 이어진다.
+- 진행 화면의 마지막 조언과 파티 반응이 정산에 이어진다.
 - 인물 HP·신뢰 전후가 실제 최종 상태와 일치한다.
 - 클리어면 정복과 게시판 제거, 전멸이면 위험도 상승이 표시된다.
-- `길드로 돌아간다`가 우측 최하단의 내용 폭 버튼으로 남는다.
-- 버튼을 누르면 기존 월드턴과 게시판 흐름이 정상 진행된다.
-- 화면 잘림, 스크롤, 겹침, 콘솔 오류, Next.js 오류 오버레이가 없다.
+- `길드로 돌아간다`가 우측 최하단의 내용 폭 버튼으로 남고 기존 월드턴·게시판 흐름이 정상 진행된다.
+- 고정 캔버스에서 화면 잘림, 스크롤, 겹침, 콘솔 오류, Next.js 오류 오버레이가 없다.
 
-- [ ] **Step 9: 브랜치 범위를 최종 확인한다**
+- [ ] **Step 11: 브랜치 범위를 최종 확인한다**
 
 Run:
 
@@ -1482,4 +1260,4 @@ git log --oneline origin/main..HEAD
 git diff --stat origin/main...HEAD
 ```
 
-Expected: 작업 트리가 깨끗하고, 공식 문서, ViewModel, 화면, CSS, 도메인 정리, 통합 테스트 커밋만 존재한다.
+Expected: 작업 트리가 깨끗하고 공식 문서, ViewModel, 화면, CSS, 도메인 정리, 통합 테스트 커밋만 존재한다.
