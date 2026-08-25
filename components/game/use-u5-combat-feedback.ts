@@ -29,7 +29,6 @@ export function u5FeedbackTimerMs(phase: U5CombatFeedbackPhase): number | null {
 
 export function useU5CombatFeedback(
   feedback: U5CombatFeedbackView | undefined,
-  battleComplete: boolean,
 ) {
   const initial = feedback === undefined
     ? { signature: "none", phase: "complete" as const }
@@ -48,16 +47,18 @@ export function useU5CombatFeedback(
     return () => window.clearTimeout(timer);
   }, [active.phase, feedback]);
 
-  useEffect(() => {
-    if (feedback === undefined || active.phase !== "battle" || !battleComplete) return;
+  const battleCompleted = () => {
+    if (feedback === undefined) return;
     setState((current) => {
       const currentActive = u5FeedbackForSignature(current, feedback);
+      if (currentActive.phase !== "battle") return currentActive;
       return { ...currentActive, phase: reduceU5CombatFeedbackPhase(feedback, currentActive.phase, "BATTLE_COMPLETE") };
     });
-  }, [active.phase, battleComplete, feedback]);
+  };
 
   return {
     phase: active.phase,
+    battleCompleted,
     acknowledgeReaction: () => feedback === undefined ? undefined : setState((current) => {
       const currentActive = u5FeedbackForSignature(current, feedback);
       return { ...currentActive, phase: reduceU5CombatFeedbackPhase(feedback, currentActive.phase, "ACKNOWLEDGE_REACTION") };

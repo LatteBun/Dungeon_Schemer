@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GameShell } from "./GameShell";
 import { PartyMemberCard, type PartyMemberChangeEntry } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
@@ -17,6 +17,8 @@ import { U5BattleScene } from "./U5BattleScene";
 import { U5NonBattlePartyScene } from "./U5NonBattlePartyScene";
 import type { U5BattleReplay } from "./u5-battle-replay";
 import { useU5BattlePlayback } from "./use-u5-battle-playback";
+import { useU5CombatFeedback } from "./use-u5-combat-feedback";
+import { u5FeedbackIsComplete, u5VisibleTrust, type U5CombatFeedbackView } from "./u5-combat-feedback";
 
 export type U5ConsoleMode = "advice" | "log";
 export type U5BattleExitPolicy = "after-playback";
@@ -44,6 +46,7 @@ export interface U5ProgressScreenProps {
   readonly battleExitPolicy?: U5BattleExitPolicy;
   /** 독립 전투 프리뷰에서만 재생 중 건너뛰기 조작을 보여준다. */
   readonly previewPlaybackControls?: boolean;
+  readonly combatFeedback?: U5CombatFeedbackView;
 }
 
 const REACTION_LABEL = {
@@ -208,6 +211,7 @@ export function U5ProgressScreen({
   battleReplay,
   battleExitPolicy,
   previewPlaybackControls = false,
+  combatFeedback,
 }: U5ProgressScreenProps) {
   /*
    * 행동 / 조언을 전면에 둔다. 선택 뒤 결과(반응 → 결과 → 변화)도 이 모드에
@@ -216,9 +220,24 @@ export function U5ProgressScreen({
    */
   const [mode, setMode] = useState<U5ConsoleMode>(initialMode ?? "advice");
   const [filter, setFilter] = useState<U5LogFilter>(initialFilter);
-  const battlePlayback = useU5BattlePlayback(battleReplay);
+  const feedback = useU5CombatFeedback(combatFeedback);
+  const battlePlayback = useU5BattlePlayback(battleReplay, combatFeedback === undefined || feedback.phase === "battle");
+  useEffect(() => {
+    if (feedback.phase === "battle" && battlePlayback.isComplete) feedback.battleCompleted();
+  }, [battlePlayback.isComplete, feedback]);
+  const feedbackComplete = combatFeedback === undefined || u5FeedbackIsComplete(feedback.phase);
+  const shownParty = combatFeedback === undefined ? progress.party : progress.party.map((member) => ({
+    ...member,
+    hp: feedback.phase === "battle"
+      ? battlePlayback.frame?.hpByParticipantId[member.id] ?? member.hp
+      : member.hp,
+    alive: feedback.phase === "battle"
+      ? (battlePlayback.frame?.hpByParticipantId[member.id] ?? member.hp) > 0
+      : member.alive,
+    trust: u5VisibleTrust(combatFeedback, feedback.phase, member.id, member.trust),
+  }));
   const hasGatedReplay = battleExitPolicy === "after-playback" && battleReplay !== undefined;
-  const replayingBattle = hasGatedReplay && battlePlayback.frame !== undefined && !battlePlayback.isComplete;
+  const replayingBattle = hasGatedReplay && (combatFeedback === undefined || feedback.phase === "battle") && battlePlayback.frame !== undefined && !battlePlayback.isComplete;
   const missingGatedFrame = hasGatedReplay && battlePlayback.frame === undefined;
   const showPreviewSkip = previewPlaybackControls
     && battleReplay !== undefined
@@ -228,6 +247,10 @@ export function U5ProgressScreen({
     ? null
     : replayingBattle || showPreviewSkip
       ? { label: "전투 건너뛰기", onClick: battlePlayback.skipToComplete }
+      : combatFeedback !== undefined && feedback.phase === "postBattleDialogue"
+        ? { label: "반응 확인", onClick: feedback.acknowledgeReaction }
+        : combatFeedback !== undefined && !feedbackComplete
+          ? null
       : onAcknowledge === undefined
         ? null
         : { label: acknowledgeLabel, onClick: onAcknowledge };
@@ -286,8 +309,17 @@ export function U5ProgressScreen({
                         />
                       ))}
                     </ul>
-                  ) : (
+                  ) : combatFeedback === undefined ? (
                     <Outcome outcome={progress.outcome} />
+                  ) : (
+                    <section className="u5-feedback-beat" aria-live="polite" aria-atomic="true">
+                      {feedback.phase === "preBattleReaction" ? combatFeedback.preBattleReaction?.text
+                        : feedback.phase === "preBattleConsequence" ? combatFeedback.consequenceText
+                          : feedback.phase === "postBattleDialogue" ? combatFeedback.postBattleReaction?.text
+                            : feedback.phase === "postBattleHp" ? "전투 피해를 정리합니다."
+                              : feedback.phase === "postBattleTrust" ? "신뢰가 변했습니다."
+                                : feedback.phase === "battle" ? "전투가 진행 중입니다." : "결과를 확인했습니다."}
+                    </section>
                   )}
                 </div>
               ) : (
@@ -301,13 +333,13 @@ export function U5ProgressScreen({
             <section className="panel-section u5-party" data-testid="u5-party" aria-labelledby="u5-party-title">
               <h3 id="u5-party-title">파티 상태</h3>
               <ul className="party-list">
-                {progress.party.map((member, index) => (
+                {shownParty.map((member, index) => (
                   <li key={member.id}>
                     <PartyMemberCard
                       member={member}
                       index={index}
                       testId="u5-party-member"
-                      changes={changesByMemberId?.[member.id]}
+                      changes={feedbackComplete ? changesByMemberId?.[member.id] : undefined}
                     />
                   </li>
                 ))}
