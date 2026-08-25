@@ -20,16 +20,12 @@ export function MainMenuScreen({ unlockedCount, loading }: MainMenuScreenProps) 
         <h1>Dungeon Schemer</h1>
       </header>
       <nav className="main-menu-screen__actions" aria-label="메인 메뉴">
-        <Link className="main-menu-screen__start" href="/campaign">
+        <Link className="shell-cta shell-cta--primary main-menu-screen__start" href="/campaign">
           캠페인 시작
         </Link>
-        <Link className="main-menu-screen__achievements" href="/achievements">
-          <span>업적 기록</span>
-          <small>
-            {loading
-              ? `달성 — / ${TOTAL_ACHIEVEMENTS}`
-              : `달성 ${unlockedCount} / ${TOTAL_ACHIEVEMENTS}`}
-          </small>
+        <Link className="shell-cta main-menu-screen__achievements" href="/achievements">
+          <span>업적</span>
+          <small>{loading ? `— / ${TOTAL_ACHIEVEMENTS}` : `${unlockedCount} / ${TOTAL_ACHIEVEMENTS}`}</small>
         </Link>
       </nav>
     </main>

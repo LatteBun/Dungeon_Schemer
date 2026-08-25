@@ -8,10 +8,10 @@
   min-height: 0;
   padding: 1.5cqh 3cqw;
   gap: 0.9cqh;
-  color: #f3e3bb;
-  background:
-    radial-gradient(ellipse at top, #493d27 0, #171a17 52cqh),
-    #10120f;
+  color: var(--color-parchment);
+  /* 바탕은 셸과 같다. 초록기 도는 배경이 이 화면만 다른 앱처럼 보이게 했다. */
+  padding: var(--shell-padding);
+  gap: var(--shell-title-gap);
 }
 
 .achievement-screen__header,
@@ -22,11 +22,16 @@
   align-items: center;
 }
 
+/* 할 말이 없으면 자리도 두지 않는다. */
+.achievement-screen__header span:empty {
+  display: none;
+}
+
 .achievement-screen__header {
   justify-content: space-between;
   min-height: 6.2cqh;
   padding: 0 1.1cqw 0.7cqh;
-  border-bottom: 0.125rem solid #b48a3b;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-shell-metal) 68%, var(--color-edge));
 }
 
 .achievement-screen__header p,
@@ -47,9 +52,12 @@
 }
 
 .achievement-screen__header h1 {
-  font-family: Georgia, serif;
-  font-size: 2.3rem;
-  line-height: 1.15;
+  color: #e5c77f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: var(--shell-title-size);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
 }
 
 .achievement-screen__header span {
@@ -57,16 +65,17 @@
   font-size: 0.95rem;
 }
 
+/* 살결은 상단 상태 바의 알약 규칙이 준다. 여기서는 글자만 정한다. */
 .achievement-screen__count {
-  padding: 0.8rem 1.25rem;
-  border: 0.0625rem solid #8f7137;
-  background: #1b201b;
-  font-size: 1.1rem;
+  gap: 0.35rem;
+  color: var(--color-muted);
+  font-size: clamp(0.72rem, 0.9cqw, 0.95rem);
+  letter-spacing: 0.04em;
 }
 
 .achievement-screen__count strong {
-  color: #f4cf74;
-  font-size: 1.55rem;
+  color: var(--color-shell-gold);
+  font-size: clamp(0.95rem, 1.2cqw, 1.35rem);
 }
 
 .achievement-screen__gallery {
@@ -207,34 +216,68 @@
 }
 
 .achievement-screen__actions {
+  /* 좌우 끝에 하나씩. 공용 CTA 의 justify-self 는 flex 안에서 뜻이 없다. */
   justify-content: space-between;
   min-height: 3.1cqh;
   padding: 0 1.1cqw;
 }
 
-.achievement-screen__actions a,
-.achievement-screen__actions button,
+/* 아래 두 버튼의 살결은 공용 `.shell-cta` 가 준다. 확인 대화만 따로 남는다. */
 .achievement-screen__dialog button {
-  border: 0.0625rem solid #af8a45;
-  padding: 0.65rem 1.1rem;
-  color: #f5e4bc;
-  background: #24291f;
-  font: inherit;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  border: 1px solid #b99145;
+  border-radius: 0.18rem;
+  background: linear-gradient(180deg, #342417 0%, #1d140e 55%, #130d09 100%);
+  box-shadow: inset 0 0 0 2px #0e0906, inset 0 0 0 3px rgb(189 147 69 / 58%);
+  color: #e6d3a3;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.06em;
   text-decoration: none;
 }
 
-.achievement-screen__actions button,
-.achievement-screen__dialog button:last-child {
-  background: #583827;
+/*
+ * 기록을 지우는 버튼. 위험은 알리되 살결은 공용 CTA 그대로 둔다.
+ *
+ * 예전에는 평평한 갈색으로 덮어 버려서, 옆의 「메인 메뉴로」와 다른 재질처럼
+ * 보였다. 테두리와 글자색만 위험색으로 옮긴다.
+ */
+.achievement-screen__actions button {
+  border-color: color-mix(in srgb, var(--color-shell-danger) 72%, #b99145);
+  color: #e7b8ab;
 }
 
+.achievement-screen__actions button:hover,
+.achievement-screen__actions button:focus-visible {
+  outline-color: var(--color-shell-danger);
+  border-color: var(--color-shell-danger);
+}
+
+/* 지우는 쪽만 위험색으로. 살결은 옆 버튼과 같다. */
+.achievement-screen__dialog button:last-child {
+  border-color: color-mix(in srgb, var(--color-shell-danger) 72%, #b99145);
+  color: #e7b8ab;
+}
+
+/*
+ * 확인 창은 화면 한가운데 선다.
+ *
+ * 모달 `dialog` 는 원래 `margin: auto` 로 가운데 서는데, Tailwind preflight 가
+ * 모든 요소의 margin 을 0 으로 만들어 좌상단 (0,0) 에 붙어 있었다. 되돌린다.
+ *
+ * 너비도 `cqw` 대신 `rem` 으로 잡는다. 최상위 층(top layer)에 올라간 요소라
+ * 컨테이너 질의가 걸리는 조상이 없다. `rem` 은 캔버스 크기에서 나오므로
+ * 창이 아니라 판과 함께 커진다 — `vw` 를 쓰면 고정 비율 계약이 깨진다.
+ */
 .achievement-screen__dialog {
-  width: 31cqw;
+  margin: auto;
+  width: 30rem;
   padding: 1.5rem;
-  border: 0.1875rem solid #bf9650;
-  color: #f3e3bb;
-  background: #22251d;
-  box-shadow: 0 1rem 3rem #050605;
+  border: 1px solid #b99145;
+  border-radius: 0.18rem;
+  color: var(--color-parchment);
+  background: linear-gradient(180deg, #241a11 0%, #1a120c 55%, #130d09 100%);
+  box-shadow: inset 0 0 0 2px #0e0906, inset 0 0 0 3px rgb(189 147 69 / 42%), 0 1rem 3rem #050605;
 }
 
 .achievement-screen__dialog::backdrop {
