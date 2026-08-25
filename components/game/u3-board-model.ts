@@ -1,4 +1,5 @@
 import { CLASSES } from "@/lib/content/classes";
+import { createRng } from "@/lib/rng";
 import { RANK_RISK_LIMIT, rewardForSurvivors } from "@/lib/domain";
 import { PERSONALITY_LABEL, portraitSrcForCharacter } from "./character-labels";
 import type {
@@ -115,6 +116,23 @@ function lockReasonLabel(
   return "현재 이 공고에는 진입할 수 없습니다.";
 }
 
+/*
+ * 게시판에 걸리는 차례를 섞는다.
+ *
+ * `C1` 은 접근 가능한 것 중 위험도 높은 쪽부터 고르고 파티도 그 차례로 짝지어
+ * 준다. 어느 공고가 걸리느냐는 그 규칙의 몫이라 건드리지 않는다. 다만 그 차례가
+ * 그대로 벽에 걸리면 언제나 첫 자리가 가장 위험한 던전이라, 길잡이가 공고를 읽지
+ * 않고 자리만 보고 고르게 된다. 게시판은 누가 먼저 와서 붙였는지 모르는 벽이다.
+ *
+ * 고르는 일이 끝난 뒤(다섯 장을 추린 뒤)에 섞으므로 무엇이 걸리는지는 그대로다.
+ * 같은 시드와 같은 월드턴이면 같은 차례가 나온다 — 화면이 렌더마다 다시 섞으면
+ * 누르려던 공고가 손 밑에서 움직인다.
+ */
+function boardOrder(campaign: CampaignState, offers: readonly BoardOffer[]): readonly BoardOffer[] {
+  const shown = offers.slice(0, 5);
+  return createRng(`${campaign.seed}/board-order/${campaign.worldTurn}`).derive("card").shuffle(shown);
+}
+
 export function createU3BoardView(
   campaign: CampaignState,
   offers: readonly BoardOffer[],
@@ -123,7 +141,7 @@ export function createU3BoardView(
   const notices: U3BoardNoticeView[] = [];
   const detailsByOfferId: Record<string, U3OfferDetailView> = {};
 
-  for (const offer of offers.slice(0, 5)) {
+  for (const offer of boardOrder(campaign, offers)) {
     const dungeon = campaign.dungeons.find(
       (candidate) => candidate.id === offer.dungeonId,
     );
