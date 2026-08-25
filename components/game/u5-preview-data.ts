@@ -22,7 +22,7 @@ import type {
   DungeonId,
   SituationEvent,
 } from "@/lib/domain";
-import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacter } from "./character-labels";
+import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacterId } from "./character-labels";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import {
@@ -239,11 +239,7 @@ function partyViews() {
     trust: member.trust,
     gold: member.gold,
     alive: member.alive,
-    portraitSrc: portraitSrcForCharacter({
-      id: member.id,
-      classId: member.classId,
-      alive: member.alive,
-    }),
+    portraitSrc: portraitSrcForCharacterId(member.id),
   }));
 }
 

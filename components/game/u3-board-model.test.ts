@@ -93,17 +93,14 @@ describe("U3 board model", () => {
     expect(firstMemberId).toBeDefined();
     if (firstMemberId === undefined) return;
 
-    const portraitSrc = `/assets/characters/${firstMemberId}.webp`;
-    const board = createU3BoardView(campaign, offers, {
-      [firstMemberId]: portraitSrc,
-    });
+    const board = createU3BoardView(campaign, offers);
     const firstDetail = offers[0] === undefined
       ? undefined
       : board.detailsByOfferId[offers[0].id];
 
     /* 앉는 자리는 섞이므로 자리가 아니라 사람으로 찾는다. */
     const member = firstDetail?.party.find((one) => String(one.id) === String(firstMemberId));
-    expect(member?.portraitSrc).toBe(portraitSrc);
+    expect(member?.portraitSrc).toMatch(/^\/assets\/characters\/live\//);
   });
 });
 

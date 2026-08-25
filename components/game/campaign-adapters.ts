@@ -12,7 +12,7 @@ import type {
 } from "@/lib/domain";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { presentShuffledAdvice } from "@/lib/rules/advice-evaluation";
-import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacter } from "./character-labels";
+import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacterId } from "./character-labels";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import { inSeatOrder } from "./party-seat-order";
@@ -80,7 +80,7 @@ export function partyViewsFor(seed: string, members: readonly Character[]) {
     trust: member.trust,
     gold: member.gold,
     alive: member.alive,
-    portraitSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: member.alive }),
+    portraitSrc: portraitSrcForCharacterId(member.id),
   }));
 }
 
@@ -283,7 +283,7 @@ export function eventReplayFor(
          * 쓰러지는 것은 재생이 프레임마다 보여준다 - `defeatedParticipantIds`
          * 가 그 순간에 흐려 준다. 초상화가 그것을 앞질러서는 안 된다.
          */
-        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: true }),
+        imageSrc: portraitSrcForCharacterId(member.id),
       })),
       /* 적의 이름은 콘텐츠에서 온다. 화면이 지어내지 않는다. */
       ...resolution.enemies.map((enemy) => ({
@@ -477,7 +477,7 @@ export function bossReplayFor(
          * 쓰러지는 것은 재생이 프레임마다 보여준다 - `defeatedParticipantIds`
          * 가 그 순간에 흐려 준다. 초상화가 그것을 앞질러서는 안 된다.
          */
-        imageSrc: portraitSrcForCharacter({ id: member.id, classId: member.classId, alive: true }),
+        imageSrc: portraitSrcForCharacterId(member.id),
       })),
       /* 적의 이름은 콘텐츠에서 온다. 화면이 보스 이름을 지어내지 않는다. */
       ...result.battle.enemies.map((enemy) => ({

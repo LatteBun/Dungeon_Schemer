@@ -8,7 +8,7 @@ import { resolveBossBattle } from "@/lib/rules/boss-battle-adapter";
 import { presentShuffledAdvice, resolveBossInfoAdvice } from "@/lib/rules/advice-evaluation";
 import { resolveMonsterEventBattle } from "@/lib/rules/expedition-events";
 import type { TopStatusView } from "./TopStatusBar";
-import { portraitSrcForCharacter } from "./u4-dungeon-map-model";
+import { portraitSrcForCharacter } from "./character-labels";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";

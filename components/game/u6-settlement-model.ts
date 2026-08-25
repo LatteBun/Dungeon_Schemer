@@ -1,4 +1,4 @@
-import { classLabel, portraitSrcForCharacter } from "./character-labels";
+import { classLabel, portraitSrcForCharacterId } from "./character-labels";
 import type {
   GuideRank,
   RiskLevel,
@@ -106,7 +106,7 @@ export function createU6SettlementView(
       id: String(after.id),
       name: after.name,
       classLabel: classLabel(after.classId),
-      portraitSrc: portraitSrcForCharacter({ id: after.id, classId: after.classId, alive: after.alive }),
+      portraitSrc: portraitSrcForCharacterId(after.id),
       alive: after.alive,
       hp: { before: before.hp, after: after.hp, max: after.maxHp },
       trust: { before: before.trust, after: after.trust },

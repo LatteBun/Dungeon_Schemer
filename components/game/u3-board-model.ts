@@ -61,8 +61,6 @@ export interface U3BoardView {
   detailsByOfferId: Readonly<Record<string, U3OfferDetailView>>;
 }
 
-export type U3PortraitMap = Readonly<Partial<Record<CharacterId, string>>>;
-
 export function contractOutcomesForRisk(
   riskLevel: RiskLevel,
 ): readonly U3ContractOutcomeView[] {
@@ -137,7 +135,6 @@ function boardOrder(campaign: CampaignState, offers: readonly BoardOffer[]): rea
 export function createU3BoardView(
   campaign: CampaignState,
   offers: readonly BoardOffer[],
-  portraitByCharacterId: U3PortraitMap = {},
 ): U3BoardView {
   const notices: U3BoardNoticeView[] = [];
   const detailsByOfferId: Record<string, U3OfferDetailView> = {};
@@ -171,12 +168,7 @@ export function createU3BoardView(
       }
 
       /* 주입된 초상이 없으면 공용 매핑으로 채운다. 화면마다 빈 자리가 나오면 안 된다. */
-      const portraitSrc = portraitByCharacterId[character.id]
-        ?? portraitSrcForCharacter({
-          id: character.id,
-          classId: character.classId,
-          alive: character.alive,
-        });
+      const portraitSrc = portraitSrcForCharacter(character);
       return {
         id: character.id,
         name: character.name,
