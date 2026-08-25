@@ -33,7 +33,7 @@
 - Consumes: existing `components/game/ScreenFit.tsx` source and `readFileSync`
 - Produces: behavioral regression contract for availability, `fullscreenchange`, and cleanup
 
-- [ ] **Step 1: Import the wished-for public behavior boundaries**
+- [x] **Step 1: Import the wished-for public behavior boundaries**
 
 Extend the existing `ScreenFit` import:
 
@@ -47,7 +47,7 @@ import {
 } from "./ScreenFit";
 ```
 
-- [ ] **Step 2: Write failing availability and subscription behavior tests**
+- [x] **Step 2: Write failing availability and subscription behavior tests**
 
 Append these cases inside `describe("전체 화면 들어가기", ...)`:
 
@@ -78,7 +78,7 @@ The production mutations these tests catch are ignoring an active fullscreen ele
 to notify React on browser changes, and leaking a listener after cleanup. They use the real
 platform `EventTarget`; do not replace it with a mock.
 
-- [ ] **Step 3: Run the focused test and verify RED**
+- [x] **Step 3: Run the focused test and verify RED**
 
 Run:
 
@@ -89,7 +89,7 @@ npx vitest run components/game/MobileFullscreen.test.ts
 Expected: FAIL because `fullscreenEntryAvailable` and `subscribeToFullscreenChanges` are not
 exported by the current implementation.
 
-- [ ] **Step 4: Confirm the baseline lint failure remains the same**
+- [x] **Step 4: Confirm the baseline lint failure remains the same**
 
 Run:
 
@@ -110,7 +110,7 @@ Expected: exit 1 with exactly one `react-hooks/set-state-in-effect` error at the
 - Consumes: `canGoFullscreen(target: unknown): boolean`, DOM `fullscreenchange`, `document.fullscreenElement`
 - Produces: `fullscreenEntryAvailable(target: unknown, fullscreenElement: unknown): boolean`, `subscribeToFullscreenChanges(target: EventTarget, onStoreChange: () => void): () => void`, plus stable internal `useSyncExternalStore` adapters
 
-- [ ] **Step 1: Import `useSyncExternalStore`**
+- [x] **Step 1: Import `useSyncExternalStore`**
 
 Replace the React import with:
 
@@ -120,7 +120,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 
 Do not remove `useState`; `needsTurn` still uses it.
 
-- [ ] **Step 2: Add testable behavior boundaries and stable browser-store adapters**
+- [x] **Step 2: Add testable behavior boundaries and stable browser-store adapters**
 
 Place these functions after `hasCoarsePointer` and before `ScreenFit`:
 
@@ -153,7 +153,7 @@ function fullscreenAvailabilityServerSnapshot(): false {
 The functions stay outside `ScreenFit` so their identity is stable and React does not
 re-subscribe after every render. The primitive boolean snapshot requires no cache object.
 
-- [ ] **Step 3: Replace copied state with the external-store hook**
+- [x] **Step 3: Replace copied state with the external-store hook**
 
 In `ScreenFit`, replace:
 
@@ -179,7 +179,7 @@ setFullscreenAvailable(canGoFullscreen(document.documentElement) && document.ful
 
 Leave `sync()`, all viewport listeners, their cleanup, JSX branches, and click handler unchanged.
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [x] **Step 4: Run the focused test and verify GREEN**
 
 Run:
 
@@ -189,7 +189,7 @@ npx vitest run components/game/MobileFullscreen.test.ts
 
 Expected: all mobile fullscreen tests PASS, including the new availability and subscription behavior contracts.
 
-- [ ] **Step 5: Run the target lint and verify GREEN**
+- [x] **Step 5: Run the target lint and verify GREEN**
 
 Run:
 
@@ -200,7 +200,7 @@ npx eslint components/game/ScreenFit.tsx
 Expected: exit 0 with no warnings or errors. If another rule reports reading a browser API or
 subscription identity, fix the external-store boundary; do not suppress the rule.
 
-- [ ] **Step 6: Commit the tested implementation**
+- [x] **Step 6: Commit the tested implementation**
 
 ```bash
 git add components/game/ScreenFit.tsx components/game/MobileFullscreen.test.ts
@@ -220,7 +220,7 @@ git commit -m "수정: ScreenFit 전체 화면 상태를 구독한다" -m "전�
 - Consumes: completed external-store implementation and existing application routes
 - Produces: clean branch ready for a PR into `main`
 
-- [ ] **Step 1: Run the complete automated verification**
+- [x] **Step 1: Run the complete automated verification**
 
 Run each command after the previous one finishes so Next build does not race with TypeScript's
 `.next/types` input:
@@ -241,7 +241,7 @@ Expected:
 - Next.js 16.3 Webpack production build completes;
 - whitespace verification exits 0.
 
-- [ ] **Step 2: Start the isolated local server**
+- [x] **Step 2: Start the isolated local server**
 
 Run on a free port that is not used by another worktree:
 
@@ -251,7 +251,7 @@ npm run dev -- --webpack -p 3002
 
 Expected: Next.js reports ready at `http://localhost:3002`.
 
-- [ ] **Step 3: Verify the mobile portrait branch in Chromium**
+- [x] **Step 3: Verify the mobile portrait branch in Chromium**
 
 Open `http://localhost:3002/` with a touch-capable portrait viewport such as 390×844. Confirm:
 
@@ -260,7 +260,7 @@ Open `http://localhost:3002/` with a touch-capable portrait viewport such as 390
 - rotating or resizing to landscape removes the alert;
 - no console error or hydration warning occurs.
 
-- [ ] **Step 4: Verify branch scope and commit completed plan tracking**
+- [x] **Step 4: Verify branch scope and commit completed plan tracking**
 
 Run:
 
