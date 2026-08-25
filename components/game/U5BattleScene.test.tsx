@@ -224,6 +224,20 @@ describe("U5BattleScene 쓰러짐 표시", () => {
 
     expect(battleCss).toMatch(/\[data-defeated="true"\][^{]*\{[^}]*filter:\s*grayscale\(1\)/);
   });
+
+  /*
+   * 살아 있는 사람이 흐려지는 일은 없어야 한다.
+   *
+   * 재생 중 아군이 잠깐 반투명해진다는 제보를 재현하지 못했다. 원인을 못 찾은
+   * 결함은 다시 돌아오므로, 일어날 수 없게 못을 박은 것을 여기서 지킨다.
+   */
+  it("살아 있는 참가자의 투명도를 못 박는다", () => {
+    const rule = battleCss.match(
+      /\.u5-battle-participant\[data-defeated="false"\]\s+\.u5-battle-motion\s*\{([^}]*)\}/,
+    )?.[1];
+    expect(rule, "살아 있는 참가자 규칙").toBeDefined();
+    expect(rule).toMatch(/opacity:\s*1\s*!important/);
+  });
 });
 
 /* 자막에서 피해를 걷어낸 만큼, 숫자가 그 몫을 해야 한다. */
