@@ -101,6 +101,7 @@
 
 ## 이번 개편 설계
 
+- [U5 조언 카드 번호 제거 설계](superpowers/specs/2026-08-25-lattebun-u5-advice-number-removal-design.md): 조언 카드 세 장의 숫자 배지만 제거하고 내부 슬롯 선택 계약을 유지하는 UI 변경
 - [보스전 정산 CTA 게이트 설계](superpowers/specs/2026-08-25-lattebun-boss-battle-exit-gate-design.md): 보스전 재생 중 정산을 잠그고 우측 하단 CTA를 `전투 건너뛰기`에서 `정산으로`로 전환하는 계약
 - [보스전 정산 CTA 게이트 구현 계획](superpowers/plans/2026-08-25-lattebun-boss-battle-exit-gate.md): 공용 playback 제어 분리, 일반전·보스전 exit 정책 연결, 실제 브라우저 전환 검증의 테스트 우선 순서
 - [진행 화면 UX 개선 설계](superpowers/specs/2026-08-25-lattebun-progress-screen-ux-design.md): 낮은 금속 명패형 조언 카드, 비전투 파티 장면, 일반전 재생 상태에 따른 우측 하단 CTA 전환 계약
