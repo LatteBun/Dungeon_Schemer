@@ -64,4 +64,17 @@ describe("U4 assets", () => {
       ).toBe(true);
     }
   });
+
+  it("keeps official character portraits live-only", () => {
+    expect(existsSync("public/assets/characters/dead")).toBe(false);
+    expect(CHARACTER_ROSTER).toHaveLength(30);
+
+    for (const entry of CHARACTER_ROSTER) {
+      expect(
+        existsSync(
+          `public/assets/characters/live/${entry.classId}/${entry.classId}_${entry.portraitVariant}.png`,
+        ),
+      ).toBe(true);
+    }
+  });
 });
