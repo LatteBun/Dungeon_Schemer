@@ -255,6 +255,7 @@ function ExpeditionScreens() {
     <U4DungeonMapScreen
       status={status}
       dungeonName={dungeon?.name ?? ""}
+      themeId={dungeon?.theme}
       riskLevel={active.expedition.riskLevel}
       nodes={createU4MapNodeViews({
         map: active.expedition.map,

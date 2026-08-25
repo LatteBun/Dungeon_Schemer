@@ -90,6 +90,8 @@ pnpm dev
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm test:e2e:install
+pnpm test:e2e
 pnpm build
 pnpm start
 ```
@@ -124,10 +126,12 @@ Codespaces Node.js            24.19.0
 | `pnpm lint` | ESLint 검사 | Pull Request 병합 전 |
 | `pnpm typecheck` | TypeScript 타입 검사 | Pull Request 병합 전 |
 | `pnpm test` | Vitest 단위 테스트 | Pull Request 병합 전 |
+| `pnpm test:e2e:install` | Playwright Chromium 최초 설치 | 새 checkout, Playwright 버전 변경 뒤 |
+| `pnpm test:e2e` | Chromium 브라우저 안정성 회귀 | UI·라우트·캠페인 흐름 PR 병합 전 |
 | `pnpm build` | Vercel과 같은 Next.js 프로덕션 빌드 | Pull Request 병합 전 |
 | `pnpm start` | `pnpm build` 성공 뒤 로컬 프로덕션 서버 실행 | 배포 전 동작 확인이 필요할 때 |
 
-`pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`를 병합 전 검증 기준으로 사용한다. 감시 모드가 필요하면 개발 중에만 `pnpm test:watch`를 사용하고, 검증에는 한 번 실행하고 종료하는 `pnpm test`를 사용한다.
+`pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`를 병합 전 검증 기준으로 사용한다. UI·라우트·캠페인 흐름을 바꾼 Pull Request는 여기에 `pnpm test:e2e`를 더한다. 감시 모드가 필요하면 개발 중에만 `pnpm test:watch`를 사용하고, 검증에는 한 번 실행하고 종료하는 `pnpm test`를 사용한다.
 
 ## 화면 구조와 import 경계
 
@@ -175,6 +179,22 @@ Vitest는 `tsconfig.json`의 `paths`를 읽지 않는다. `@/` 별칭은 `vitest
 현재 테스트 환경은 Node이며 순수 로직 검증을 대상으로 한다. React 컴포넌트를 렌더링하는 테스트가 필요해지면 그 작업에서 `jsdom`과 테스트 라이브러리를 함께 도입하고 이 절을 갱신한다.
 
 가장 가까운 예시는 `lib/domain/contract.test.ts`다.
+
+## 브라우저 E2E 테스트
+
+Playwright Test와 Chromium은 실제 Next.js 라우트 렌더링, 브라우저 예외, 사용자 클릭
+화면 전이, 고정 캔버스 viewport 계약을 검증한다. 최초 한 번
+`pnpm test:e2e:install`로 Chromium을 설치하고, 이후 `pnpm test:e2e`로 서버 기동부터
+종료까지 한 번에 실행한다.
+
+Vitest의 `*.test.ts(x)`는 Node 환경의 규칙·Store·문서 회귀를 소유한다. Playwright의
+`e2e/*.spec.ts`는 실제 브라우저가 필요한 회귀만 소유하며 서로의 내부 구현을 복제하지
+않는다. 기존의 대상 옆 단위 테스트 규약은 Vitest에 적용하고, E2E는 이 분리 경로를
+사용한다. 실패 trace와 screenshot은 `test-results/`, HTML 리포트는
+`playwright-report/`에 생성되고 Git에는 포함하지 않는다.
+
+현재 자동 범위는 Chromium 로컬 실행이다. GitHub Actions, Firefox·WebKit, 픽셀 골든
+스크린샷은 별도 승인 뒤 추가한다.
 
 ## 난수와 재현성
 

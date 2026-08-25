@@ -1,7 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { CharacterId, ClassId, NodeId } from "@/lib/domain";
+import type { CharacterId, ClassId, NodeId, ThemeId } from "@/lib/domain";
+import { THEME_IDS } from "@/lib/domain";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U4MapLayout } from "./u4-dungeon-map-layout";
 import type { U4MapNodeView, U4PartyMemberView } from "./u4-dungeon-map-model";
@@ -97,7 +98,20 @@ const party: readonly U4PartyMemberView[] = [
   },
 ];
 
-function render(selectedNextNodeId: NodeId | null = MONSTER): string {
+const survey = {
+  visited: 2,
+  total: 12,
+  disclosedRules: [
+    "거미는 불을 피한다",
+    "동굴거미는 발소리와 진동에 민감하게 반응한다",
+    "그림자거미는 빛이 없는 곳에서만 모습을 드러낸다",
+  ],
+} as const;
+
+function render(
+  selectedNextNodeId: NodeId | null = MONSTER,
+  themeId?: ThemeId,
+): string {
   return renderToStaticMarkup(
     createElement(U4DungeonMapScreen, {
       status,
@@ -106,9 +120,11 @@ function render(selectedNextNodeId: NodeId | null = MONSTER): string {
       nodes,
       layout,
       party,
+      themeId,
       selectedNextNodeId,
       onSelectNextNode: () => undefined,
       onMove: () => undefined,
+      survey,
     }),
   );
 }
@@ -184,6 +200,17 @@ describe("U4DungeonMapScreen", () => {
     expect(html).toMatch(/data-testid=\"u4-move-button\"[^>]*disabled=\"\"/);
   });
 
+  it("orders the survey before the selected destination and keeps the move CTA last", () => {
+    const html = render(MONSTER);
+    const surveyIndex = html.indexOf("계약 전 답사");
+    const destinationIndex = html.indexOf("선택한 지점");
+    const moveIndex = html.indexOf("이 지점으로 이동");
+
+    expect(surveyIndex).toBeGreaterThan(-1);
+    expect(surveyIndex).toBeLessThan(destinationIndex);
+    expect(destinationIndex).toBeLessThan(moveIndex);
+  });
+
   it("orders left/right keyboard navigation by the room x coordinate", () => {
     expect(nextSelectableNodeId(nodes, layout, MONSTER, "right")).toBe(REST);
     expect(nextSelectableNodeId(nodes, layout, REST, "left")).toBe(MONSTER);
@@ -225,5 +252,34 @@ describe("선택한 다음 지점", () => {
   /* 고르지 않았으면 고르라고만 한다. */
   it("고르지 않았으면 안내만 남는다", () => {
     expect(render(null)).toContain("다음 지점을 선택하세요");
+  });
+});
+
+/*
+ * 지도 배경은 던전마다 달라야 한다.
+ *
+ * 한동안 map_background_base.png 한 장이 모든 던전에 깔렸다. 거미굴에 들어가든
+ * 묘지에 들어가든 눈에 보이는 돌바닥이 똑같으니, 어디에 와 있는지가 화면 위쪽
+ * 이름표에만 남았다.
+ */
+describe("U4DungeonMapScreen 배경", () => {
+  it("던전의 테마마다 다른 배경을 깐다", () => {
+    const backgrounds = THEME_IDS.map((themeId) => {
+      const html = render(MONSTER, themeId);
+      const found = /class="u4-map-surface__background[^"]*" src="([^"]+)"/.exec(html);
+      expect(found, `${themeId} 배경`).not.toBeNull();
+      return found![1];
+    });
+
+    for (const [index, themeId] of THEME_IDS.entries()) {
+      expect(backgrounds[index]).toContain(themeId);
+    }
+    expect(new Set(backgrounds).size).toBe(THEME_IDS.length);
+  });
+
+  it("테마를 주지 않으면 예전 돌바닥을 그대로 쓴다", () => {
+    // 프리뷰에는 던전이 없다. 테마 없이도 화면이 서야 한다.
+    const html = render(MONSTER, undefined);
+    expect(html).toContain("/assets/u4/map/map_background_base.png");
   });
 });

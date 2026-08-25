@@ -118,27 +118,22 @@ describe("U4 fixed 16:9 canvas contract", () => {
   });
 
   /*
-   * 우측 패널은 앞 두 덩어리를 내용 높이로 쌓고, 마지막이 남는 자리를 받는다.
-   *
-   * 전에는 2fr : 1fr 로 나눠 다음 지점을 아래 3분의 1 에 붙였다. 그러면 파티
-   * 칸이 내용보다 커져 카드 아래가 빈 상자로 남는다. 그래서 둘 다 내용 높이로
-   * 두었는데, 이번에는 그 아래가 통째로 비어 보였다.
-   *
-   * 답사 기록이 그 자리를 받는다. 늘려도 빈 상자가 되지 않는 유일한 덩어리라
-   * 그렇다 - 알아낸 규칙이 쌓이고, 넘치면 그 안에서 스크롤한다. 앞 둘은 그대로
-   * 내용 높이다.
+   * 우측 패널은 파티를 자동 높이 행에 두고, 답사 기록을 내부 스크롤이 가능한
+   * 유연한 가운데 행에 배치하며, 다음 지점과 CTA를 자동 높이의 마지막 행에 둔다.
    */
-  it("stacks the right panel and lets only the last block take the rest", () => {
+  it("keeps the survey flexible and the destination in the last row", () => {
     const base = readFileSync("app/u4-dungeon-map.css", "utf8");
-    const rule = base.match(/\.u4-right-panel\s*\{([^}]*)\}/)?.[1] ?? "";
-
-    expect(rule).toMatch(/grid-template-rows:\s*auto auto minmax\(0, 1fr\)/);
-    /* 마지막이 자리를 받아야 하므로 위로 몰지 않는다. */
-    expect(rule).not.toMatch(/align-content:\s*start/);
-
-    /* 늘어난 덩어리는 제 안에서 스크롤한다. 패널을 밀어내지 않는다. */
+    const rightPanel = base.match(/\.u4-right-panel\s*\{([^}]*)\}/)?.[1] ?? "";
+    const party = base.match(/\.u4-party\s*\{([^}]*)\}/)?.[1] ?? "";
     const survey = base.match(/\.u4-survey\s*\{([^}]*)\}/)?.[1] ?? "";
+    const destination = base.match(/\.u4-destination\s*\{([^}]*)\}/)?.[1] ?? "";
 
+    expect(rightPanel).toMatch(
+      /grid-template-rows:\s*auto minmax\(0, 1fr\) auto/,
+    );
+    expect(party).toMatch(/grid-row:\s*1/);
+    expect(survey).toMatch(/grid-row:\s*2/);
+    expect(destination).toMatch(/grid-row:\s*3/);
     expect(survey).toMatch(/min-height:\s*0/);
     expect(survey).toMatch(/overflow-y:\s*auto/);
 
@@ -226,5 +221,34 @@ describe("액자를 늘리지 않는다", () => {
 
     expect(thumb).toMatch(/width:\s*100%/);
     expect(thumb).toMatch(/aspect-ratio:\s*1/);
+  });
+});
+
+/*
+ * 같은 규칙을 두 파일이 정하면, 뒤에 실리는 쪽만 살고 앞의 값은 죽는다.
+ *
+ * 선택한 지점의 아이콘이 그랬다. u4-dungeon-map.css 의 크기를
+ * u4-dungeon-map-fixes.css 가 42%로 덮어써서, 앞 파일을 아무리 고쳐도 화면은
+ * 그대로였다. 고쳤다고 믿은 채로 배포까지 나갔다.
+ */
+describe("U4 지도 스타일 단일 출처", () => {
+  const map = readFileSync("app/u4-dungeon-map.css", "utf8");
+  const fixes = readFileSync("app/u4-dungeon-map-fixes.css", "utf8");
+
+  function definesSize(css: string, selector: string): boolean {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return [...css.matchAll(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`, "g"))]
+      .some((match) => /(^|[;{\s])width\s*:/.test(match[1] ?? ""));
+  }
+
+  it("선택한 지점 아이콘의 크기를 두 파일이 함께 정하지 않는다", () => {
+    expect(definesSize(map, ".u4-destination__icon")).toBe(true);
+    expect(definesSize(fixes, ".u4-destination__icon")).toBe(false);
+  });
+
+  it("아이콘이 칸을 채울 만큼 크다", () => {
+    // 42%일 때는 어두운 칸 한가운데 작게 떠 있어 무슨 지점인지 읽기 어려웠다.
+    expect(numericDeclaration(map, ".u4-destination__icon", "width"))
+      .toBeGreaterThanOrEqual(80);
   });
 });

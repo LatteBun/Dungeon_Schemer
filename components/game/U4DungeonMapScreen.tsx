@@ -5,7 +5,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
 } from "react";
-import type { NodeId } from "@/lib/domain";
+import type { NodeId, ThemeId } from "@/lib/domain";
 import { GameShell } from "./GameShell";
 import { PartyMemberCard, type PartyMemberChangeEntry } from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
@@ -40,6 +40,13 @@ export interface U4DungeonMapScreenProps {
   selectedNextNodeId: NodeId | null;
   onSelectNextNode: (nodeId: NodeId) => void;
   onMove: (nodeId: NodeId) => void;
+  /*
+   * 이 던전의 테마. 배경이 그것을 따른다.
+   *
+   * 던전마다 다른 곳에 들어와 있는데 배경이 한 장으로 고정이었다. 거미굴도
+   * 사막도 묘지도 같은 돌바닥이면 어디에 있는지가 이름에만 남는다.
+   */
+  themeId?: ThemeId;
   /** 이 원정에서 알아낸 것. 프리뷰에는 원정이 없어 주지 않는다. */
   survey?: U4SurveyView;
   /** 파티원별 이 원정의 변화. 주면 카드를 뒤집을 수 있다. */
@@ -227,6 +234,7 @@ function DungeonMap({
   layout,
   selectedNextNodeId,
   onSelectNextNode,
+  themeId,
 }: Omit<
   U4DungeonMapScreenProps,
   "status" | "party" | "onMove"
@@ -261,9 +269,16 @@ function DungeonMap({
       </header>
 
       <div className="u4-map-surface" data-testid="u4-map-surface">
+        {/*
+          * 배경은 던전의 테마를 따른다.
+          *
+          * 테마를 주지 않는 화면(프리뷰)은 예전의 돌바닥을 그대로 쓴다.
+          */}
         <img
-          className="u4-map-surface__background"
-          src="/assets/u4/map/map_background_base.png"
+          className={themeId === undefined ? "u4-map-surface__background" : "u4-map-surface__background is-themed"}
+          src={themeId === undefined
+            ? "/assets/u4/map/map_background_base.png"
+            : `/assets/u5/dungeon-progress-scenes/${themeId}/entry.png`}
           alt=""
           aria-hidden="true"
         />
@@ -477,6 +492,35 @@ function RightPanel({
         )}
       </section>
 
+      {/*
+        * 아래를 비워 두지 않는다.
+        *
+        * 답사로 알아낸 생태 규칙은 다음 지점을 고를 때 쓰라고 준 사실인데,
+        * 그동안 진행 화면의 기록 탭에만 있어 지도에서는 볼 수 없었다. 정작
+        * 고르는 자리가 여기다.
+        *
+        * 들어오자마자 내용이 차 있는 것이 맞다. 여기 적히는 것은 던전 안에서
+        * 알아낸 것이 아니라 **계약 전 답사**로 이미 알아낸 생태다 - `E2` 가
+        * 위험도에 따라 그만큼 공개한다. 「답사 기록」이라고만 적어 두면 걸으면서
+        * 쌓이는 것처럼 읽히므로 언제 알아낸 것인지를 이름에 넣는다.
+        */}
+      {survey === undefined ? null : (
+        <section className="panel-section u4-survey" aria-labelledby="u4-survey-title">
+          <h3 id="u4-survey-title">계약 전 답사</h3>
+          {survey.disclosedRules.length === 0 ? (
+            <p className="u4-survey__empty">답사로 알아낸 것이 없다. 이 던전은 위험도가 낮다.</p>
+          ) : (
+            <ul className="u4-survey__rules">
+              {survey.disclosedRules.map((rule) => <li key={rule}>{rule}</li>)}
+            </ul>
+          )}
+          {/* 걸으면서 쌓이는 것은 이쪽이다. */}
+          <p className="u4-survey__progress">
+            지나온 지점 <strong>{survey.visited}</strong> / {survey.total}
+          </p>
+        </section>
+      )}
+
       <section
         className="panel-section u4-destination"
         aria-labelledby="u4-destination-title"
@@ -538,35 +582,6 @@ function RightPanel({
           }}
         />
       </section>
-
-      {/*
-        * 아래를 비워 두지 않는다.
-        *
-        * 답사로 알아낸 생태 규칙은 다음 지점을 고를 때 쓰라고 준 사실인데,
-        * 그동안 진행 화면의 기록 탭에만 있어 지도에서는 볼 수 없었다. 정작
-        * 고르는 자리가 여기다.
-        *
-        * 들어오자마자 내용이 차 있는 것이 맞다. 여기 적히는 것은 던전 안에서
-        * 알아낸 것이 아니라 **계약 전 답사**로 이미 알아낸 생태다 - `E2` 가
-        * 위험도에 따라 그만큼 공개한다. 「답사 기록」이라고만 적어 두면 걸으면서
-        * 쌓이는 것처럼 읽히므로 언제 알아낸 것인지를 이름에 넣는다.
-        */}
-      {survey === undefined ? null : (
-        <section className="panel-section u4-survey" aria-labelledby="u4-survey-title">
-          <h3 id="u4-survey-title">계약 전 답사</h3>
-          {survey.disclosedRules.length === 0 ? (
-            <p className="u4-survey__empty">답사로 알아낸 것이 없다. 이 던전은 위험도가 낮다.</p>
-          ) : (
-            <ul className="u4-survey__rules">
-              {survey.disclosedRules.map((rule) => <li key={rule}>{rule}</li>)}
-            </ul>
-          )}
-          {/* 걸으면서 쌓이는 것은 이쪽이다. */}
-          <p className="u4-survey__progress">
-            지나온 지점 <strong>{survey.visited}</strong> / {survey.total}
-          </p>
-        </section>
-      )}
     </div>
   );
 }
@@ -581,6 +596,7 @@ export function U4DungeonMapScreen({
   selectedNextNodeId,
   onSelectNextNode,
   onMove,
+  themeId,
   survey,
   changesByMemberId,
 }: U4DungeonMapScreenProps) {
@@ -598,6 +614,7 @@ export function U4DungeonMapScreen({
             layout={layout}
             selectedNextNodeId={selectedNextNodeId}
             onSelectNextNode={onSelectNextNode}
+            themeId={themeId}
           />
         }
         rightPanel={

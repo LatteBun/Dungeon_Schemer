@@ -55,6 +55,7 @@ import { applyAcceptedMerchantAdvice } from "./merchant";
 import { settleExpedition } from "./settlement";
 import { runWorldTurn } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
+import { advanceAdvicePressure, assertAdvicePressure } from "./advice-pressure";
 
 /**
  * 끝난 캠페인이 남기는 기록.
@@ -463,6 +464,10 @@ function transitionChooseAdvice(
       return finalizeImmediateAdviceTrust({ decision, members: living, applied: { executed: decision.executed, resultText } });
     })();
 
+  const advicePressure = advanceAdvicePressure(
+    active.expedition.advicePressure,
+    resolution.decision,
+  );
   const applied = applyEventChoice({ event, decision: resolution.decision, members: active.partyMembers });
 
   /*
@@ -492,7 +497,7 @@ function transitionChooseAdvice(
     classDefs: CLASSES,
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/${active.expedition.currentNodeId}`,
     pendingMerchantEffect: purchased?.pendingMerchantEffect ?? active.expedition.pendingMerchantEffect,
-    retrySteps: dungeon.attempts,
+    advicePressure,
   });
 
   /*
@@ -521,6 +526,7 @@ function transitionChooseAdvice(
   const wiped = withTrust.every((member) => !member.alive);
   const nextExpedition: ExpeditionState = {
     ...active.expedition,
+    advicePressure,
     infoRecords: [...active.expedition.infoRecords, ...resolution.decision.delayedRecords],
     pendingMerchantEffect: battle?.pendingMerchantEffect
       ?? purchased?.pendingMerchantEffect
@@ -645,6 +651,7 @@ function transitionEnterBoss(
     infoRecords: expedition.infoRecords,
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/boss`,
     pendingMerchantEffect: expedition.pendingMerchantEffect,
+    advicePressure: expedition.advicePressure,
   });
 
   const withTrust = resolved.members.map((member) => {
@@ -812,6 +819,7 @@ export function createExpeditionForOffer(
       map,
       currentNodeId: map.entryNodeId,
       visitedNodeIds: [map.entryNodeId],
+      advicePressure: 0,
       infoRecords: [],
       pendingMerchantEffect: null,
       bossResult: null,
@@ -831,6 +839,7 @@ function copyActiveExpedition(
   action: Extract<CampaignTransition, { type: "START_EXPEDITION" }>,
   offer: BoardOffer,
 ): NonNullable<CampaignTransitionContext["activeExpedition"]> {
+  assertAdvicePressure(action.expedition.advicePressure);
   return {
     expeditionId: action.expeditionId,
     offer: {

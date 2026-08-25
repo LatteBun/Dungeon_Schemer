@@ -10,6 +10,7 @@ import {
   REPUTATION_START,
 } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
+import { validateCampaignBalance } from "@/lib/rules/balance-validation";
 
 function themeOf(themeId: (typeof THEMES)[number]["id"]) {
   const theme = THEMES.find((candidate) => candidate.id === themeId);
@@ -18,6 +19,11 @@ function themeOf(themeId: (typeof THEMES)[number]["id"]) {
 }
 
 describe("initializeCampaign", () => {
+  it("캠페인 생성 전에 공통 밸런스 설정을 검증한다", () => {
+    expect(() => validateCampaignBalance()).not.toThrow();
+    expect(() => initializeCampaign("c1-validated-balance")).not.toThrow();
+  });
+
   it("인트로에 필요한 초기 자원과 콘텐츠를 생성한다", () => {
     const state = initializeCampaign("c1-initial-state");
 

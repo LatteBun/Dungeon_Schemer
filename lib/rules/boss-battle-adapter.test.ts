@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CLASSES } from "@/lib/content/classes";
 import { SPIDER_BOSSES, THEMES } from "@/lib/content/themes";
 import { RuleError } from "@/lib/domain";
-import { resolveBossBattle, retryBossStats } from "@/lib/rules/boss-battle-adapter";
+import { balancedBossStats, resolveBossBattle } from "@/lib/rules/boss-battle-adapter";
 import type {
   CampaignDungeon,
   BossRuleId,
@@ -107,6 +107,7 @@ function resolve(input: Partial<Parameters<typeof resolveBossBattle>[0]> = {}) {
     infoRecords: [],
     seed: "boss-adapter",
     pendingMerchantEffect: null,
+    advicePressure: 0,
     ...input,
   });
 }
@@ -122,7 +123,7 @@ describe("E4 보스 BattleEngine adapter", () => {
     expect(result.pendingMerchantEffect).toBeNull();
   });
 
-  it("두 outgoing help와 merchant를 모두 곱한 뒤 한 번만 clamp한다", () => {
+  it("두 outgoing help·merchant·조언 압력을 모두 곱한 뒤 한 번만 clamp한다", () => {
     const result = resolve({
       dungeon: dungeon({ bossId: SPIDER_BOSSES[1].id }),
       infoRecords: [
@@ -131,9 +132,10 @@ describe("E4 보스 BattleEngine adapter", () => {
       ],
       classDefs: classesWithWarriorAttack(20),
       pendingMerchantEffect: { adviceId: "merchant" as ChoiceId, nextBattle: { partyDamageMultiplier: 0.5 } },
+      advicePressure: 2,
     });
 
-    expect(firstPartyAction(result).damage).toBe(16);
+    expect(firstPartyAction(result).damage).toBe(14);
   });
 
   it("verification 순서를 characterId, bossRuleId, eventId, adviceId로 고정한다", () => {
@@ -250,13 +252,28 @@ describe("E4 보스 BattleEngine adapter", () => {
     expect(() => resolve({ infoRecords })).toThrowError(RuleError);
   });
 
-  it("현재 위험도와 초기 위험도의 차이만 보스 scaling에 반영한다", () => {
-    const stats = retryBossStats(SPIDER_BOSSES[0], { initialRiskLevel: 1, riskLevel: 3 });
-    expect(stats.maxHp).toBe(Math.round(SPIDER_BOSSES[0].maxHp * 1.2));
-    expect(stats.baseDamage).toBe(Math.round(SPIDER_BOSSES[0].baseDamage * 1.2));
-    expect(retryBossStats(SPIDER_BOSSES[0], { initialRiskLevel: 1, riskLevel: 5 })).toEqual(
-      retryBossStats(SPIDER_BOSSES[0], { initialRiskLevel: 1, riskLevel: 5 }),
-    );
+  it("초기 위험도의 공통 보정만 보스 능력치에 적용한다", () => {
+    const expected = {
+      maxHp: Math.max(1, Math.round(SPIDER_BOSSES[0].maxHp * 1.10)),
+      baseDamage: Math.max(1, Math.round(SPIDER_BOSSES[0].baseDamage * 1.10)),
+    };
+
+    expect(balancedBossStats(SPIDER_BOSSES[0], 1)).toEqual(expected);
+    expect(resolve({ dungeon: dungeon({ riskLevel: 1 }) }).bossResult.battle.enemies[0]?.maxHp).toBe(expected.maxHp);
+    expect(resolve({ dungeon: dungeon({ riskLevel: 5 }) }).bossResult.battle.enemies[0]?.maxHp).toBe(expected.maxHp);
+  });
+
+  it("원정 조언 압력이 높을수록 보스전 파티 공격 피해가 줄어든다", () => {
+    const safe = resolve({
+      classDefs: classesWithWarriorAttack(20),
+      advicePressure: 0,
+    });
+    const pressured = resolve({
+      classDefs: classesWithWarriorAttack(20),
+      advicePressure: 3,
+    });
+
+    expect(firstPartyAction(pressured).damage).toBeLessThan(firstPartyAction(safe).damage);
   });
 
   it("accepted와 suspected는 서로 다른 사후 검증 결과를 만든다", () => {
