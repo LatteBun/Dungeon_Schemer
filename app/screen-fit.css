@@ -70,3 +70,56 @@
   padding: 0 5vmin;
   font-size: 3.8vmin;
 }
+
+/*
+ * 전체 화면을 받아 주지 않는 기기에 적는 안내.
+ *
+ * 그 자리를 비워 두면 아이폰 사용자는 「돌리세요」 한 줄만 보고 끝난다. 홈
+ * 화면에 얹는 법을 적어 두면 주소창이 사라져 판이 커지고, 화면 맨 아래가
+ * 시스템 제스처 영역에서 벗어나 아래쪽 단추도 잘 눌린다.
+ */
+.screen-fit__guide {
+  display: grid;
+  gap: 1.6vmin;
+  justify-items: center;
+  padding: 3.4vmin 4.4vmin;
+  border: 1px solid rgb(189 147 69 / 52%);
+  border-radius: 0.6vmin;
+  background: rgb(24 17 11 / 88%);
+}
+
+.screen-fit__guide-title {
+  margin: 0;
+  color: #e5c77f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3.6vmin;
+  letter-spacing: 0.02em;
+}
+
+.screen-fit__steps {
+  display: grid;
+  gap: 1vmin;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  color: var(--color-parchment);
+  font-size: 3.1vmin;
+  text-align: left;
+}
+
+.screen-fit__steps li {
+  counter-increment: step;
+}
+
+/* 순서가 뜻을 지니므로 번호를 붙인다. */
+.screen-fit__steps li::before {
+  content: counter(step) ". ";
+  color: var(--color-shell-gold);
+}
+
+.screen-fit__guide-note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 2.7vmin;
+}

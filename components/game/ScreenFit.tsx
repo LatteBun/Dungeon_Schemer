@@ -151,7 +151,24 @@ export function ScreenFit() {
           >
             전체 화면으로 열기
           </button>
-        ) : null}
+        ) : (
+          /*
+           * 전체 화면을 받아 주지 않는 기기 — 아이폰 사파리다.
+           *
+           * 그 자리를 비워 두는 대신 홈 화면에 얹는 법을 적는다. 그러면 주소창이
+           * 사라져 판이 커지고, 화면 맨 아래가 시스템 제스처 영역에서 벗어나
+           * 아래쪽 단추가 잘 눌린다. 여기서 겪는 불편이 한 번에 없어진다.
+           */
+          <div className="screen-fit__guide">
+            <p className="screen-fit__guide-title">주소창 없이 크게 보려면</p>
+            <ol className="screen-fit__steps">
+              <li>아래 공유 단추를 누르고</li>
+              <li>「홈 화면에 추가」를 고른 다음</li>
+              <li>바탕화면에 생긴 아이콘으로 여세요</li>
+            </ol>
+            <p className="screen-fit__guide-note">화면 아래쪽 단추도 그때 잘 눌립니다.</p>
+          </div>
+        )}
       </div>
     </div>
   );

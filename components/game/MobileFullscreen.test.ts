@@ -174,3 +174,34 @@ describe("세로 안내의 자리 잡기", () => {
     expect(rule(".screen-fit__card")).toMatch(/justify-items:\s*center/);
   });
 });
+
+/*
+ * 전체 화면을 받아 주지 않는 기기에는 홈 화면에 얹는 법을 적는다.
+ *
+ * 아이폰 사파리에는 전체 화면 API 가 없어 단추를 낼 수 없다. 그 자리를 비워
+ * 두면 「돌리세요」 한 줄만 보고 끝난다. 홈 화면에 얹으면 주소창이 사라져 판이
+ * 커지고, 화면 맨 아래가 시스템 제스처 영역에서 벗어나 아래쪽 단추도 잘 눌린다.
+ */
+describe("전체 화면을 못 여는 기기 안내", () => {
+  const source = readFileSync(join(process.cwd(), "components", "game", "ScreenFit.tsx"), "utf8");
+
+  it("단추를 낼 수 없을 때만 적는다", () => {
+    /* 두 갈래가 한 조건에서 갈라져야 안드로이드에 둘 다 뜨는 일이 없다. */
+    const branch = source.match(/\{fullscreenAvailable \? \([\s\S]*?\) : \([\s\S]*?\)\}/);
+    expect(branch, "갈림길").not.toBeNull();
+    expect(branch![0]).toContain("전체 화면으로 열기");
+    expect(branch![0]).toContain("홈 화면에 추가");
+  });
+
+  it("무엇을 눌러 어떻게 되는지 순서대로 적는다", () => {
+    expect(source).toContain("공유 단추를 누르고");
+    expect(source).toContain("홈 화면에 추가");
+    /* 순서가 뜻을 지니므로 목록도 순서 있는 것을 쓴다. */
+    expect(source).toContain("<ol className=\"screen-fit__steps\">");
+  });
+
+  it("아래쪽 터치가 나아진다는 것도 알린다", () => {
+    // 그것이 이 안내를 읽을 사람이 지금 겪고 있는 불편이다.
+    expect(source).toContain("아래쪽 단추도 그때 잘 눌립니다");
+  });
+});
