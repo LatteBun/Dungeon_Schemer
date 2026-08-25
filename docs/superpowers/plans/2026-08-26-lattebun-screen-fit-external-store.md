@@ -280,7 +280,7 @@ git add docs/README.md docs/superpowers/plans/2026-08-26-lattebun-screen-fit-ext
 git commit -m "문서: ScreenFit 구현 검증을 기록한다" -m "외부 상태 구독 구현과 전체 자동·모바일 브라우저 검증의 완료 상태를 계획에 반영한다."
 ```
 
-- [ ] **Step 5: Push and create the PR**
+- [x] **Step 5: Push and create the PR**
 
 ```bash
 git push -u origin fix/screen-fit-external-store
