@@ -275,9 +275,16 @@ export function U5ProgressScreen({
               </nav>
 
               {mode === "advice" ? (
-                <div className="u5-advice-mode">
+                <div className="u5-advice-mode" data-has-outcome={progress.outcome === null ? "false" : "true"}>
                   {/* 상황 묘사가 추론의 근거를 실어 나르므로 조언보다 먼저 온다. */}
-                  <p className="u5-situation" data-testid="u5-situation">{progress.situation}</p>
+                  <section className="u5-situation-panel" aria-labelledby="u5-situation-title">
+                    <h3 id="u5-situation-title" className="u5-situation-panel__title">
+                      현재 상황
+                    </h3>
+                    <p className="u5-situation" data-testid="u5-situation">
+                      {progress.situation}
+                    </p>
+                  </section>
 
                   {progress.outcome === null ? (
                     <ul className="u5-advice-list" data-testid="u5-advice-list">

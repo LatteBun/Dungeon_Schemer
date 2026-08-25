@@ -101,6 +101,10 @@
 
 ## 이번 개편 설계
 
+- [U5 행동/조언 헤더와 현재 상황 패널 가독성 개선 설계](superpowers/specs/2026-08-25-lattebun-u5-console-situation-readability-design.md): 행동·조언 탭과 현재 상황 패널을 금속 명패 계열로 맞추고, 패널의 잔여 높이 확장·좌측 상단 정렬·글자 확대와 조언 카드 하단 정렬을 정의하는 UI 경계
+- [U5 행동/조언 헤더와 현재 상황 패널 가독성 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-console-situation-readability.md): JSX·CSS 계약, FHD 브라우저 containment, 문서 색인을 테스트 우선으로 구현·검증하는 순서
+- [U5 콘솔 금속 명패 통일과 조언 카드 하단 정렬 구현 계획](superpowers/plans/2026-08-26-lattebun-u5-console-situation-readability-refinement.md): PR #180 이후 카드 하단 정렬, 상황 글자 확대와 탭·패널 금속 표면을 검증하는 후속 TDD 순서
+- [U5 현재 상황 패널 확장과 타이포그래피 2차 개선 구현 계획](superpowers/plans/2026-08-26-lattebun-u5-console-situation-panel-expansion.md): 패널의 잔여 높이 확장, 좌측 상단 정렬과 탭·제목·본문 추가 확대를 FHD에서 검증하는 후속 TDD 순서
 - [U5 조언 카드 번호 제거 설계](superpowers/specs/2026-08-25-lattebun-u5-advice-number-removal-design.md): 조언 카드 세 장의 숫자 배지만 제거하고 내부 슬롯 선택 계약을 유지하는 UI 변경
 - [U5 조언 카드 번호 제거 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-advice-number-removal.md): 조언 카드의 숫자 배지를 테스트 우선으로 제거하고 내부 슬롯 선택 계약을 유지하는 구현 순서
 - [보스전 정산 CTA 게이트 설계](superpowers/specs/2026-08-25-lattebun-boss-battle-exit-gate-design.md): 보스전 재생 중 정산을 잠그고 우측 하단 CTA를 `전투 건너뛰기`에서 `정산으로`로 전환하는 계약
