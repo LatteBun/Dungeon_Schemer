@@ -88,12 +88,21 @@ describe("백테스트 캠페인 driver", () => {
   });
 
   it("인력 소진 종료에는 가용 직업 경계를 넘긴 선행 손실과 전멸 source를 보존한다", () => {
-    /* 지도 배정은 진화해도, 실제로 인력 소진한 실행의 원장 의미는 고정한다. */
+    /*
+     * 지도 배정은 진화해도, 실제로 인력 소진한 실행의 원장 의미는 고정한다.
+     *
+     * 전멸로 끝난 실행을 고른다. 인력 소진은 마지막 전멸 없이 소모만으로도
+     * 닿을 수 있어서, 그냥 첫 실행을 집으면 `wipeSource` 가 비어 있는 판이
+     * 잡힌다 — 게시판이 다른 던전을 걸기 시작하자 실제로 그렇게 됐다. 여기서
+     * 보려는 것은 전멸이 원장에 남는가이므로 그 조건을 밖으로 드러낸다.
+     */
     const result = Array.from({ length: 40 }, (_, index) => runCampaign({
       seed: `b1b-calibration-v1/${String(index).padStart(6, "0")}`,
       strategy: createStrategy("survival"),
       accuracy: 0.7,
-    })).find((candidate) => candidate.ok && candidate.campaign.ending?.kind === "exhausted");
+    })).find((candidate) => candidate.ok
+      && candidate.campaign.ending?.kind === "exhausted"
+      && candidate.trace.terminationEvidence?.wipeSource != null);
 
     expect(result).toBeDefined();
     if (result === undefined || !result.ok) throw new Error("인력 소진 실행을 찾지 못했다");

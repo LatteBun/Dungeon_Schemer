@@ -505,7 +505,13 @@ describe("캠페인 전체 신뢰 보정", () => {
 describe("전투 뒤 파티 명단", () => {
   /** 한 명이 이미 죽은 채로 사건 앞까지 간다. */
   function atEventWithDeadMember() {
-    /* 이 시드의 첫 사건이 실제로 싸움이 되는 monster 사건이다. */
+    /*
+     * 싸움이 되는 monster 사건 앞까지 간다.
+     *
+     * 예전에는 「이 시드의 첫 사건이 monster 다」에 기대고 있었다. 게시판이
+     * 캠페인마다 다른 던전을 걸게 되면서 같은 시드가 다른 지도를 주므로, 첫
+     * 사건이 무엇인지에 기대지 않고 monster 를 만날 때까지 지나간다.
+     */
     const begun = startedWith("party-roster-1");
     const active = begun.context.activeExpedition!;
     const weakened = {
@@ -518,15 +524,26 @@ describe("전투 뒤 파티 명단", () => {
     };
 
     let state: CampaignTransitionResult = { ...begun, context: weakened };
-    for (let step = 0; step < 10; step += 1) {
+    for (let step = 0; step < 40; step += 1) {
       const current = state.context.activeExpedition!;
-      if (current.pendingEvent !== null) return state;
+      const pending = current.pendingEvent;
+
+      if (pending !== null) {
+        if (pending.kind === "monster") return state;
+        /* 싸움이 아니면 지나간다. 고르고, 결과를 확인하고, 다시 걷는다. */
+        state = transitionCampaign(state.campaign, state.context, {
+          type: "CHOOSE_ADVICE", adviceId: pending.advice[0]!.id,
+        });
+        state = transitionCampaign(state.campaign, state.context, { type: "ACKNOWLEDGE_OUTCOME" });
+        continue;
+      }
+
       const here = current.expedition.map.nodes.find((node) => node.id === current.expedition.currentNodeId)!;
       const next = here.nextNodeIds.find((id) => !current.expedition.visitedNodeIds.includes(id));
       if (next === undefined) break;
       state = transitionCampaign(state.campaign, state.context, { type: "VISIT_NODE", nodeId: next });
     }
-    throw new Error("사건이 확정되는 지점에 닿지 못했다");
+    throw new Error("싸움이 되는 사건에 닿지 못했다");
   }
 
   it("이미 죽은 사람이 다음 전투에서 명단에서 사라지지 않는다", () => {
