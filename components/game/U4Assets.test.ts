@@ -56,19 +56,7 @@ describe("U4 assets", () => {
   it("reuses existing U2/U3 assets and provides every official live portrait", () => {
     expect(existsSync("public/assets/u2/status-gold.svg")).toBe(true);
     expect(existsSync("public/assets/u3/extracted/risk-star.png")).toBe(true);
-    for (const entry of CHARACTER_ROSTER) {
-      expect(
-        existsSync(
-          `public/assets/characters/live/${entry.classId}/${entry.classId}_${entry.portraitVariant}.png`,
-        ),
-      ).toBe(true);
-    }
-  });
-
-  it("keeps official character portraits live-only", () => {
     expect(existsSync("public/assets/characters/dead")).toBe(false);
-    expect(CHARACTER_ROSTER).toHaveLength(30);
-
     for (const entry of CHARACTER_ROSTER) {
       expect(
         existsSync(

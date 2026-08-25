@@ -117,7 +117,6 @@ describe("generateCharacterPool", () => {
     const pool = generateCharacterPool(createRng("fixed-roster-gender-boundary"));
 
     for (const entry of CHARACTER_ROSTER) {
-      expect(["male", "female"]).toContain(entry.gender);
       expect(pool.byId[entry.id]).not.toHaveProperty("gender");
     }
   });

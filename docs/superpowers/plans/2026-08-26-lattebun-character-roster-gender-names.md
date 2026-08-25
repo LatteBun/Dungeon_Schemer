@@ -129,7 +129,6 @@ it("성별은 로스터 메타데이터에만 두고 런타임 캐릭터 상태�
   const pool = generateCharacterPool(createRng("fixed-roster-gender-boundary"));
 
   for (const entry of CHARACTER_ROSTER) {
-    expect(["male", "female"]).toContain(entry.gender);
     expect(pool.byId[entry.id]).not.toHaveProperty("gender");
   }
 });
@@ -268,13 +267,13 @@ git commit -m "콘텐츠: 캐릭터 성별과 이름을 반영한다" -m "공식
 
 - [ ] **Step 1: dead 디렉터리 부재 회귀를 명시한다**
 
-`components/game/U4Assets.test.ts`의 `describe("U4 assets")`에 다음 테스트를 추가한다.
+`components/game/U4Assets.test.ts`의 기존 U2/U3·live 초상화 회귀 테스트에 `dead/` 디렉터리 부재 assertion을 추가한다. live 초상화 반복 검사는 기존 테스트를 재사용한다.
 
 ```ts
-it("keeps official character portraits live-only", () => {
+it("reuses existing U2/U3 assets and provides every official live portrait", () => {
+  expect(existsSync("public/assets/u2/status-gold.svg")).toBe(true);
+  expect(existsSync("public/assets/u3/extracted/risk-star.png")).toBe(true);
   expect(existsSync("public/assets/characters/dead")).toBe(false);
-  expect(CHARACTER_ROSTER).toHaveLength(30);
-
   for (const entry of CHARACTER_ROSTER) {
     expect(
       existsSync(
