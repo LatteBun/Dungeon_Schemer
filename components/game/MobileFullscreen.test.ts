@@ -51,9 +51,25 @@ describe("휴대폰에서 주소창 감추기", () => {
     }
   });
 
-  it("dvh 를 모르는 브라우저를 위한 대비를 남긴다", () => {
-    // 이 줄이 없으면 뒤 줄이 통째로 무효가 되어 판이 화면 밖으로 부푼다.
-    expect(read("app", "globals.css")).toContain("min(100vw / 120, 100vh / 67.5)");
+  it("잃는 것이 적은 순서로 세 줄을 쌓는다", () => {
+    /*
+     * 한 줄로 두면 그 줄을 모르는 브라우저에서 선언이 통째로 무효가 되어 판이
+     * 화면 밖으로 부푼다. 층을 나누되 순서가 중요하다 — 노치를 피하는 줄이
+     * 실패해도 주소창 잘림은 그 앞 줄에서 이미 막혀야 한다.
+     */
+    const sheet = read("app", "globals.css");
+    const at = (needle: string) => sheet.indexOf(needle);
+
+    const oldest = at("min(100vw / 120, 100vh / 67.5)");
+    const dvhOnly = at("min(100dvw / 120, 100dvh / 67.5)");
+    const withSafeArea = at("100dvw - env(safe-area-inset-left");
+
+    expect(oldest, "가장 오래된 자리").toBeGreaterThan(-1);
+    expect(dvhOnly, "env 없이 dvh 만 쓰는 줄").toBeGreaterThan(-1);
+    expect(withSafeArea, "노치를 피하는 줄").toBeGreaterThan(-1);
+
+    expect(oldest).toBeLessThan(dvhOnly);
+    expect(dvhOnly).toBeLessThan(withSafeArea);
   });
 });
 
