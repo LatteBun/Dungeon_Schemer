@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { canvasFontSizePx, visibleSizeOf } from "./canvas-scale";
 
 /**
@@ -87,6 +87,30 @@ function hasCoarsePointer(): boolean {
   return window.matchMedia("(pointer: coarse)").matches;
 }
 
+export function fullscreenEntryAvailable(target: unknown, fullscreenElement: unknown): boolean {
+  return canGoFullscreen(target) && fullscreenElement === null;
+}
+
+export function subscribeToFullscreenChanges(
+  target: EventTarget,
+  onStoreChange: () => void,
+): () => void {
+  target.addEventListener("fullscreenchange", onStoreChange);
+  return () => target.removeEventListener("fullscreenchange", onStoreChange);
+}
+
+function subscribeFullscreenAvailability(onStoreChange: () => void): () => void {
+  return subscribeToFullscreenChanges(document, onStoreChange);
+}
+
+function fullscreenAvailabilitySnapshot(): boolean {
+  return fullscreenEntryAvailable(document.documentElement, document.fullscreenElement);
+}
+
+function fullscreenAvailabilityServerSnapshot(): false {
+  return false;
+}
+
 /**
  * 세로로 든 동안 판을 가리고 돌려 달라고 말한다.
  *
@@ -95,7 +119,11 @@ function hasCoarsePointer(): boolean {
  */
 export function ScreenFit() {
   const [needsTurn, setNeedsTurn] = useState(false);
-  const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
+  const fullscreenAvailable = useSyncExternalStore(
+    subscribeFullscreenAvailability,
+    fullscreenAvailabilitySnapshot,
+    fullscreenAvailabilityServerSnapshot,
+  );
 
   useEffect(() => {
     /*
@@ -115,7 +143,6 @@ export function ScreenFit() {
       }));
     };
     sync();
-    setFullscreenAvailable(canGoFullscreen(document.documentElement) && document.fullscreenElement === null);
 
     window.addEventListener("resize", sync);
     window.addEventListener("orientationchange", sync);

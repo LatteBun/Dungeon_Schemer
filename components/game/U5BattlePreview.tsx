@@ -40,6 +40,7 @@ export function U5BattlePreview() {
         battleReplay={entry.replay}
         playbackRate={playbackRateControl.playbackRate}
         onTogglePlaybackRate={playbackRateControl.togglePlaybackRate}
+        combatFeedback={entry.feedback}
         previewPlaybackControls
       />
     </div>

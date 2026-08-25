@@ -2,11 +2,17 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { U5ProgressScreen } from "./U5ProgressScreen";
+import { allSituationEvents } from "@/lib/content/event-registry";
+import { U5ProgressScreen, u5SettledPartyResult } from "./U5ProgressScreen";
 import { createU5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import type { U5ProgressView } from "./u5-progress-model";
 import type { TopStatusView } from "./TopStatusBar";
+
+const longestSituation = allSituationEvents().reduce(
+  (longest, event) => event.description.length > longest.length ? event.description : longest,
+  "",
+);
 
 const status: TopStatusView = {
   rank: "C",
@@ -83,7 +89,30 @@ const render = (over: Partial<U5ProgressView> = {}, props: Record<string, unknow
     }),
   );
 
+const cssRule = (sheet: string, selector: string) =>
+  sheet.match(new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{[^}]*\\}`))?.[0] ?? "";
+
 describe("U5ProgressScreen", () => {
+  it("반응 확인 전에는 완료 변화량을 숨기고 확인 뒤에는 0이 아닌 값만 남긴다", () => {
+    const feedback = {
+      signature: "result-1",
+      kind: "event" as const,
+      consequenceText: null,
+      preBattleReaction: null,
+      immediateTrustChanges: [],
+      postBattleReaction: { memberId: "party-1", memberName: "코르빈", text: "확인했다." },
+      postBattleTrustChanges: [{ memberId: "party-1", before: 42, after: 40 }],
+    };
+    const found = battleReplay.participants.find((one) => one.id === "party-1");
+    const participant = found === undefined ? undefined : { ...found, initialHp: 32, finalHp: 29 };
+
+    expect(u5SettledPartyResult(feedback, "postBattleDialogue", participant, "party-1")).toBeUndefined();
+    expect(u5SettledPartyResult(feedback, "postBattleTrust", participant, "party-1"))
+      .toEqual({ hpDelta: -3, trustDelta: -2 });
+    expect(u5SettledPartyResult(feedback, "complete", participant, "party-1"))
+      .toEqual({ hpDelta: -3, trustDelta: -2 });
+  });
+
   it("전투 replay가 없으면 기존 장면 슬롯과 배경을 장식 이미지로 유지한다", () => {
     const html = render();
 
@@ -156,6 +185,68 @@ describe("U5ProgressScreen", () => {
       .toBeLessThan(html.indexOf('data-testid="u5-advice-list"'));
   });
 
+  it("현재 상황 제목과 본문을 같은 패널에 둔다", () => {
+    const html = render();
+    const panel = html.match(/<section class="u5-situation-panel"[\s\S]*?<\/section>/)?.[0] ?? "";
+
+    expect(panel).toContain('aria-labelledby="u5-situation-title"');
+    expect(panel).toContain('<h3 id="u5-situation-title" class="u5-situation-panel__title">현재 상황</h3>');
+    expect(panel).toContain('data-testid="u5-situation"');
+  });
+
+  it("초기 행동 / 조언 모드만 활성화한다", () => {
+    const html = render();
+
+    expect(html).toMatch(/<button[^>]*class="is-active"[^>]*aria-pressed="true"[^>]*>행동 \/ 조언<\/button>/);
+    expect(html).toMatch(/<button[^>]*aria-pressed="false"[^>]*>진행 기록<\/button>/);
+  });
+
+  it("초기 진행 기록 모드만 활성화한다", () => {
+    const html = render({}, { initialMode: "log" });
+
+    expect(html).toMatch(/<button[^>]*aria-pressed="false"[^>]*>행동 \/ 조언<\/button>/);
+    expect(html).toMatch(/<button[^>]*class="is-active"[^>]*aria-pressed="true"[^>]*>진행 기록<\/button>/);
+  });
+
+  it("최장 공식 상황 문구를 선택 전과 선택 후에 그대로 둔다", () => {
+    const before = render({ situation: longestSituation });
+    const after = render({
+      situation: longestSituation,
+      outcome: { reactions: [], resultText: "결과", changes: [{ label: "변화", detail: "그대로다." }] },
+    });
+
+    expect(before).toContain(`data-testid="u5-situation">${longestSituation}</p>`);
+    expect(after).toContain(`data-testid="u5-situation">${longestSituation}</p>`);
+    expect(after.indexOf('class="u5-situation-panel"')).toBeLessThan(after.indexOf('data-testid="u5-outcome"'));
+  });
+
+  it("상황 패널은 경계와 여백을 가지되 내용을 자르지 않는다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const panel = cssRule(sheet, ".u5-situation-panel");
+    const situation = cssRule(sheet, ".u5-situation");
+    const title = sheet.match(/\.u5-situation-panel__title\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(panel).toMatch(/box-sizing:\s*border-box/);
+    expect(panel).toMatch(/min-width:\s*0/);
+    expect(panel).toMatch(/padding:/);
+    expect(panel).toMatch(/border:/);
+    expect(panel).toMatch(/background:/);
+    for (const rule of [panel, situation]) {
+      expect(rule).not.toMatch(/(?:^|\s)(?:max-)?height\s*:/);
+      expect(rule).not.toMatch(/overflow(?:-x|-y)?\s*:/);
+    }
+    expect(title).toMatch(/margin:\s*0/);
+  });
+
+  it("진행 기록 필터는 분리 뒤에도 기존 버튼 표면을 유지한다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const filters = sheet.match(/\.u5-log__filters button\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(filters).toMatch(/border:\s*1px solid var\(--color-edge\)/);
+    expect(filters).toMatch(/background:\s*rgb\(12 9 6 \/ 80%\)/);
+    expect(filters).toMatch(/color:\s*var\(--color-muted\)/);
+  });
+
   /* 이 화면의 가장 중요한 계약이다. 슬롯 말고는 서로 다른 표시가 없어야 한다. */
   it("조언 3개가 같은 클래스와 같은 구조로 렌더된다", () => {
     const html = render();
@@ -178,14 +269,82 @@ describe("U5ProgressScreen", () => {
     expect(adviceHtml).not.toMatch(/>1<|>2<|>3</);
   });
 
-  it("조언 카드는 남은 높이를 채우지 않고 A1 금속 명패로 중앙 정렬한다", () => {
+  it("조언 카드는 콘솔 아래쪽에 정렬하고 별도 하단 여백을 만들지 않는다", () => {
     const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const list = cssRule(sheet, ".u5-advice-list");
 
-    expect(sheet).toMatch(/\.u5-advice-list\s*\{[^}]*align-content:\s*center/);
-    expect(sheet).toMatch(/\.u5-advice\s*\{[^}]*height:\s*clamp\(/);
-    expect(sheet).toMatch(/\.u5-advice__button\s*\{[^}]*clip-path:\s*polygon\(/);
-    expect(sheet).toMatch(/\.u5-advice__button\s*\{[^}]*box-shadow:[^}]*inset/);
-    expect(sheet).toMatch(/\.u5-advice__rivets\s*\{/);
+    expect(list).toMatch(/align-content:\s*end/);
+    expect(list).toMatch(/padding:\s*0/);
+    expect(list).not.toMatch(/padding-bottom\s*:/);
+    expect(list).not.toMatch(/position:\s*(?:absolute|fixed)/);
+    expect(list).not.toMatch(/transform\s*:/);
+  });
+
+  it("모드 탭과 현재 상황 패널은 리벳 없는 금속 명패 표면을 쓴다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const tabs = cssRule(sheet, ".u5-console__tabs button");
+    const panel = cssRule(sheet, ".u5-situation-panel");
+
+    for (const rule of [tabs, panel]) {
+      expect(rule).toMatch(/clip-path:\s*polygon\(/);
+      expect(rule).toMatch(/border:\s*0\.125rem solid/);
+      expect(rule).toMatch(/background:\s*linear-gradient\(/);
+      expect(rule.match(/\binset\b/g)).toHaveLength(2);
+      expect(rule).not.toMatch(/\burl\(/);
+    }
+    const html = render();
+    const tabsMarkup = html.match(/<nav class="u5-console__tabs"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    const panelMarkup = html.match(/<section class="u5-situation-panel"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(tabsMarkup).not.toContain("u5-advice__rivet");
+    expect(panelMarkup).not.toContain("u5-advice__rivet");
+    for (const markup of [tabsMarkup, panelMarkup]) {
+      expect(markup).not.toMatch(/<(?:img|svg)\b/);
+    }
+  });
+
+  it("현재 상황 패널은 남는 높이를 채우고 카드나 결과는 내용 높이를 유지한다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const mode = cssRule(sheet, ".u5-advice-mode");
+
+    expect(mode).toMatch(/grid-template-rows:\s*minmax\(0,\s*1fr\)\s+auto/);
+    expect(mode).toMatch(/gap:/);
+    expect(mode).not.toMatch(/place-(?:content|items)\s*:/);
+    expect(mode).not.toMatch(/align-(?:content|items)\s*:\s*(?:center|end)/);
+  });
+
+  it("상황 모드는 선택 전후 결과 상태를 호환 가능한 data attribute로 표시한다", () => {
+    const before = render();
+    const after = render({
+      outcome: {
+        reactions: [{ memberName: "코르빈", reaction: "suspected", note: "눈을 가늘게 뜬다" }],
+        resultText: "벽을 두드리자 진동이 굴을 타고 퍼진다.",
+        changes: [{ label: "신뢰", detail: "코르빈 40 → 34" }],
+      },
+    });
+
+    expect(before).toContain('class="u5-advice-mode" data-has-outcome="false"');
+    expect(after).toContain('class="u5-advice-mode" data-has-outcome="true"');
+  });
+
+  it("선택 뒤에는 호환 가능한 상태 선택자로 긴 현재 상황의 최소 높이를 확보한다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const selectedMode = cssRule(sheet, '.u5-advice-mode[data-has-outcome="true"]');
+
+    expect(sheet).not.toContain(":has(");
+    expect(selectedMode).toMatch(/grid-template-rows:\s*minmax\(min-content,\s*1fr\)\s+auto/);
+  });
+
+  it("모드 탭과 현재 상황 글자를 2차 승인 크기로 키운다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const tabs = cssRule(sheet, ".u5-console__tabs button");
+    const title = cssRule(sheet, ".u5-situation-panel__title");
+    const body = cssRule(sheet, ".u5-situation");
+
+    expect(tabs).toMatch(/padding:\s*clamp\(0\.16rem,\s*0\.15cqw,\s*0\.3rem\)\s+clamp\(0\.5rem,\s*0\.7cqw,\s*1rem\)/);
+    expect(tabs).toMatch(/font-size:\s*clamp\(0\.88rem,\s*0\.96cqw,\s*1\.3(?:0)?rem\)/);
+    expect(title).toMatch(/font-size:\s*clamp\(0\.9(?:0)?rem,\s*1(?:\.00)?cqw,\s*1\.25rem\)/);
+    expect(body).toMatch(/font-size:\s*clamp\(1(?:\.00)?rem,\s*1\.12cqw,\s*1\.5(?:0)?rem\)/);
+    expect(body).toMatch(/line-height:\s*1\.45/);
   });
 
   it("조언 마크업에 판정 어휘가 새지 않는다", () => {

@@ -102,13 +102,43 @@
   background: linear-gradient(180deg, rgb(24 18 12 / 92%), rgb(13 10 7 / 95%));
 }
 
-.u5-console__tabs,
+.u5-console__tabs {
+  display: flex;
+  gap: clamp(0.25rem, 0.35cqw, 0.55rem);
+}
+
+.u5-console__tabs button {
+  border: 0.125rem solid color-mix(in srgb, var(--color-shell-metal) 72%, var(--color-edge));
+  clip-path: polygon(0.32rem 0, calc(100% - 0.32rem) 0, 100% 0.32rem, 100% calc(100% - 0.32rem), calc(100% - 0.32rem) 100%, 0.32rem 100%, 0 calc(100% - 0.32rem), 0 0.32rem);
+  background: linear-gradient(145deg, rgb(40 27 16 / 96%), rgb(20 14 9 / 98%));
+  box-shadow: inset 0 0 0 0.1rem #120c07, inset 0 0 0 0.16rem #87673c;
+  color: var(--color-muted);
+  padding: clamp(0.16rem, 0.15cqw, 0.3rem) clamp(0.5rem, 0.7cqw, 1rem);
+  font-size: clamp(0.88rem, 0.96cqw, 1.3rem);
+  cursor: pointer;
+}
+
+.u5-console__tabs button.is-active {
+  border-color: var(--color-shell-gold);
+  background: linear-gradient(145deg, #5a3f1d, #2c1c0d);
+  color: #fff3cc;
+}
+
+.u5-console__tabs button:hover:not(.is-active) {
+  border-color: color-mix(in srgb, var(--color-shell-gold) 55%, var(--color-edge));
+  color: var(--color-parchment);
+}
+
+.u5-console__tabs button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 0.1rem #120c07, inset 0 0 0 0.16rem #87673c, inset 0 0 0 0.3rem var(--color-parchment);
+}
+
 .u5-log__filters {
   display: flex;
   gap: clamp(0.25rem, 0.35cqw, 0.55rem);
 }
 
-.u5-console__tabs button,
 .u5-log__filters button {
   border: 1px solid var(--color-edge);
   border-radius: 0.2rem;
@@ -119,14 +149,12 @@
   cursor: pointer;
 }
 
-.u5-console__tabs button.is-active,
 .u5-log__filters button.is-active {
   border-color: var(--color-shell-gold);
   background: #3b2a14;
   color: #fff3cc;
 }
 
-.u5-console__tabs button:focus-visible,
 .u5-log__filters button:focus-visible {
   outline: 2px solid var(--color-parchment);
   outline-offset: 2px;
@@ -136,32 +164,55 @@
 
 .u5-advice-mode {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: clamp(0.4rem, 0.55cqw, 0.85rem);
   min-height: 0;
+}
+
+.u5-advice-mode[data-has-outcome="true"] {
+  grid-template-rows: minmax(min-content, 1fr) auto;
+}
+
+.u5-situation-panel {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: clamp(0.35rem, 0.48cqw, 0.75rem);
+  border: 0.125rem solid color-mix(in srgb, var(--color-shell-metal) 64%, var(--color-edge));
+  clip-path: polygon(0.45rem 0, calc(100% - 0.45rem) 0, 100% 0.45rem, 100% calc(100% - 0.45rem), calc(100% - 0.45rem) 100%, 0.45rem 100%, 0 calc(100% - 0.45rem), 0 0.45rem);
+  background: linear-gradient(145deg, rgb(34 24 16 / 94%), rgb(16 11 8 / 97%));
+  box-shadow: inset 0 0 0 0.1rem #120c07, inset 0 0 0 0.16rem #765a36;
+}
+
+.u5-situation-panel__title {
+  margin: 0 0 clamp(0.16rem, 0.22cqw, 0.34rem);
+  color: var(--color-shell-gold);
+  font-size: clamp(0.9rem, 1cqw, 1.25rem);
+  line-height: 1.2;
 }
 
 .u5-situation {
   margin: 0;
   color: #e7d7ae;
-  font-size: clamp(0.86rem, 0.92cqw, 1.3rem);
-  line-height: 1.5;
+  font-size: clamp(1rem, 1.12cqw, 1.5rem);
+  line-height: 1.45;
 }
+
+.u5-feedback-beat { display: grid; place-items: center; min-height: 0; padding: clamp(0.8rem, 1.2cqw, 1.6rem); border: 1px solid color-mix(in srgb, var(--color-shell-gold) 45%, var(--color-edge)); color: #fff0c9; font-size: clamp(1rem, 1.2cqw, 1.55rem); line-height: 1.5; text-align: center; }
 
 /*
  * 조언은 가로로 나란한 세로형 카드 셋이다. 시안(docs/diagram/png 의 던전 진행)
  * 이 그렇게 두고 있고, 나란히 놓여야 셋을 한눈에 견주게 된다. 위아래로 쌓으면
  * 먼저 읽은 것이 기준이 되어 순서가 판단에 끼어든다.
  *
- * 카드는 낮은 금속 명패로 중앙에 모은다. 남는 세로 공간을 명패가 다 차지하면
+ * 카드는 낮은 금속 명패로 콘솔 하단에 모은다. 남는 세로 공간을 명패가 다 차지하면
  * 근거가 너무 멀어져 비교가 어려워진다. 번호부터 근거까지를 한 덩어리로 묶어
- * 명패 가운데에 둔다.
+ * 기존 콘솔 안쪽 여백 바로 위에 둔다.
  */
 .u5-advice-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: auto;
-  align-content: center;
+  align-content: end;
   gap: clamp(0.4rem, 0.55cqw, 0.85rem);
   margin: 0;
   padding: 0;

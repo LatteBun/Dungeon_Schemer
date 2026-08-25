@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { canGoFullscreen, enterLandscapeFullscreen, shouldAskToTurn } from "./ScreenFit";
+import {
+  canGoFullscreen,
+  enterLandscapeFullscreen,
+  fullscreenEntryAvailable,
+  shouldAskToTurn,
+  subscribeToFullscreenChanges,
+} from "./ScreenFit";
 
 /**
  * 휴대폰에서 주소창을 감추는 길은 두 갈래뿐이다.
@@ -74,6 +80,27 @@ describe("휴대폰에서 주소창 감추기", () => {
 });
 
 describe("전체 화면 들어가기", () => {
+  it("전체 화면 API가 있고 아직 진입하지 않았을 때만 진입할 수 있다", () => {
+    const target = { requestFullscreen: async () => undefined };
+
+    expect(fullscreenEntryAvailable(target, null)).toBe(true);
+    expect(fullscreenEntryAvailable(target, {})).toBe(false);
+    expect(fullscreenEntryAvailable({}, null)).toBe(false);
+  });
+
+  it("fullscreenchange 구독은 변경을 알리고 cleanup 뒤에는 멈춘다", () => {
+    const target = new EventTarget();
+    let changes = 0;
+    const unsubscribe = subscribeToFullscreenChanges(target, () => { changes += 1; });
+
+    target.dispatchEvent(new Event("fullscreenchange"));
+    expect(changes).toBe(1);
+
+    unsubscribe();
+    target.dispatchEvent(new Event("fullscreenchange"));
+    expect(changes).toBe(1);
+  });
+
   it("받아 주지 않는 기기에서는 아무 일도 하지 않는다", async () => {
     // 아이폰 사파리에는 이 API 가 없다. 눌러도 조용해야 한다.
     expect(canGoFullscreen({})).toBe(false);

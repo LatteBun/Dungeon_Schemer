@@ -103,6 +103,14 @@
 
 - [던전 계약 보상 랜덤화 설계](superpowers/specs/2026-08-26-lattebun-dungeon-reward-randomization-design.md): 위험도별 기대값을 유지하는 독립 균등 보상, 공고 확정·계약 snapshot·정산 소비와 미래 보상 제거 계약
 - [던전 계약 보상 랜덤화 구현 계획](superpowers/plans/2026-08-26-lattebun-dungeon-reward-randomization.md): 자원·승급 기준선부터 도메인 범위, 공고 생성, U3·정산·U6 전환, 통합 회귀와 50·100·200시드 재측정까지의 테스트 우선 순서
+- [ScreenFit 전체 화면 외부 상태 구독 설계](superpowers/specs/2026-08-26-lattebun-screen-fit-external-store-design.md): 모바일 세로 안내의 전체 화면 가능 여부를 브라우저 외부 상태로 구독해 Effect 동기 상태 갱신과 ESLint 오류를 제거하는 기술 계약
+- [ScreenFit 전체 화면 외부 상태 구독 구현 계획](superpowers/plans/2026-08-26-lattebun-screen-fit-external-store.md): fullscreenchange 구독, SSR snapshot, React Hooks lint 회귀를 테스트 우선으로 구현·검증하는 순서
+- [U5 전투 피드백 시퀀스 설계](superpowers/specs/2026-08-25-lattebun-u5-combat-feedback-sequence-design.md): 조언 선택부터 일반전·보스전, 우측 카드 HP 동기화, 사후 대사와 신뢰 변화까지 결과를 인과 순서로 공개하는 UI 계약
+- [U5 전투 피드백 시퀀스 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-combat-feedback-sequence.md): 표시 상태 머신, 전투 프레임과 우측 카드 HP 동기화, 사후 대사 확인과 신뢰 공개를 테스트 우선으로 연결하는 구현 순서
+- [U5 행동/조언 헤더와 현재 상황 패널 가독성 개선 설계](superpowers/specs/2026-08-25-lattebun-u5-console-situation-readability-design.md): 행동·조언 탭과 현재 상황 패널을 금속 명패 계열로 맞추고, 패널의 잔여 높이 확장·좌측 상단 정렬·글자 확대와 조언 카드 하단 정렬을 정의하는 UI 경계
+- [U5 행동/조언 헤더와 현재 상황 패널 가독성 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-console-situation-readability.md): JSX·CSS 계약, FHD 브라우저 containment, 문서 색인을 테스트 우선으로 구현·검증하는 순서
+- [U5 콘솔 금속 명패 통일과 조언 카드 하단 정렬 구현 계획](superpowers/plans/2026-08-26-lattebun-u5-console-situation-readability-refinement.md): PR #180 이후 카드 하단 정렬, 상황 글자 확대와 탭·패널 금속 표면을 검증하는 후속 TDD 순서
+- [U5 현재 상황 패널 확장과 타이포그래피 2차 개선 구현 계획](superpowers/plans/2026-08-26-lattebun-u5-console-situation-panel-expansion.md): 패널의 잔여 높이 확장, 좌측 상단 정렬과 탭·제목·본문 추가 확대를 FHD에서 검증하는 후속 TDD 순서
 - [U5 조언 카드 번호 제거 설계](superpowers/specs/2026-08-25-lattebun-u5-advice-number-removal-design.md): 조언 카드 세 장의 숫자 배지만 제거하고 내부 슬롯 선택 계약을 유지하는 UI 변경
 - [U5 조언 카드 번호 제거 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-advice-number-removal.md): 조언 카드의 숫자 배지를 테스트 우선으로 제거하고 내부 슬롯 선택 계약을 유지하는 구현 순서
 - [보스전 정산 CTA 게이트 설계](superpowers/specs/2026-08-25-lattebun-boss-battle-exit-gate-design.md): 보스전 재생 중 정산을 잠그고 우측 하단 CTA를 `전투 건너뛰기`에서 `정산으로`로 전환하는 계약
