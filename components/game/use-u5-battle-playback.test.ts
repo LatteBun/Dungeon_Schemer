@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   advanceU5BattlePlayback,
   nextU5BattleFrameIndex,
+  nextU5BattleFrameIndexForLength,
   nextU5BattlePlaybackRate,
   replayU5BattlePlayback,
   shouldAdvanceU5BattleFrame,
   u5BattleFrameDurationMs,
+  u5BattlePlaybackForSignature,
   u5ReplaySignature,
 } from "./use-u5-battle-playback";
 import { U5_TEST_BATTLE_REPLAY } from "./u5-battle-test-fixture";
@@ -22,11 +24,30 @@ describe("u5 battle playback", () => {
     expect(u5BattleFrameDurationMs(phase, 2)).toBe(atTwo);
   });
 
+  it("새 replay signature는 frame만 처음으로 돌린다", () => {
+    expect(u5BattlePlaybackForSignature(
+      { signature: "before", frameIndex: 4, replayingFromStart: true },
+      "after",
+    )).toEqual({ signature: "after", frameIndex: 0, replayingFromStart: false });
+  });
+
+  it("같은 replay signature는 현재 frame을 유지한다", () => {
+    const playback = { signature: "same", frameIndex: 0, replayingFromStart: false } as const;
+
+    expect(u5BattlePlaybackForSignature(playback, "same")).toBe(playback);
+  });
+
   it.each([
     [1, 2],
     [2, 1],
   ] as const)("전투 속도 %d를 누르면 %d가 된다", (current, expected) => {
     expect(nextU5BattlePlaybackRate(current)).toBe(expected);
+  });
+
+  it("다음 frame 계산은 replay 객체가 아니라 frame 수만 사용한다", () => {
+    expect(nextU5BattleFrameIndexForLength(U5_TEST_BATTLE_REPLAY.frames.length, 1)).toBe(2);
+    expect(nextU5BattleFrameIndexForLength(U5_TEST_BATTLE_REPLAY.frames.length, 99))
+      .toBe(U5_TEST_BATTLE_REPLAY.frames.length - 1);
   });
 
   it("같은 내용의 새 객체는 같은 signature를 가진다", () => {

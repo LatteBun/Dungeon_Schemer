@@ -324,17 +324,38 @@ describe("엔딩이 실제 캠페인으로 그려진다", () => {
   });
 });
 
+/*
+ * 싸움이 되는 monster 사건을 만날 때까지 걷는다.
+ *
+ * 예전에는 열 걸음 안에 첫 사건이 나오고 그것이 monster 이기를 기대했다. 게시판이
+ * 캠페인마다 다른 던전을 걸게 되면서 같은 시드가 다른 지도를 주므로, 첫 사건이
+ * 무엇인지에 기대지 않고 monster 를 만날 때까지 지나간다.
+ */
+function walkToMonsterEvent(run: ReturnType<typeof contracted>) {
+  for (let step = 0; step < 40; step += 1) {
+    const active = run.state().context.activeExpedition;
+    if (active === null) break;
+
+    const pending = active.pendingEvent;
+    if (pending !== null) {
+      if (pending.kind === "monster") return pending;
+      run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+      run.act({ type: "ACKNOWLEDGE_OUTCOME" });
+      continue;
+    }
+
+    const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
+    const next = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
+    if (next === undefined) break;
+    run.act({ type: "VISIT_NODE", nodeId: next });
+  }
+  throw new Error("싸움이 되는 사건에 닿지 못했다");
+}
+
 describe("결과 화면이 실제 판정으로 그려진다", () => {
   it("실제 일반전 결과는 완료 전까지 우측 하단에서 전투만 건너뛴다", () => {
     const run = contracted("party-roster-1");
-    for (let step = 0; step < 10; step += 1) {
-      const active = run.state().context.activeExpedition!;
-      if (active.pendingEvent !== null) break;
-      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
-      run.act({ type: "VISIT_NODE", nodeId: here.nextNodeIds[0]! });
-    }
-    const event = run.state().context.activeExpedition!.pendingEvent!;
-    if (event.kind !== "monster") throw new Error("monster 사건 fixture가 아니다");
+    const event = walkToMonsterEvent(run);
     run.act({ type: "CHOOSE_ADVICE", adviceId: event.advice[1]!.id });
 
     const outcome = run.state().context.activeExpedition!.pendingOutcome!;
@@ -358,16 +379,9 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
 
   it("전투 전멸 뒤에도 정산보다 결과를 먼저 그린다", () => {
     const run = contracted("party-roster-1");
-    for (let step = 0; step < 10; step += 1) {
-      const active = run.state().context.activeExpedition!;
-      if (active.pendingEvent !== null) break;
-      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
-      run.act({ type: "VISIT_NODE", nodeId: here.nextNodeIds[0]! });
-    }
+    const event = walkToMonsterEvent(run);
     const before = run.state();
     const active = before.context.activeExpedition!;
-    const event = active.pendingEvent!;
-    if (event.kind !== "monster") throw new Error("monster 사건 fixture가 아니다");
     const dungeon = before.campaign.dungeons.find((candidate) => candidate.id === active.expedition.dungeonId)!;
     run.store.setState({
       context: {

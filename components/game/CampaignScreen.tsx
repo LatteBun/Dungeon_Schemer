@@ -327,7 +327,20 @@ export function RejectionNotice({
   readonly onDismiss: () => void;
 }) {
   return (
-    <div className="campaign-rejection" role="alert" data-testid="campaign-rejection">
+    /*
+      * 판 전체를 쓰는 화면이 아니라 그 위에 얹는 쪽지다.
+      *
+      * `.game-canvas` 의 자식은 기본으로 100% x 100% 가 된다 — 화면 루트가 판을
+      * 꽉 채우게 하려는 규칙이다. 이 쪽지는 화면 루트가 아닌데 같은 자리에 붙어,
+      * 작아야 할 알림이 판을 통째로 덮었다(1152 x 1080 으로 재졌다). 그 규칙이
+      * 마련해 둔 예외 장치를 쓴다.
+      */
+    <div
+      className="campaign-rejection"
+      role="alert"
+      data-testid="campaign-rejection"
+      data-canvas-layout="intrinsic"
+    >
       <p className="campaign-rejection__reason">{reason}</p>
       <button type="button" onClick={onDismiss}>확인</button>
     </div>

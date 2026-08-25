@@ -61,7 +61,6 @@ export function u5BattlePlaybackForSignature(
     ? playback
     : { signature, frameIndex: 0, replayingFromStart: false };
 }
-
 export function u5ReplaySignature(replay: U5BattleReplay | undefined): string {
   if (replay === undefined) return "none";
   return JSON.stringify({

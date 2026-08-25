@@ -101,9 +101,6 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
           label="길잡이 등급"
           value={status.rank}
           iconSrc="/assets/u2/status-rank.svg"
-          onClick={canOpenPromotion ? onOpenPromotion : undefined}
-          testId={canOpenPromotion ? "u3-promotion-trigger" : undefined}
-          available={status.canPromote}
         />
         <StatusItem
           label="현재 명성"
@@ -115,10 +112,21 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
           value={status.gold}
           iconSrc="/assets/u2/status-gold.svg"
         />
+        {/*
+          * 올리는 일은 「승급」 칸이 맡는다.
+          *
+          * 전에는 「길잡이 등급」 칸을 누르면 승급 창이 열렸다. 그 칸은 지금 등급이
+          * 무엇인지 말하는 자리이지 무엇을 하는 자리가 아니라, 누를 수 있다는 것을
+          * 알아채기 어려웠다. 바로 옆에 「승급」 이라고 적힌 칸이 있는데 그쪽은
+          * 눌러도 아무 일이 없었다.
+          */}
         <StatusItem
           label="승급"
           value={promotionLabel}
           iconSrc="/assets/u2/status-promotion.svg"
+          onClick={canOpenPromotion ? onOpenPromotion : undefined}
+          testId={canOpenPromotion ? "u3-promotion-trigger" : undefined}
+          available={status.canPromote}
         />
         <StatusItem
           label="남은 던전"

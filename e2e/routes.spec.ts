@@ -15,7 +15,7 @@ const ROUTES: readonly RouteCase[] = [
   { path: "/u4-test", marker: (page) => page.getByRole("region", { name: "던전 지도" }) },
   { path: "/u5-test", marker: (page) => page.getByTestId("u5-progress") },
   { path: "/u5-2-test", marker: (page) => page.getByTestId("u5-progress") },
-  { path: "/u6-test", marker: (page) => page.getByRole("heading", { level: 1, name: /정산 · 거미굴 3/ }) },
+  { path: "/u6-test", marker: (page) => page.getByRole("heading", { level: 1, name: /정산 · 모르칸의 사체길/ }) },
 ];
 
 for (const route of ROUTES) {

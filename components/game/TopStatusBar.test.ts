@@ -98,3 +98,58 @@ describe("TopStatusBar U2/U3", () => {
     expect(html).not.toContain('disabled=""');
   });
 });
+
+/*
+ * 올리는 일은 「승급」 칸이 맡는다.
+ *
+ * 전에는 「길잡이 등급」 칸을 누르면 승급 창이 열렸다. 그 칸은 지금 등급이
+ * 무엇인지 말하는 자리이지 무엇을 하는 자리가 아니라, 누를 수 있다는 것을
+ * 알아채기 어려웠다. 바로 옆에 「승급」 이라고 적힌 칸이 있는데 그쪽은 눌러도
+ * 아무 일이 없었다.
+ */
+describe("승급을 여는 자리", () => {
+  const promotable = {
+    ...baseStatus,
+    canPromote: true,
+    nextPromotion: { rank: "B" as const, reputationRequired: 60 },
+  };
+
+  /** 그 칸이 버튼으로 그려졌는지 본다. 칸 하나만 잘라서 확인한다. */
+  function chip(html: string, label: string): string {
+    const found = html.match(new RegExp(`<(button|div)[^>]*>(?:(?!</\\1>)[\\s\\S])*?${label}[\\s\\S]*?</\\1>`));
+    expect(found, `${label} 칸`).not.toBeNull();
+    return found![0];
+  }
+
+  it("「승급」 칸이 누를 수 있는 자리다", () => {
+    const html = renderToStaticMarkup(createElement(TopStatusBar, {
+      status: promotable,
+      onOpenPromotion: () => undefined,
+    }));
+
+    const promotion = chip(html, "승급");
+    expect(promotion.startsWith("<button")).toBe(true);
+    expect(promotion).toContain('data-testid="u3-promotion-trigger"');
+  });
+
+  it("「길잡이 등급」 칸은 읽는 자리로 남는다", () => {
+    const html = renderToStaticMarkup(createElement(TopStatusBar, {
+      status: promotable,
+      onOpenPromotion: () => undefined,
+    }));
+
+    const rank = chip(html, "길잡이 등급");
+    expect(rank.startsWith("<button")).toBe(false);
+    expect(rank).not.toContain("u3-promotion-trigger");
+  });
+
+  it("누를 자리는 하나뿐이다", () => {
+    // 두 칸이 같은 창을 열면 어느 쪽이 그 일을 하는지 흐려진다.
+    const html = renderToStaticMarkup(createElement(TopStatusBar, {
+      status: promotable,
+      onOpenPromotion: () => undefined,
+    }));
+
+    expect(html.match(/u3-promotion-trigger/g)).toHaveLength(1);
+  });
+});

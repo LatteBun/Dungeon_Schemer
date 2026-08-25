@@ -343,7 +343,7 @@
   right: clamp(0.3rem, 0.8cqw, 0.7rem);
   z-index: 6;
   display: flex;
-  gap: clamp(0.2rem, 0.45cqw, 0.4rem);
+  gap: clamp(0.2rem, 0.4cqw, 0.4rem);
 }
 
 .u5-battle-controls button,

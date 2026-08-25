@@ -126,10 +126,12 @@ function motionForParticipant(
   playbackRate: U5BattlePlaybackRate,
 ) {
   const defeated = frame.defeatedParticipantIds.includes(participant.id);
-  if (defeated) return {
-    animate: { x: 0, y: 0, opacity: 0.38 },
-    transition: { duration: u5BattleMotionDuration(0.24, playbackRate) },
-  };
+  if (defeated) {
+    return {
+      animate: { x: 0, y: 0, opacity: 0.38 },
+      transition: { duration: u5BattleMotionDuration(0.24, playbackRate) },
+    };
+  }
   if (frame.phase === "attack" && frame.actorId === participant.id) {
     return {
       animate: { x: reducedMotion ? 0 : "var(--u5-battle-lunge-x)", y: 0, opacity: 1 },
@@ -158,7 +160,7 @@ function motionForParticipant(
   return {
     animate: { x: 0, y: reducedMotion ? 0 : [0, "-2%", 0], opacity: 1 },
     transition: reducedMotion ? { duration: 0 } : {
-      y: { duration: 1.8, repeat: Infinity, ease: "easeInOut" as const },
+      y: { duration: u5BattleMotionDuration(1.8, playbackRate), repeat: Infinity, ease: "easeInOut" as const },
       x: { duration: u5BattleMotionDuration(0.24, playbackRate) },
       /*
        * 살아 있는 사람의 투명도는 애니메이션 대상이 아니다.
