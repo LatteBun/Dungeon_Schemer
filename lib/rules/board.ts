@@ -1,4 +1,11 @@
-import { canDeploy, canDeployEmergency, BOARD_OFFER_MAX, RANK_RISK_LIMIT, RISK_LEVELS } from "@/lib/domain";
+import {
+  canDeploy,
+  canDeployEmergency,
+  BOARD_OFFER_MAX,
+  CONTRACT_REWARD_RANGES,
+  RANK_RISK_LIMIT,
+  RISK_LEVELS,
+} from "@/lib/domain";
 import { RuleError } from "@/lib/domain";
 import { createRng, type Rng } from "@/lib/rng";
 import type {
@@ -7,6 +14,7 @@ import type {
   CampaignState,
   CharacterId,
   ClassId,
+  ContractReward,
   ExpeditionParty,
   CharacterPool,
   RiskLevel,
@@ -215,6 +223,25 @@ export function canCreateEmergencyParty(pool: CharacterPool): boolean {
   return classes.size >= 3;
 }
 
+export function rollContractReward(
+  riskLevel: RiskLevel,
+  rng: Pick<Rng, "int">,
+): ContractReward {
+  const range = CONTRACT_REWARD_RANGES[riskLevel];
+  return {
+    reputation: rng.int(range.reputation.min, range.reputation.max),
+    gold: rng.int(range.gold.min, range.gold.max),
+  };
+}
+
+export function createOfferReward(
+  campaign: Pick<CampaignState, "seed" | "worldTurn">,
+  dungeon: Pick<CampaignDungeon, "id" | "riskLevel">,
+): ContractReward {
+  const key = `${campaign.seed}/offer-reward/${campaign.worldTurn}/${dungeon.id}/risk-${dungeon.riskLevel}`;
+  return rollContractReward(dungeon.riskLevel, createRng(key));
+}
+
 /** 현재 상태에서 한 게시판의 공고와 일회성 임시 파티를 만든다. */
 export function createBoardOffers(state: CampaignState): readonly BoardOffer[] {
   const root = createRng(`${state.seed}/${state.worldTurn}`);
@@ -226,6 +253,7 @@ export function createBoardOffers(state: CampaignState): readonly BoardOffer[] {
     id: `offer-${state.worldTurn}-${dungeon.id}` as BoardOffer["id"],
     dungeonId: dungeon.id,
     riskLevel: dungeon.riskLevel,
+    reward: createOfferReward(state, dungeon),
     party: { memberIds: [...(parties[index]?.memberIds ?? [])] },
     lockReason: dungeon.riskLevel > RANK_RISK_LIMIT[state.rank] ? "rankTooLow" : null,
   }));

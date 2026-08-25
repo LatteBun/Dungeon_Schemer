@@ -184,6 +184,7 @@ describe("공개 환경 특성 계약", () => {
       id: "offer-0-dungeon-spider-01" as OfferId,
       dungeonId: "dungeon-spider-01" as DungeonId,
       riskLevel: 1,
+      reward: { reputation: 6, gold: 12 },
       party: { memberIds: [] },
       lockReason: null,
     } satisfies BoardOffer;
