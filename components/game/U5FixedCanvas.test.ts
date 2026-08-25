@@ -73,3 +73,43 @@ describe("U5 고정 캔버스 계약", () => {
     expect(progressCss).not.toMatch(/u5-advice--/);
   });
 });
+
+/*
+ * 넘어가는 버튼은 화면 바닥에 붙는다.
+ *
+ * `.u5-right-panel` 은 `auto minmax(0,1fr) auto` 로 파티를 위에, 버튼을 아래에
+ * 두려 한다. 그런데 감싸는 `.game-shell__right-panel` 이 `align-content: start`
+ * 로 내용 높이에 묶여 있어 가운데 칸이 0 이 되었다. 버튼이 파티 카드 바로 밑에
+ * 붙고 그 아래로 460px 이 빈 채 남았다.
+ */
+describe("U5 우측 패널이 화면 높이를 다 쓴다", () => {
+  const progressCss = readFileSync("app/u5-progress.css", "utf8");
+
+  /*
+   * 한 선택자가 여러 규칙에 나온다 — 목록으로 묶인 것까지 포함해서다.
+   * 처음 걸린 것만 보면 엉뚱한 블록을 읽으므로 전부 모으고, 최종 값은
+   * 나중에 온 것이 이긴다.
+   */
+  function rulesFor(selector: string): readonly string[] {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return [...progressCss.matchAll(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`, "g"))].map((m) => m[1] ?? "");
+  }
+
+  function ruleFor(selector: string): string {
+    const rules = rulesFor(selector);
+    return rules.at(-1) ?? "";
+  }
+
+  it("감싸는 칸을 내용 높이에 묶지 않는다", () => {
+    const rules = rulesFor(".u5-progress-screen .game-shell__right-panel");
+    expect(rules.length).toBeGreaterThan(0);
+    for (const rule of rules) expect(rule).not.toMatch(/align-content:\s*start/);
+    expect(ruleFor(".u5-progress-screen .game-shell__right-panel"))
+      .toMatch(/grid-template-rows:\s*minmax\(0,\s*1fr\)/);
+  });
+
+  it("가운데 칸이 남는 높이를 받아 버튼을 아래로 민다", () => {
+    expect(ruleFor(".u5-right-panel")).toMatch(/grid-template-rows:\s*auto minmax\(0,\s*1fr\) auto/);
+    expect(ruleFor(".u5-right-panel .u5-outcome-continue")).toMatch(/grid-row:\s*3/);
+  });
+});

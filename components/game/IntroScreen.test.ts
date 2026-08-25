@@ -71,6 +71,18 @@ describe("IntroScreen", () => {
     expect(html).not.toContain("/assets/u2/intro-role.png");
   });
 
+  it("공용 상태 바를 건드리지 않고 인트로 본문 글자를 확대한다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "u2-intro.css"), "utf8");
+
+    expect(css).toMatch(/\.u2-intro__eyebrow\s*\{[^}]*font-size:\s*clamp\(0\.86rem, 1\.15cqw, 1\.06rem\)/);
+    expect(css).toMatch(/\.u2-intro__copy h1\s*\{[^}]*font-size:\s*clamp\(2\.18rem, 3\.45cqw, 3\.55rem\)/);
+    expect(css).toMatch(/\.u2-intro__lead\s*\{[^}]*font-size:\s*clamp\(0\.9rem, 1\.29cqw, 1\.1rem\)/);
+    expect(css).toMatch(/\.u2-intro__card h2\s*\{[^}]*font-size:\s*clamp\(1\.2rem, 1\.67cqw, 1\.55rem\)/);
+    expect(css).toMatch(/\.u2-intro__card p\s*\{[^}]*font-size:\s*clamp\(0\.81rem, 1\.09cqw, 0\.97rem\)/);
+    expect(css).toMatch(/\.u2-intro__cta\s*\{[^}]*--cta-text-size:\s*clamp\(1\.36rem, 2\.3cqw, 1\.9rem\)/);
+    expect(css).not.toMatch(/--status-(?:bar|label|value)/);
+  });
+
   it("U2 본문은 전체 폭을 쓰고 카드 영역을 U3 밀도에 맞춘다", () => {
     const css = readFileSync(join(process.cwd(), "app", "u2-intro.css"), "utf8");
 

@@ -53,14 +53,15 @@
 ### 사용자 경험
 
 - [SCREEN_LAYOUT.md](experience/SCREEN_LAYOUT.md): 3:2 게임 셸(좌 60%·우 40%), 기준 해상도, 화면별 좌·우 구조와 색 외 단서 원칙
-- [ONBOARDING_AND_INTERFACE.md](experience/ONBOARDING_AND_INTERFACE.md): 인트로부터 엔딩까지 화면 정보 구조, 30초 온보딩과 결과 피드백
+- [ONBOARDING_AND_INTERFACE.md](experience/ONBOARDING_AND_INTERFACE.md): 메인 메뉴에서 캠페인·업적 기록으로 갈리는 진입과 인트로부터 엔딩까지의 화면 정보 구조
 - [UI_IMPLEMENTATION_GUIDE.md](experience/UI_IMPLEMENTATION_GUIDE.md): UI·파티원·지도·배경·이미지 에셋 구현 시 재사용, 반응형, 가독성, 레퍼런스 스타일·시점 계승과 벡터/아이콘화 금지 기준
 - [UI_TASK_TEMPLATE.md](experience/UI_TASK_TEMPLATE.md): 화면별 UI와 이미지 에셋 작업에서 필수 정보, 시각 계약, 슬롯 비율, viewport 검증 조건을 전달하기 위한 작업 지시서 템플릿
 
 ### 시각 자료
 
-- [diagram/README.md](diagram/README.md): 캠페인·탐험 시퀀스, 상태 전이, 대표 화면 6개의 Markdown 원본과 이미지 인덱스
-- [대표 화면 전체 모음](diagram/png/screen-overview.png): 인트로부터 캠페인 엔딩까지 화면 일곱 장의 실제 캡처
+- [diagram/README.md](diagram/README.md): 캠페인·탐험 시퀀스, 상태 전이, 캠페인 화면 일곱 장과 메타 화면 두 장의 이미지 인덱스
+- [캠페인 대표 화면 전체 모음](diagram/png/screen-overview.png): 인트로부터 캠페인 엔딩까지 화면 일곱 장의 실제 캡처
+- [메인 메뉴](diagram/png/screen-main-menu.png) · [길잡이 업적 기록](diagram/png/screen-achievements.png): 두 메타 화면의 실제 1920×1080 캡처
 
 ### 기술
 
@@ -102,6 +103,8 @@
 
 - [진행 화면 UX 개선 설계](superpowers/specs/2026-08-25-lattebun-progress-screen-ux-design.md): 낮은 금속 명패형 조언 카드, 비전투 파티 장면, 일반전 재생 상태에 따른 우측 하단 CTA 전환 계약
 - [진행 화면 UX 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-progress-screen-ux.md): 전투 재생 제어 분리, 일반전 CTA 게이트, 비전투 파티와 A1 카드의 테스트 우선 구현 순서
+- [U6 정산 복귀 CTA 크기 개선 설계](superpowers/specs/2026-08-25-lattebun-u6-settlement-continue-size-design.md): 공통 다음 단계 CTA 크기를 유지하면서 정산 복귀 버튼을 내용 폭으로 줄이는 배치 기준
+- [U6 정산 복귀 CTA 크기 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u6-settlement-continue-size.md): CSS 계약 테스트부터 내용 폭 우측 정렬과 실제 정산 화면 검증까지의 테스트 우선 순서
 - [U4 지도 우측 패널 순서 개선 설계](superpowers/specs/2026-08-25-lattebun-u4-map-right-panel-order-design.md): 계약 전 답사를 선택 지점 위로 옮기고 이동 CTA를 우측 최하단에 고정하는 배치 기준
 - [U4 지도 우측 패널 순서 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u4-map-right-panel-order.md): DOM 읽기 순서와 3행 CSS 계약을 테스트 우선으로 변경하고 실제 캠페인 지도에서 확인하는 순서
 - [브라우저 안정성 스모크 테스트 설계](superpowers/specs/2026-08-25-lattebun-browser-stability-smoke-design.md): 공개 경로·첫 사건 클릭 흐름·공식 viewport의 Chromium 회귀 계약
@@ -137,6 +140,10 @@
 - [C1 캠페인 초기화·생태 패키지 구현 계획](superpowers/plans/2026-08-20-sanghwan-yoo-c1-campaign-initialization.md): 도메인 계약, 콘텐츠 검증, 시드 초기화의 구현 순서
 - [U2 인트로 게시판 진입 연결 설계](superpowers/specs/2026-08-20-sanghwan-yoo-u2-intro-board-navigation-design.md): U2 CTA와 기존 U1 게시판 프리뷰의 라우팅 계약
 - [U2 인트로 게시판 진입 연결 구현 계획](superpowers/plans/2026-08-20-sanghwan-yoo-u2-intro-board-navigation.md): 테스트·구현·검증·PR 순서
+- [인트로 본문 글자 크기 개선 설계](superpowers/specs/2026-08-25-lattebun-intro-body-typography-design.md): 실제 캠페인 인트로 본문만 약 15% 확대하는 타이포그래피 경계
+- [인트로 본문 글자 크기 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-intro-body-typography.md): CSS 계약 테스트부터 실제 캠페인 화면 확인까지의 실행 순서
+- [게시판 수배지 UX·던전 명칭 개선 설계](superpowers/specs/2026-08-25-lattebun-board-notice-ux-design.md): 작은 수배지의 불규칙 배치, 보스 전설형 던전 이름, 계약 상세 배경 이미지 제거 기준
+- [게시판 수배지 UX·던전 명칭 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-board-notice-ux.md): 던전 이름, 계약 상세 배경, 수배지 배치를 테스트 우선으로 변경하고 실제 캠페인에서 확인하는 순서
 - [캠페인 개편 작업 배정표](technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md): 무엇을 어떤 순서로 구현하는지
 
 ## 이전 개편 기록

@@ -14,9 +14,12 @@ import {
 } from "./u5-log";
 import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
 import { U5BattleScene } from "./U5BattleScene";
+import { U5NonBattlePartyScene } from "./U5NonBattlePartyScene";
 import type { U5BattleReplay } from "./u5-battle-replay";
+import { useU5BattlePlayback } from "./use-u5-battle-playback";
 
 export type U5ConsoleMode = "advice" | "log";
+export type U5BattleExitPolicy = "after-playback";
 
 export interface U5ProgressScreenProps {
   status: TopStatusView;
@@ -38,6 +41,9 @@ export interface U5ProgressScreenProps {
   initialMode?: U5ConsoleMode;
   initialFilter?: U5LogFilter;
   readonly battleReplay?: U5BattleReplay;
+  readonly battleExitPolicy?: U5BattleExitPolicy;
+  /** 독립 전투 프리뷰에서만 재생 중 건너뛰기 조작을 보여준다. */
+  readonly previewPlaybackControls?: boolean;
 }
 
 const REACTION_LABEL = {
@@ -68,18 +74,26 @@ function AdviceOption({ slot, text, rationale, goldCost, unavailableReason, onSe
         disabled={unavailableReason !== undefined}
         onClick={() => onSelect?.(slot)}
       >
-        {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
-        <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
-        <strong className="u5-advice__text">{text}</strong>
-        <span className="u5-advice__divider" aria-hidden="true" />
-        <span className="u5-advice__rationale">{rationale}</span>
-        {goldCost === undefined ? null : (
-          <span className="u5-advice__cost">골드 {goldCost}</span>
-        )}
-        {/* 왜 고를 수 없는지 적는다. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */}
-        {unavailableReason === undefined ? null : (
-          <span className="u5-advice__blocked">{unavailableReason}</span>
-        )}
+        <span className="u5-advice__rivets" aria-hidden="true">
+          <i className="u5-advice__rivet is-top-left" />
+          <i className="u5-advice__rivet is-top-right" />
+          <i className="u5-advice__rivet is-bottom-left" />
+          <i className="u5-advice__rivet is-bottom-right" />
+        </span>
+        <span className="u5-advice__content">
+          {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
+          <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
+          <strong className="u5-advice__text">{text}</strong>
+          <span className="u5-advice__divider" aria-hidden="true" />
+          <span className="u5-advice__rationale">{rationale}</span>
+          {goldCost === undefined ? null : (
+            <span className="u5-advice__cost">골드 {goldCost}</span>
+          )}
+          {/* 왜 고를 수 없는지 적는다. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */}
+          {unavailableReason === undefined ? null : (
+            <span className="u5-advice__blocked">{unavailableReason}</span>
+          )}
+        </span>
       </button>
     </li>
   );
@@ -118,8 +132,8 @@ function Outcome({ outcome }: { outcome: NonNullable<U5ProgressView["outcome"]> 
       <section className="u5-outcome__step" aria-labelledby="u5-changes-title">
         <h4 id="u5-changes-title">수치·신뢰 변화</h4>
         <dl className="u5-changes">
-          {outcome.changes.map((change) => (
-            <div key={change.label}>
+          {outcome.changes.map((change, index) => (
+            <div key={`${change.label}-${index}`}>
               <dt>{change.label}</dt>
               <dd>{change.detail}</dd>
             </div>
@@ -194,6 +208,8 @@ export function U5ProgressScreen({
   initialMode,
   initialFilter = "all",
   battleReplay,
+  battleExitPolicy,
+  previewPlaybackControls = false,
 }: U5ProgressScreenProps) {
   /*
    * 행동 / 조언을 전면에 둔다. 선택 뒤 결과(반응 → 결과 → 변화)도 이 모드에
@@ -202,6 +218,17 @@ export function U5ProgressScreen({
    */
   const [mode, setMode] = useState<U5ConsoleMode>(initialMode ?? "advice");
   const [filter, setFilter] = useState<U5LogFilter>(initialFilter);
+  const battlePlayback = useU5BattlePlayback(battleReplay);
+  const replayingBattle = battleReplay !== undefined
+    && battlePlayback.frame !== undefined
+    && !battlePlayback.isComplete;
+  const gateMapExit = battleExitPolicy === "after-playback" && replayingBattle;
+  const showPreviewSkip = previewPlaybackControls && replayingBattle;
+  const rightAction = gateMapExit || showPreviewSkip
+    ? { label: "전투 건너뛰기", onClick: battlePlayback.skipToComplete }
+    : onAcknowledge === undefined
+      ? null
+      : { label: acknowledgeLabel, onClick: onAcknowledge };
 
   return (
     <div className="expedition-screen u5-progress-screen" data-testid="u5-progress">
@@ -217,7 +244,15 @@ export function U5ProgressScreen({
               style={{ backgroundImage: `url("${sceneSrc(progress.theme, progress.sceneKind)}")` }}
               aria-hidden={battleReplay === undefined ? "true" : undefined}
             >
-              {battleReplay === undefined ? null : <U5BattleScene replay={battleReplay} />}
+              {battleReplay === undefined ? (
+                <U5NonBattlePartyScene party={progress.party} />
+              ) : battlePlayback.frame === undefined ? null : (
+                <U5BattleScene
+                  replay={battleReplay}
+                  frame={battlePlayback.frame}
+                  onReplayFromStart={battlePlayback.replayFromStart}
+                />
+              )}
             </div>
 
             <div className="u5-console" data-testid="u5-console">
@@ -287,9 +322,9 @@ export function U5ProgressScreen({
               * 오른쪽 아래는 비어 있었다. 다음으로 가는 길은 화면의 끝에 있는
               * 편이 찾기 쉽다.
               */}
-            {onAcknowledge !== undefined && (
-              <button type="button" className="u5-outcome-continue" onClick={onAcknowledge}>
-                {acknowledgeLabel}
+            {rightAction === null ? null : (
+              <button type="button" className="u5-outcome-continue" onClick={rightAction.onClick}>
+                {rightAction.label}
               </button>
             )}
           </div>
