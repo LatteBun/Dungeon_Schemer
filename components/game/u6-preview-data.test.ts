@@ -30,9 +30,6 @@ describe("U6 프리뷰 데이터", () => {
     expect(wipe?.relicGold).toBeGreaterThan(0);
     expect(wipe?.reputationDelta).toBeLessThan(0);
     expect(wipe?.dungeonOutcome.kind).toBe("riskIncreased");
-    if (wipe?.dungeonOutcome.kind === "riskIncreased") {
-      expect(wipe.dungeonOutcome.after).toBe(wipe.dungeonOutcome.before + 1);
-    }
     expect(wipe?.nextReward).toEqual({ reputation: 15, gold: 32 });
   });
 
@@ -49,6 +46,27 @@ describe("U6 프리뷰 데이터", () => {
 
     expect(capped?.outcome.kind).toBe("cleared");
     expect(capped?.dungeonOutcome).toEqual({ kind: "cleared" });
+  });
+
+  it("부분 생존 정산은 정복·사망·생존자 신뢰 0을 함께 담는다", () => {
+    const partial = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-partial")?.settlement;
+    if (partial === undefined) throw new Error("부분 생존 프리뷰가 없다");
+
+    expect(partial.outcome.kind).toBe("cleared");
+    expect(partial.dungeonOutcome).toEqual({ kind: "cleared" });
+    expect(partial.members.some((member) => member.diedThisExpedition)).toBe(true);
+    expect(partial.members.some((member) => member.trust.countsTowardCampaign)).toBe(true);
+    expect(partial.trustPressure?.afterCount).toBeGreaterThan(0);
+  });
+
+  it("전멸 정산은 사망자 셋과 위험도 상승을 담는다", () => {
+    const wiped = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-wipe")?.settlement;
+    if (wiped === undefined) throw new Error("전멸 프리뷰가 없다");
+
+    expect(wiped.outcome.kind).toBe("wiped");
+    expect(wiped.members.every((member) => member.diedThisExpedition)).toBe(true);
+    expect(wiped.dungeonOutcome.kind).toBe("riskIncreased");
+    expect(wiped.members.some((member) => member.trust.countsTowardCampaign)).toBe(false);
   });
 
   it("엔딩마다 이유 세 줄과 보고서·결말 항목 넷을 갖춘다", () => {

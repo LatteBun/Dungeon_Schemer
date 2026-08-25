@@ -280,7 +280,7 @@ const settlementPartial = settlementFor({
   campaign: baseCampaign,
   status: "cleared",
   finalMembers: [
-    { ...first, hp: Math.max(1, Math.floor(first.hp / 2)), trust: Math.max(0, first.trust - 18) },
+    { ...first, hp: Math.max(1, Math.floor(first.hp / 2)), trust: 0 },
     { ...second, hp: 0, alive: false },
     { ...third, hp: Math.max(1, third.hp - 6), trust: Math.max(0, third.trust - 6) },
   ],

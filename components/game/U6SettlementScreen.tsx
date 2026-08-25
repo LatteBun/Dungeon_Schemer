@@ -63,8 +63,14 @@ function CauseSummary({ settlement }: { settlement: U6SettlementView }) {
 }
 
 function MemberResult({ member }: { member: U6SettlementMember }) {
+  const className = [
+    member.diedThisExpedition ? "is-dead" : null,
+    member.trust.countsTowardCampaign ? "is-exposed" : null,
+    member.gravelyWounded ? "is-gravely-wounded" : null,
+  ].filter(Boolean).join(" ");
+
   return (
-    <li className={member.diedThisExpedition ? "is-dead" : ""}>
+    <li className={className}>
       <img src={member.portraitSrc} alt="" aria-hidden="true" />
       <span className="u6-party-result__who">
         <strong>{member.name}</strong>

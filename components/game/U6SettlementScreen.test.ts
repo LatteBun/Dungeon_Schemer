@@ -240,6 +240,28 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("<em>중상</em>");
   });
 
+  it("발각과 중상 인물 행에 각 상태 클래스를 붙인다", () => {
+    const html = render({
+      members: [
+        member({
+          trust: {
+            before: 9,
+            after: 0,
+            changed: true,
+            isZero: true,
+            becameZero: true,
+            countsTowardCampaign: true,
+          },
+        }),
+        member({ id: "character-2", name: "카일", gravelyWounded: true }),
+        BASE_MEMBERS[2]!,
+      ],
+    });
+
+    expect(html).toContain('<li class="is-exposed">');
+    expect(html).toContain('<li class="is-gravely-wounded">');
+  });
+
   it("정산에는 승급 제어가 없다", () => {
     const html = render();
 

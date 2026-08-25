@@ -38,4 +38,23 @@ describe("U6 고정 캔버스 계약", () => {
     expect(rule).not.toMatch(/justify-self:\s*stretch/);
     expect(rule).not.toMatch(/width:\s*100%/);
   });
+
+  it("정산 본문은 결과·원인·원정대 결과 세 행을 쓴다", () => {
+    const rule = css.match(/\.u6-settlement-main\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(rule).toMatch(/grid-template-rows:\s*auto\s+auto\s+minmax\(0,\s*1fr\)/);
+  });
+
+  it("원정대 결과 목록은 세 인물을 세로로 담고 넘치지 않는다", () => {
+    const rule = css.match(/\.u6-party-results__list\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(rule).toMatch(/display:\s*grid/);
+    expect(rule).toMatch(/grid-template-rows:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    expect(rule).toMatch(/min-height:\s*0/);
+  });
+
+  it("폐기한 다섯 단계와 다녀온 사람 선택자를 남기지 않는다", () => {
+    expect(css).not.toContain("u6-cause__order");
+    expect(css).not.toContain("u6-returned");
+  });
 });
