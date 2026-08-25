@@ -385,7 +385,8 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
       }, createElement(CampaignScreen)),
     ));
 
-    expect(markup).toContain("전투 건너뛰기");
+    expect(markup).toContain("u5-feedback-beat");
+    expect(markup).not.toContain("전투 건너뛰기");
     expect(markup).not.toContain("지도로 돌아간다");
   });
 
@@ -424,7 +425,7 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
       }, createElement(CampaignScreen)),
     ));
 
-    expect(markup).toContain("u5-outcome");
+    expect(markup).toContain("u5-feedback-beat");
     expect(markup).not.toContain("u5-battle-settle");
   });
 
@@ -447,9 +448,9 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
       progress: progressViewFor(campaign, active)!,
       log: logFor(campaign, active),
       ecology: ecologyViewFor(campaign, active),
-      battleReplay: eventReplayFor(campaign, active) ?? undefined,
       playbackRate: 1,
       onTogglePlaybackRate: noop,
+      battleReplay: eventReplayFor(campaign, active) ?? undefined,
       onAcknowledge: noop,
     }));
 

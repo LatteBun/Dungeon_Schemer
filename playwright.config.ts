@@ -26,7 +26,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm exec next dev --webpack -p ${port}`,
+    command: `pnpm exec next build --webpack && pnpm exec next start -p ${port}`,
     url: baseURL,
     reuseExistingServer: true,
     timeout: 120_000,

@@ -58,4 +58,16 @@ describe("U5 battle preview data", () => {
       }
     }
   });
+
+  it("두 상태 모두 반응 확인 뒤 지속 신뢰 변화량을 검증할 수 있다", () => {
+    for (const entry of U5_BATTLE_PREVIEW_ENTRIES) {
+      expect(entry.feedback.postBattleReaction).not.toBeNull();
+      expect(entry.feedback.postBattleTrustChanges).toHaveLength(1);
+      const change = entry.feedback.postBattleTrustChanges[0]!;
+      expect(change.after).not.toBe(change.before);
+      expect(entry.progress.party.some((member) => member.id === change.memberId)).toBe(true);
+      const participant = entry.replay.participants.find((candidate) => candidate.id === change.memberId);
+      if (entry.id === "e4-boss") expect(participant?.finalHp).not.toBe(participant?.initialHp);
+    }
+  });
 });
