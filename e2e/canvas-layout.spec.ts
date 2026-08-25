@@ -8,7 +8,7 @@ const VIEWPORTS = [
   { name: "5:4", width: 1280, height: 1024 },
 ] as const;
 
-const ROUTES = ["/campaign", "/u5-test", "/u6-test"] as const;
+const ROUTES = ["/", "/achievements", "/campaign", "/u5-test", "/u6-test"] as const;
 const tolerance = 1.5;
 
 for (const viewport of VIEWPORTS) {
@@ -44,12 +44,41 @@ for (const viewport of VIEWPORTS) {
       expect(documentSize.scrollWidth).toBeLessThanOrEqual(documentSize.innerWidth + 1);
       expect(documentSize.scrollHeight).toBeLessThanOrEqual(documentSize.innerHeight + 1);
 
-      const root = canvas.locator(":scope > :not([data-canvas-layout='intrinsic'])").first();
+      const root = canvas.locator(":scope > .app-frame");
       const rootBox = await root.boundingBox();
       expect(rootBox).not.toBeNull();
       if (rootBox !== null) {
         expect(Math.abs(rootBox.width - canvasBox.width)).toBeLessThan(tolerance);
         expect(Math.abs(rootBox.height - canvasBox.height)).toBeLessThan(tolerance);
+      }
+
+      if (route === "/") {
+        await page.getByRole("button", { name: "빠른 메뉴 열기" }).click();
+        const panel = page.getByRole("region", { name: "빠른 메뉴" });
+        const heading = page.getByRole("heading", { level: 1, name: "Dungeon Schemer" });
+        const actions = page.getByRole("navigation", { name: "메인 메뉴" });
+        const [panelBox, headingBox, actionsBox] = await Promise.all([
+          panel.boundingBox(),
+          heading.boundingBox(),
+          actions.boundingBox(),
+        ]);
+        expect(panelBox).not.toBeNull();
+        expect(headingBox).not.toBeNull();
+        expect(actionsBox).not.toBeNull();
+        if (panelBox !== null) {
+          expect(panelBox.x).toBeGreaterThanOrEqual(canvasBox.x - tolerance);
+          expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(canvasBox.x + canvasBox.width + tolerance);
+          expect(panelBox.y).toBeGreaterThanOrEqual(canvasBox.y - tolerance);
+          expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(canvasBox.y + canvasBox.height + tolerance);
+          for (const occupied of [headingBox, actionsBox]) {
+            if (occupied === null) continue;
+            const overlaps = panelBox.x < occupied.x + occupied.width
+              && panelBox.x + panelBox.width > occupied.x
+              && panelBox.y < occupied.y + occupied.height
+              && panelBox.y + panelBox.height > occupied.y;
+            expect(overlaps).toBe(false);
+          }
+        }
       }
 
       const overflowingImages = await canvas.locator("img:visible").evaluateAll((images, box) =>
