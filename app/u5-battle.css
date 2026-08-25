@@ -163,12 +163,25 @@
   transform: translateX(-50%);
 }
 
+/*
+ * 피해 숫자가 이 화면의 주인공이다.
+ *
+ * 자막에서 "N 피해를 받습니다" 를 걷어냈으니, 얼마나 아팠는지는 이 숫자
+ * 하나가 말한다. 전보다 크게, 진하게, 테두리를 둘러 배경에서 떼어 놓는다.
+ */
 .u5-battle-damage {
   display: block;
-  color: #ffdf6f;
-  font-size: clamp(0.9rem, 3cqh, 1.55rem);
-  font-weight: 800;
-  text-shadow: 0 0.1rem 0.22rem #300, 0 0 0.5rem #f33;
+  color: #ffe98a;
+  font-size: clamp(1.5rem, 5.4cqh, 2.9rem);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  -webkit-text-stroke: 0.06em rgb(58 8 4 / 92%);
+  paint-order: stroke fill;
+  text-shadow:
+    0 0.08rem 0.2rem #200,
+    0 0 0.7rem rgb(255 92 48 / 85%),
+    0 0 1.5rem rgb(255 60 20 / 55%);
 }
 
 .u5-battle-defeated {
@@ -176,18 +189,32 @@
   top: 45%;
   left: 50%;
   z-index: 4;
-  padding: 0.1rem 0.3rem;
-  border: 0.0625rem solid #d7b16a;
-  background: rgb(10 5 4 / 88%);
-  color: #f2d7ad;
-  font-size: clamp(0.52rem, 1.5cqh, 0.78rem);
+  padding: 0.14rem 0.44rem;
+  border: 0.0625rem solid rgb(198 86 64 / 85%);
+  border-radius: 0.14rem;
+  background: rgb(26 6 4 / 94%);
+  color: #f0b9a6;
+  font-size: clamp(0.62rem, 1.95cqh, 0.98rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
   transform: translateX(-50%);
   white-space: nowrap;
+}
+
+/*
+ * 쓰러진 사람에게서 색을 뺀다.
+ *
+ * 흐려지기만 하면 "잠깐 반투명해졌다" 로 읽혀 사고처럼 보인다. 색이 빠지면
+ * 되돌아오지 않는 상태라는 것이 한눈에 드러난다.
+ */
+.u5-battle-participant[data-defeated="true"] .u5-battle-sprite-frame {
+  filter: grayscale(1) brightness(0.72);
 }
 
 .u5-battle-live {
   flex: 0 0 auto;
   max-width: 74%;
+  min-height: 1lh;
   margin: 0 auto clamp(0.2rem, 0.7cqh, 0.45rem);
   padding: clamp(0.14rem, 0.45cqh, 0.28rem) clamp(0.5rem, 1.2cqw, 0.9rem);
   border: 0.0625rem solid rgb(215 177 106 / 52%);
@@ -197,6 +224,12 @@
   font-size: clamp(0.56rem, 1.7cqh, 0.9rem);
   line-height: 1.25;
   text-align: center;
+}
+
+/* 말할 사건이 없는 프레임. 자리는 지키고 테두리만 지운다. */
+.u5-battle-live[data-empty="true"] {
+  border-color: transparent;
+  background: transparent;
 }
 
 /* 읽어 주기만 하는 자리다. 화면 문장은 .u5-battle-live 가 이미 보여 준다. */

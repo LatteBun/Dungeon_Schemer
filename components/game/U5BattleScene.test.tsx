@@ -142,3 +142,100 @@ describe("U5BattleScene", () => {
     expect(html).toMatch(/<button[^>]*type="button"[^>]*>다시 보기<\/button>/);
   });
 });
+
+/*
+ * 화면 문장은 사건만 남긴다.
+ *
+ * 프레임마다 "공격합니다 / 피해를 받습니다 / HP가 N까지 떨어졌습니다" 를 갈아
+ * 끼우면 스무 행동 전투에서 예순 줄이 지나간다. 셋 다 화면이 이미 보여 주는
+ * 것이라, 글이 시선을 가져가 정작 피해 숫자를 놓치게 만든다.
+ */
+describe("U5BattleScene 화면 자막", () => {
+  const frameOf = (phase: string) => {
+    const frame = replay.frames.find((one) => one.phase === phase);
+    if (frame === undefined) throw new Error(`fixture에 ${phase} frame이 없다.`);
+    return frame;
+  };
+  const liveText = (html: string): string =>
+    html.match(/<p class="u5-battle-live"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? "__없음__";
+
+  it("공격과 피해 프레임에는 문장을 남기지 않는다", () => {
+    for (const phase of ["attack", "impact"]) {
+      const html = render({ ...replay, frames: [frameOf(phase)] });
+      expect(liveText(html), phase).toBe("");
+      expect(html, phase).toContain('data-empty="true"');
+    }
+  });
+
+  it("쓰러지지 않은 settle 도 문장을 남기지 않는다", () => {
+    /* 공용 fixture는 한 방에 끝나 생존 settle이 없다. 두 방짜리를 따로 만든다. */
+    const twoHits = createU5BattleReplay({
+      resolution: {
+        ...resolution,
+        actions: [
+          { round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 3, targetHpBefore: 7, targetHpAfter: 4, defeated: false },
+          { round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 4, targetHpBefore: 4, targetHpAfter: 0, defeated: true },
+        ],
+      },
+      presentations: [
+        { id: "party-1", name: "코르빈", imageSrc: "/assets/characters/live/warrior/warrior_a.png" },
+        { id: "enemy-1", name: "새끼거미", imageSrc: "/assets/monsters/spider/monster-spider-hatchling.png" },
+      ],
+    });
+    const settle = twoHits.frames.find(
+      (one) => one.phase === "settle" && one.defeatedParticipantIds.length === 0,
+    );
+    if (settle === undefined) throw new Error("생존 settle frame을 만들지 못했다.");
+
+    expect(liveText(render({ ...twoHits, frames: [settle] }))).toBe("");
+  });
+
+  it("시작·쓰러짐·승패는 남긴다", () => {
+    expect(liveText(render({ ...replay, frames: [frameOf("idle")] }))).toContain("전투가 시작됩니다");
+    expect(liveText(render({ ...replay, frames: [frameOf("complete")] }))).toMatch(/승리|패배/);
+
+    const defeat = replay.frames.find(
+      (one) => one.phase === "settle" && one.defeatedParticipantIds.length > 0,
+    );
+    if (defeat === undefined) throw new Error("fixture에 쓰러짐 settle frame이 없다.");
+    expect(liveText(render({ ...replay, frames: [defeat] }))).toContain("쓰러뜨렸습니다");
+  });
+
+  it("읽어 주는 자리는 그대로 다 말한다", () => {
+    // 눈으로 못 보는 사람이 잃는 것이 없어야 자막을 덜어낼 수 있다.
+    const settle = frameOf("settle");
+    const html = render({ ...replay, frames: [settle] });
+    expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite">.+<\/p>/);
+  });
+});
+
+/* 쓰러진 사람은 흐려지기만 하면 화면 결함처럼 보인다. 상태를 표식으로 남긴다. */
+describe("U5BattleScene 쓰러짐 표시", () => {
+  it("쓰러진 참가자만 data-defeated 를 달고 색이 빠진다", () => {
+    const defeat = replay.frames.find(
+      (one) => one.phase === "settle" && one.defeatedParticipantIds.length > 0,
+    );
+    if (defeat === undefined) throw new Error("fixture에 쓰러짐 frame이 없다.");
+    const html = render({ ...replay, frames: [defeat] });
+
+    expect(participantMarkup(html, defeat.defeatedParticipantIds[0]!)).toContain('data-defeated="true"');
+    const alive = replay.participants.find((one) => !defeat.defeatedParticipantIds.includes(one.id));
+    expect(participantMarkup(html, alive!.id)).toContain('data-defeated="false"');
+
+    expect(battleCss).toMatch(/\[data-defeated="true"\][^{]*\{[^}]*filter:\s*grayscale\(1\)/);
+  });
+});
+
+/* 자막에서 피해를 걷어낸 만큼, 숫자가 그 몫을 해야 한다. */
+describe("U5BattleScene 피해 숫자", () => {
+  it("피해 숫자가 자막 글자보다 확실히 크다", () => {
+    const sizeOf = (selector: string): number => {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const rule = battleCss.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`))?.[1] ?? "";
+      const max = rule.match(/font-size:\s*clamp\([^,]+,[^,]+,\s*([\d.]+)rem\)/)?.[1];
+      if (max === undefined) throw new Error(`${selector}의 font-size를 찾을 수 없다.`);
+      return Number(max);
+    };
+    expect(sizeOf(".u5-battle-damage")).toBeGreaterThan(sizeOf(".u5-battle-live") * 2);
+  });
+});

@@ -98,6 +98,27 @@ function announcement(replay: U5BattleReplay, frame: U5BattleReplayFrame): strin
 }
 
 /*
+ * 화면에 남기는 문장은 사건뿐이다.
+ *
+ * 프레임마다 "누가 누구를 공격합니다 / N 피해를 받습니다 / HP가 N까지
+ * 떨어졌습니다" 를 갈아 끼우면, 스무 행동 전투에서 예순 줄이 지나간다. 그런데
+ * 그 셋은 화면이 이미 보여 주는 것을 글로 옮긴 것이다 — 달려드는 몸짓이 공격
+ * 이고, 머리 위 숫자가 피해이고, 줄어드는 막대가 HP다. 글이 그림과 경쟁하면
+ * 눈이 글로 가고, 정작 봐야 할 피해 숫자를 놓친다.
+ *
+ * 그림이 말하지 못하는 것만 남긴다 — 시작, 누군가 쓰러진 순간, 승패.
+ * 읽어 주는 자리(.u5-battle-announcement)는 그대로 다 말하므로 눈으로 못 보는
+ * 사람이 잃는 것은 없다.
+ */
+function caption(replay: U5BattleReplay, frame: U5BattleReplayFrame): string {
+  if (frame.phase === "idle" || frame.phase === "complete") return frameDescription(replay, frame);
+  if (frame.phase === "settle" && frame.defeatedParticipantIds.includes(String(frame.targetId))) {
+    return frameDescription(replay, frame);
+  }
+  return "";
+}
+
+/*
  * replay 를 내용으로 식별한다.
  *
  * 객체 신원으로 보면 호출부가 렌더 안에서 createU5BattleReplay 를 부르는 순간
@@ -154,8 +175,18 @@ function Participant({ participant, frame, reducedMotion }: {
     "--u5-battle-lunge-x": participant.side === "party" ? "16%" : "-16%",
   } as CSSProperties;
 
+  /*
+   * 쓰러진 사람은 흐려진다. 그런데 흐려지기만 하면 무슨 일이 난 건지 알기
+   * 어렵다 — 화면이 잠깐 반투명해진 것처럼 보인다. 상태를 표식으로 내놓아
+   * 색을 빼고 배지를 키운다.
+   */
   return (
-    <article className="u5-battle-participant" data-participant-id={participant.id} style={participantStyle}>
+    <article
+      className="u5-battle-participant"
+      data-participant-id={participant.id}
+      data-defeated={defeated ? "true" : "false"}
+      style={participantStyle}
+    >
       <motion.div
         className="u5-battle-motion"
         animate={motionState.animate}
@@ -262,7 +293,10 @@ export function U5BattleScene({ replay }: U5BattleSceneProps) {
           ))}
         </div>
       </div>
-      <p className="u5-battle-live">{frameDescription(replay, frame)}</p>
+      {/* 빈 문장에도 자리는 지킨다. 줄이 나타났다 사라지면 화면이 덜컹거린다. */}
+      <p className="u5-battle-live" data-empty={caption(replay, frame) === "" ? "true" : "false"}>
+        {caption(replay, frame)}
+      </p>
       {!complete || replay.verifications.length === 0 ? null : (
         <ul className="u5-battle-verifications" data-testid="u5-battle-verifications">
           {replay.verifications.map((one) => (
