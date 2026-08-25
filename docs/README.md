@@ -103,6 +103,7 @@
 
 - [전역 오디오·퀵 메뉴 설계](superpowers/specs/2026-08-26-sbh3821-global-audio-menu-design.md): 기본 OFF인 공통 BGM·UI 효과음, 세션 전투 속도, 전역 퀵 메뉴와 캠페인을 보존하는 업적 오버레이의 앱 공통 계약
 - [전역 오디오·퀵 메뉴 구현 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu.md): 설정 저장·결정적 WAV 생성·전역 재생기·업적 오버레이·브라우저 회귀를 순차 구현하는 테스트 우선 계획
+- [전역 오디오·퀵 메뉴 후속 개선 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu-follow-up.md): 세션 전투 속도 공유, 세로 점 메뉴 재구성, 승인된 `어두운 길드의 밤 1B` BGM과 낮춘 조작음 믹스를 적용하는 테스트 우선 계획
 - [U5 조언 카드 번호 제거 설계](superpowers/specs/2026-08-25-lattebun-u5-advice-number-removal-design.md): 조언 카드 세 장의 숫자 배지만 제거하고 내부 슬롯 선택 계약을 유지하는 UI 변경
 - [U5 조언 카드 번호 제거 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-advice-number-removal.md): 조언 카드의 숫자 배지를 테스트 우선으로 제거하고 내부 슬롯 선택 계약을 유지하는 구현 순서
 - [보스전 정산 CTA 게이트 설계](superpowers/specs/2026-08-25-lattebun-boss-battle-exit-gate-design.md): 보스전 재생 중 정산을 잠그고 우측 하단 CTA를 `전투 건너뛰기`에서 `정산으로`로 전환하는 계약
