@@ -52,14 +52,30 @@
   letter-spacing: 0.13em;
 }
 
+/*
+ * 제목은 배경에서 튀지 않는다.
+ *
+ * `#e5c77f` 를 그대로 쓰니 어두운 서재 위에서 혼자 형광처럼 밝았다. 이 화면의
+ * 다른 금색은 모두 촛불에 비친 놋쇠인데 제목만 재질이 달라 보였다. 위에서
+ * 아래로 옅어지는 금색을 글자에 입혀, 촛불이 위에서 닿은 것처럼 만든다.
+ */
 .main-menu-screen__title h1 {
   margin: 0;
-  color: #e5c77f;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(3rem, 6cqw, 6.2rem);
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 0.95;
+
+  /* 글자 안을 금속처럼 채운다. 배경 클립을 못 읽는 곳에서는 아래 color 가 선다. */
+  color: #c8a659;
+  background: linear-gradient(180deg, #e3c688 0%, #c4a05a 55%, #9b7838 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  /* 새긴 것처럼 보이게 아래에 어두운 선을 하나 둔다. */
+  filter: drop-shadow(0 0.035em 0 rgb(18 11 5 / 90%)) drop-shadow(0 0.1em 0.26em rgb(0 0 0 / 70%));
 }
 
 .main-menu-screen__actions {
