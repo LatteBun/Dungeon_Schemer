@@ -23,7 +23,7 @@
 
 ---
 
-### Task 1: 전체 화면 외부 상태 계약을 RED로 고정한다
+### Task 1: 전체 화면 외부 상태 동작을 RED로 고정한다
 
 **Files:**
 - Modify: `components/game/MobileFullscreen.test.ts`
@@ -31,27 +31,54 @@
 
 **Interfaces:**
 - Consumes: existing `components/game/ScreenFit.tsx` source and `readFileSync`
-- Produces: source-level regression contract for `useSyncExternalStore`, `fullscreenchange`, cleanup, server snapshot, and removed setter
+- Produces: behavioral regression contract for availability, `fullscreenchange`, and cleanup
 
-- [ ] **Step 1: Write the failing source contract test**
+- [ ] **Step 1: Import the wished-for public behavior boundaries**
 
-Append this case inside `describe("전체 화면 들어가기", ...)`:
+Extend the existing `ScreenFit` import:
 
 ```ts
-it("전체 화면 가능 여부는 Effect 상태 복사 대신 브라우저 상태를 구독한다", () => {
-  const source = read("components", "game", "ScreenFit.tsx");
+import {
+  canGoFullscreen,
+  enterLandscapeFullscreen,
+  fullscreenEntryAvailable,
+  shouldAskToTurn,
+  subscribeToFullscreenChanges,
+} from "./ScreenFit";
+```
 
-  expect(source).toContain("useSyncExternalStore");
-  expect(source).toContain('document.addEventListener("fullscreenchange", onStoreChange)');
-  expect(source).toContain('document.removeEventListener("fullscreenchange", onStoreChange)');
-  expect(source).toMatch(/function fullscreenAvailabilityServerSnapshot\(\)[^{]*\{\s*return false;/);
-  expect(source).not.toContain("setFullscreenAvailable");
+- [ ] **Step 2: Write failing availability and subscription behavior tests**
+
+Append these cases inside `describe("전체 화면 들어가기", ...)`:
+
+```ts
+it("전체 화면 API가 있고 아직 진입하지 않았을 때만 진입할 수 있다", () => {
+  const target = { requestFullscreen: async () => undefined };
+
+  expect(fullscreenEntryAvailable(target, null)).toBe(true);
+  expect(fullscreenEntryAvailable(target, {})).toBe(false);
+  expect(fullscreenEntryAvailable({}, null)).toBe(false);
+});
+
+it("fullscreenchange 구독은 변경을 알리고 cleanup 뒤에는 멈춘다", () => {
+  const target = new EventTarget();
+  let changes = 0;
+  const unsubscribe = subscribeToFullscreenChanges(target, () => { changes += 1; });
+
+  target.dispatchEvent(new Event("fullscreenchange"));
+  expect(changes).toBe(1);
+
+  unsubscribe();
+  target.dispatchEvent(new Event("fullscreenchange"));
+  expect(changes).toBe(1);
 });
 ```
 
-Use the file's existing `read(...parts)` helper rather than adding another filesystem helper.
+The production mutations these tests catch are ignoring an active fullscreen element, failing
+to notify React on browser changes, and leaking a listener after cleanup. They use the real
+platform `EventTarget`; do not replace it with a mock.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [ ] **Step 3: Run the focused test and verify RED**
 
 Run:
 
@@ -59,10 +86,10 @@ Run:
 npx vitest run components/game/MobileFullscreen.test.ts
 ```
 
-Expected: FAIL because the source does not contain `useSyncExternalStore` or the fullscreen
-subscription and still contains `setFullscreenAvailable`.
+Expected: FAIL because `fullscreenEntryAvailable` and `subscribeToFullscreenChanges` are not
+exported by the current implementation.
 
-- [ ] **Step 3: Confirm the baseline lint failure remains the same**
+- [ ] **Step 4: Confirm the baseline lint failure remains the same**
 
 Run:
 
@@ -81,7 +108,7 @@ Expected: exit 1 with exactly one `react-hooks/set-state-in-effect` error at the
 
 **Interfaces:**
 - Consumes: `canGoFullscreen(target: unknown): boolean`, DOM `fullscreenchange`, `document.fullscreenElement`
-- Produces: `subscribeFullscreenAvailability(onStoreChange: () => void): () => void`, `fullscreenAvailabilitySnapshot(): boolean`, `fullscreenAvailabilityServerSnapshot(): false`
+- Produces: `fullscreenEntryAvailable(target: unknown, fullscreenElement: unknown): boolean`, `subscribeToFullscreenChanges(target: EventTarget, onStoreChange: () => void): () => void`, plus stable internal `useSyncExternalStore` adapters
 
 - [ ] **Step 1: Import `useSyncExternalStore`**
 
@@ -93,18 +120,29 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 
 Do not remove `useState`; `needsTurn` still uses it.
 
-- [ ] **Step 2: Add stable browser-store functions outside the component**
+- [ ] **Step 2: Add testable behavior boundaries and stable browser-store adapters**
 
 Place these functions after `hasCoarsePointer` and before `ScreenFit`:
 
 ```ts
+export function fullscreenEntryAvailable(target: unknown, fullscreenElement: unknown): boolean {
+  return canGoFullscreen(target) && fullscreenElement === null;
+}
+
+export function subscribeToFullscreenChanges(
+  target: EventTarget,
+  onStoreChange: () => void,
+): () => void {
+  target.addEventListener("fullscreenchange", onStoreChange);
+  return () => target.removeEventListener("fullscreenchange", onStoreChange);
+}
+
 function subscribeFullscreenAvailability(onStoreChange: () => void): () => void {
-  document.addEventListener("fullscreenchange", onStoreChange);
-  return () => document.removeEventListener("fullscreenchange", onStoreChange);
+  return subscribeToFullscreenChanges(document, onStoreChange);
 }
 
 function fullscreenAvailabilitySnapshot(): boolean {
-  return canGoFullscreen(document.documentElement) && document.fullscreenElement === null;
+  return fullscreenEntryAvailable(document.documentElement, document.fullscreenElement);
 }
 
 function fullscreenAvailabilityServerSnapshot(): false {
@@ -149,7 +187,7 @@ Run:
 npx vitest run components/game/MobileFullscreen.test.ts
 ```
 
-Expected: all mobile fullscreen tests PASS, including the new source contract.
+Expected: all mobile fullscreen tests PASS, including the new availability and subscription behavior contracts.
 
 - [ ] **Step 5: Run the target lint and verify GREEN**
 

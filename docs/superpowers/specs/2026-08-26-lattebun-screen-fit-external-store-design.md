@@ -58,6 +58,9 @@ Router에서는 세 번째 인수 `getServerSnapshot`을 명시한다.
 
 컴포넌트 바깥에 다음 책임을 둔다.
 
+- `fullscreenEntryAvailable(target, fullscreenElement)`는 전체 화면 API 지원과 현재
+  전체 화면 진입 여부를 입력으로 받아 boolean을 반환한다. 브라우저 snapshot은
+  이 순수 경계를 사용한다.
 - 클라이언트 snapshot은 `document.documentElement`가 표준 또는 WebKit 전체 화면
   진입 API를 제공하고, 현재 `document.fullscreenElement`가 `null`일 때만 `true`다.
 - 서버 snapshot은 항상 `false`다. 서버에는 `document`가 없고, 초기 HTML에서는
@@ -68,10 +71,11 @@ snapshot은 boolean만 반환한다. 매 호출마다 새 객체를 만들지 �
 
 ### 3.2 Subscription
 
-`subscribeFullscreenAvailability(callback)`은 `document`의
+`subscribeToFullscreenChanges(target, callback)`은 전달받은 `EventTarget`의
 `fullscreenchange`에 callback을 등록하고 cleanup에서 같은 listener를 제거한다.
-구독 함수는 컴포넌트 밖에 선언해 렌더마다 함수 identity가 달라져 재구독되는 일을
-막는다.
+프로덕션의 `subscribeFullscreenAvailability(callback)`은 이 함수에 `document`를
+전달한다. 구독 함수는 컴포넌트 밖에 선언해 렌더마다 함수 identity가 달라져
+재구독되는 일을 막는다.
 
 전체 화면 요청이 성공하거나 사용자가 전체 화면에서 나오면 브라우저가 이벤트를
 발행하고 React가 snapshot을 다시 읽는다. snapshot이 바뀐 경우에만 컴포넌트를
@@ -108,11 +112,10 @@ cleanup은 안전하며, 기존 분기보다 기능을 축소하지 않는다.
 
 TDD 순서는 다음과 같다.
 
-1. `MobileFullscreen.test.ts`에 source 계약 테스트를 추가한다.
-   - `useSyncExternalStore`를 사용한다.
-   - `fullscreenchange`를 구독하고 해제한다.
-   - `setFullscreenAvailable`을 두지 않는다.
-   - 서버 snapshot이 `false`다.
+1. `MobileFullscreen.test.ts`에 실제 동작 테스트를 추가한다.
+   - 전체 화면 API가 있고 활성 전체 화면이 없을 때만 진입 가능하다.
+   - 실제 `EventTarget`의 `fullscreenchange`가 callback을 호출한다.
+   - cleanup 뒤 같은 이벤트는 callback을 다시 호출하지 않는다.
 2. 테스트를 실행해 기존 구현에서 RED를 확인한다.
 3. `ScreenFit.tsx`를 외부 상태 구독 구조로 변경한다.
 4. 관련 단위 테스트와 `ScreenFit.tsx` 단독 ESLint를 GREEN으로 만든다.
