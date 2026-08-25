@@ -2,11 +2,17 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { allSituationEvents } from "@/lib/content/event-registry";
 import { U5ProgressScreen } from "./U5ProgressScreen";
 import { createU5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import type { U5ProgressView } from "./u5-progress-model";
 import type { TopStatusView } from "./TopStatusBar";
+
+const longestSituation = allSituationEvents().reduce(
+  (longest, event) => event.description.length > longest.length ? event.description : longest,
+  "",
+);
 
 const status: TopStatusView = {
   rank: "C",
@@ -154,6 +160,65 @@ describe("U5ProgressScreen", () => {
 
     expect(html.indexOf('data-testid="u5-situation"'))
       .toBeLessThan(html.indexOf('data-testid="u5-advice-list"'));
+  });
+
+  it("현재 상황 제목과 본문을 같은 패널에 둔다", () => {
+    const html = render();
+    const panel = html.match(/<section class="u5-situation-panel"[\s\S]*?<\/section>/)?.[0] ?? "";
+
+    expect(panel).toContain('aria-labelledby="u5-situation-title"');
+    expect(panel).toContain('<h3 id="u5-situation-title" class="u5-situation-panel__title">현재 상황</h3>');
+    expect(panel).toContain('data-testid="u5-situation"');
+  });
+
+  it("초기 행동 / 조언 모드만 활성화한다", () => {
+    const html = render();
+
+    expect(html).toMatch(/<button[^>]*class="is-active"[^>]*aria-pressed="true"[^>]*>행동 \/ 조언<\/button>/);
+    expect(html).toMatch(/<button[^>]*aria-pressed="false"[^>]*>진행 기록<\/button>/);
+  });
+
+  it("초기 진행 기록 모드만 활성화한다", () => {
+    const html = render({}, { initialMode: "log" });
+
+    expect(html).toMatch(/<button[^>]*aria-pressed="false"[^>]*>행동 \/ 조언<\/button>/);
+    expect(html).toMatch(/<button[^>]*class="is-active"[^>]*aria-pressed="true"[^>]*>진행 기록<\/button>/);
+  });
+
+  it("최장 공식 상황 문구를 선택 전과 선택 후에 그대로 둔다", () => {
+    const before = render({ situation: longestSituation });
+    const after = render({
+      situation: longestSituation,
+      outcome: { reactions: [], resultText: "결과", changes: [{ label: "변화", detail: "그대로다." }] },
+    });
+
+    expect(before).toContain(`data-testid="u5-situation">${longestSituation}</p>`);
+    expect(after).toContain(`data-testid="u5-situation">${longestSituation}</p>`);
+    expect(after.indexOf('class="u5-situation-panel"')).toBeLessThan(after.indexOf('data-testid="u5-outcome"'));
+  });
+
+  it("상황 패널은 경계와 여백을 가지되 내용을 자르지 않는다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const panel = sheet.match(/\.u5-situation-panel\s*\{[^}]*\}/)?.[0] ?? "";
+    const title = sheet.match(/\.u5-situation-panel__title\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(panel).toMatch(/box-sizing:\s*border-box/);
+    expect(panel).toMatch(/min-width:\s*0/);
+    expect(panel).toMatch(/padding:/);
+    expect(panel).toMatch(/border:/);
+    expect(panel).toMatch(/background:/);
+    expect(panel).not.toMatch(/(?:^|\s)(?:max-)?height\s*:/);
+    expect(panel).not.toMatch(/overflow\s*:/);
+    expect(title).toMatch(/margin:\s*0/);
+  });
+
+  it("진행 기록 필터는 분리 뒤에도 기존 버튼 표면을 유지한다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const filters = sheet.match(/\.u5-log__filters button\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(filters).toMatch(/border:\s*1px solid var\(--color-edge\)/);
+    expect(filters).toMatch(/background:\s*rgb\(12 9 6 \/ 80%\)/);
+    expect(filters).toMatch(/color:\s*var\(--color-muted\)/);
   });
 
   /* 이 화면의 가장 중요한 계약이다. 슬롯 말고는 서로 다른 표시가 없어야 한다. */
