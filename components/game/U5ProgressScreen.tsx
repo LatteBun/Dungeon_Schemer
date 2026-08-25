@@ -55,8 +55,8 @@ const REACTION_LABEL = {
 /**
  * 조언 하나. 세 개가 같은 클래스와 같은 구조로 그려진다.
  *
- * 슬롯 번호 말고는 서로 다른 표시가 없어야 한다. 유형·정합·확률·신뢰 변화는
- * View 에 아예 없으므로 여기서 실수로도 드러낼 수 없다.
+ * 내부 슬롯 값은 선택 연결에만 쓴다. 유형·정합·확률·신뢰 변화는 View 에 아예
+ * 없으므로 여기서 실수로도 드러낼 수 없다.
  */
 function AdviceOption({ slot, text, rationale, goldCost, unavailableReason, onSelect }: {
   slot: number;
@@ -81,8 +81,6 @@ function AdviceOption({ slot, text, rationale, goldCost, unavailableReason, onSe
           <i className="u5-advice__rivet is-bottom-right" />
         </span>
         <span className="u5-advice__content">
-          {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
-          <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
           <strong className="u5-advice__text">{text}</strong>
           <span className="u5-advice__divider" aria-hidden="true" />
           <span className="u5-advice__rationale">{rationale}</span>
