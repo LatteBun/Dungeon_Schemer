@@ -16,7 +16,7 @@ import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
 import { U5BattleScene } from "./U5BattleScene";
 import { U5NonBattlePartyScene } from "./U5NonBattlePartyScene";
 import type { U5BattleReplay } from "./u5-battle-replay";
-import { useU5BattlePlayback } from "./use-u5-battle-playback";
+import { type U5BattlePlaybackRate, useU5BattlePlayback } from "./use-u5-battle-playback";
 import { useU5CombatFeedback } from "./use-u5-combat-feedback";
 import { u5FeedbackIsComplete, u5VisibleTrust, type U5CombatFeedbackView } from "./u5-combat-feedback";
 
@@ -44,6 +44,9 @@ export interface U5ProgressScreenProps {
   initialFilter?: U5LogFilter;
   readonly battleReplay?: U5BattleReplay;
   readonly battleExitPolicy?: U5BattleExitPolicy;
+  /** 활성 원정 또는 프리뷰가 소유하는 전투 재생 속도다. */
+  readonly playbackRate: U5BattlePlaybackRate;
+  readonly onTogglePlaybackRate: () => void;
   /** 독립 전투 프리뷰에서만 재생 중 건너뛰기 조작을 보여준다. */
   readonly previewPlaybackControls?: boolean;
   readonly combatFeedback?: U5CombatFeedbackView;
@@ -210,6 +213,8 @@ export function U5ProgressScreen({
   initialFilter = "all",
   battleReplay,
   battleExitPolicy,
+  playbackRate,
+  onTogglePlaybackRate,
   previewPlaybackControls = false,
   combatFeedback,
 }: U5ProgressScreenProps) {
@@ -221,23 +226,31 @@ export function U5ProgressScreen({
   const [mode, setMode] = useState<U5ConsoleMode>(initialMode ?? "advice");
   const [filter, setFilter] = useState<U5LogFilter>(initialFilter);
   const feedback = useU5CombatFeedback(combatFeedback);
-  const battlePlayback = useU5BattlePlayback(battleReplay, combatFeedback === undefined || feedback.phase === "battle");
+  const battlePlayback = useU5BattlePlayback(
+    battleReplay,
+    playbackRate,
+    combatFeedback === undefined || feedback.phase === "battle",
+  );
   useEffect(() => {
     if (feedback.phase === "battle" && battlePlayback.isComplete) feedback.battleCompleted();
   }, [battlePlayback.isComplete, feedback]);
   const feedbackComplete = combatFeedback === undefined || u5FeedbackIsComplete(feedback.phase);
+  const showingBattleFrames = feedback.phase === "battle" || battlePlayback.isReplaying;
   const shownParty = combatFeedback === undefined ? progress.party : progress.party.map((member) => ({
     ...member,
-    hp: feedback.phase === "battle"
+    hp: showingBattleFrames
       ? battlePlayback.frame?.hpByParticipantId[member.id] ?? member.hp
       : member.hp,
-    alive: feedback.phase === "battle"
+    alive: showingBattleFrames
       ? (battlePlayback.frame?.hpByParticipantId[member.id] ?? member.hp) > 0
       : member.alive,
     trust: u5VisibleTrust(combatFeedback, feedback.phase, member.id, member.trust),
   }));
   const hasGatedReplay = battleExitPolicy === "after-playback" && battleReplay !== undefined;
-  const replayingBattle = hasGatedReplay && (combatFeedback === undefined || feedback.phase === "battle") && battlePlayback.frame !== undefined && !battlePlayback.isComplete;
+  const replayingBattle = hasGatedReplay
+    && (combatFeedback === undefined || feedback.phase === "battle" || battlePlayback.isReplaying)
+    && battlePlayback.frame !== undefined
+    && !battlePlayback.isComplete;
   const missingGatedFrame = hasGatedReplay && battlePlayback.frame === undefined;
   const showPreviewSkip = previewPlaybackControls
     && battleReplay !== undefined
@@ -275,7 +288,9 @@ export function U5ProgressScreen({
                 <U5BattleScene
                   replay={battleReplay}
                   frame={battlePlayback.frame}
+                  playbackRate={playbackRate}
                   onReplayFromStart={battlePlayback.replayFromStart}
+                  onTogglePlaybackRate={onTogglePlaybackRate}
                   showReplayControl={feedbackComplete}
                 />
               )}
@@ -341,7 +356,7 @@ export function U5ProgressScreen({
                       index={index}
                       testId="u5-party-member"
                       changes={feedbackComplete ? changesByMemberId?.[member.id] : undefined}
-                      effect={feedback.phase === "battle" && battlePlayback.frame?.targetId === member.id && battlePlayback.frame.damage !== null
+                      effect={showingBattleFrames && battlePlayback.frame?.targetId === member.id && battlePlayback.frame.damage !== null
                         ? { kind: "hp", delta: -battlePlayback.frame.damage, token: `${battlePlayback.frameIndex}:${member.id}:hp` }
                         : feedback.phase === "postBattleTrust"
                           ? (() => {

@@ -9,6 +9,7 @@ import { IntroScreen } from "./IntroScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
+import { useU5BattlePlaybackRate } from "./use-u5-battle-playback";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import {
@@ -194,6 +195,7 @@ function ExpeditionScreens() {
   const context = useCampaignStore((state) => state.context);
   const dispatch = useCampaignStore((state) => state.dispatch);
   const [selected, setSelected] = useState<NodeId | null>(null);
+  const playbackRateControl = useU5BattlePlaybackRate();
 
   const active = context.activeExpedition!;
   const status = statusFor(campaign, active);
@@ -223,6 +225,8 @@ function ExpeditionScreens() {
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={bossReplay ?? undefined}
+        playbackRate={playbackRateControl.playbackRate}
+        onTogglePlaybackRate={playbackRateControl.togglePlaybackRate}
         battleExitPolicy={bossReplay === null ? undefined : "after-playback"}
         combatFeedback={bossCombatFeedbackFor(campaign, active)}
         changesByMemberId={changesByMemberId(active)}
@@ -250,6 +254,8 @@ function ExpeditionScreens() {
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={replay ?? undefined}
+        playbackRate={playbackRateControl.playbackRate}
+        onTogglePlaybackRate={playbackRateControl.togglePlaybackRate}
         battleExitPolicy={gateBattle ? "after-playback" : undefined}
         combatFeedback={seeing ? eventCombatFeedbackFor(campaign, active) : undefined}
         changesByMemberId={changesByMemberId(active)}

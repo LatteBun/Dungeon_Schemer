@@ -156,7 +156,7 @@
   width: var(--u5-battle-hp-percent);
   height: 100%;
   background: linear-gradient(90deg, #783126, #d4623e);
-  transition: width 0.28s ease;
+  transition: width var(--u5-battle-hp-transition-duration, 0.28s) ease;
 }
 
 .u5-battle-hp__numbers {
@@ -342,6 +342,8 @@
   top: clamp(0.3rem, 1cqh, 0.65rem);
   right: clamp(0.3rem, 0.8cqw, 0.7rem);
   z-index: 6;
+  display: flex;
+  gap: clamp(0.2rem, 0.45cqw, 0.4rem);
 }
 
 .u5-battle-controls button,
@@ -356,6 +358,11 @@
 .u5-battle-controls button {
   padding: clamp(0.16rem, 0.45cqh, 0.3rem) clamp(0.4rem, 0.9cqw, 0.75rem);
   font-size: clamp(0.5rem, 1.5cqh, 0.78rem);
+}
+
+.u5-battle-controls button[aria-pressed="true"] {
+  border-color: #f4c96a;
+  background: #493112;
 }
 
 .u5-battle-controls button:focus-visible,

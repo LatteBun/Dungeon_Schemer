@@ -217,6 +217,8 @@ describe("진행 화면이 실제 사건으로 그려진다", () => {
       progress: progressViewFor(campaign, active)!,
       log: logFor(campaign, active),
       ecology: ecologyViewFor(campaign, active),
+      playbackRate: 1,
+      onTogglePlaybackRate: noop,
       onSelectAdvice: noop,
     }));
 
@@ -248,6 +250,8 @@ describe("진행 화면이 실제 사건으로 그려진다", () => {
       progress: view,
       log: logFor(campaign, active),
       ecology: ecologyViewFor(campaign, active),
+      playbackRate: 1,
+      onTogglePlaybackRate: noop,
       onSelectAdvice: noop,
     }));
 
@@ -417,6 +421,8 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
       progress: progressViewFor(campaign, active)!,
       log: logFor(campaign, active),
       ecology: ecologyViewFor(campaign, active),
+      playbackRate: 1,
+      onTogglePlaybackRate: noop,
       battleReplay: eventReplayFor(campaign, active) ?? undefined,
       onAcknowledge: noop,
     }));
@@ -451,6 +457,8 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
       progress: progressViewFor(campaign, active)!,
       log: logFor(campaign, active),
       ecology: ecologyViewFor(campaign, active),
+      playbackRate: 1,
+      onTogglePlaybackRate: noop,
       onAcknowledge: noop,
     }));
 

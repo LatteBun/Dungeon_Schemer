@@ -6,6 +6,10 @@ async function expectPlaybackControls(entryName: string, page: Page): Promise<vo
   await page.goto("/u5-2-test");
 
   await page.getByRole("button", { name: entryName }).click();
+  const speed = page.getByRole("button", { name: "전투 재생 속도" });
+  await expect(speed).toHaveText("×1");
+  await speed.click();
+  await expect(speed).toHaveText("×2");
   const skip = page.getByRole("button", { name: "전투 건너뛰기" });
   await expect(skip).toBeEnabled();
 
@@ -15,6 +19,9 @@ async function expectPlaybackControls(entryName: string, page: Page): Promise<vo
 
   await replay.click();
   await expect(skip).toBeEnabled();
+  await expect(speed).toHaveText("×2");
+
+  await expect(replay).toBeVisible({ timeout: 60_000 });
   expectNoBrowserErrors(failures, `U5-2 ${entryName}`);
 }
 

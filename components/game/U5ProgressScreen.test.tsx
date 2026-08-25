@@ -77,6 +77,8 @@ const render = (over: Partial<U5ProgressView> = {}, props: Record<string, unknow
       progress: { ...base, ...over },
       log,
       ecology,
+      playbackRate: 1,
+      onTogglePlaybackRate: () => undefined,
       ...props,
     }),
   );

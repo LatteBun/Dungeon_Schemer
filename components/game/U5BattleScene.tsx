@@ -10,12 +10,19 @@ import type {
   U5BattleReplayFrame,
   U5BattleReplayParticipant,
 } from "./u5-battle-replay";
+import type { U5BattlePlaybackRate } from "./use-u5-battle-playback";
 
 export interface U5BattleSceneProps {
   readonly replay: U5BattleReplay;
   readonly frame: U5BattleReplayFrame;
+  readonly playbackRate: U5BattlePlaybackRate;
   readonly onReplayFromStart: () => void;
+  readonly onTogglePlaybackRate: () => void;
   readonly showReplayControl?: boolean;
+}
+
+export function u5BattleMotionDuration(seconds: number, playbackRate: U5BattlePlaybackRate): number {
+  return seconds / playbackRate;
 }
 
 function participantById(replay: U5BattleReplay, id: string | null) {
@@ -116,19 +123,27 @@ function motionForParticipant(
   participant: U5BattleReplayParticipant,
   frame: U5BattleReplayFrame,
   reducedMotion: boolean,
+  playbackRate: U5BattlePlaybackRate,
 ) {
   const defeated = frame.defeatedParticipantIds.includes(participant.id);
-  if (defeated) return { animate: { x: 0, y: 0, opacity: 0.38 }, transition: { duration: 0.24 } };
+  if (defeated) return {
+    animate: { x: 0, y: 0, opacity: 0.38 },
+    transition: { duration: u5BattleMotionDuration(0.24, playbackRate) },
+  };
   if (frame.phase === "attack" && frame.actorId === participant.id) {
     return {
       animate: { x: reducedMotion ? 0 : "var(--u5-battle-lunge-x)", y: 0, opacity: 1 },
-      transition: { duration: 0.18, repeat: 1, repeatType: "reverse" as const },
+      transition: {
+        duration: u5BattleMotionDuration(0.18, playbackRate),
+        repeat: 1,
+        repeatType: "reverse" as const,
+      },
     };
   }
   if (frame.phase === "impact" && frame.targetId === participant.id) {
     return {
       animate: { x: reducedMotion ? 0 : [0, "-3%", "3%", 0], y: 0, opacity: 1 },
-      transition: { duration: 0.24 },
+      transition: { duration: u5BattleMotionDuration(0.24, playbackRate) },
     };
   }
   /*
@@ -144,7 +159,7 @@ function motionForParticipant(
     animate: { x: 0, y: reducedMotion ? 0 : [0, "-2%", 0], opacity: 1 },
     transition: reducedMotion ? { duration: 0 } : {
       y: { duration: 1.8, repeat: Infinity, ease: "easeInOut" as const },
-      x: { duration: 0.24 },
+      x: { duration: u5BattleMotionDuration(0.24, playbackRate) },
       /*
        * 살아 있는 사람의 투명도는 애니메이션 대상이 아니다.
        *
@@ -156,10 +171,11 @@ function motionForParticipant(
   };
 }
 
-function Participant({ participant, frame, reducedMotion }: {
+function Participant({ participant, frame, reducedMotion, playbackRate }: {
   readonly participant: U5BattleReplayParticipant;
   readonly frame: U5BattleReplayFrame;
   readonly reducedMotion: boolean;
+  readonly playbackRate: U5BattlePlaybackRate;
 }) {
   /* 믿음은 그것을 들고 간 사람의 것이다. 피해 숫자가 대상 위에 뜨듯 여기 붙인다. */
   const cue = frame.cues.find((one) => one.characterId === participant.id);
@@ -167,7 +183,7 @@ function Participant({ participant, frame, reducedMotion }: {
   const hpPercent = Math.max(0, Math.min(100, hp / participant.maxHp * 100));
   const defeated = frame.defeatedParticipantIds.includes(participant.id);
   const showDamage = frame.phase === "impact" && frame.targetId === participant.id;
-  const motionState = motionForParticipant(participant, frame, reducedMotion);
+  const motionState = motionForParticipant(participant, frame, reducedMotion, playbackRate);
   const participantStyle = {
     "--u5-battle-lunge-x": participant.side === "party" ? "16%" : "-16%",
   } as CSSProperties;
@@ -223,6 +239,7 @@ function Participant({ participant, frame, reducedMotion }: {
               initial={{ opacity: 0, y: reducedMotion ? 0 : "12%" }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: reducedMotion ? 0 : "-18%" }}
+              transition={{ duration: reducedMotion ? 0 : u5BattleMotionDuration(0.24, playbackRate) }}
             >
               -{frame.damage}
             </motion.span>
@@ -236,6 +253,7 @@ function Participant({ participant, frame, reducedMotion }: {
             initial={{ opacity: 0, y: reducedMotion ? 0 : "24%" }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: reducedMotion ? 0 : u5BattleMotionDuration(0.24, playbackRate) }}
           >
             <b>{CUE_AXIS_WORD[cue.axis]}</b>
             {cue.direction === "beneficial" ? "믿음이 통했다" : "믿음이 어긋났다"}
@@ -247,7 +265,14 @@ function Participant({ participant, frame, reducedMotion }: {
   );
 }
 
-export function U5BattleScene({ replay, frame, onReplayFromStart, showReplayControl = true }: U5BattleSceneProps) {
+export function U5BattleScene({
+  replay,
+  frame,
+  playbackRate,
+  onReplayFromStart,
+  onTogglePlaybackRate,
+  showReplayControl = true,
+}: U5BattleSceneProps) {
   const reducedMotion = useReducedMotion() ?? false;
 
   const party = replay.participants.filter((participant) => participant.side === "party");
@@ -255,16 +280,36 @@ export function U5BattleScene({ replay, frame, onReplayFromStart, showReplayCont
   const complete = frame.phase === "complete";
 
   return (
-    <section className="u5-battle-scene" data-testid="u5-battle-scene" aria-label="자동 전투 재생">
+    <section
+      className="u5-battle-scene"
+      data-testid="u5-battle-scene"
+      data-playback-rate={playbackRate}
+      aria-label="자동 전투 재생"
+      style={{
+        "--u5-battle-hp-transition-duration": `${u5BattleMotionDuration(0.28, playbackRate)}s`,
+      } as CSSProperties}
+    >
       <div className="u5-battle-overlay">
         <div className="u5-battle-group" data-side="party" role="group" aria-label="파티">
           {party.map((participant) => (
-            <Participant key={participant.id} participant={participant} frame={frame} reducedMotion={reducedMotion} />
+            <Participant
+              key={participant.id}
+              participant={participant}
+              frame={frame}
+              reducedMotion={reducedMotion}
+              playbackRate={playbackRate}
+            />
           ))}
         </div>
         <div className="u5-battle-group" data-side="enemy" role="group" aria-label="적">
           {enemies.map((participant) => (
-            <Participant key={participant.id} participant={participant} frame={frame} reducedMotion={reducedMotion} />
+            <Participant
+              key={participant.id}
+              participant={participant}
+              frame={frame}
+              reducedMotion={reducedMotion}
+              playbackRate={playbackRate}
+            />
           ))}
         </div>
       </div>
@@ -282,11 +327,19 @@ export function U5BattleScene({ replay, frame, onReplayFromStart, showReplayCont
         </ul>
       )}
       <p className="u5-battle-announcement" aria-live="polite">{announcement(replay, frame)}</p>
-      {complete && showReplayControl ? (
-        <div className="u5-battle-controls">
-          <button type="button" onClick={onReplayFromStart}>다시 보기</button>
-        </div>
-      ) : null}
+      <div className="u5-battle-controls">
+        <button
+          type="button"
+          aria-label="전투 재생 속도"
+          aria-pressed={playbackRate === 2}
+          onClick={onTogglePlaybackRate}
+        >
+          ×{playbackRate}
+        </button>
+        {complete && showReplayControl
+          ? <button type="button" onClick={onReplayFromStart}>다시 보기</button>
+          : null}
+      </div>
     </section>
   );
 }
