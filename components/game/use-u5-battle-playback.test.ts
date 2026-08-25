@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextU5BattleFrameIndex, u5ReplaySignature } from "./use-u5-battle-playback";
+import { nextU5BattleFrameIndex, shouldAdvanceU5BattleFrame, u5ReplaySignature } from "./use-u5-battle-playback";
 import { U5_TEST_BATTLE_REPLAY } from "./u5-battle-test-fixture";
 
 describe("u5 battle playback", () => {
@@ -44,6 +44,12 @@ describe("u5 battle playback", () => {
     };
 
     expect(u5ReplaySignature(changed)).not.toBe(u5ReplaySignature(U5_TEST_BATTLE_REPLAY));
+  });
+
+  it("playing이 false면 다음 frame을 예약하지 않는다", () => {
+    expect(shouldAdvanceU5BattleFrame(U5_TEST_BATTLE_REPLAY.frames[0]!, false)).toBe(false);
+    expect(shouldAdvanceU5BattleFrame(U5_TEST_BATTLE_REPLAY.frames[0]!, true)).toBe(true);
+    expect(shouldAdvanceU5BattleFrame(U5_TEST_BATTLE_REPLAY.frames.at(-1)!, true)).toBe(false);
   });
 
   it("참가자 표현 정보가 바뀌면 새 replay로 식별한다", () => {
