@@ -8,7 +8,7 @@ export default defineConfig({
     // .tsx 를 빠뜨리면 JSX 로 쓴 컴포넌트 테스트가 조용히 실행되지 않는다.
     // 실제로 U4DungeonMapScreen.test.tsx 의 7개가 그렇게 묻혀 있었다.
     include: ["**/*.test.{ts,tsx}"],
-    exclude: [".worktrees/**", "node_modules/**", ".next/**"],
+    exclude: [".worktrees/**", ".pnpm-store/**", "node_modules/**", ".next/**"],
   },
   resolve: {
     // Vitest는 tsconfig.json의 paths를 읽지 않으므로 직접 맞춘다.

@@ -12,6 +12,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.run.ts"],
+    exclude: [".worktrees/**", ".pnpm-store/**", "node_modules/**", ".next/**"],
     testTimeout: 0,
     hookTimeout: 0,
     maxWorkers: 1,
