@@ -112,4 +112,13 @@ describe("generateCharacterPool", () => {
     const poolB = generateCharacterPool(createRng("f4-pool-seed-b"));
     expect(poolA.byId).not.toEqual(poolB.byId);
   });
+
+  it("성별은 로스터 메타데이터에만 두고 런타임 캐릭터 상태에는 복사하지 않는다", () => {
+    const pool = generateCharacterPool(createRng("fixed-roster-gender-boundary"));
+
+    for (const entry of CHARACTER_ROSTER) {
+      expect(["male", "female"]).toContain(entry.gender);
+      expect(pool.byId[entry.id]).not.toHaveProperty("gender");
+    }
+  });
 });
