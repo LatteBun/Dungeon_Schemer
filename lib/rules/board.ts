@@ -42,14 +42,46 @@ function shuffledRiskGroups(
 /**
  * 게시판에 걸 던전을 고른다.
  *
- * 갈 수 있는 것 중에서는 **무엇이 걸릴지 정하지 않는다.** 예전에는 위험도가 높은
- * 쪽부터 채웠는데, 등급 C 에서 갈 수 있는 일곱 중 ★2 가 넷이라 그 넷이 언제나
- * 먼저 차고 남은 한 칸만 ★1 셋이 돌아가며 채웠다 — 시드 예순 판을 재 보니 서로
- * 다른 조합이 세 가지뿐이었다. 어느 캠페인을 시작해도 같은 게시판을 본다.
+ * 예전에는 갈 수 있는 것 중 위험도가 높은 쪽부터 채웠다. 등급 C 에서 갈 수 있는
+ * 일곱 중 ★2 가 넷이라 그 넷이 언제나 먼저 차고 남은 한 칸만 ★1 셋이 돌아가며
+ * 채웠다 — 시드 예순 판을 재 보니 서로 다른 조합이 세 가지뿐이었다. 어느 캠페인을
+ * 시작해도 같은 게시판을 본다.
+ *
+ * 그렇다고 아무렇게나 섞으면 다른 것을 잃는다. 그 규칙은 등급이 오를수록 게시판이
+ * 험해지게 하고 있었다 — 재 보니 걸리는 던전의 평균 위험도가 C 1.8, B 2.8, A 3.6,
+ * S 4.0 이다. 고르게 섞으면 S 에서도 2.65 로 내려앉아, 승급해도 같은 난이도의
+ * 던전을 보게 된다.
+ *
+ * 그래서 위험도를 저울로 삼아 뽑는다. 험한 쪽이 자주 걸리되 늘 그렇지는 않다.
  *
  * 잠긴 것은 그대로 가까운 위험도부터 둔다. 그것은 고를 수 없는 자리이고, 무엇이
  * 곧 열리는지 알려 주는 것이 뜻이므로 섞으면 그 뜻이 사라진다.
  */
+/**
+ * 위험한 쪽을 자주, 그러나 늘 그렇지는 않게 고른다.
+ *
+ * 위험도를 저울로 삼아 하나씩 뽑는다. ★4 는 ★1 보다 열여섯 배 자주 뽑히지만
+ * ★1 도 뽑힐 수 있다. 등급이 오를수록 게시판이 험해지는 것은 그대로 두면서,
+ * 같은 다섯이 매번 걸리는 일만 없앤다.
+ */
+function weightedByRisk(dungeons: readonly CampaignDungeon[], rng: Rng): CampaignDungeon[] {
+  const pool = [...dungeons];
+  const picked: CampaignDungeon[] = [];
+
+  while (pool.length > 0) {
+    const weights = pool.map((dungeon) => dungeon.riskLevel ** 2);
+    const total = weights.reduce((sum, weight) => sum + weight, 0);
+    let cut = rng.float() * total;
+    let index = 0;
+    while (index < weights.length - 1 && cut >= weights[index]!) {
+      cut -= weights[index]!;
+      index += 1;
+    }
+    picked.push(pool.splice(index, 1)[0]!);
+  }
+  return picked;
+}
+
 function selectDungeons(state: CampaignState, limit: number, rng: Rng): CampaignDungeon[] {
   const remaining = state.dungeons.filter((dungeon) => dungeon.status !== "cleared");
   const riskLimit = RANK_RISK_LIMIT[state.rank];
@@ -57,7 +89,7 @@ function selectDungeons(state: CampaignState, limit: number, rng: Rng): Campaign
   const locked = remaining.filter((dungeon) => dungeon.riskLevel > riskLimit);
 
   return [
-    ...rng.shuffle(accessible),
+    ...weightedByRisk(accessible, rng),
     ...shuffledRiskGroups(locked, false, rng),
   ].slice(0, limit);
 }
