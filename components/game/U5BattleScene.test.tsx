@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { U5BattleScene } from "./U5BattleScene";
+import * as u5BattleSceneModule from "./U5BattleScene";
 import { U5_TEST_BATTLE_REPLAY } from "./u5-battle-test-fixture";
 import { createU5BattleReplay } from "./u5-battle-replay";
 import type { U5BattleReplay, U5BattleReplayFrame } from "./u5-battle-replay";
@@ -16,7 +17,9 @@ function render(frame: U5BattleReplayFrame = replay.frames[0]!, value: U5BattleR
   return renderToStaticMarkup(createElement(U5BattleScene, {
     replay: value,
     frame,
+    playbackRate: 1,
     onReplayFromStart: () => undefined,
+    onTogglePlaybackRate: () => undefined,
   }));
 }
 
@@ -27,6 +30,37 @@ function participantMarkup(html: string, participantId: string): string {
 }
 
 describe("U5BattleScene", () => {
+  it("재생 중에는 ×1 속도 토글을 제공한다", () => {
+    const html = render();
+
+    expect(html).toContain('data-playback-rate="1"');
+    expect(html).toContain('aria-label="전투 재생 속도"');
+    expect(html).toContain('aria-pressed="false"');
+    expect(html).toContain(">×1</button>");
+  });
+
+  it("complete frame은 속도 토글과 다시 보기를 함께 제공한다", () => {
+    const html = renderToStaticMarkup(createElement(U5BattleScene, {
+      replay,
+      frame: replay.frames.at(-1)!,
+      playbackRate: 2,
+      onReplayFromStart: () => undefined,
+      onTogglePlaybackRate: () => undefined,
+    }));
+
+    expect(html).toContain('data-playback-rate="2"');
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain(">×2</button>");
+    expect(html).toContain("--u5-battle-hp-transition-duration:0.14s");
+    expect(html).toContain("다시 보기");
+  });
+
+  it("유한 motion과 HP 전환은 재생 속도에 맞춰 짧아진다", () => {
+    expect(u5BattleSceneModule.u5BattleMotionDuration(0.24, 1)).toBe(0.24);
+    expect(u5BattleSceneModule.u5BattleMotionDuration(0.24, 2)).toBe(0.12);
+    expect(battleCss).toContain("transition: width var(--u5-battle-hp-transition-duration, 0.28s) ease");
+  });
+
   it("initial frame에서 양 진영과 모든 참가자의 이름, 이미지, 숫자 HP를 제공한다", () => {
     const html = render(replay.frames[0]!);
 

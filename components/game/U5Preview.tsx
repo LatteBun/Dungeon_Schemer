@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { U5ProgressScreen } from "./U5ProgressScreen";
+import { useU5BattlePlaybackRate } from "./use-u5-battle-playback";
 import { U5_PREVIEW_ENTRIES, type U5PreviewId } from "./u5-preview-data";
 
 export interface U5PreviewProps {
@@ -10,6 +11,7 @@ export interface U5PreviewProps {
 
 export function U5Preview({ initialId = "monster-before" }: U5PreviewProps) {
   const [selectedId, setSelectedId] = useState<U5PreviewId>(initialId);
+  const playbackRateControl = useU5BattlePlaybackRate();
   const entry =
     U5_PREVIEW_ENTRIES.find((candidate) => candidate.id === selectedId) ?? U5_PREVIEW_ENTRIES[0];
 
@@ -35,6 +37,8 @@ export function U5Preview({ initialId = "monster-before" }: U5PreviewProps) {
         progress={entry.progress}
         log={entry.log}
         ecology={entry.ecology}
+        playbackRate={playbackRateControl.playbackRate}
+        onTogglePlaybackRate={playbackRateControl.togglePlaybackRate}
         initialMode={entry.initialMode}
         initialFilter={entry.initialFilter}
       />

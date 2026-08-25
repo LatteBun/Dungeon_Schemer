@@ -148,7 +148,8 @@ test("보스전은 재생이 끝난 뒤에만 정산으로 이동한다", async 
   await expect(page.getByTestId("u6-settlement")).toBeVisible();
 });
 
-test("연속 전투 결과는 React key 경고 없이 표시된다", async ({ page }) => {
+test("같은 원정의 다음 전투도 선택한 ×2 속도를 유지한다", async ({ page }) => {
+  test.setTimeout(120_000);
   const failures = watchBrowserErrors(page);
   await page.goto("/campaign?seed=dungeon-schemer");
 
@@ -157,18 +158,57 @@ test("연속 전투 결과는 React key 경고 없이 표시된다", async ({ pa
   await board.getByRole("button").filter({ hasText: "진입 가능" }).first().click();
   await page.getByRole("button", { name: "이 공고 계약하기" }).click();
 
-  const enterFirstBattle = async () => {
-    const map = page.getByRole("region", { name: "던전 지도" });
-    await map.getByRole("button", { name: "전투 지점 선택" }).first().click();
-    await page.getByRole("button", { name: "이 지점으로 이동" }).click();
-    await page.getByTestId("u5-advice-list").getByRole("button").first().click();
+  const speed = page.getByRole("button", { name: "전투 재생 속도" });
+  const enterNextBattle = async () => {
+    for (let step = 0; step < 40; step += 1) {
+      if (await speed.isVisible()) return;
+
+      const adviceList = page.getByTestId("u5-advice-list");
+      if (await adviceList.isVisible()) {
+        await adviceList.locator("button:not(:disabled)").first().click();
+        continue;
+      }
+
+      const returnToMap = page.getByRole("button", { name: "지도로 돌아간다" });
+      if (await returnToMap.isVisible()) {
+        await returnToMap.click();
+        continue;
+      }
+
+      const map = page.getByRole("region", { name: "던전 지도" });
+      if (await map.isVisible()) {
+        await map.getByTestId("u4-selectable-room").first().click();
+        await page.getByRole("button", { name: "이 지점으로 이동" }).click();
+        continue;
+      }
+
+      throw new Error("전투 재생으로 가는 원정 화면을 찾지 못했습니다");
+    }
+
+    throw new Error("전투 재생 화면에 도달하지 못했습니다");
   };
 
-  await enterFirstBattle();
+  await enterNextBattle();
+  await speed.click();
+  await expect(speed).toHaveText("×2");
   await page.getByRole("button", { name: "전투 건너뛰기" }).click();
   await page.getByRole("button", { name: "지도로 돌아간다" }).click();
 
-  await enterFirstBattle();
-  await expect(page.getByRole("button", { name: "지도로 돌아간다" })).toBeEnabled({ timeout: 10_000 });
+  await enterNextBattle();
+  await expect(speed).toHaveText("×2");
+  await expect(speed).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("u5-battle-scene")).toHaveAttribute("data-playback-rate", "2");
+
+  await page.getByRole("button", { name: "전투 건너뛰기" }).click();
+  await page.getByRole("button", { name: "정산으로" }).click();
+  await page.getByRole("button", { name: "길드로 돌아간다" }).click();
+  const nextBoard = page.getByRole("region", { name: "길드 게시판" });
+  await expect(nextBoard).toBeVisible();
+  await nextBoard.getByRole("button").filter({ hasText: "진입 가능" }).first().click();
+  await page.getByRole("button", { name: "이 공고 계약하기" }).click();
+
+  await enterNextBattle();
+  await expect(speed).toHaveText("×1");
+  await expect(speed).toHaveAttribute("aria-pressed", "false");
   expectNoBrowserErrors(failures, `campaign ${page.url()}`);
 });

@@ -16,7 +16,7 @@ import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
 import { U5BattleScene } from "./U5BattleScene";
 import { U5NonBattlePartyScene } from "./U5NonBattlePartyScene";
 import type { U5BattleReplay } from "./u5-battle-replay";
-import { useU5BattlePlayback } from "./use-u5-battle-playback";
+import { type U5BattlePlaybackRate, useU5BattlePlayback } from "./use-u5-battle-playback";
 
 export type U5ConsoleMode = "advice" | "log";
 export type U5BattleExitPolicy = "after-playback";
@@ -42,6 +42,9 @@ export interface U5ProgressScreenProps {
   initialFilter?: U5LogFilter;
   readonly battleReplay?: U5BattleReplay;
   readonly battleExitPolicy?: U5BattleExitPolicy;
+  /** 활성 원정 또는 프리뷰가 소유하는 전투 재생 속도다. */
+  readonly playbackRate: U5BattlePlaybackRate;
+  readonly onTogglePlaybackRate: () => void;
   /** 독립 전투 프리뷰에서만 재생 중 건너뛰기 조작을 보여준다. */
   readonly previewPlaybackControls?: boolean;
 }
@@ -207,6 +210,8 @@ export function U5ProgressScreen({
   initialFilter = "all",
   battleReplay,
   battleExitPolicy,
+  playbackRate,
+  onTogglePlaybackRate,
   previewPlaybackControls = false,
 }: U5ProgressScreenProps) {
   /*
@@ -216,7 +221,7 @@ export function U5ProgressScreen({
    */
   const [mode, setMode] = useState<U5ConsoleMode>(initialMode ?? "advice");
   const [filter, setFilter] = useState<U5LogFilter>(initialFilter);
-  const battlePlayback = useU5BattlePlayback(battleReplay);
+  const battlePlayback = useU5BattlePlayback(battleReplay, playbackRate);
   const hasGatedReplay = battleExitPolicy === "after-playback" && battleReplay !== undefined;
   const replayingBattle = hasGatedReplay && battlePlayback.frame !== undefined && !battlePlayback.isComplete;
   const missingGatedFrame = hasGatedReplay && battlePlayback.frame === undefined;
@@ -252,7 +257,9 @@ export function U5ProgressScreen({
                 <U5BattleScene
                   replay={battleReplay}
                   frame={battlePlayback.frame}
+                  playbackRate={playbackRate}
                   onReplayFromStart={battlePlayback.replayFromStart}
+                  onTogglePlaybackRate={onTogglePlaybackRate}
                 />
               )}
             </div>

@@ -11,12 +11,51 @@ const FRAME_DURATION_MS: Readonly<Record<U5BattleReplayPhase, number>> = {
   complete: 0,
 };
 
+export type U5BattlePlaybackRate = 1 | 2;
+
+export interface U5BattlePlaybackState {
+  readonly signature: string;
+  readonly frameIndex: number;
+}
+
 export interface U5BattlePlayback {
   readonly frame: U5BattleReplayFrame | undefined;
   readonly frameIndex: number;
   readonly isComplete: boolean;
   readonly skipToComplete: () => void;
   readonly replayFromStart: () => void;
+}
+
+export interface U5BattlePlaybackRateControl {
+  readonly playbackRate: U5BattlePlaybackRate;
+  readonly togglePlaybackRate: () => void;
+}
+
+export function u5BattleFrameDurationMs(
+  phase: U5BattleReplayPhase,
+  playbackRate: U5BattlePlaybackRate,
+): number {
+  return FRAME_DURATION_MS[phase] / playbackRate;
+}
+
+export function u5BattlePlaybackForSignature(
+  playback: U5BattlePlaybackState,
+  signature: string,
+): U5BattlePlaybackState {
+  return playback.signature === signature ? playback : { signature, frameIndex: 0 };
+}
+
+export function nextU5BattlePlaybackRate(current: U5BattlePlaybackRate): U5BattlePlaybackRate {
+  return current === 1 ? 2 : 1;
+}
+
+export function useU5BattlePlaybackRate(): U5BattlePlaybackRateControl {
+  const [playbackRate, setPlaybackRate] = useState<U5BattlePlaybackRate>(1);
+
+  return {
+    playbackRate,
+    togglePlaybackRate: () => setPlaybackRate(nextU5BattlePlaybackRate),
+  };
 }
 
 export function u5ReplaySignature(replay: U5BattleReplay | undefined): string {
@@ -57,35 +96,51 @@ export function u5ReplaySignature(replay: U5BattleReplay | undefined): string {
 }
 
 export function nextU5BattleFrameIndex(replay: U5BattleReplay, current: number): number {
-  return Math.min(current + 1, Math.max(0, replay.frames.length - 1));
+  return nextU5BattleFrameIndexForLength(replay.frames.length, current);
 }
 
-export function useU5BattlePlayback(replay: U5BattleReplay | undefined): U5BattlePlayback {
+export function nextU5BattleFrameIndexForLength(frameCount: number, current: number): number {
+  return Math.min(current + 1, Math.max(0, frameCount - 1));
+}
+
+export function useU5BattlePlayback(
+  replay: U5BattleReplay | undefined,
+  playbackRate: U5BattlePlaybackRate,
+): U5BattlePlayback {
   const signature = u5ReplaySignature(replay);
-  const [playback, setPlayback] = useState({ signature, frameIndex: 0 });
-  const frameIndex = playback.signature === signature ? playback.frameIndex : 0;
+  const [playback, setPlayback] = useState<U5BattlePlaybackState>({ signature, frameIndex: 0 });
+  const activePlayback = u5BattlePlaybackForSignature(playback, signature);
+  const { frameIndex } = activePlayback;
   const frame = replay?.frames[Math.min(frameIndex, replay.frames.length - 1)];
+  const framePhase = frame?.phase;
+  const frameCount = replay?.frames.length ?? 0;
 
   useEffect(() => {
-    if (replay === undefined || frame === undefined || frame.phase === "complete") return;
+    if (framePhase === undefined || framePhase === "complete") return;
     const timeout = window.setTimeout(
-      () => setPlayback((current) => ({
-        signature,
-        frameIndex: nextU5BattleFrameIndex(replay, current.signature === signature ? current.frameIndex : 0),
-      })),
-      FRAME_DURATION_MS[frame.phase],
+      () => setPlayback((current) => {
+        const currentPlayback = u5BattlePlaybackForSignature(current, signature);
+        return {
+          ...currentPlayback,
+          frameIndex: nextU5BattleFrameIndexForLength(frameCount, currentPlayback.frameIndex),
+        };
+      }),
+      u5BattleFrameDurationMs(framePhase, playbackRate),
     );
     return () => window.clearTimeout(timeout);
-  }, [frame?.phase, frameIndex, replay?.frames.length, signature]);
+  }, [frameCount, frameIndex, framePhase, playbackRate, signature]);
 
   return {
     frame,
     frameIndex,
     isComplete: frame?.phase === "complete",
-    skipToComplete: () => setPlayback({
-      signature,
+    skipToComplete: () => setPlayback((current) => ({
+      ...u5BattlePlaybackForSignature(current, signature),
       frameIndex: Math.max(0, (replay?.frames.length ?? 1) - 1),
-    }),
-    replayFromStart: () => setPlayback({ signature, frameIndex: 0 }),
+    })),
+    replayFromStart: () => setPlayback((current) => ({
+      ...u5BattlePlaybackForSignature(current, signature),
+      frameIndex: 0,
+    })),
   };
 }
