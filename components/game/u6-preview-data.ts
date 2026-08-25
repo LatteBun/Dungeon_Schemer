@@ -95,10 +95,10 @@ function previewParty(): readonly Character[] {
 const party = previewParty();
 
 /**
- * 원인 사슬의 앞 세 칸을 실제 원정에서 얻는다.
+ * 정산이 보존할 `causeInputs` 원정 근거를 실제 원정에서 얻는다.
  *
- * `선택`·`개인 반응`·`피해` 는 규칙이 만든 사실이다. 뒤 두 칸(`보상·손실`,
- * `캠페인 변화`)은 `C4` 가 정산하면서 직접 쓴다.
+ * `선택`·`개인 반응`·`피해`는 규칙이 만든 사실이다. 보상과 던전 변화는 C4가
+ * 별도의 구조화된 정산 필드로 계산하므로 `causeInputs`에 UI 문장으로 넣지 않는다.
  */
 function causeInputsFromExpedition(): { choice: string; reactions: string; damage: string } {
   const map = generateDungeonMap({

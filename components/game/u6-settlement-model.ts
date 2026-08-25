@@ -20,13 +20,13 @@ import { countLivingZeroTrust, getCampaignTrustModifier } from "@/lib/rules/endi
  */
 
 export interface U6SettlementView {
-  dungeonName: string;
-  themeId: ThemeId;
-  reputationDelta: number;
-  goldDelta: number;
+  readonly dungeonName: string;
+  readonly themeId: ThemeId;
+  readonly reputationDelta: number;
+  readonly goldDelta: number;
   /** 전멸에서만 회수한다. 그 외에는 0. */
-  relicGold: number;
-  nextReward: Reward | null;
+  readonly relicGold: number;
+  readonly nextReward: Reward | null;
   readonly outcome: U6SettlementOutcome;
   readonly causes: readonly U6SettlementCause[];
   readonly dungeonOutcome: U6DungeonOutcome;
@@ -37,19 +37,19 @@ export interface U6SettlementView {
    * 정산은 누가 돌아왔는지에 대한 셈이다. 그런데 숫자만 있고 사람이 없어,
    * "2명 생존" 이 누구를 말하는지 화면에서 알 수 없었다.
    */
-  members: readonly U6SettlementMember[];
+  readonly members: readonly U6SettlementMember[];
 }
 
 export interface U6SettlementMember {
-  id: string;
-  name: string;
-  classLabel: string;
-  portraitSrc: string;
-  alive: boolean;
+  readonly id: string;
+  readonly name: string;
+  readonly classLabel: string;
+  readonly portraitSrc: string;
+  readonly alive: boolean;
   readonly diedThisExpedition: boolean;
   readonly gravelyWounded: boolean;
-  hp: { before: number; after: number; max: number };
-  trust: {
+  readonly hp: { readonly before: number; readonly after: number; readonly max: number };
+  readonly trust: {
     readonly before: number;
     readonly after: number;
     readonly changed: boolean;

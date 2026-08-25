@@ -124,6 +124,38 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("1 / 5");
   });
 
+  it("신뢰 0 누적이 늘면 전후 인원을 함께 보여준다", () => {
+    const html = render({
+      trustPressure: {
+        beforeCount: 1,
+        afterCount: 2,
+        threshold: 5,
+        acceptModifier: -5,
+        exposeModifier: 0,
+        reachedThreshold: false,
+      },
+    });
+
+    expect(html).toContain("1 → 2 / 5");
+    expect(html).toContain("조언 수용 -5");
+  });
+
+  it("신뢰 0 누적이 줄면 전후 인원과 불이익 해제를 함께 보여준다", () => {
+    const html = render({
+      trustPressure: {
+        beforeCount: 1,
+        afterCount: 0,
+        threshold: 5,
+        acceptModifier: 0,
+        exposeModifier: 0,
+        reachedThreshold: false,
+      },
+    });
+
+    expect(html).toContain("1 → 0 / 5");
+    expect(html).toContain("살아 있는 신뢰 0 인물이 없어 누적 불이익이 해제됐다");
+  });
+
   it("사망자는 마지막 신뢰를 남기되 누적 원인으로 표시하지 않는다", () => {
     const html = render({
       members: [

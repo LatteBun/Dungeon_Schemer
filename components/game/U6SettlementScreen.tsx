@@ -143,6 +143,13 @@ function trustPressureDetail(pressure: U6TrustPressureView): string {
   return "신뢰 0 인물은 플레이어 원정에 출전할 수 없다";
 }
 
+function trustPressureCount(pressure: U6TrustPressureView): string {
+  const current = `${pressure.afterCount} / ${pressure.threshold}`;
+  return pressure.beforeCount === pressure.afterCount
+    ? current
+    : `${pressure.beforeCount} → ${current}`;
+}
+
 function Changes({ settlement }: { settlement: U6SettlementView }) {
   const contractReward = settlement.outcome.kind === "cleared";
 
@@ -170,7 +177,7 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
       {settlement.trustPressure === null ? null : (
         <div className="u6-trust-pressure">
           <span>신뢰 0 누적</span>
-          <strong>{settlement.trustPressure.afterCount} / {settlement.trustPressure.threshold}</strong>
+          <strong>{trustPressureCount(settlement.trustPressure)}</strong>
           <small>{trustPressureDetail(settlement.trustPressure)}</small>
         </div>
       )}
