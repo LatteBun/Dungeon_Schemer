@@ -103,6 +103,22 @@ describe("U5ProgressScreen", () => {
     expect(sceneOpeningTag).not.toContain('aria-hidden="true"');
   });
 
+  it("일반전 replay는 장면 속도 control과 기존 건너뛰기 CTA를 함께 렌더링한다", () => {
+    const html = render({}, { battleReplay, battleExitPolicy: "after-playback" });
+
+    expect(html).toContain('aria-label="전투 재생 속도"');
+    expect(html).toContain('aria-pressed="false"');
+    expect(html).toContain('data-playback-rate="1"');
+    expect(html).toContain("전투 건너뛰기");
+  });
+
+  it("보스전 replay도 같은 ×1 speed control을 받는다", () => {
+    const html = render({ sceneKind: "boss" }, { battleReplay });
+
+    expect(html).toContain('aria-label="전투 재생 속도"');
+    expect(html).toContain('data-playback-rate="1"');
+  });
+
   it("비전투 장면에는 파티를, 전투 장면에는 battle scene만 둔다", () => {
     const calm = render(threeMemberProgress);
     const battle = render(threeMemberProgress, { battleReplay });

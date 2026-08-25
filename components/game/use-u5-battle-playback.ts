@@ -104,7 +104,7 @@ export function useU5BattlePlayback(replay: U5BattleReplay | undefined): U5Battl
       u5BattleFrameDurationMs(frame.phase, playbackRate),
     );
     return () => window.clearTimeout(timeout);
-  }, [frame?.phase, frameIndex, playbackRate, replay?.frames.length, signature]);
+  }, [frame, frameIndex, playbackRate, replay, signature]);
 
   return {
     frame,
