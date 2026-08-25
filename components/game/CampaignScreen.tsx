@@ -9,7 +9,7 @@ import { IntroScreen } from "./IntroScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
-import { useU5BattlePlaybackRate } from "./use-u5-battle-playback";
+import { useAppBattlePlaybackRate } from "./AppBattlePlaybackRateProvider";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import {
@@ -194,7 +194,7 @@ function ExpeditionScreens() {
   const context = useCampaignStore((state) => state.context);
   const dispatch = useCampaignStore((state) => state.dispatch);
   const [selected, setSelected] = useState<NodeId | null>(null);
-  const playbackRateControl = useU5BattlePlaybackRate();
+  const playbackRateControl = useAppBattlePlaybackRate();
 
   const active = context.activeExpedition!;
   const status = statusFor(campaign, active);

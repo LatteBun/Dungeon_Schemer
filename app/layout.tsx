@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { AppAudioProvider } from "@/components/game/AppAudioProvider";
+import { AppBattlePlaybackRateProvider } from "@/components/game/AppBattlePlaybackRateProvider";
 import { AppFrame } from "@/components/game/AppFrame";
 import { PlayerProgressProvider } from "@/components/game/PlayerProgressProvider";
 import { ScreenFit } from "@/components/game/ScreenFit";
@@ -58,7 +59,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <div className="game-canvas">
           <PlayerProgressProvider>
             <AppAudioProvider>
-              <AppFrame>{children}</AppFrame>
+              <AppBattlePlaybackRateProvider>
+                <AppFrame>{children}</AppFrame>
+              </AppBattlePlaybackRateProvider>
             </AppAudioProvider>
           </PlayerProgressProvider>
         </div>

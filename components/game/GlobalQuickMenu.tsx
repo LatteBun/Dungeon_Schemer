@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
+import type { U5BattlePlaybackRate } from "./use-u5-battle-playback";
 
 export interface GlobalQuickMenuProps {
   readonly open: boolean;
@@ -13,6 +14,8 @@ export interface GlobalQuickMenuProps {
   readonly onRequestClose: () => void;
   readonly onToggleBgm: () => void;
   readonly onToggleSfx: () => void;
+  readonly playbackRate: U5BattlePlaybackRate;
+  readonly onTogglePlaybackRate: () => void;
   readonly onOpenAchievements: () => void;
 }
 
@@ -26,6 +29,8 @@ export function GlobalQuickMenu({
   onRequestClose,
   onToggleBgm,
   onToggleSfx,
+  playbackRate,
+  onTogglePlaybackRate,
   onOpenAchievements,
 }: GlobalQuickMenuProps) {
   const panelRef = useRef<HTMLElement>(null);
@@ -68,11 +73,11 @@ export function GlobalQuickMenu({
         data-ui-sound="none"
         onClick={onToggleOpen}
       >
-        <svg viewBox="0 0 64 72" aria-hidden="true" focusable="false">
-          <path className="global-quick-menu__shield" d="M32 4 55 13v20c0 16-9 27-23 35C18 60 9 49 9 33V13Z" />
-          <path className="global-quick-menu__rune" d="M23 23v25M30 19v33M37 24v23M44 29v13" />
-          <path className="global-quick-menu__bar" d="M18 35h28" />
-        </svg>
+        <span className="global-quick-menu__dots" aria-hidden="true">
+          <span className="global-quick-menu__dot" />
+          <span className="global-quick-menu__dot" />
+          <span className="global-quick-menu__dot" />
+        </span>
       </button>
 
       {open ? (
@@ -82,35 +87,44 @@ export function GlobalQuickMenu({
           className="global-quick-menu__panel"
           aria-label="빠른 메뉴"
         >
-          <header>
-            <span aria-hidden="true">◆</span>
-            <h2>길드 장부</h2>
-            <span aria-hidden="true">◆</span>
-          </header>
+          <div className="global-quick-menu__settings">
+            <button
+              className="global-quick-menu__item"
+              type="button"
+              role="switch"
+              aria-checked={bgmEnabled}
+              data-ui-sound="none"
+              onClick={onToggleBgm}
+            >
+              <span>BGM</span>
+              <strong>{bgmEnabled ? "ON" : "OFF"}</strong>
+            </button>
+            <button
+              className="global-quick-menu__item"
+              type="button"
+              role="switch"
+              aria-checked={sfxEnabled}
+              data-ui-sound="none"
+              onClick={onToggleSfx}
+            >
+              <span>효과음</span>
+              <strong>{sfxEnabled ? "ON" : "OFF"}</strong>
+            </button>
+            <button
+              className="global-quick-menu__item"
+              type="button"
+              aria-label={`전투 속도 ×${playbackRate}, 누르면 ×${playbackRate === 1 ? 2 : 1}`}
+              data-playback-rate={playbackRate}
+              data-ui-sound="none"
+              onClick={onTogglePlaybackRate}
+            >
+              <span>전투 속도</span>
+              <strong>×{playbackRate}</strong>
+            </button>
+          </div>
+          <div className="global-quick-menu__divider" aria-hidden="true" />
           <button
-            className="global-quick-menu__item"
-            type="button"
-            role="switch"
-            aria-checked={bgmEnabled}
-            data-ui-sound="none"
-            onClick={onToggleBgm}
-          >
-            <span>BGM</span>
-            <strong>{bgmEnabled ? "ON" : "OFF"}</strong>
-          </button>
-          <button
-            className="global-quick-menu__item"
-            type="button"
-            role="switch"
-            aria-checked={sfxEnabled}
-            data-ui-sound="none"
-            onClick={onToggleSfx}
-          >
-            <span>효과음</span>
-            <strong>{sfxEnabled ? "ON" : "OFF"}</strong>
-          </button>
-          <button
-            className="global-quick-menu__item global-quick-menu__achievements"
+            className="global-quick-menu__achievements"
             type="button"
             data-ui-sound="none"
             onClick={onOpenAchievements}

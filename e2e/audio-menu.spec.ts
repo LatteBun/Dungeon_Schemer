@@ -92,6 +92,40 @@ test("오디오 토글은 저장되고 reload와 campaign route 전환에도 BGM
   expect(await playCount(page, "dungeon-schemer-guild-loop.wav")).toBe(1);
 });
 
+test("전투 속도는 client route 전환에는 남고 reload에는 기본값으로 돌아간다", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "빠른 메뉴 열기" }).click();
+
+  const speedAtMain = page.getByRole("button", { name: "전투 속도 ×1, 누르면 ×2" });
+  await expect(speedAtMain).toBeVisible();
+  await speedAtMain.click();
+  await expect(page.getByRole("button", { name: "전투 속도 ×2, 누르면 ×1" })).toBeVisible();
+
+  await page.getByRole("link", { name: "캠페인 시작" }).click();
+  await page.getByRole("button", { name: "빠른 메뉴 열기" }).click();
+  await expect(page.getByRole("button", { name: "전투 속도 ×2, 누르면 ×1" })).toBeVisible();
+
+  await page.reload();
+  await page.getByRole("button", { name: "빠른 메뉴 열기" }).click();
+  await expect(page.getByRole("button", { name: "전투 속도 ×1, 누르면 ×2" })).toBeVisible();
+});
+
+test("U5-2 장면과 퀵 메뉴는 같은 전투 속도를 양방향으로 바꾼다", async ({ page }) => {
+  await page.goto("/u5-2-test");
+
+  const sceneSpeed = page.getByRole("button", { name: "전투 재생 속도" });
+  await expect(sceneSpeed).toHaveText("×1");
+  await sceneSpeed.click();
+  await expect(sceneSpeed).toHaveText("×2");
+
+  await page.getByRole("button", { name: "빠른 메뉴 열기" }).click();
+  const speedAtMenu = page.getByRole("button", { name: "전투 속도 ×2, 누르면 ×1" });
+  await expect(speedAtMenu).toBeVisible();
+  await speedAtMenu.click();
+
+  await expect(sceneSpeed).toHaveText("×1");
+});
+
 test("campaign 업적 overlay를 닫아도 게시판 phase와 URL을 보존한다", async ({ page }) => {
   await mockMediaPlayback(page);
   await page.goto("/campaign?seed=dungeon-schemer");

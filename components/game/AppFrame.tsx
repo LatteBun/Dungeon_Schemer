@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { AchievementOverlay } from "./AchievementOverlay";
+import { useAppBattlePlaybackRate } from "./AppBattlePlaybackRateProvider";
 import { GlobalQuickMenu } from "./GlobalQuickMenu";
 import { useAppAudioStore } from "./AppAudioProvider";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
@@ -15,6 +16,7 @@ function soundKindFor(control: Element): UiSoundKind | null {
 }
 
 export function AppFrame({ children }: { readonly children: ReactNode }) {
+  const playbackRateControl = useAppBattlePlaybackRate();
   const settings = useAppAudioStore((state) => state.settings);
   const statusMessage = useAppAudioStore((state) => state.message);
   const resumeBgmFromGesture = useAppAudioStore((state) => state.resumeBgmFromGesture);
@@ -63,6 +65,8 @@ export function AppFrame({ children }: { readonly children: ReactNode }) {
         onRequestClose={() => setMenuOpen(false)}
         onToggleBgm={() => { void toggleBgm(); }}
         onToggleSfx={() => { void toggleSfx(); }}
+        playbackRate={playbackRateControl.playbackRate}
+        onTogglePlaybackRate={playbackRateControl.togglePlaybackRate}
         onOpenAchievements={openAchievements}
       />
       {achievementsOpen ? <AchievementOverlay onClose={closeAchievements} /> : null}
