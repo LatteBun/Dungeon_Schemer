@@ -80,9 +80,17 @@ function accessibleOffers(view: BoardDecisionView) {
   return view.offers.filter((offer) => offer.lockReason === null);
 }
 
+function hasProgressionLock(view: BoardDecisionView): boolean {
+  const promotion = view.promotion;
+  return promotion !== null && view.offers.some((offer) =>
+    offer.lockReason === "rankTooLow"
+    && offer.riskLevel >= promotion.newlyUnlockedRiskLevel,
+  );
+}
+
 function survivalOffer(view: BoardDecisionView): OfferDecision {
   const chosen = [...accessibleOffers(view)].sort((left, right) =>
-    left.riskLevel - right.riskLevel
+    (hasProgressionLock(view) ? right.riskLevel - left.riskLevel : left.riskLevel - right.riskLevel)
     || minimumHpRatio(right.party) - minimumHpRatio(left.party)
     || minimumTrust(right.party) - minimumTrust(left.party)
     || String(left.id).localeCompare(String(right.id)),

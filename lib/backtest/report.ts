@@ -198,6 +198,8 @@ export function renderBacktestReport(input: BacktestReportInput): string {
   const eventualClearRows: string[] = [];
   const themeFunnelRows: string[] = [];
   const endingRows: string[] = [];
+  const progressionRows: string[] = [];
+  const remainingRiskRows: string[] = [];
   const depletionRows: string[] = [];
   const terminationRows: string[] = [];
   const opportunistFirstAttemptDepletionRows: string[] = [];
@@ -247,6 +249,8 @@ export function renderBacktestReport(input: BacktestReportInput): string {
         themeFunnelRows.push(`| ${strategy} | ${accuracy} | ${initialRisk} | ${theme} | ${funnel.starts} | ${funnel.bossEntries} | ${funnel.clears} | ${funnel.wipes} | ${funnel.interrupted} | ${funnel.preBossFailures} | ${funnel.bossFailures} | ${nullable(funnel.clearRate)} | ${nullable(funnel.bossReachRate)} | ${nullable(funnel.bossConversionRate)} | ${nullable(funnel.meanBossEntryHpRatio)} | ${nullable(funnel.meanBossEntryAliveCount)} | ${nullableInterval(funnel.clearRateWilson95)} |`);
       }
       endingRows.push(`| ${strategy} | ${accuracy} | ${combination.endingCounts.completed} | ${combination.endingCounts.exhausted} | ${combination.endingCounts.unemployed} | ${combination.endingCounts.denounced} | ${combination.endingCounts.distrust} | ${combination.endingCounts["run-error"]} | ${rate(combination.rankSCount, combination.count)} |`);
+      progressionRows.push(`| ${strategy} | ${accuracy} | ${rate(combination.rankReachedCounts.B, combination.count)} | ${nullable(combination.meanFirstRankAtExpedition.B)} | ${rate(combination.rankReachedCounts.A, combination.count)} | ${nullable(combination.meanFirstRankAtExpedition.A)} | ${rate(combination.rankReachedCounts.S, combination.count)} | ${nullable(combination.meanFirstRankAtExpedition.S)} |`);
+      remainingRiskRows.push(`| ${strategy} | ${accuracy} | ${([1, 2, 3, 4, 5] as const).map((risk) => combination.meanRemainingDungeonsByRisk[risk].toFixed(4)).join(" | ")} |`);
     }
   }
   const pairedRows: string[] = [];
@@ -371,6 +375,18 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "| 전략 | 정확도 | 정상 완주 | 소진 | 실업 | 고발 | 불신 | 실행 오류 | S 도달률 |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...endingRows,
+    "",
+    "## 승급 도달과 평균 최초 도달 원정",
+    "",
+    "| 전략 | 정확도 | B 도달률 | B 평균 원정 | A 도달률 | A 평균 원정 | S 도달률 | S 평균 원정 |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...progressionRows,
+    "",
+    "## 종료 시 평균 잔여 던전 위험도",
+    "",
+    "| 전략 | 정확도 | ★1 | ★2 | ★3 | ★4 | ★5 |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...remainingRiskRows,
     "",
     "## paired 정확도 비교",
     "",
