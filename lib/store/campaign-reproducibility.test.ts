@@ -75,6 +75,10 @@ describe("시드 재현", () => {
     const second = playOne(SEED);
 
     expect(second.taken).toEqual(first.taken);
+    /* Break caught: 같은 시드의 다음 게시판 보상이나 정산이 실행마다 달라지면 실패한다. */
+    expect(first.store.getState().campaign.offers.map((offer) => offer.reward))
+      .toEqual(second.store.getState().campaign.offers.map((offer) => offer.reward));
+    expect(first.settlement).toEqual(second.settlement);
     expect(JSON.stringify(second.store.getState().campaign))
       .toBe(JSON.stringify(first.store.getState().campaign));
   });

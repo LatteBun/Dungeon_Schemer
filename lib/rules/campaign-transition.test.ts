@@ -13,7 +13,11 @@ import {
 } from "@/lib/domain";
 import { initializeCampaign } from "./campaign-init";
 import { createBoardOffers } from "./board";
-import { createExpeditionForOffer, transitionCampaign } from "./campaign-transition";
+import {
+  createExpeditionForOffer,
+  createSettlementSnapshotFor,
+  transitionCampaign,
+} from "./campaign-transition";
 import { createRng } from "@/lib/rng";
 
 function membersFor(offer: BoardOffer, campaign: CampaignState): Character[] {
@@ -41,20 +45,21 @@ function startAction(
 function snapshotFor(
   campaign: CampaignState,
   context: CampaignTransitionContext,
-  expeditionId = "exp-c7-01",
 ): SettlementSnapshot {
   const active = context.activeExpedition;
   if (active === null) throw new Error("active expedition fixture is missing");
-  return {
-    expeditionId,
-    dungeonId: active.expedition.dungeonId,
-    contractRisk: active.expedition.riskLevel,
-    contractReward: { ...active.offer.reward },
-    party: active.expedition.party,
-    finalMembers: membersFor(active.offer, campaign),
-    status: "cleared",
-    causeInputs: { choice: "선택", reactions: "반응", damage: "피해" },
-  };
+  const finalMembers = membersFor(active.offer, campaign);
+  return createSettlementSnapshotFor(campaign, {
+    ...active,
+    expedition: {
+      ...active.expedition,
+      result: {
+        status: "cleared",
+        survivorIds: finalMembers.map((member) => member.id),
+      },
+    },
+    partyMembers: finalMembers,
+  });
 }
 
 function openBoard(campaign = initializeCampaign("c7-transition")) {
@@ -188,16 +193,25 @@ describe("C7 캠페인 전이", () => {
       contract.context,
       startAction(contract.campaign, contract.context),
     );
+    const snapshot = snapshotFor(expedition.campaign, expedition.context);
+    expect(snapshot.finalMembers).toHaveLength(3);
+    expect(snapshot.finalMembers.every((member) => member.alive)).toBe(true);
+    /* Break caught: 정산 snapshot이 활성 공고의 확정 보상과 갈라지면 실패한다. */
+    expect(snapshot.contractReward).toEqual(expedition.context.activeExpedition?.offer.reward);
+
     const result = transitionCampaign(
       expedition.campaign,
       expedition.context,
-      { type: "COMPLETE_EXPEDITION", snapshot: snapshotFor(expedition.campaign, expedition.context) },
+      { type: "COMPLETE_EXPEDITION", snapshot },
     );
 
     expect(result.campaign.phase).toBe("settlement");
     expect(result.campaign.settledExpeditionIds).toEqual(["exp-c7-01"]);
     expect(result.campaign.statistics).toEqual(createCampaignStatistics());
     expect(result.settlement?.expeditionId).toBe("exp-c7-01");
+    /* Break caught: 세 명 생존 정산이 계약 확정값을 다시 계산하거나 바꾸면 실패한다. */
+    expect(result.settlement?.reputationDelta).toBe(snapshot.contractReward.reputation);
+    expect(result.settlement?.goldDelta).toBe(snapshot.contractReward.gold);
   });
 
   it("활성 공고와 다른 계약 보상 snapshot을 거부한다", () => {
