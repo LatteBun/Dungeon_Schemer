@@ -89,6 +89,9 @@ const render = (over: Partial<U5ProgressView> = {}, props: Record<string, unknow
     }),
   );
 
+const cssRule = (sheet: string, selector: string) =>
+  sheet.match(new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{[^}]*\\}`))?.[0] ?? "";
+
 describe("U5ProgressScreen", () => {
   it("전투 replay가 없으면 기존 장면 슬롯과 배경을 장식 이미지로 유지한다", () => {
     const html = render();
@@ -243,14 +246,43 @@ describe("U5ProgressScreen", () => {
     expect(adviceHtml).not.toMatch(/>1<|>2<|>3</);
   });
 
-  it("조언 카드는 남은 높이를 채우지 않고 A1 금속 명패로 중앙 정렬한다", () => {
+  it("조언 카드는 콘솔 아래쪽에 정렬하고 별도 하단 여백을 만들지 않는다", () => {
     const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const list = cssRule(sheet, ".u5-advice-list");
 
-    expect(sheet).toMatch(/\.u5-advice-list\s*\{[^}]*align-content:\s*center/);
-    expect(sheet).toMatch(/\.u5-advice\s*\{[^}]*height:\s*clamp\(/);
-    expect(sheet).toMatch(/\.u5-advice__button\s*\{[^}]*clip-path:\s*polygon\(/);
-    expect(sheet).toMatch(/\.u5-advice__button\s*\{[^}]*box-shadow:[^}]*inset/);
-    expect(sheet).toMatch(/\.u5-advice__rivets\s*\{/);
+    expect(list).toMatch(/align-content:\s*end/);
+    expect(list).toMatch(/padding:\s*0/);
+    expect(list).not.toMatch(/padding-bottom\s*:/);
+    expect(list).not.toMatch(/position:\s*(?:absolute|fixed)/);
+    expect(list).not.toMatch(/transform\s*:/);
+  });
+
+  it("모드 탭과 현재 상황 패널은 리벳 없는 금속 명패 표면을 쓴다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const tabs = cssRule(sheet, ".u5-console__tabs button");
+    const panel = cssRule(sheet, ".u5-situation-panel");
+
+    for (const rule of [tabs, panel]) {
+      expect(rule).toMatch(/clip-path:\s*polygon\(/);
+      expect(rule).toMatch(/border:\s*0\.125rem solid/);
+      expect(rule).toMatch(/background:\s*linear-gradient\(/);
+      expect(rule.match(/\binset\b/g)).toHaveLength(2);
+    }
+    const html = render();
+    const tabsMarkup = html.match(/<nav class="u5-console__tabs"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    const panelMarkup = html.match(/<section class="u5-situation-panel"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(tabsMarkup).not.toContain("u5-advice__rivet");
+    expect(panelMarkup).not.toContain("u5-advice__rivet");
+  });
+
+  it("현재 상황 제목과 본문을 승인 크기로 함께 키운다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const title = cssRule(sheet, ".u5-situation-panel__title");
+    const body = cssRule(sheet, ".u5-situation");
+
+    expect(title).toMatch(/font-size:\s*clamp\(0\.78rem,\s*0\.82cqw,\s*1\.04rem\)/);
+    expect(body).toMatch(/font-size:\s*clamp\(0\.86rem,\s*0\.92cqw,\s*1\.3(?:0)?rem\)/);
+    expect(body).toMatch(/line-height:\s*1\.45/);
   });
 
   it("조언 마크업에 판정 어휘가 새지 않는다", () => {

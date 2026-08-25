@@ -120,3 +120,57 @@ test("최장 공식 상황 문구는 FHD에서 선택 전과 선택 후에 패�
   await expectSituationAndOutcomeFitConsole(page, true);
   expectNoBrowserErrors(failures, "최장 공식 U5 상황 문구 containment");
 });
+
+test("조언 카드는 FHD 콘솔의 기존 안쪽 여백만 남기고 하단에 정렬된다", async ({ page }) => {
+  const failures = watchBrowserErrors(page);
+  await useFhd(page);
+  const metrics = await page.getByTestId("u5-console").evaluate((console) => {
+    const cards = [...console.querySelectorAll<HTMLElement>(".u5-advice__button")];
+    if (cards.length !== 3) throw new Error("조언 카드 세 장이 없다");
+    const consoleBox = console.getBoundingClientRect();
+    const style = getComputedStyle(console);
+    const cardBottom = Math.max(...cards.map((card) => card.getBoundingClientRect().bottom));
+    return {
+      bottomGap: consoleBox.bottom - cardBottom,
+      expectedGap: parseFloat(style.paddingBottom) + parseFloat(style.borderBottomWidth),
+    };
+  });
+
+  expect(metrics.bottomGap).toBeGreaterThan(0);
+  expect(Math.abs(metrics.bottomGap - metrics.expectedGap)).toBeLessThanOrEqual(1.5);
+  expectNoBrowserErrors(failures, "U5 조언 카드 하단 정렬");
+});
+
+test("탭과 현재 상황은 FHD에서 금속 표면과 확대된 글자를 사용한다", async ({ page }) => {
+  const failures = watchBrowserErrors(page);
+  await useFhd(page);
+  const styles = await page.evaluate(() => {
+    const tab = document.querySelector<HTMLElement>(".u5-console__tabs button:not(.is-active)");
+    const panel = document.querySelector<HTMLElement>(".u5-situation-panel");
+    const title = document.querySelector<HTMLElement>(".u5-situation-panel__title");
+    const body = document.querySelector<HTMLElement>(".u5-situation");
+    if (tab === null || panel === null || title === null || body === null) {
+      throw new Error("U5 금속 표면 fixture가 없다");
+    }
+    const surface = (element: HTMLElement) => {
+      const style = getComputedStyle(element);
+      return { clipPath: style.clipPath, backgroundImage: style.backgroundImage, boxShadow: style.boxShadow };
+    };
+    return {
+      tab: surface(tab),
+      panel: surface(panel),
+      titleSize: parseFloat(getComputedStyle(title).fontSize),
+      bodySize: parseFloat(getComputedStyle(body).fontSize),
+    };
+  });
+
+  for (const surface of [styles.tab, styles.panel]) {
+    expect(surface.clipPath).not.toBe("none");
+    expect(surface.backgroundImage).toContain("linear-gradient");
+    expect(surface.boxShadow.match(/inset/g)).toHaveLength(2);
+  }
+  expect(styles.titleSize).toBeGreaterThanOrEqual(15.7);
+  expect(styles.bodySize).toBeGreaterThanOrEqual(17.6);
+  expect(styles.bodySize).toBeGreaterThan(styles.titleSize);
+  expectNoBrowserErrors(failures, "U5 금속 표면과 상황 typography");
+});
