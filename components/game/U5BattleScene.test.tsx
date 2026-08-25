@@ -51,6 +51,7 @@ describe("U5BattleScene", () => {
     expect(html).toContain('data-playback-rate="2"');
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain(">×2</button>");
+    expect(html).toContain("--u5-battle-hp-transition-duration:0.14s");
     expect(html).toContain("다시 보기");
   });
 

@@ -81,7 +81,11 @@ export function u5ReplaySignature(replay: U5BattleReplay | undefined): string {
 }
 
 export function nextU5BattleFrameIndex(replay: U5BattleReplay, current: number): number {
-  return Math.min(current + 1, Math.max(0, replay.frames.length - 1));
+  return nextU5BattleFrameIndexForLength(replay.frames.length, current);
+}
+
+export function nextU5BattleFrameIndexForLength(frameCount: number, current: number): number {
+  return Math.min(current + 1, Math.max(0, frameCount - 1));
 }
 
 export function useU5BattlePlayback(replay: U5BattleReplay | undefined): U5BattlePlayback {
@@ -90,21 +94,23 @@ export function useU5BattlePlayback(replay: U5BattleReplay | undefined): U5Battl
   const activePlayback = u5BattlePlaybackForSignature(playback, signature);
   const { frameIndex, playbackRate } = activePlayback;
   const frame = replay?.frames[Math.min(frameIndex, replay.frames.length - 1)];
+  const framePhase = frame?.phase;
+  const frameCount = replay?.frames.length ?? 0;
 
   useEffect(() => {
-    if (replay === undefined || frame === undefined || frame.phase === "complete") return;
+    if (framePhase === undefined || framePhase === "complete") return;
     const timeout = window.setTimeout(
       () => setPlayback((current) => {
         const currentPlayback = u5BattlePlaybackForSignature(current, signature);
         return {
           ...currentPlayback,
-          frameIndex: nextU5BattleFrameIndex(replay, currentPlayback.frameIndex),
+          frameIndex: nextU5BattleFrameIndexForLength(frameCount, currentPlayback.frameIndex),
         };
       }),
-      u5BattleFrameDurationMs(frame.phase, playbackRate),
+      u5BattleFrameDurationMs(framePhase, playbackRate),
     );
     return () => window.clearTimeout(timeout);
-  }, [frame, frameIndex, playbackRate, replay, signature]);
+  }, [frameCount, frameIndex, framePhase, playbackRate, signature]);
 
   return {
     frame,

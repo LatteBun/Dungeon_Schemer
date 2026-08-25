@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   nextU5BattleFrameIndex,
+  nextU5BattleFrameIndexForLength,
   u5BattleFrameDurationMs,
   u5BattlePlaybackForSignature,
   u5ReplaySignature,
@@ -30,6 +31,12 @@ describe("u5 battle playback", () => {
     const playback = { signature: "same", frameIndex: 0, playbackRate: 2 } as const;
 
     expect(u5BattlePlaybackForSignature(playback, "same")).toBe(playback);
+  });
+
+  it("다음 frame 계산은 replay 객체가 아니라 frame 수만 사용한다", () => {
+    expect(nextU5BattleFrameIndexForLength(U5_TEST_BATTLE_REPLAY.frames.length, 1)).toBe(2);
+    expect(nextU5BattleFrameIndexForLength(U5_TEST_BATTLE_REPLAY.frames.length, 99))
+      .toBe(U5_TEST_BATTLE_REPLAY.frames.length - 1);
   });
 
   it("같은 내용의 새 객체는 같은 signature를 가진다", () => {
