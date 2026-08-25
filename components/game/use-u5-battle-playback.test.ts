@@ -17,7 +17,36 @@ describe("u5 battle playback", () => {
     expect(u5ReplaySignature(undefined)).toBe("none");
   });
 
-  it("참가자 표현이 바뀌면 새 replay로 식별한다", () => {
+  it("frame 행동 내용이 바뀌면 새 replay로 식별한다", () => {
+    const changed = {
+      ...U5_TEST_BATTLE_REPLAY,
+      frames: U5_TEST_BATTLE_REPLAY.frames.map((frame, index) => index === 1
+        ? { ...frame, damage: (frame.damage ?? 0) + 1 }
+        : frame),
+    };
+    expect(u5ReplaySignature(changed)).not.toBe(u5ReplaySignature(U5_TEST_BATTLE_REPLAY));
+  });
+
+  it("frame cue가 바뀌면 새 replay로 식별한다", () => {
+    const changed = {
+      ...U5_TEST_BATTLE_REPLAY,
+      frames: U5_TEST_BATTLE_REPLAY.frames.map((frame, index) => index === 0
+        ? {
+            ...frame,
+            cues: [{
+              characterId: "party-1",
+              axis: "targetWeight" as const,
+              direction: "beneficial" as const,
+              presentationKey: "boss-info.target-weight.beneficial",
+            }],
+          }
+        : frame),
+    };
+
+    expect(u5ReplaySignature(changed)).not.toBe(u5ReplaySignature(U5_TEST_BATTLE_REPLAY));
+  });
+
+  it("참가자 표현 정보가 바뀌면 새 replay로 식별한다", () => {
     const changed = {
       ...U5_TEST_BATTLE_REPLAY,
       participants: U5_TEST_BATTLE_REPLAY.participants.map((participant, index) => index === 0

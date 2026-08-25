@@ -25,10 +25,17 @@
   grid-template-rows: auto minmax(0, 1fr);
 }
 
-/* 덩어리를 위에서부터 쌓는다. 늘리지 않는다. U3 가 그렇게 되어 있다. */
+/*
+ * 우측 패널은 화면 높이를 다 쓴다.
+ *
+ * 예전에는 `align-content: start` 로 내용 높이에 묶어 두었다. 그러면 그 안의
+ * `auto minmax(0,1fr) auto` 에서 가운데 칸이 0 이 되어, 넘어가는 버튼이 파티
+ * 카드 바로 밑에 붙고 아래로 460px 이 빈 채 남는다. 위에서부터 쌓는 것은
+ * `.u5-right-panel` 이 제 안에서 이미 하고 있으므로, 여기서는 늘려 주기만
+ * 하면 파티는 위에 그대로 있고 버튼만 바닥으로 내려간다.
+ */
 .u5-progress-screen .game-shell__right-panel {
-  grid-template-rows: auto;
-  align-content: start;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 /* 위 40% 장면 · 아래 60% 콘솔. 조작 영역이 장면보다 넓다는 원칙이다. */
@@ -40,12 +47,48 @@
 }
 
 .u5-scene {
+  position: relative;
   min-height: 0;
+  overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-shell-metal) 52%, var(--color-edge));
   border-radius: 0.24rem;
   background-position: center 42%;
   background-size: cover;
   box-shadow: inset 0 0 4rem rgb(0 0 0 / 62%);
+}
+
+.u5-scene-party {
+  position: absolute;
+  inset: auto auto 2% 2%;
+  display: flex;
+  align-items: end;
+  width: 48%;
+  height: 92%;
+  pointer-events: none;
+}
+
+.u5-scene-party__slot {
+  position: relative;
+  flex: 0 0 33.333%;
+  height: 84%;
+  filter: drop-shadow(0 0.6rem 0.45rem rgb(0 0 0 / 72%));
+}
+
+.u5-scene-party__slot:nth-child(1) {
+  height: 76%;
+}
+
+.u5-scene-party__slot:nth-child(2) {
+  height: 92%;
+}
+
+.u5-scene-party__slot:nth-child(3) {
+  height: 83%;
+}
+
+.u5-scene-party__image {
+  object-fit: contain;
+  object-position: 50% 100%;
 }
 
 .u5-console {
@@ -84,8 +127,7 @@
 }
 
 .u5-console__tabs button:focus-visible,
-.u5-log__filters button:focus-visible,
-.u5-advice__button:focus-visible {
+.u5-log__filters button:focus-visible {
   outline: 2px solid var(--color-parchment);
   outline-offset: 2px;
 }
@@ -111,15 +153,15 @@
  * 이 그렇게 두고 있고, 나란히 놓여야 셋을 한눈에 견주게 된다. 위아래로 쌓으면
  * 먼저 읽은 것이 기준이 되어 순서가 판단에 끼어든다.
  *
- * 카드는 남는 세로 공간을 모두 쓴다. 카드 밖에 빈 자리를 남기면 콘솔 아래가
- * 통째로 비어 화면이 미완성으로 읽힌다. 다만 안에서 위아래로 벌리지는 않는다.
- * 벌리면 구분선이 허공에 뜨고 근거가 바닥에 붙어 늘어난 티가 난다. 번호부터
- * 근거까지를 한 덩어리로 묶어 카드 가운데에 둔다.
+ * 카드는 낮은 금속 명패로 중앙에 모은다. 남는 세로 공간을 명패가 다 차지하면
+ * 근거가 너무 멀어져 비교가 어려워진다. 번호부터 근거까지를 한 덩어리로 묶어
+ * 명패 가운데에 둔다.
  */
 .u5-advice-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-content: center;
   gap: clamp(0.4rem, 0.55cqw, 0.85rem);
   margin: 0;
   padding: 0;
@@ -129,29 +171,73 @@
 
 .u5-advice {
   display: grid;
+  height: clamp(10.5rem, 23cqh, 14rem);
   min-width: 0;
-  min-height: 0;
 }
 
 /* 세 개가 같은 모양이어야 한다. 슬롯별 변형을 두지 않는다. */
 .u5-advice__button {
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  border: 0.125rem solid color-mix(in srgb, var(--color-shell-metal) 72%, var(--color-edge));
+  clip-path: polygon(7% 0, 93% 0, 100% 10%, 100% 90%, 93% 100%, 7% 100%, 0 90%, 0 10%);
+  background: linear-gradient(145deg, rgb(40 27 16 / 96%), rgb(20 14 9 / 98%));
+  box-shadow: inset 0 0 0 0.18rem #120c07, inset 0 0 0 0.25rem #87673c;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-align: center;
+  overflow: hidden;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+/* 잘린 외곽선 밖으로 나가지 않고 금속 명패 안에서 초점을 읽는다. */
+.u5-advice__button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 0.18rem #120c07, inset 0 0 0 0.25rem #87673c, inset 0 0 0 0.4rem var(--color-parchment);
+}
+
+.u5-advice__rivets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 긴 비용과 잠금 이유는 명패 안에서만 스크롤한다. */
+.u5-advice__content {
+  display: grid;
   grid-template-rows: repeat(4, auto);
   align-content: center;
   justify-items: center;
   gap: clamp(0.2rem, 0.28cqw, 0.42rem);
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
+  min-width: 0;
   min-height: 0;
-  border: 1px solid color-mix(in srgb, var(--color-shell-metal) 40%, var(--color-edge));
-  border-radius: 0.22rem;
-  background: linear-gradient(180deg, rgb(30 22 15 / 90%), rgb(17 13 9 / 94%));
-  color: inherit;
   padding: clamp(0.4rem, 0.55cqw, 0.85rem) clamp(0.6rem, 0.8cqw, 1.2rem);
-  cursor: pointer;
-  text-align: center;
-  transition: border-color 120ms ease, background-color 120ms ease;
+  overflow: auto;
 }
+
+.u5-advice__rivet {
+  position: absolute;
+  width: 0.42rem;
+  height: 0.42rem;
+  border: 1px solid #a68a59;
+  border-radius: 50%;
+  background: #392a1b;
+  box-shadow: inset 0 0.06rem 0.08rem #d4bd87;
+}
+
+.u5-advice__rivet.is-top-left { top: 0.55rem; left: 0.72rem; }
+.u5-advice__rivet.is-top-right { top: 0.55rem; right: 0.72rem; }
+.u5-advice__rivet.is-bottom-left { bottom: 0.55rem; left: 0.72rem; }
+.u5-advice__rivet.is-bottom-right { right: 0.72rem; bottom: 0.55rem; }
 
 /* 자리 번호. 셋이 같은 색이어야 한다. 색이 갈리면 그것이 단서가 된다. */
 .u5-advice__slot {
@@ -199,7 +285,10 @@
 
 /* 왜 못 고르는지. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */
 .u5-advice__blocked {
+  box-sizing: border-box;
   margin-top: clamp(0.15rem, 0.22cqh, 0.3rem);
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid #7a4a3a;
   border-radius: 999px;
   padding: 0.1rem clamp(0.4rem, 0.55cqw, 0.75rem);
@@ -207,6 +296,7 @@
   color: #d99a7e;
   font-size: clamp(0.72rem, 0.76cqw, 0.95rem);
   letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
 }
 
 .u5-advice__text {
@@ -224,8 +314,11 @@
 }
 
 .u5-advice__cost {
+  min-width: 0;
+  max-width: 100%;
   color: var(--color-shell-gold);
   font-size: clamp(0.74rem, 0.78cqw, 1.05rem);
+  overflow-wrap: anywhere;
 }
 
 /* ── 선택 뒤 결과 ── */
@@ -441,7 +534,7 @@
  */
 .u5-right-panel {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   row-gap: clamp(0.6rem, 0.8cqh, 1rem);
   min-height: 0;
   height: 100%;

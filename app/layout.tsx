@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { PlayerProgressProvider } from "@/components/game/PlayerProgressProvider";
 import "./globals.css";
+import "./main-menu.css";
 import "../components/game/u3-promotion-motion.css";
 import "./u2-intro.css";
 import "./u3-board.css";
@@ -14,6 +16,7 @@ import "./u5-battle.css";
 import "./u6-result.css";
 import "./u4-dungeon-map.css";
 import "./u4-dungeon-map-fixes.css";
+import "./achievements.css";
 
 export const metadata: Metadata = {
   title: "Dungeon Schemer",
@@ -24,7 +27,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
       <body className="min-h-screen bg-ink font-sans text-parchment antialiased">
-        <div className="game-canvas">{children}</div>
+        <div className="game-canvas">
+          <PlayerProgressProvider>{children}</PlayerProgressProvider>
+        </div>
       </body>
     </html>
   );

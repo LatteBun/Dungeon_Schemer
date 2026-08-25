@@ -14,6 +14,7 @@ import {
 } from "./u5-log";
 import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
 import { U5BattleScene } from "./U5BattleScene";
+import { U5NonBattlePartyScene } from "./U5NonBattlePartyScene";
 import type { U5BattleReplay } from "./u5-battle-replay";
 import { useU5BattlePlayback } from "./use-u5-battle-playback";
 
@@ -73,18 +74,26 @@ function AdviceOption({ slot, text, rationale, goldCost, unavailableReason, onSe
         disabled={unavailableReason !== undefined}
         onClick={() => onSelect?.(slot)}
       >
-        {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
-        <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
-        <strong className="u5-advice__text">{text}</strong>
-        <span className="u5-advice__divider" aria-hidden="true" />
-        <span className="u5-advice__rationale">{rationale}</span>
-        {goldCost === undefined ? null : (
-          <span className="u5-advice__cost">골드 {goldCost}</span>
-        )}
-        {/* 왜 고를 수 없는지 적는다. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */}
-        {unavailableReason === undefined ? null : (
-          <span className="u5-advice__blocked">{unavailableReason}</span>
-        )}
+        <span className="u5-advice__rivets" aria-hidden="true">
+          <i className="u5-advice__rivet is-top-left" />
+          <i className="u5-advice__rivet is-top-right" />
+          <i className="u5-advice__rivet is-bottom-left" />
+          <i className="u5-advice__rivet is-bottom-right" />
+        </span>
+        <span className="u5-advice__content">
+          {/* 번호는 자리이지 유형이 아니다. 슬롯마다 색을 달리하지 않는다. */}
+          <span className="u5-advice__slot" aria-hidden="true">{slot + 1}</span>
+          <strong className="u5-advice__text">{text}</strong>
+          <span className="u5-advice__divider" aria-hidden="true" />
+          <span className="u5-advice__rationale">{rationale}</span>
+          {goldCost === undefined ? null : (
+            <span className="u5-advice__cost">골드 {goldCost}</span>
+          )}
+          {/* 왜 고를 수 없는지 적는다. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */}
+          {unavailableReason === undefined ? null : (
+            <span className="u5-advice__blocked">{unavailableReason}</span>
+          )}
+        </span>
       </button>
     </li>
   );
@@ -123,8 +132,8 @@ function Outcome({ outcome }: { outcome: NonNullable<U5ProgressView["outcome"]> 
       <section className="u5-outcome__step" aria-labelledby="u5-changes-title">
         <h4 id="u5-changes-title">수치·신뢰 변화</h4>
         <dl className="u5-changes">
-          {outcome.changes.map((change) => (
-            <div key={change.label}>
+          {outcome.changes.map((change, index) => (
+            <div key={`${change.label}-${index}`}>
               <dt>{change.label}</dt>
               <dd>{change.detail}</dd>
             </div>
@@ -239,7 +248,9 @@ export function U5ProgressScreen({
               style={{ backgroundImage: `url("${sceneSrc(progress.theme, progress.sceneKind)}")` }}
               aria-hidden={battleReplay === undefined ? "true" : undefined}
             >
-              {battleReplay === undefined || battlePlayback.frame === undefined ? null : (
+              {battleReplay === undefined ? (
+                <U5NonBattlePartyScene party={progress.party} />
+              ) : battlePlayback.frame === undefined ? null : (
                 <U5BattleScene
                   replay={battleReplay}
                   frame={battlePlayback.frame}

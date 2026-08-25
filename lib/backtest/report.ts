@@ -1,6 +1,6 @@
 import { CAMPAIGN_BALANCE, type CampaignCalibrationSettings } from "@/lib/balance/campaign-balance";
 import type { EndingKind } from "@/lib/domain";
-import { B1B_ACCEPTANCE, evaluateB1BAcceptance, type B1BAcceptanceGate } from "./acceptance";
+import { B1B_ACCEPTANCE, evaluateB1BAcceptance, type B1BAcceptanceGate, type BacktestFocus } from "./acceptance";
 import {
   aggregateRuns,
   pairedMeanDifference,
@@ -15,12 +15,14 @@ import type { Accuracy, StrategyId } from "./public-state";
 export interface FixedGateResult {
   readonly id: "no-run-errors" | "accuracy-interval" | "not-all-rank-s" | "betrayal-can-complete" | "accuracy-has-effect";
   readonly passed: boolean;
+  readonly enforced: boolean;
   readonly evidence: string;
 }
 
 export interface BacktestReportInput {
   readonly mode: "calibration" | "holdout";
-  readonly namespace: "b1b-calibration-v1" | "b1b-holdout-v1";
+  readonly focus: BacktestFocus;
+  readonly namespace: "b1b-calibration-v1" | "b1-risk-curve-v2-calibration" | "b1b-holdout-v1";
   readonly seedsPerCombination: 2 | 50 | 100 | 200 | 2000;
   readonly sourceRevision: string;
   readonly aggregate: BacktestAggregate;
@@ -68,9 +70,14 @@ function pairedCompleted(aggregate: BacktestAggregate, strategy: StrategyId): Pa
   return pairedLeft.length < 2 ? null : pairedMeanDifference(pairedRight, pairedLeft);
 }
 
-export function evaluateFixedGates(aggregate: BacktestAggregate): readonly FixedGateResult[] {
+function fixedGateEnforced(id: FixedGateResult["id"], focus: BacktestFocus): boolean {
+  return focus === "full-campaign" || id === "no-run-errors" || id === "not-all-rank-s";
+}
+
+export function evaluateFixedGates(aggregate: BacktestAggregate, focus: BacktestFocus = "full-campaign"): readonly FixedGateResult[] {
   const noErrors: FixedGateResult = {
     id: "no-run-errors", passed: aggregate.errorCount === 0,
+    enforced: fixedGateEnforced("no-run-errors", focus),
     evidence: `실행 오류 ${aggregate.errorCount}건`,
   };
   let accuracyPassed = true;
@@ -112,12 +119,13 @@ export function evaluateFixedGates(aggregate: BacktestAggregate): readonly Fixed
   }
   return [
     noErrors,
-    { id: "accuracy-interval", passed: accuracyPassed, evidence: accuracyEvidence.join("; ") },
-    { id: "not-all-rank-s", passed: notAllS, evidence: "각 조합 S 도달률 100% 미만" },
-    { id: "betrayal-can-complete", passed: betrayalCanComplete, evidence: `캠페인 정상 완주 ${completedBetrayalCampaigns}건` },
+    { id: "accuracy-interval", passed: accuracyPassed, enforced: fixedGateEnforced("accuracy-interval", focus), evidence: accuracyEvidence.join("; ") },
+    { id: "not-all-rank-s", passed: notAllS, enforced: fixedGateEnforced("not-all-rank-s", focus), evidence: "각 조합 S 도달률 100% 미만" },
+    { id: "betrayal-can-complete", passed: betrayalCanComplete, enforced: fixedGateEnforced("betrayal-can-complete", focus), evidence: `캠페인 정상 완주 ${completedBetrayalCampaigns}건` },
     {
       id: "accuracy-has-effect",
       passed: accuracyHasEffect,
+      enforced: fixedGateEnforced("accuracy-has-effect", focus),
       evidence: `최소 실질 차이 ${B1B_ACCEPTANCE.minimumPairedAccuracyEffect.toFixed(3)}; ${pairedEvidence.join("; ")}`,
     },
   ];
@@ -128,14 +136,14 @@ function rate(count: number, total: number): string {
 }
 
 function lineForGate(gate: FixedGateResult): string {
-  return `| ${gate.id} | ${gate.passed ? "PASS" : "FAIL"} | ${gate.evidence} |`;
+  return `| ${gate.id} | ${gateStatus(gate)} | ${gate.evidence} |`;
 }
 
 function lineForB1BGate(gate: B1BAcceptanceGate): string {
   return `| ${gate.id} | ${gateStatus(gate)} | ${gate.evidence} |`;
 }
 
-function gateStatus(gate: B1BAcceptanceGate): "PASS" | "FAIL" | "OBSERVE" {
+function gateStatus(gate: Pick<B1BAcceptanceGate, "passed" | "enforced">): "PASS" | "FAIL" | "OBSERVE" {
   if (!gate.enforced) return "OBSERVE";
   return gate.passed ? "PASS" : "FAIL";
 }
@@ -184,6 +192,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
   const b1bGates = [...evaluateB1BAcceptance(aggregate, {
     mode: input.mode,
     seedsPerCombination,
+    focus: input.focus,
   })].sort((left, right) => left.id.localeCompare(right.id));
   const rows: string[] = [];
   for (const strategy of STRATEGIES) {
@@ -279,6 +288,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "# B1 현행 캠페인 백테스트 보고서",
     "",
     `- 모드: ${input.mode}`,
+    `- focus: ${input.focus}`,
     `- namespace: ${input.namespace}`,
     `- source revision: ${input.sourceRevision}`,
     "- 전략: survival, opportunist, selective-betrayal",

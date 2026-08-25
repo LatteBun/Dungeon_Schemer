@@ -44,6 +44,15 @@ const base: U5ProgressView = {
   ],
 };
 
+const threeMemberProgress: U5ProgressView = {
+  ...base,
+  party: [
+    { id: "warrior", name: "오린", classLabel: "전사", personalityLabel: "용감한", hp: 12, maxHp: 12, trust: 40, gold: 20, portraitSrc: "/assets/characters/live/warrior/warrior_a.png" },
+    { id: "rogue", name: "코르빈", classLabel: "도적", personalityLabel: "신중한", hp: 10, maxHp: 10, trust: 42, gold: 16, portraitSrc: "/assets/characters/live/rogue/rogue_a.png" },
+    { id: "cleric", name: "에리카", classLabel: "성직자", personalityLabel: "침착한", hp: 14, maxHp: 14, trust: 35, gold: 18, portraitSrc: "/assets/characters/live/cleric/cleric_a.png" },
+  ],
+};
+
 const battleReplay = createU5BattleReplay({
   resolution: {
     status: "victory",
@@ -94,6 +103,16 @@ describe("U5ProgressScreen", () => {
     expect(sceneOpeningTag).not.toContain('aria-hidden="true"');
   });
 
+  it("비전투 장면에는 파티를, 전투 장면에는 battle scene만 둔다", () => {
+    const calm = render(threeMemberProgress);
+    const battle = render(threeMemberProgress, { battleReplay });
+
+    expect(calm).toContain('data-testid="u5-nonbattle-party"');
+    expect(calm).not.toContain('data-testid="u5-battle-scene"');
+    expect(battle).not.toContain('data-testid="u5-nonbattle-party"');
+    expect(battle).toContain('data-testid="u5-battle-scene"');
+  });
+
   it("전투 replay를 표시해도 오른쪽 파티 ViewModel 마크업을 바꾸지 않는다", () => {
     const partyMarkup = (html: string) =>
       (html.match(/<div class="u5-party" data-testid="u5-party">[\s\S]*?<\/div><\/aside>/) ?? [""])[0];
@@ -118,7 +137,18 @@ describe("U5ProgressScreen", () => {
       expect(item).toContain('class="u5-advice__button"');
       expect(item).toContain('class="u5-advice__text"');
       expect(item).toContain('class="u5-advice__rationale"');
+      expect(item.match(/class="u5-advice__rivet(?:\s|")/g)).toHaveLength(4);
     }
+  });
+
+  it("조언 카드는 남은 높이를 채우지 않고 A1 금속 명패로 중앙 정렬한다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+
+    expect(sheet).toMatch(/\.u5-advice-list\s*\{[^}]*align-content:\s*center/);
+    expect(sheet).toMatch(/\.u5-advice\s*\{[^}]*height:\s*clamp\(/);
+    expect(sheet).toMatch(/\.u5-advice__button\s*\{[^}]*clip-path:\s*polygon\(/);
+    expect(sheet).toMatch(/\.u5-advice__button\s*\{[^}]*box-shadow:[^}]*inset/);
+    expect(sheet).toMatch(/\.u5-advice__rivets\s*\{/);
   });
 
   it("조언 마크업에 판정 어휘가 새지 않는다", () => {
@@ -308,6 +338,24 @@ describe("잠긴 조언", () => {
     expect(html).toContain("u5-advice__blocked");
   });
 
+  it("공백 없는 긴 잠금 이유도 잠긴 카드 안에서 줄바꿈할 수 있다", () => {
+    const unavailableReason = "잠금사유".repeat(80);
+    const html = render({
+      ...blocked,
+      advice: [
+        { ...blocked.advice[0], unavailableReason },
+        blocked.advice[1],
+        blocked.advice[2],
+      ],
+    });
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+
+    expect(html).toContain(unavailableReason);
+    expect(html).toContain('class="u5-advice__blocked"');
+    expect(sheet).toMatch(/\.u5-advice__blocked\s*\{[^}]*min-width:\s*0/);
+    expect(sheet).toMatch(/\.u5-advice__blocked\s*\{[^}]*overflow-wrap:\s*anywhere/);
+  });
+
   it("잠기지 않은 조언은 그대로 누를 수 있다", () => {
     const html = render(blocked);
     const buttons = html.split("u5-advice__button").length - 1;
@@ -327,5 +375,11 @@ describe("잠긴 모양", () => {
     expect(sheet).toMatch(/\.u5-advice__blocked\s*\{/);
     /* 잠긴 버튼에는 hover 가 걸리지 않는다. */
     expect(sheet).toMatch(/\.u5-advice__button:hover:not\(:disabled\)/);
+  });
+
+  it("잘린 조언 버튼의 키보드 초점은 안쪽 표시로 읽힌다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+
+    expect(sheet).toMatch(/\.u5-advice__button:focus-visible\s*\{[^}]*outline:\s*none[^}]*box-shadow:[^}]*inset/);
   });
 });
