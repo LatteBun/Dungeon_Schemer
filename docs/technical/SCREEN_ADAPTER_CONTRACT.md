@@ -91,21 +91,20 @@ U3은 `eligibility`의 요구치와 가능 여부를 다시 계산하지 않는�
 네 규칙이 다 없어서 `components/game/u6-preview-data.ts`가 통째로 fixture다.
 화면이 지금 기대하는 모양은 다음 둘이다.
 
-### `U6SettlementView` — C4 정산
+### `U6SettlementView` — C4 정산과 C6 신뢰 누적
 
-`components/game/u6-settlement-model.ts`에 있다. 주요 칸만 옮기면,
+U6 정산은 실제 `SettlementResult`와 정산 뒤 `CampaignState`를 소비한다. 규칙은 보상·유품·위험도·인물 전후 상태와 원정 근거를 구조화된 값으로 내고, 어댑터가 화면용 결과 표제와 상태 union을 만든다.
 
-| 칸 | 뜻 | 어디서 오나 |
-| --- | --- | --- |
-| `survivors` | `0`이면 전멸 | C4 |
-| `causeChain` | 정산 원인을 **순서대로**. 한 줄 요약이 아니다 | C4 |
-| `riskBefore` · `riskAfter` · `riskCapped` | ★5 상한에 걸렸는지 구분 | C4 |
-| `reputationDelta` · `goldDelta` | 증감분 | C4 |
-| `relicGold` | 전멸에서만 회수, 그 외 `0` | C4 |
-| `nextReward` | 전멸 뒤 다음 공고 보상, 클리어면 `null` | C4 |
-U6은 승급 가능 여부를 정산 정보의 설명 문구로만 표시할 수 있지만, 승급 버튼·
-선택 오버레이·결과 ViewModel을 제공하지 않는다. 승급의 유일한 진입점은 U3
-게시판 상단 등급 버튼이다.
+```ts
+createU6SettlementView(
+  campaignAfterSettlement: CampaignState,
+  settlement: SettlementResult,
+  dungeonName: string,
+  themeId: ThemeId,
+): U6SettlementView
+```
+
+화면은 생존자 수로 클리어·전멸을 재판정하지 않는다. `SettlementResult.status`를 보존한 `outcome.kind`와 `dungeonOutcome`을 사용한다. 살아 있는 신뢰 0 정산 전후 인원은 같은 정산에서 나온 캠페인과 `memberChanges.before`로 만들며, 현재 보정은 C6의 `getCampaignTrustModifier`를 그대로 옮긴다. `memberChanges`와 사망자 이름은 계약 파티 순서를 유지한다.
 
 ### `U6EndingView` — C6 엔딩 · C8 통계
 
