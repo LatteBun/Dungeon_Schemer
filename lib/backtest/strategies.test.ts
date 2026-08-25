@@ -7,9 +7,9 @@ const member = (id: string, classId: string, overrides: Partial<PublicMemberView
   hp: 20, maxHp: 20, trust: 50, gold: 30, alive: true, gravelyWounded: false, ...overrides,
 });
 
-const board = (offers: BoardDecisionView["offers"]): BoardDecisionView => ({
+const board = (offers: BoardDecisionView["offers"], overrides: Partial<BoardDecisionView> = {}): BoardDecisionView => ({
   rank: "C", reputation: 30, gold: 100, cumulativeGold: 100, remainingDungeonCount: 5,
-  offers, pool: [], promotion: null,
+  offers, pool: [], promotion: null, ...overrides,
 });
 
 const offer = (id: string, riskLevel: 1 | 2 | 3 | 4 | 5, party: readonly PublicMemberView[], reputation: number, gold: number) => ({
@@ -18,12 +18,86 @@ const offer = (id: string, riskLevel: 1 | 2 | 3 | 4 | 5, party: readonly PublicM
 });
 
 describe("백테스트 전략", () => {
+  const cToBPromotion: NonNullable<BoardDecisionView["promotion"]> = {
+    fromRank: "C", toRank: "B", newlyUnlockedRiskLevel: 3,
+    reputationRequired: 60, goldRequired: 150, currentReputation: 30, currentGold: 100,
+    canPromoteByReputation: false, canPromoteByGold: false,
+  };
+
   it("생존형은 저위험·건강·신뢰 순으로 공고를 고른다", () => {
     const chosen = createStrategy("survival").chooseOffer(board([
       offer("safe-healthy", 1, [member("a", "warrior")], 3, 3),
       offer("risky", 2, [member("b", "warrior", { hp: 2 })], 10, 20),
     ]));
     expect(chosen).toEqual({ offerId: "safe-healthy", betrayal: false });
+  });
+
+  it("생존형은 등급 잠금이 보이면 접근 가능한 최고 위험도를 먼저 고른다", () => {
+    const locked = { ...offer("locked", 3, [member("locked-member", "mage")], 15, 32), lockReason: "rankTooLow" as const };
+    const chosen = createStrategy("survival").chooseOffer(board([
+      offer("safe", 1, [member("safe-member", "warrior")], 6, 12),
+      offer("frontier", 2, [member("frontier-member", "rogue")], 10, 20),
+      locked,
+    ], { promotion: cToBPromotion }));
+
+    expect(chosen).toEqual({ offerId: "frontier", betrayal: false });
+  });
+
+  it("진행 잠금 중 같은 위험도에서는 보상보다 최소 HP와 신뢰를 우선한다", () => {
+    const locked = { ...offer("locked", 3, [member("locked-member", "mage")], 15, 32), lockReason: "rankTooLow" as const };
+    const chosen = createStrategy("survival").chooseOffer(board([
+      offer("rich-hurt", 2, [member("a", "warrior", { hp: 8, maxHp: 20, trust: 90 })], 99, 99),
+      offer("healthy-low-trust", 2, [member("b", "rogue", { trust: 20 })], 10, 20),
+      offer("healthy-trusted", 2, [member("c", "mage", { trust: 70 })], 10, 20),
+      locked,
+    ], { promotion: cToBPromotion }));
+
+    expect(chosen).toEqual({ offerId: "healthy-trusted", betrayal: false });
+  });
+
+  it("새 승급 위험도보다 낮은 인위적 잠금은 진행 잠금으로 취급하지 않는다", () => {
+    const irrelevantLocked = { ...offer("irrelevant-locked", 2, [member("c", "rogue")], 10, 20), lockReason: "rankTooLow" as const };
+    const view = board([
+      offer("safe", 1, [member("a", "warrior")], 6, 12),
+      offer("higher", 2, [member("b", "mage")], 10, 20),
+      irrelevantLocked,
+    ], { promotion: cToBPromotion });
+    const policy = createStrategy("survival");
+
+    expect(policy.chooseOffer(view)).toEqual({ offerId: "safe", betrayal: false });
+    expect(policy.chooseOffer(view)).toEqual(policy.chooseOffer(view));
+  });
+
+  it("S등급 생존형은 기존처럼 최저 위험도를 고른다", () => {
+    const chosen = createStrategy("survival").chooseOffer(board([
+      offer("safe", 1, [member("a", "warrior")], 6, 12),
+      offer("dangerous", 5, [member("b", "mage")], 28, 60),
+    ], { rank: "S", promotion: null }));
+
+    expect(chosen).toEqual({ offerId: "safe", betrayal: false });
+  });
+
+  it("생존형은 명성 승급 가능 시 기존처럼 승급을 공고 선택보다 우선한다", () => {
+    const view = board([
+      offer("accessible", 2, [member("a", "warrior")], 10, 20),
+    ], {
+      reputation: 60,
+      promotion: { ...cToBPromotion, currentReputation: 60, canPromoteByReputation: true },
+    });
+
+    expect(createStrategy("survival").choosePromotion(view)).toBe("reputation");
+  });
+
+  it("선별적 배신형은 후보가 없으면 교정된 생존형 공고 정책으로 복귀한다", () => {
+    const safe = offer("safe", 1, [member("safe-party", "warrior")], 6, 12);
+    const frontier = offer("frontier", 2, [member("frontier-party", "mage")], 10, 20);
+    const locked = { ...offer("locked", 3, [member("locked-party", "rogue")], 15, 32), lockReason: "rankTooLow" as const };
+    const chosen = createStrategy("selective-betrayal").chooseOffer({
+      ...board([safe, frontier, locked], { promotion: cToBPromotion }),
+      pool: [member("only-warrior", "warrior")],
+    });
+
+    expect(chosen).toEqual({ offerId: "frontier", betrayal: false });
   });
 
   it("기회주의형은 고위험·명성·골드 순으로 공고를 고른다", () => {
