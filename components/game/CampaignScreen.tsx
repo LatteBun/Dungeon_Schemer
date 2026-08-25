@@ -27,6 +27,7 @@ import {
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
 import { createU4MapNodeViews, createU4PartyMemberViews } from "./u4-dungeon-map-model";
+import { inSeatOrder } from "./party-seat-order";
 import { createU4DungeonMapLayout } from "./u4-dungeon-map-layout";
 import { createU6SettlementView } from "./u6-settlement-model";
 import { createU6EndingView } from "./u6-ending-adapter";
@@ -213,13 +214,15 @@ function ExpeditionScreens() {
   const finished = active.pendingOutcome === null
     && (active.expedition.bossResult !== null || active.expedition.result !== null);
   if (finished) {
+    const bossReplay = bossReplayFor(campaign, active);
     return (
       <U5ProgressScreen
         status={status}
         progress={expeditionEndViewFor(campaign, active)}
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
-        battleReplay={bossReplayFor(campaign, active) ?? undefined}
+        battleReplay={bossReplay ?? undefined}
+        battleExitPolicy={bossReplay === null ? undefined : "after-playback"}
         changesByMemberId={changesByMemberId(active)}
         onAcknowledge={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
         acknowledgeLabel="정산으로"
@@ -236,9 +239,8 @@ function ExpeditionScreens() {
   if (active.pendingEvent !== null || active.pendingOutcome !== null) {
     const seeing = active.pendingOutcome !== null;
     const replay = eventReplayFor(campaign, active);
-    const gateMonsterBattle = seeing
-      && active.pendingOutcome?.event.kind === "monster"
-      && active.pendingOutcome.battle !== null;
+    /* 전투 기록이 있으면 사건 종류와 무관하게 재생이 끝날 때까지 다음 이동을 잠근다. */
+    const gateBattle = seeing && replay !== null;
     return (
       <U5ProgressScreen
         status={status}
@@ -246,7 +248,7 @@ function ExpeditionScreens() {
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={replay ?? undefined}
-        battleExitPolicy={gateMonsterBattle ? "after-playback" : undefined}
+        battleExitPolicy={gateBattle ? "after-playback" : undefined}
         changesByMemberId={changesByMemberId(active)}
         onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });
@@ -269,7 +271,7 @@ function ExpeditionScreens() {
         publicKindByNodeId: publicKindByNodeId(active),
       })}
       layout={createU4DungeonMapLayout(active.expedition.map)}
-      party={createU4PartyMemberViews(active.partyMembers)}
+      party={createU4PartyMemberViews(inSeatOrder(campaign.seed, active.partyMembers, (member) => String(member.id)))}
       survey={surveyViewFor(campaign, active)}
       changesByMemberId={changesByMemberId(active)}
       selectedNextNodeId={selected}

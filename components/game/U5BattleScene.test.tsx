@@ -4,14 +4,20 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { U5BattleScene } from "./U5BattleScene";
-import { U5_TEST_BATTLE_REPLAY as replay } from "./u5-battle-test-fixture";
+import { U5_TEST_BATTLE_REPLAY } from "./u5-battle-test-fixture";
 import { createU5BattleReplay } from "./u5-battle-replay";
 import type { U5BattleReplay, U5BattleReplayFrame } from "./u5-battle-replay";
 
+const replay = U5_TEST_BATTLE_REPLAY;
+
 const battleCss = readFileSync(join(process.cwd(), "app", "u5-battle.css"), "utf8");
 
-function render(frame: U5BattleReplayFrame, value: U5BattleReplay = replay): string {
-  return renderToStaticMarkup(createElement(U5BattleScene, { replay: value, frame, onReplayFromStart: () => {} }));
+function render(frame: U5BattleReplayFrame = replay.frames[0]!, value: U5BattleReplay = replay): string {
+  return renderToStaticMarkup(createElement(U5BattleScene, {
+    replay: value,
+    frame,
+    onReplayFromStart: () => undefined,
+  }));
 }
 
 function participantMarkup(html: string, participantId: string): string {
@@ -44,7 +50,7 @@ describe("U5BattleScene", () => {
         ? { ...participant, imageSrc: "/assets/characters/live/warrior/warrior_a.png" }
         : { ...participant, name: "세리나", imageSrc: "/assets/monsters/spider/boss-spider-03-serina.png" }),
     };
-    const html = render(replay.frames[0]!, nonUniformAssetReplay);
+    const html = render(nonUniformAssetReplay.frames[0]!, nonUniformAssetReplay);
 
     for (const name of ["코르빈", "세리나"]) {
       const image = html.match(new RegExp(`<img alt="${name}"[^>]*>`))?.[0];
@@ -83,13 +89,15 @@ describe("U5BattleScene", () => {
    * complete 뿐이다. 네 프레임을 모두 알리면 행동 하나에 네 번 읽는데,
    * 프레임 간격이 0.36~0.52초라 합성음이 화면을 따라오지 못한다.
    */
-  it("화면 문장과 읽어 주는 문장을 나눈다", () => {
-    const html = render(replay.frames[0]!);
+  it("화면 문장과 읽어 주는 문장을 나누고 재생 중 장면 안에 skip을 두지 않는다", () => {
+    const html = render();
 
     expect(html.match(/aria-live="polite"/g)).toHaveLength(1);
     expect(html).toContain("전투가 시작됩니다.");
     /* idle 은 행동이 아니다. 읽어 주는 자리는 비어 있어야 한다. */
     expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite"><\/p>/);
+    expect(html).not.toContain("전투 건너뛰기");
+    expect(html).not.toContain("다시 보기");
   });
 
   it("행동이 끝난 frame 만 읽어 준다", () => {
