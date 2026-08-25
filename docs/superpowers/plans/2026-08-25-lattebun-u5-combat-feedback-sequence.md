@@ -4,7 +4,7 @@
 
 **Goal:** 일반전과 보스전에서 결과를 인과 순서대로 공개하고, 확인한 HP·신뢰 변화량을 같은 크기의 우측 파티 카드에 유지하며 결과 단계와 다시보기에서는 최종 HP를 보존한다.
 
-**Architecture:** 규칙 결과를 바꾸지 않는 순수 `U5CombatFeedbackView` adapter와 표시 전용 phase reducer를 사용한다. `U5ProgressScreen`은 최초 전투 중에만 같은 replay frame을 장면과 우측 카드 HP에 투영하고, 전투 이후에는 replay participant의 `finalHp`를 party view보다 우선하며 완료 뒤 다시보기에서는 장면만 frame을 소비하게 한다. `PartyMemberCard`는 모든 카드에 한 줄 높이의 결과 슬롯을 기본으로 두고, 사후 확인 뒤 이번 결과의 0이 아닌 HP·신뢰 변화량만 그 슬롯에 지속 표시한다.
+**Architecture:** 규칙 결과를 바꾸지 않는 순수 `U5CombatFeedbackView` adapter와 표시 전용 phase reducer를 사용한다. `U5ProgressScreen`은 최초 전투 중에만 같은 replay frame을 장면과 우측 카드 HP에 투영하고, 전투 이후에는 replay participant의 `finalHp`를 party view보다 우선하며 완료 뒤 다시보기에서는 장면만 frame을 소비하게 한다. `PartyMemberCard`는 U5 카드에 한 줄 높이의 결과 슬롯을 기본으로 두고, 전투 중 transient effect와 사후 확인 뒤의 persistent HP·신뢰 변화량을 같은 슬롯에서 phase별로 표시한다.
 
 **Tech Stack:** Next.js 16.3 App Router, React 19, TypeScript, Framer Motion 13, Zustand 5, Vitest 4, Playwright
 
@@ -24,6 +24,7 @@
 - 좌측 하단은 현재 beat 하나만 표시한다. 전체 반응·결과·수치 세 묶음을 동시에 노출하지 않는다.
 - HP·신뢰 수치 변화 effect는 우측 카드에 둔다. 전체 이력은 해당 phase가 지난 뒤 로그와 카드 뒷면에서만 공개한다.
 - U5의 모든 파티 카드는 변화량 badge 한 줄의 최소 높이를 기본으로 확보한다. 변화량이 0인 항목은 output과 장식을 만들지 않지만 빈 결과 슬롯은 유지한다. U3·U4는 이 슬롯을 요청하지 않는다.
+- 전투 중 transient HP·신뢰 effect는 U5의 예약된 변화량 슬롯 안에 렌더링한다. HP·신뢰 통계 grid에 조건부 행을 추가하지 않으며 effect mount·unmount가 카드 높이를 바꾸지 않는다.
 - 핵심 인물은 spec의 stable seat order와 절댓값 tie-break 규칙으로 정한다. 내부 kind/key 값은 DOM text, accessible name, `data-*`에 출력하지 않는다.
 - `accepted`, `suspected`, `exposed`, `adviceHelped`, `adviceHarmed`, `suspicionWasCorrect`, `suspicionWasCostly` 문구는 spec에 승인된 고정 한국어 문구를 그대로 사용한다. 성격별 문구나 새 에셋을 추가하지 않는다.
 - replay control은 전체 feedback sequence가 complete일 때만 보인다. 다시 보기는 중앙 장면만 되감고 우측 카드의 최종 HP·신뢰·변화량을 유지하며 대사·신뢰 phase를 반복하지 않는다.
@@ -441,7 +442,7 @@ Add trust increase/decrease cases and confirm that the internal token is used on
 
 - [ ] **Step 5: Add the optional visual effect**
 
-Render `<output aria-live="polite">` near the matching stat. Format positive values with `+`, negative values with Unicode minus `−`. Add a short translate/fade keyframe using existing card colors. Under `prefers-reduced-motion: reduce`, remove animation while keeping the output text visible for the phase.
+Render `<output aria-live="polite">` in U5's reserved result slot while retaining its HP/trust label and color. Format positive values with `+`, negative values with Unicode minus `−`. Add a short translate/fade keyframe using existing card colors. Under `prefers-reduced-motion: reduce`, remove animation while keeping the output text visible for the phase. Do not add a conditional row to the matching stat grid.
 
 - [ ] **Step 6: Run card and projection suites**
 
@@ -683,7 +684,7 @@ export interface PartyMemberSettledResult {
 }
 ~~~
 
-Render both non-zero values on the card front. Use `output` elements with `HP ±N` and `신뢰 ±N`; wrap them in `.party-card__settled-results`. Keep the result mounted without an exit timer. The existing transient battle-hit effect remains separate.
+Render both non-zero values on the card front. Use `output` elements with `HP ±N` and `신뢰 ±N`; wrap them in `.party-card__settled-results`. Keep the result mounted without an exit timer. The transient battle-hit effect keeps its separate lifecycle and class but shares this wrapper's reserved layout space.
 
 - [ ] **Step 4: Write failing projection tests**
 
@@ -963,5 +964,132 @@ verification pass. Then commit and push to the existing PR branch:
 ~~~bash
 git add app/party-card.css components/game/PartyMemberCard.test.tsx components/game/PartyMemberCard.tsx components/game/U5ProgressScreen.tsx components/game/u5-combat-feedback.test.ts components/game/u5-combat-feedback.ts docs/experience/ONBOARDING_AND_INTERFACE.md docs/experience/SCREEN_LAYOUT.md docs/experience/UI_IMPLEMENTATION_GUIDE.md docs/superpowers/plans/2026-08-25-lattebun-u5-combat-feedback-sequence.md docs/superpowers/specs/2026-08-25-lattebun-u5-combat-feedback-sequence-design.md e2e/u5-battle-preview.spec.ts
 git commit -m "수정: 전투 결과 카드의 HP와 높이를 고정한다" -m "결과 단계에서는 replay 최종 HP를 우선하고 모든 파티 카드가 변화량 슬롯 높이를 기본으로 확보한다."
+git push origin feature/u5-combat-feedback-sequence
+~~~
+
+### Task 10: 피격 effect를 예약 슬롯에 넣어 카드 높이를 고정한다
+
+**Files:**
+- Modify: `components/game/PartyMemberCard.tsx`
+- Modify: `components/game/PartyMemberCard.test.tsx`
+- Modify: `app/party-card.css`
+- Modify: `e2e/u5-battle-preview.spec.ts`
+- Modify: `docs/experience/SCREEN_LAYOUT.md`
+- Modify: `docs/experience/ONBOARDING_AND_INTERFACE.md`
+- Modify: `docs/experience/UI_IMPLEMENTATION_GUIDE.md`
+- Modify: `docs/superpowers/specs/2026-08-25-lattebun-u5-combat-feedback-sequence-design.md`
+- Modify: `docs/superpowers/plans/2026-08-25-lattebun-u5-combat-feedback-sequence.md`
+
+**Interfaces:**
+- Preserves: `effect?: { kind: "hp" | "trust"; delta: number; token: string }` and its accessible `output` text.
+- Changes: transient `.party-card__effect` is a child of `.party-card__settled-results`, never a conditional child row of `.party-card__stat`.
+- Consumes: `reserveSettledResultSpace` so U5's already-mounted result slot absorbs effect mount and unmount without resizing.
+
+- [x] **Step 1: Write the failing component placement test**
+
+Render a reserved U5 card with a transient HP effect. Extract the real stats and result-slot
+markup independently:
+
+~~~tsx
+const html = render({}, {
+  reserveSettledResultSpace: true,
+  effect: { kind: "hp", delta: -3, token: "impact-1" },
+});
+const stats = html.match(/<dl class="party-card__stats">[\s\S]*?<\/dl>/)?.[0] ?? "";
+const results = html.match(/<div class="party-card__settled-results"[\s\S]*?<\/div>/)?.[0] ?? "";
+expect(stats).not.toContain("party-card__effect--hp");
+expect(results).toContain("party-card__effect--hp");
+expect(results).toContain("HP −3");
+~~~
+
+The production mutation this catches is inserting the conditional effect back into
+`.party-card__stat`, where CSS Grid creates a new row and increases only the hit card's height.
+
+- [x] **Step 2: Run the card test and verify RED**
+
+Run: `npx vitest run components/game/PartyMemberCard.test.tsx`
+
+Expected: FAIL because the current transient output is inside the HP stat and outside the
+reserved result wrapper.
+
+- [x] **Step 3: Write the failing browser height regression**
+
+Add a natural boss-playback test. Wait until no transient effect is present, record all three
+`.party-card` heights, wait for `.party-card__effect--hp`, and record the heights while the
+effect is mounted:
+
+~~~ts
+const beforeHit = await partyCardHeights(page);
+await expect(page.locator(".party-card__effect--hp")).toBeVisible({ timeout: 60_000 });
+const duringHit = await partyCardHeights(page);
+duringHit.forEach((height, index) => {
+  expect(Math.abs(height - beforeHit[index]!)).toBeLessThan(1);
+});
+~~~
+
+Run: `npx playwright test e2e/u5-battle-preview.spec.ts --reporter=line`
+
+Expected: the new height regression FAILS on the current implementation because the hit card
+gains the transient output row. Existing playback, replay, speed, and result tests remain green.
+
+- [x] **Step 4: Move the transient output into the reserved slot**
+
+Remove transient effect outputs from both `.party-card__stat` elements. Extend the existing
+slot visibility and accessibility condition to include `effect !== undefined`, then render the
+same output as the first child of `.party-card__settled-results`:
+
+~~~tsx
+const hasTransientEffect = effect !== undefined;
+const showSettledResultSpace = reserveSettledResultSpace || hasSettledResult || hasTransientEffect;
+const hasVisibleResult = hasSettledResult || hasTransientEffect;
+
+{effect === undefined ? null : (
+  <output
+    className={`party-card__effect party-card__effect--${effect.kind}`}
+    data-reduced-motion={reducedMotion}
+    aria-live="polite"
+  >
+    {effect.kind === "hp" ? "HP" : "신뢰"} {signedDelta(effect.delta)}
+  </output>
+)}
+~~~
+
+Use `hasVisibleResult` for the wrapper's `aria-hidden`. Keep `effect.token` private and retain
+the existing animation/reduced-motion behavior. Remove the obsolete `grid-column` declaration
+from `.party-card__effect`; do not add padding or height outside the reserved wrapper.
+
+- [x] **Step 5: Run focused tests and verify GREEN**
+
+Run: `npx vitest run components/game/PartyMemberCard.test.tsx components/game/U5ProgressScreen.test.tsx`
+
+Expected: PASS for output text, token privacy, wrapper placement, U5 reserved height, U3·U4
+empty-slot omission, and reduced motion.
+
+- [x] **Step 6: Run the browser regression and verify GREEN**
+
+Run: `npx playwright test e2e/u5-battle-preview.spec.ts --reporter=line`
+
+Expected: PASS with less than one CSS pixel difference between every card's pre-hit and
+during-hit height, plus all existing general/boss/replay assertions and no browser errors.
+
+- [x] **Step 7: Run full verification, commit, and update the existing PR**
+
+Run:
+
+~~~bash
+npm test
+npm run typecheck
+npx eslint . --ignore-pattern 'playwright-report/**' --ignore-pattern 'test-results/**'
+npm run build -- --webpack
+npx playwright test e2e/u5-battle-preview.spec.ts --reporter=line
+git diff --check
+~~~
+
+Expected: all Vitest files, TypeScript, ESLint, production build, focused Chromium E2E, and
+whitespace verification pass. Then commit only Task 10 files:
+
+~~~bash
+git add app/party-card.css components/game/PartyMemberCard.test.tsx components/game/PartyMemberCard.tsx e2e/u5-battle-preview.spec.ts docs/experience/ONBOARDING_AND_INTERFACE.md docs/experience/SCREEN_LAYOUT.md docs/experience/UI_IMPLEMENTATION_GUIDE.md docs/superpowers/plans/2026-08-25-lattebun-u5-combat-feedback-sequence.md docs/superpowers/specs/2026-08-25-lattebun-u5-combat-feedback-sequence-design.md
+git commit -m "수정: 피격 중 파티 카드 높이를 유지한다" -m "일시적인 HP 변화량을 U5 카드의 예약된 결과 슬롯에 표시해 피격 전후 레이아웃 이동을 없앤다."
 git push origin feature/u5-combat-feedback-sequence
 ~~~

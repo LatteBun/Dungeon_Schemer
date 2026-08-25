@@ -132,7 +132,9 @@ export function PartyMemberCard({
   const settledHp = settledResult?.hpDelta === 0 ? undefined : settledResult?.hpDelta;
   const settledTrust = settledResult?.trustDelta === 0 ? undefined : settledResult?.trustDelta;
   const hasSettledResult = settledHp !== undefined || settledTrust !== undefined;
-  const showSettledResultSpace = reserveSettledResultSpace || hasSettledResult;
+  const hasTransientEffect = effect !== undefined;
+  const hasVisibleResult = hasSettledResult || hasTransientEffect;
+  const showSettledResultSpace = reserveSettledResultSpace || hasVisibleResult;
 
   /*
    * 뒤집을 수 있는 카드만 누를 수 있게 한다.
@@ -176,7 +178,6 @@ export function PartyMemberCard({
             <span className="party-meter" aria-hidden="true">
               <i style={{ width: `${alive ? percent(member.hp, member.maxHp) : 0}%` }} />
             </span>
-            {effect?.kind === "hp" ? <output className="party-card__effect party-card__effect--hp" data-reduced-motion={reducedMotion} aria-live="polite">HP {effect.delta > 0 ? `+${effect.delta}` : `−${Math.abs(effect.delta)}`}</output> : null}
           </div>
 
           <div className="party-card__stat">
@@ -185,7 +186,6 @@ export function PartyMemberCard({
             <span className="party-meter party-meter--trust" aria-hidden="true">
               <i style={{ width: `${percent(member.trust, 100)}%` }} />
             </span>
-            {effect?.kind === "trust" ? <output className="party-card__effect party-card__effect--trust" data-reduced-motion={reducedMotion} aria-live="polite">신뢰 {effect.delta > 0 ? `+${effect.delta}` : `−${Math.abs(effect.delta)}`}</output> : null}
           </div>
 
           {/* 라벨 문구를 두지 않는다. 아이콘과 금액이 붙어 있으면 읽힌다. */}
@@ -202,8 +202,17 @@ export function PartyMemberCard({
             className="party-card__settled-results"
             data-reduced-motion={reducedMotion}
             aria-live="polite"
-            aria-hidden={hasSettledResult ? undefined : true}
+            aria-hidden={hasVisibleResult ? undefined : true}
           >
+            {effect === undefined ? null : (
+              <output
+                className={`party-card__effect party-card__effect--${effect.kind}`}
+                data-reduced-motion={reducedMotion}
+                aria-live="polite"
+              >
+                {effect.kind === "hp" ? "HP" : "신뢰"} {signedDelta(effect.delta)}
+              </output>
+            )}
             {settledHp === undefined ? null : <output className="party-card__settled-result party-card__settled-result--hp">HP {signedDelta(settledHp)}</output>}
             {settledTrust === undefined ? null : <output className="party-card__settled-result party-card__settled-result--trust">신뢰 {signedDelta(settledTrust)}</output>}
           </div>

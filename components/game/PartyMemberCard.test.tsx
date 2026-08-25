@@ -80,6 +80,20 @@ describe("PartyMemberCard", () => {
     expect(html).toContain("party-card__effect--hp");
     expect(html).not.toContain("private-token");
   });
+
+  it("U5 피격 effect는 통계 행이 아니라 예약된 결과 슬롯 안에 표시한다", () => {
+    const html = render({}, {
+      reserveSettledResultSpace: true,
+      effect: { kind: "hp", delta: -3, token: "impact-1" },
+    });
+    const stats = html.match(/<dl class="party-card__stats">[\s\S]*?<\/dl>/)?.[0] ?? "";
+    const results = html.match(/<div class="party-card__settled-results"[\s\S]*?<\/div>/)?.[0] ?? "";
+
+    expect(stats).not.toContain("party-card__effect--hp");
+    expect(results).toContain("party-card__effect--hp");
+    expect(results).toContain("HP −3");
+  });
+
   it("이름·직업·성격을 함께 보여준다", () => {
     const html = render();
 

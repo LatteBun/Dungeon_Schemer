@@ -84,4 +84,25 @@ test.describe("U5-2 전투 프리뷰", () => {
     await expect(page.locator(".party-card__settled-result--trust")).toHaveText("신뢰 −2");
     await expect(page.getByRole("button", { name: "전투 건너뛰기" })).toHaveCount(0);
   });
+
+  test("보스전 피격 effect가 나타나도 파티 카드 높이를 유지한다", async ({ page }) => {
+    test.setTimeout(90_000);
+    const failures = watchBrowserErrors(page);
+    await page.goto("/u5-2-test");
+    await page.getByRole("button", { name: "E4 실제 보스전" }).click();
+    await expect(page.getByRole("heading", { name: /E4 실제 보스전/ })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+
+    const effect = page.locator(".party-card__effect--hp");
+    await expect(effect).toHaveCount(0);
+    const beforeHit = await partyCardHeights(page);
+    await expect(effect).toBeVisible({ timeout: 60_000 });
+    const duringHit = await partyCardHeights(page);
+
+    expect(duringHit).toHaveLength(beforeHit.length);
+    duringHit.forEach((height, index) => {
+      expect(Math.abs(height - beforeHit[index]!)).toBeLessThan(1);
+    });
+    expectNoBrowserErrors(failures, "U5-2 보스전 피격 카드 높이");
+  });
 });
