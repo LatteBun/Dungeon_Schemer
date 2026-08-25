@@ -98,14 +98,40 @@ describe("16:9 고정 캔버스", () => {
     );
   });
 
-  it("현재 승인된 intrinsic 화면 예외는 없다", () => {
-    const offenders = uiSources()
-      .filter(({ source }) =>
-        source.includes('data-canvas-layout="intrinsic"'),
-      )
+  /*
+   * 예외는 목록으로만 늘어난다.
+   *
+   * `.game-canvas` 의 자식은 기본으로 판을 꽉 채운다. 화면 루트는 그래야 하지만,
+   * 판 위에 얹는 쪽지는 아니다 — 거부 알림이 그 규칙에 걸려 1152 x 1080 으로
+   * 판을 통째로 덮고 있었다.
+   *
+   * 예외를 열어 두되 조용히 늘지 않게 한다. 새로 쓰려면 이 목록에 이름을 적고
+   * 왜 화면 루트가 아닌지를 여기 남겨야 한다.
+   */
+  const INTRINSIC_ALLOWED = new Map([
+    [
+      join("components", "game", "CampaignScreen.tsx"),
+      "거부 알림. 판을 쓰는 화면이 아니라 화면 위에 잠깐 얹었다 사라지는 쪽지다.",
+    ],
+  ]);
+
+  it("intrinsic 예외는 승인된 것뿐이다", () => {
+    const users = uiSources()
+      .filter(({ source }) => source.includes('data-canvas-layout="intrinsic"'))
       .map(({ name }) => name);
 
-    expect(offenders).toEqual([]);
+    expect(users.sort()).toEqual([...INTRINSIC_ALLOWED.keys()].sort());
+  });
+
+  it("예외마다 왜 화면 루트가 아닌지 적혀 있다", () => {
+    for (const [name, reason] of INTRINSIC_ALLOWED) {
+      expect(reason.length, name).toBeGreaterThan(20);
+    }
+  });
+
+  it("예외를 쓰는 곳은 판 안에 머문다", () => {
+    /* 절대 배치라 기준이 필요하다. 판이 기준이 아니면 레터박스 밖으로 나간다. */
+    expect(css("globals.css")).toMatch(/\.game-canvas \{[^}]*position:\s*relative/);
   });
 
   it("캔버스 내부 화면은 브라우저 높이를 요구하지 않는다", () => {
