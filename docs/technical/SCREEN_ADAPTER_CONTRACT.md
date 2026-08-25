@@ -1,23 +1,24 @@
 # 화면·규칙 인수인계 계약
 
-`U5`·`U5-2`·`U6`은 화면과 ViewModel 경계까지 만들어 두고, 아직 없는 규칙 자리를
-결정적 fixture로 메워 그리고 있다. 이 문서는 그 fixture 자리마다 **무엇이
-들어올 자리인지**를 한곳에 모은다.
+`U5`는 화면과 ViewModel 경계에서 아직 없는 사건 선택 규칙 한 자리를 결정적
+fixture로 메우고 있다. `U5-2`와 `U6`은 실제 규칙을 소비하며, U6 프리뷰 데이터도
+C4·C6·C8 규칙으로 결정적 정산·엔딩 상태를 만든다. 이 문서는 규칙 결과와 화면
+View 사이의 현재 경계를 한곳에 모은다.
 
-지금 `C4`~`C8`과 `E3`·`E4`를 쓰는 사람이 화면 코드를 열어보지 않고도 무엇을
-내놓아야 하는지 알 수 있게 하는 것이 목적이다.
+`C4`~`C8`과 `E3`·`E4`의 생산자와 화면 어댑터를 유지하는 사람이 화면 코드를
+열어보지 않고도 현재 인수인계 모양을 알 수 있게 하는 것이 목적이다.
 
 ## 우선권은 로직에 있다
 
 **이 문서는 요구서가 아니라 현황 보고다.**
 
-여기 적힌 모양은 규칙이 없는 동안 화면이 임시로 가정한 것일 뿐이다. 규칙과
+여기 적힌 View 모양은 규칙 결과를 화면에 전달하는 현재 계약이다. 규칙과
 어긋나면 **고치는 쪽은 화면이다.** 규칙 계층이 도메인의 진실을 가지므로,
-이름·단위·분기·순서가 다르면 규칙 쪽이 맞고 화면 쪽 가정이 틀린 것이다.
+이름·단위·분기·순서가 다르면 규칙 쪽이 맞고 화면 쪽 어댑터가 틀린 것이다.
 
-따라서 `C4`~`C8`·`E3`·`E4`를 구현할 때 이 문서에 맞추려고 규칙을 비틀지 않는다.
-규칙이 자연스러운 모양으로 나오면 화면이 그쪽으로 옮겨 간다. 옮기는 일은
-어댑터 한 겹에서 끝나도록 아래처럼 경계를 잡아 두었다.
+따라서 `C4`~`C8`·`E3`·`E4`를 바꾸거나 확장할 때 이 문서에 맞추려고 규칙을
+비틀지 않는다. 규칙의 자연스러운 모양이 바뀌면 화면이 그쪽으로 옮겨 간다.
+옮기는 일은 어댑터 한 겹에서 끝나도록 아래처럼 경계를 잡아 두었다.
 
 이 문서가 쓸모 있는 경우는 하나다. **규칙이 어느 쪽으로 가도 상관없는 자리**에서
 화면이 이미 쓰고 있는 모양을 골라 주면 어댑터가 얇아진다. 그 이상은 아니다.
@@ -31,8 +32,8 @@
    (C·E 소유)                          (U 소유)
 ```
 
-화면 컴포넌트는 View 타입만 안다. 규칙이 들어올 때 바뀌는 것은 어댑터 한 겹과
-그 자리를 임시로 채우던 fixture 파일뿐이고, 화면 코드는 그대로다.
+화면 컴포넌트는 View 타입만 안다. 규칙 결과 모양이 바뀌면 어댑터 한 겹과,
+fixture가 남은 경우 그 파일을 먼저 바꾼다.
 
 View 타입도 규칙이 정한 모양에 따라 바뀔 수 있다. 그때는 화면 컴포넌트까지
 따라 바뀐다. 그것이 정상이며, 그 비용을 줄이려고 규칙을 비틀지 않는다.
@@ -88,24 +89,26 @@ U3은 `eligibility`의 요구치와 가능 여부를 다시 계산하지 않는�
 
 ## U6 정산·엔딩 ← C4 · C6 · C8
 
-네 규칙이 다 없어서 `components/game/u6-preview-data.ts`가 통째로 fixture다.
-화면이 지금 기대하는 모양은 다음 둘이다.
+U6는 C4 정산, C6 신뢰 누적·엔딩 판정, C8 캠페인 통계를 실제 규칙에서 받는다.
+`components/game/u6-preview-data.ts`도 이 규칙들을 호출해 부분 생환·전멸·승급
+가능 클리어의 결정적 상태를 만든다. 화면이 소비하는 경계는 다음 둘이다.
 
-### `U6SettlementView` — C4 정산
+### `U6SettlementView` — C4 정산과 C6 신뢰 누적
 
-`components/game/u6-settlement-model.ts`에 있다. 주요 칸만 옮기면,
+U6 정산은 실제 `SettlementResult`와 정산 뒤 `CampaignState`를 소비한다. 규칙은 보상·유품·위험도·인물 전후 상태와 원정 근거를 구조화된 값으로 내고, 어댑터가 화면용 결과 표제와 상태 union을 만든다.
 
-| 칸 | 뜻 | 어디서 오나 |
-| --- | --- | --- |
-| `survivors` | `0`이면 전멸 | C4 |
-| `causeChain` | 정산 원인을 **순서대로**. 한 줄 요약이 아니다 | C4 |
-| `riskBefore` · `riskAfter` · `riskCapped` | ★5 상한에 걸렸는지 구분 | C4 |
-| `reputationDelta` · `goldDelta` | 증감분 | C4 |
-| `relicGold` | 전멸에서만 회수, 그 외 `0` | C4 |
-| `nextReward` | 전멸 뒤 다음 공고 보상, 클리어면 `null` | C4 |
-U6은 승급 가능 여부를 정산 정보의 설명 문구로만 표시할 수 있지만, 승급 버튼·
-선택 오버레이·결과 ViewModel을 제공하지 않는다. 승급의 유일한 진입점은 U3
-게시판 상단 등급 버튼이다.
+```ts
+createU6SettlementView(
+  campaignAfterSettlement: CampaignState,
+  settlement: SettlementResult,
+  dungeonName: string,
+  themeId: ThemeId,
+): U6SettlementView
+```
+
+화면은 생존자 수로 클리어·전멸을 재판정하지 않는다. `SettlementResult.status`를 보존한 `outcome.kind`와 `dungeonOutcome`을 사용한다. `causeInputs`의 선택과 반응은 화면 원인 요약으로 옮기고, 피해는 `memberChanges`의 인물별 결과에서 보여준다. 살아 있는 신뢰 0 정산 전후 인원은 같은 정산에서 나온 캠페인과 `memberChanges.before`로 만들며, 현재 보정은 C6의 `getCampaignTrustModifier`를 그대로 옮긴다. `memberChanges`와 사망자 이름은 계약 파티 순서를 유지한다.
+
+`reputationDelta`와 `goldDelta`는 계약 시 확정된 보상에 생존 결과를 적용한 실제 증감이며, `relicGold`는 전멸에서만 별도로 회수한다. 전멸 뒤 다음 공고 보상은 아직 생성되지 않은 값이므로 `SettlementResult`와 `U6SettlementView`에 포함하지 않는다. U6은 승급 버튼·선택 오버레이·결과 ViewModel을 제공하지 않으며, 승급의 유일한 진입점은 U3 게시판 상단 등급 버튼이다.
 
 ### `U6EndingView` — C6 엔딩 · C8 통계
 
@@ -114,11 +117,12 @@ U6은 승급 가능 여부를 정산 정보의 설명 문구로만 표시할 수
 `wipedExpeditions`·`totalDeaths`·`totalGoldEarned`·`highestDungeonCleared`의
 정산 누계를 제공한다.
 
-`survivedCount`·`diedCount`·`zeroTrustCount`는 최종 `CampaignState.pool`에서
-읽는 현재 상태이고, C8-A가 다시 세지 않는다. `adviceTotal`·`turningPoint`·
-`chronicleSummary`는 `SettlementResult`만으로 만들 수 없으므로 C8-B와 I2 연결
-전에는 fixture로 남긴다. `reasons`가 배열인 이유는 화면이 세 줄로 그리기
-때문이며, `turningPoint`는 없을 수 있어 `null`을 받는다.
+`survivedCount`와 `zeroTrustCount`는 최종 `CampaignState.pool`에서, `diedCount`는
+C8-A의 `statistics.totalDeaths`에서 읽는다. `adviceTotal`은
+`campaign.history.events`의 `ADVICE_RESOLVED`만 세고, `turningPoint`는 C8-B가
+기록한 `history.turningPoints`를 `selectHighlightedTurningPoint`로 골라 옮기며
+없으면 `null`이다. `chronicleSummary`만 엔딩 종류별 화면 산문인 `PROSE`가
+소유하고, `reasons`는 C6 판정 근거 한 줄과 화면 산문 두 줄을 담는다.
 
 ## 어긋났을 때
 

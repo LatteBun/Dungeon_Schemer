@@ -101,6 +101,10 @@
 
 ## 이번 개편 설계
 
+- [캠페인 기본 진입 무작위 시드 설계](superpowers/specs/2026-08-26-lattebun-campaign-random-seed-design.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 탐색 계약
+- [캠페인 기본 진입 무작위 시드 구현 계획](superpowers/plans/2026-08-26-lattebun-campaign-random-seed.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 테스트 우선 실행 순서
+- [던전 계약 보상 랜덤화 설계](superpowers/specs/2026-08-26-lattebun-dungeon-reward-randomization-design.md): 위험도별 기대값을 유지하는 독립 균등 보상, 공고 확정·계약 snapshot·정산 소비와 미래 보상 제거 계약
+- [던전 계약 보상 랜덤화 구현 계획](superpowers/plans/2026-08-26-lattebun-dungeon-reward-randomization.md): 자원·승급 기준선부터 도메인 범위, 공고 생성, U3·정산·U6 전환, 통합 회귀와 50·100·200시드 재측정까지의 테스트 우선 순서
 - [ScreenFit 전체 화면 외부 상태 구독 설계](superpowers/specs/2026-08-26-lattebun-screen-fit-external-store-design.md): 모바일 세로 안내의 전체 화면 가능 여부를 브라우저 외부 상태로 구독해 Effect 동기 상태 갱신과 ESLint 오류를 제거하는 기술 계약
 - [ScreenFit 전체 화면 외부 상태 구독 구현 계획](superpowers/plans/2026-08-26-lattebun-screen-fit-external-store.md): fullscreenchange 구독, SSR snapshot, React Hooks lint 회귀를 테스트 우선으로 구현·검증하는 순서
 - [U5 전투 피드백 시퀀스 설계](superpowers/specs/2026-08-25-lattebun-u5-combat-feedback-sequence-design.md): 조언 선택부터 일반전·보스전, 우측 카드 HP 동기화, 사후 대사와 신뢰 변화까지 결과를 인과 순서로 공개하는 UI 계약
@@ -117,6 +121,8 @@
 - [진행 화면 UX 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-progress-screen-ux.md): 전투 재생 제어 분리, 일반전 CTA 게이트, 비전투 파티와 A1 카드의 테스트 우선 구현 순서
 - [U6 정산 복귀 CTA 크기 개선 설계](superpowers/specs/2026-08-25-lattebun-u6-settlement-continue-size-design.md): 공통 다음 단계 CTA 크기를 유지하면서 정산 복귀 버튼을 내용 폭으로 줄이는 배치 기준
 - [U6 정산 복귀 CTA 크기 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u6-settlement-continue-size.md): CSS 계약 테스트부터 내용 폭 우측 정렬과 실제 정산 화면 검증까지의 테스트 우선 순서
+- [U6 정산 정보 위계 개선 설계](superpowers/specs/2026-08-25-lattebun-u6-settlement-information-hierarchy-design.md): 정복·전멸, 인물별 영구 상태, 신뢰 0 누적, 캠페인 변화를 중복 없이 보여주는 정산 화면 계약
+- [U6 정산 정보 위계 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u6-settlement-information-hierarchy.md): 공식 문서부터 ViewModel, 화면, 도메인 정리, 통합 검증까지의 테스트 우선 구현 순서
 - [U4 지도 우측 패널 순서 개선 설계](superpowers/specs/2026-08-25-lattebun-u4-map-right-panel-order-design.md): 계약 전 답사를 선택 지점 위로 옮기고 이동 CTA를 우측 최하단에 고정하는 배치 기준
 - [U4 지도 우측 패널 순서 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u4-map-right-panel-order.md): DOM 읽기 순서와 3행 CSS 계약을 테스트 우선으로 변경하고 실제 캠페인 지도에서 확인하는 순서
 - [브라우저 안정성 스모크 테스트 설계](superpowers/specs/2026-08-25-lattebun-browser-stability-smoke-design.md): 공개 경로·첫 사건 클릭 흐름·공식 viewport의 Chromium 회귀 계약

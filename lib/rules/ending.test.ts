@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PROMOTION_GOLD, PROMOTION_REPUTATION, createCampaignStatistics } from "@/lib/domain";
 import type { BoardOffer, CampaignEnding, CampaignState, Character, CharacterId } from "@/lib/domain";
-import { createBoardOffers } from "./board";
+import { createBoardOffers, createOfferReward } from "./board";
 import { initializeCampaign } from "./campaign-init";
 import {
   countLivingZeroTrust,
@@ -197,6 +197,7 @@ describe("정상 경로 엔딩 우선순위", () => {
       id: `c6-offer-${index}` as BoardOffer["id"],
       dungeonId: dungeon.id,
       riskLevel: dungeon.riskLevel,
+      reward: createOfferReward(campaign, dungeon),
       party: { memberIds: party },
       lockReason: "rankTooLow",
     }));

@@ -33,8 +33,11 @@ describe("백테스트 공개 상태 projection", () => {
     const store = createCampaignStore("public-board");
     store.getState().dispatch({ type: "OPEN_BOARD" });
     const view = projectBoardDecision(store.getState().campaign);
+    const source = store.getState().campaign.offers[0]!;
 
     expect(view.offers.length).toBeGreaterThan(0);
+    expect(view.offers[0]?.fullSurvivorReward).toEqual(source.reward);
+    expect(view.offers[0]?.fullSurvivorReward).not.toBe(source.reward);
     expect(view).not.toHaveProperty("history");
     expect(view).not.toHaveProperty("statistics");
     expect(view.offers[0]).not.toHaveProperty("preparedEvents");

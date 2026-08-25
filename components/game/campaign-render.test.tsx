@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
+import { countLivingZeroTrust } from "@/lib/rules/ending";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
@@ -156,12 +157,14 @@ describe("게시판이 실제 캠페인으로 그려진다", () => {
   it("공고와 계약 조건이 찍힌다", () => {
     const run = driven();
     run.act({ type: "OPEN_BOARD" });
-    const { campaign, context, last } = run.state();
+    const { campaign, last } = run.state();
+    const board = createU3BoardView(campaign, campaign.offers);
+    const notice = board.notices[0]!;
 
     const markup = renderToStaticMarkup(createElement(U3BoardScreen, {
       status: statusFor(campaign, null),
-      board: createU3BoardView(campaign, campaign.offers),
-      selectedOfferId: context.selectedOffer?.id ?? "",
+      board,
+      selectedOfferId: notice.offerId,
       promotion: createU3PromotionView(getGuidePromotionEligibility(campaign), campaign.phase, last?.promotion ?? null),
       onSelectOffer: noop, onContract: noop, onOpenPromotion: noop,
       onCancelPromotion: noop, onConfirmPromotion: noop, onDismissPromotionResult: noop,
@@ -171,6 +174,14 @@ describe("게시판이 실제 캠페인으로 그려진다", () => {
     /* 공고가 하나도 없으면 위 검사는 통과하지만 화면은 비어 있다. */
     expect(markup).toContain(campaign.offers[0]!.dungeonId.length > 0 ? "위험도" : "위험도");
     expect(markup.length).toBeGreaterThan(500);
+    /* Break caught: U3가 공고의 확정 보상 대신 다른 숫자를 렌더링하면 실패한다. */
+    const selectedMarker = markup.indexOf('aria-pressed="true"');
+    const selectedStart = markup.lastIndexOf("<button", selectedMarker);
+    const selectedEnd = markup.indexOf("</button>", selectedMarker);
+    const selectedNoticeMarkup = markup.slice(selectedStart, selectedEnd);
+    expect(selectedMarker).toBeGreaterThan(-1);
+    expect(selectedNoticeMarkup).toContain(`>명성</span>${notice.reputationReward}</span>`);
+    expect(selectedNoticeMarkup).toContain(`>골드</span>${notice.goldReward}</span>`);
   });
 });
 
@@ -273,22 +284,34 @@ describe("진행 화면이 실제 사건으로 그려진다", () => {
 });
 
 describe("정산이 실제 결과로 그려진다", () => {
-  it("원인 사슬 네 칸이 다 찍힌다", () => {
+  it("선택과 판단, 인물별 결과가 다 찍힌다", () => {
     const run = settled();
     const { campaign, last } = run.state();
     const settlement = last!.settlement!;
     const dungeon = campaign.dungeons.find((one) => one.id === settlement.dungeonId);
 
+    const view = createU6SettlementView(campaign, settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider");
     const markup = renderToStaticMarkup(createElement(U6SettlementScreen, {
       status: statusFor(campaign, null),
-      settlement: createU6SettlementView(settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider"),
+      settlement: view,
       onContinue: noop,
     }));
 
     assertClean(markup, "정산");
-    expect(markup).toContain(settlement.causeChain.choice);
-    expect(markup).toContain(settlement.causeChain.reactions);
-    expect(markup).toContain(settlement.causeChain.damage);
+    expect(view.trustPressure?.afterCount ?? 0).toBe(countLivingZeroTrust(campaign));
+    expect(markup).toContain(settlement.causeInputs.choice);
+    expect(markup).toContain(settlement.causeInputs.reactions);
+    expect(markup).not.toContain("<strong>피해</strong>");
+    const changedMember = settlement.memberChanges.find((change) =>
+      change.before.hp !== change.after.hp || change.before.alive !== change.after.alive,
+    );
+    if (changedMember === undefined) throw new Error("피해 또는 사망한 원정대원이 없다");
+    expect(markup).toContain(changedMember.after.name);
+    expect(markup).toContain(
+      changedMember.before.alive && !changedMember.after.alive
+        ? `사망 · HP ${changedMember.before.hp} → ${changedMember.after.hp}`
+        : `HP ${changedMember.before.hp} → ${changedMember.after.hp} / ${changedMember.after.maxHp}`,
+    );
   });
 });
 
