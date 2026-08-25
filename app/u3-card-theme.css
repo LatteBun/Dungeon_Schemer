@@ -45,16 +45,6 @@
     0 0.375rem 0.875rem #000;
 }
 
-.u3-notice--3 {
-  grid-column: 1;
-  transform: translate(0.1rem, -0.02rem) rotate(0.35deg);
-}
-
-.u3-notice--4 {
-  grid-column: 3;
-  transform: translate(-0.1rem, 0.04rem) rotate(-0.4deg);
-}
-
 .u3-notice__pin {
   position: absolute;
   top: -0.56rem;
@@ -164,37 +154,6 @@
     url("/assets/shared/screen-texture-tile.png");
   background-repeat: repeat;
 }
-
-/*
- * 계약 카드는 공통 질감 대신 그 던전의 장면을 바탕에 쓴다. u3-board.css 보다
- * 이 파일이 뒤에 실려서, 여기서 비워 주지 않으면 질감이 장면을 덮는다.
- */
-.u3-detail-section.u3-contract-card {
-  /*
-   * 장면 한 칸의 원본은 512x288 이다. 카드 폭(약 733px)에 꽉 채우면 1.43배로
-   * 늘어나 흐려지고 그만큼 크게 보인다. 1.28배까지만 늘리고 남는 가장자리는
-   * scrim 이 카드 바탕색으로 덮는다. 1.14배까지 줄여 봤더니 덮어야 할 띠가
-   * 넓어져 비네팅이 진해졌다. 확대와 비네팅을 맞바꾸는 자리라 그 사이를 잡는다.
-   *
-   * 512px = 32rem 이다. rem 으로 쓰므로 고정 캔버스가 줄어도 같이 줄어든다.
-   */
-  --scene-frame-width: 41rem;
-
-  background-color: #0b0806;
-  background-image: url("/assets/u3/extracted/theme-scenes-wide.avif");
-  background-repeat: no-repeat;
-  /* 시트는 세 칸이 가로로 붙어 있다. 폭을 세 배로 주면 높이는 비율대로 따라온다. */
-  background-size: calc(var(--scene-frame-width) * 3) auto;
-  background-position-y: center;
-}
-
-/*
- * 50% 는 시트 전체를 가운데 두므로 가운데 칸이 카드 복판에 온다. 좌우 칸은
- * 거기서 한 칸씩 밀어 준다. 칸 너비가 카드 너비와 달라도 이 셈은 그대로다.
- */
-.u3-contract-card--desert { background-position-x: calc(50% + var(--scene-frame-width)); }
-.u3-contract-card--spider { background-position-x: 50%; }
-.u3-contract-card--graveyard { background-position-x: calc(50% - var(--scene-frame-width)); }
 
 .u3-detail-section h3::after {
   content: "";

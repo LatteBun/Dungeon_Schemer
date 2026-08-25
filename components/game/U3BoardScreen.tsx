@@ -105,8 +105,7 @@ function PartyCard({ member, index }: { member: U3OfferDetailView["party"][numbe
 }
 
 function ContractOutcomes({ detail }: { detail: U3OfferDetailView }) {
-  // u3-detail-section 을 붙이지 않는다. 그 클래스가 불투명한 질감 배경을 달고
-  // 오는데, 계약 카드 안에서는 그것이 던전 장면을 덮어 버린다.
+  // 계약 조건은 계약 카드의 공통 어두운 바탕 안에서 보상 정보를 우선한다.
   return (
     <section className="u3-contract-outcomes" aria-labelledby="u3-contract-title">
       <h3 id="u3-contract-title">계약 조건</h3>
@@ -136,16 +135,10 @@ function ContractDetail({ detail, onContract }: { detail: U3OfferDetailView | un
         </ul>
       </section>
 
-      {/*
-        던전 정보와 계약 조건을 한 카드로 묶는다. 어느 던전에 어떤 조건으로
-        들어가는지가 한 덩어리의 판단이기 때문이다. 바탕에는 그 던전의 장면을
-        깔되 글씨가 묻히지 않게 어둡게 덮는다.
-      */}
       <section
-        className={`u3-detail-section u3-contract-card u3-contract-card--${detail.theme}`}
+        className="u3-detail-section u3-contract-card"
         aria-labelledby="u3-dungeon-title"
       >
-        <div className="u3-contract-card__scrim" aria-hidden="true" />
         <div className="u3-contract-card__body">
           <header className="u3-contract-card__head">
             <span className="u3-contract-card__theme">{detail.themeLabel}</span>
