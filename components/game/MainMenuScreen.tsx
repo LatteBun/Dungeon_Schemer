@@ -23,7 +23,10 @@ export function MainMenuScreen({ unlockedCount, loading }: MainMenuScreenProps) 
         <Link className="shell-cta shell-cta--primary main-menu-screen__start" href="/campaign">
           캠페인 시작
         </Link>
-        <Link className="shell-cta main-menu-screen__achievements" href="/achievements">
+        <Link
+          className="shell-cta main-menu-screen__achievements"
+          href={{ pathname: "/achievements", query: { returnTo: "/" } }}
+        >
           <span>업적</span>
           <small>{loading ? `— / ${TOTAL_ACHIEVEMENTS}` : `${unlockedCount} / ${TOTAL_ACHIEVEMENTS}`}</small>
         </Link>

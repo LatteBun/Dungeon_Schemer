@@ -24,6 +24,10 @@ export interface AchievementCardView {
 
 export type AchievementScreenStatus = "loading" | "ready" | "recovered" | "unavailable";
 
+export type AchievementBackAction =
+  | { readonly kind: "link"; readonly href: string }
+  | { readonly kind: "button"; readonly onActivate: () => void };
+
 const HIDDEN_TITLE = "???";
 const HIDDEN_DESCRIPTION = "조건을 달성하면 기록이 공개됩니다.";
 
@@ -74,6 +78,7 @@ export interface AchievementScreenProps {
   readonly unlockedCount: number;
   readonly status: AchievementScreenStatus;
   readonly message: string | null;
+  readonly backAction: AchievementBackAction;
   readonly confirming?: boolean;
   readonly onRequestClear?: () => void;
   readonly onCancelClear?: () => void;
@@ -189,6 +194,7 @@ export function AchievementScreen({
   unlockedCount,
   status,
   message,
+  backAction,
   confirming = false,
   onRequestClear,
   onCancelClear,
@@ -222,7 +228,13 @@ export function AchievementScreen({
       </section>
 
       <footer className="achievement-screen__actions">
-        <Link className="shell-cta" href="/">메인 메뉴로</Link>
+        {backAction.kind === "link" ? (
+          <Link className="shell-cta" href={backAction.href}>이전 화면으로</Link>
+        ) : (
+          <button className="shell-cta" type="button" onClick={backAction.onActivate}>
+            이전 화면으로
+          </button>
+        )}
         <button className="shell-cta" type="button" onClick={onRequestClear}>업적 기록 초기화</button>
       </footer>
 
@@ -231,7 +243,7 @@ export function AchievementScreen({
   );
 }
 
-export function Achievements() {
+export function Achievements({ backAction }: { readonly backAction: AchievementBackAction }) {
   const progress = usePlayerProgressStore((state) => state.progress);
   const status = usePlayerProgressStore((state) => state.status);
   const message = usePlayerProgressStore((state) => state.message);
@@ -244,6 +256,7 @@ export function Achievements() {
       unlockedCount={unlockedAchievementCount(progress)}
       status={status}
       message={message}
+      backAction={backAction}
       confirming={confirming}
       onRequestClear={() => setConfirming(true)}
       onCancelClear={() => setConfirming(false)}

@@ -11,7 +11,7 @@ describe("메인 메뉴 화면", () => {
 
     expect(html).toContain('href="/campaign"');
     expect(html).toContain("캠페인 시작");
-    expect(html).toContain('href="/achievements"');
+    expect(html).toContain('href="/achievements?returnTo=%2F"');
     expect(html).toContain("3 / 12");
     expect(html).not.toMatch(/<button[^>]*>[^]*<a/);
   });
