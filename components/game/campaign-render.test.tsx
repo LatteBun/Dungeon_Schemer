@@ -568,25 +568,25 @@ describe("보스전도 같은 화면에서 본다", () => {
 
   it("상단 상태와 파티가 함께 선다", () => {
     const run = afterBoss();
-    const { campaign, context } = run.state();
+    const { context } = run.state();
     const active = context.activeExpedition!;
-
-    const markup = renderToStaticMarkup(createElement(U5ProgressScreen, {
-      status: statusFor(campaign, active),
-      progress: expeditionEndViewFor(campaign, active),
-      log: logFor(campaign, active),
-      ecology: ecologyViewFor(campaign, active),
-      battleReplay: bossReplayFor(campaign, active) ?? undefined,
-      onAcknowledge: noop,
-      acknowledgeLabel: "정산으로",
-    }));
+    const store = { ...run.store, getInitialState: () => run.store.getState() };
+    const markup = renderToStaticMarkup(createElement(
+      PlayerProgressProvider,
+      null,
+      createElement(CampaignStoreProvider as never, {
+        seed: "render-boss-outcome",
+        store,
+      }, createElement(CampaignScreen)),
+    ));
 
     assertClean(markup, "보스전 화면");
     /* 전에는 전투 장면만 덩그러니 떴다. 셸이 함께 서야 같은 화면이다. */
     expect(markup).toContain("u5-party");
     expect(markup).toContain("u5-console");
     expect(markup).toContain("u5-battle-scene");
-    expect(markup).toContain("정산으로");
+    expect(markup).toContain("전투 건너뛰기");
+    expect(markup).not.toContain("정산으로");
     for (const member of active.partyMembers) expect(markup).toContain(member.name);
   });
 

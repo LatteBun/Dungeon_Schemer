@@ -214,13 +214,15 @@ function ExpeditionScreens() {
   const finished = active.pendingOutcome === null
     && (active.expedition.bossResult !== null || active.expedition.result !== null);
   if (finished) {
+    const bossReplay = bossReplayFor(campaign, active);
     return (
       <U5ProgressScreen
         status={status}
         progress={expeditionEndViewFor(campaign, active)}
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
-        battleReplay={bossReplayFor(campaign, active) ?? undefined}
+        battleReplay={bossReplay ?? undefined}
+        battleExitPolicy={bossReplay === null ? undefined : "after-playback"}
         changesByMemberId={changesByMemberId(active)}
         onAcknowledge={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
         acknowledgeLabel="정산으로"
@@ -237,9 +239,8 @@ function ExpeditionScreens() {
   if (active.pendingEvent !== null || active.pendingOutcome !== null) {
     const seeing = active.pendingOutcome !== null;
     const replay = eventReplayFor(campaign, active);
-    const gateMonsterBattle = seeing
-      && active.pendingOutcome?.event.kind === "monster"
-      && active.pendingOutcome.battle !== null;
+    /* 전투 기록이 있으면 사건 종류와 무관하게 재생이 끝날 때까지 다음 이동을 잠근다. */
+    const gateBattle = seeing && replay !== null;
     return (
       <U5ProgressScreen
         status={status}
@@ -247,7 +248,7 @@ function ExpeditionScreens() {
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={replay ?? undefined}
-        battleExitPolicy={gateMonsterBattle ? "after-playback" : undefined}
+        battleExitPolicy={gateBattle ? "after-playback" : undefined}
         changesByMemberId={changesByMemberId(active)}
         onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });

@@ -219,16 +219,20 @@ export function U5ProgressScreen({
   const [mode, setMode] = useState<U5ConsoleMode>(initialMode ?? "advice");
   const [filter, setFilter] = useState<U5LogFilter>(initialFilter);
   const battlePlayback = useU5BattlePlayback(battleReplay);
-  const replayingBattle = battleReplay !== undefined
+  const hasGatedReplay = battleExitPolicy === "after-playback" && battleReplay !== undefined;
+  const replayingBattle = hasGatedReplay && battlePlayback.frame !== undefined && !battlePlayback.isComplete;
+  const missingGatedFrame = hasGatedReplay && battlePlayback.frame === undefined;
+  const showPreviewSkip = previewPlaybackControls
+    && battleReplay !== undefined
     && battlePlayback.frame !== undefined
     && !battlePlayback.isComplete;
-  const gateMapExit = battleExitPolicy === "after-playback" && replayingBattle;
-  const showPreviewSkip = previewPlaybackControls && replayingBattle;
-  const rightAction = gateMapExit || showPreviewSkip
-    ? { label: "전투 건너뛰기", onClick: battlePlayback.skipToComplete }
-    : onAcknowledge === undefined
-      ? null
-      : { label: acknowledgeLabel, onClick: onAcknowledge };
+  const rightAction = missingGatedFrame
+    ? null
+    : replayingBattle || showPreviewSkip
+      ? { label: "전투 건너뛰기", onClick: battlePlayback.skipToComplete }
+      : onAcknowledge === undefined
+        ? null
+        : { label: acknowledgeLabel, onClick: onAcknowledge };
 
   return (
     <div className="expedition-screen u5-progress-screen" data-testid="u5-progress">
