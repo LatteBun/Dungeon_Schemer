@@ -1530,3 +1530,52 @@ git diff --stat origin/main...HEAD
 ```
 
 Expected: 작업 트리가 깨끗하고 공식 문서, ViewModel, 화면, CSS, 도메인 정리, 통합 테스트 커밋만 존재한다.
+
+---
+
+### Task 7: 원정대 결과를 3열 세로형 카드로 확장
+
+**Files:**
+- Modify: `docs/experience/SCREEN_LAYOUT.md`
+- Modify: `docs/superpowers/specs/2026-08-25-lattebun-u6-settlement-information-hierarchy-design.md`
+- Modify: `components/game/U6FixedCanvas.test.ts`
+- Modify: `components/game/U6SettlementScreen.test.ts`
+- Modify: `components/game/U6SettlementScreen.tsx`
+- Modify: `app/u6-result.css`
+
+**Interfaces:**
+- Consumes: 기존 `U6SettlementMember`와 공용 파티 카드의 `--party-portrait-height` 크기 계약
+- Produces: 생환·부분 사망·전멸 모두 같은 3열 세로형 인물 카드 레이아웃
+
+- [ ] **Step 1: CSS 계약 테스트를 먼저 교체한다**
+
+`U6FixedCanvas.test.ts`에서 세로 3행 기대를 제거하고, 목록이 `repeat(3, minmax(0, 1fr))` 3열이며 각 카드가 `portrait / who / state / badges`의 세로 흐름을 사용하는지 검증한다. 초상은 카드 폭을 채우고 높이가 공용 파티 상태 카드와 같은 `clamp(5.5rem, 8.6cqw, 11.5rem)` 범위를 쓰는지 확인한다.
+
+- [ ] **Step 2: 화면 테스트에 공통 카드 구조를 고정한다**
+
+생환자가 있는 결과와 전멸 결과가 모두 세 인물을 같은 카드 markup으로 렌더하고, 이름·직업·HP·신뢰·사망·중상·정체 발각 문구와 계약 파티 순서를 유지하는지 확인한다.
+
+- [ ] **Step 3: 실패를 확인한 뒤 3열 카드를 구현한다**
+
+`u6-party-results__list`를 한 행의 3열 grid로 바꾸고 각 `li`를 세로형 카드로 만든다. 직사각형 초상은 카드 폭 전체와 공용 파티 상태 카드 수준의 높이를 사용하고 `object-fit: cover`, 얼굴 중심의 `object-position`을 적용한다. 이름·상태 글씨를 기존보다 키우며 배지는 카드 하단에 둔다. 새 보상·위험도 정보는 추가하지 않는다.
+
+- [ ] **Step 4: 자동 검증과 실제 프리뷰 확인을 수행한다**
+
+Run:
+
+```bash
+pnpm vitest run components/game/U6FixedCanvas.test.ts components/game/U6SettlementScreen.test.ts components/game/u6-settlement-integration.test.tsx
+pnpm test
+pnpm lint
+pnpm typecheck
+pnpm build
+```
+
+`/u6-test`의 부분 생환·전멸·★5 정복 세 상태에서 1920×1080 고정 캔버스의 카드 잘림, 글자 겹침, 스크롤을 확인한다.
+
+- [ ] **Step 5: 변경을 커밋하고 PR을 갱신한다**
+
+```bash
+git add docs/experience/SCREEN_LAYOUT.md docs/superpowers/specs/2026-08-25-lattebun-u6-settlement-information-hierarchy-design.md docs/superpowers/plans/2026-08-25-lattebun-u6-settlement-information-hierarchy.md components/game/U6FixedCanvas.test.ts components/game/U6SettlementScreen.test.ts components/game/U6SettlementScreen.tsx app/u6-result.css
+git commit -m "화면: 정산 인물 카드를 세로형으로 확장한다" -m "세 인물의 직사각형 초상과 상태 정보를 3열 카드로 키워 생환과 전멸 결과의 빈 공간을 줄인다."
+```
