@@ -20,11 +20,11 @@ export function MainMenuScreen({ unlockedCount, loading }: MainMenuScreenProps) 
           * 표어는 이 게임이 무엇인지 말한다.
           *
           * 예전에는 「길드가 기억하지 않는 길을 기록하라」 였는데, 게임에 길드
-          * 기록이라는 장치가 없다. 실제로 하는 일은 던전을 미리 답사한 고블린
-          * 길잡이로서 용사에게 조언하는 것이고, 그 조언은 도울 수도 해칠 수도 있다.
-          * 그 두 가지를 그대로 적는다.
+          * 기록이라는 장치가 없다. 길잡이는 직접 싸우지 않고 조언만 하며, 그
+          * 조언은 용사가 받아들여야 실행된다. 믿게 만드는 것이 이 게임의
+          * 수단이므로 그것을 적는다.
           */}
-        <p>당신은 던전 편이다. 용사들은 그것을 모른다</p>
+        <p>그들은 당신의 말을 믿는다</p>
         <h1>Dungeon Schemer</h1>
       </header>
       <nav className="main-menu-screen__actions" aria-label="메인 메뉴">

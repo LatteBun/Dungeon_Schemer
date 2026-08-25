@@ -41,16 +41,19 @@
   align-self: end;
   max-width: 56rem;
   margin: 0 auto clamp(1.5rem, 4cqh, 3rem);
-  text-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 90%), 0 0 1.25rem rgb(0 0 0 / 82%);
+  /*
+   * 어둠은 `text-shadow` 로 주지 않는다.
+   *
+   * 제목은 `background-clip: text` 로 글자 속을 채우므로 글자 자체는 투명하다.
+   * `text-shadow` 는 그 배경보다 위에 글자 모양대로 덧칠되어서, 넣는 순간 채워
+   * 둔 금색을 검게 덮는다. 실제로 재 보면 획의 최대 밝기가 229 에서 150 까지
+   * 눌렸다 — 색을 아무리 올려도 밝아지지 않는 이유가 이것이었다.
+   *
+   * 대신 아래 h1 의 `drop-shadow` 가 어둠을 맡는다. 그쪽은 글자 바깥에 그려지
+   * 므로 배경과 갈라 주면서 글자는 건드리지 않는다.
+   */
 }
 
-.main-menu-screen__title p {
-  margin: 0 0 clamp(0.4rem, 1cqh, 0.75rem);
-  color: var(--color-shell-gold);
-  font-size: clamp(0.82rem, 1.2cqw, 1.15rem);
-  font-weight: 700;
-  letter-spacing: 0.13em;
-}
 
 /*
  * 제목은 배경에서 튀지 않는다.
@@ -67,15 +70,29 @@
   letter-spacing: -0.045em;
   line-height: 0.95;
 
+  /*
+   * 내려긋는 획이 잘리지 않게 상자를 아래로 늘린다.
+   *
+   * `background-clip: text` 는 요소 상자 안에서만 칠한다. `line-height: 0.95` 는
+   * 글자보다 짧은 상자를 만들어서, `g` 처럼 기준선 아래로 내려가는 획이 상자
+   * 밖으로 나가 색을 못 받고 사라졌다. 상자만 늘리고 같은 만큼 당겨 두어
+   * 배치는 그대로 둔다.
+   */
+  padding-bottom: 0.2em;
+  margin-bottom: -0.2em;
+
   /* 글자 안을 금속처럼 채운다. 배경 클립을 못 읽는 곳에서는 아래 color 가 선다. */
-  color: #c8a659;
-  background: linear-gradient(180deg, #e3c688 0%, #c4a05a 55%, #9b7838 100%);
+  color: #a88c53;
+  background: linear-gradient(180deg, #c1a975 0%, #a88c53 48%, #866a35 84%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 
   /* 새긴 것처럼 보이게 아래에 어두운 선을 하나 둔다. */
-  filter: drop-shadow(0 0.035em 0 rgb(18 11 5 / 90%)) drop-shadow(0 0.1em 0.26em rgb(0 0 0 / 70%));
+  filter:
+    drop-shadow(0 0.03em 0 rgb(16 10 4 / 95%))
+    drop-shadow(0 0.08em 0.16em rgb(0 0 0 / 88%))
+    drop-shadow(0 0 0.5em rgb(0 0 0 / 80%));
 }
 
 .main-menu-screen__actions {

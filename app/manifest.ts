@@ -16,7 +16,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Dungeon Schemer",
     short_name: "Dungeon Schemer",
-    description: "당신은 던전 편이다. 용사들은 그것을 모른다",
+    description: "그들은 당신의 말을 믿는다",
     start_url: "/",
     display: "fullscreen",
     orientation: "landscape",
