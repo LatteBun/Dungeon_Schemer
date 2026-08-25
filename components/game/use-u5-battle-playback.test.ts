@@ -1,8 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { nextU5BattleFrameIndex, u5ReplaySignature } from "./use-u5-battle-playback";
+import {
+  nextU5BattleFrameIndex,
+  u5BattleFrameDurationMs,
+  u5BattlePlaybackForSignature,
+  u5ReplaySignature,
+} from "./use-u5-battle-playback";
 import { U5_TEST_BATTLE_REPLAY } from "./u5-battle-test-fixture";
 
 describe("u5 battle playback", () => {
+  it.each([
+    ["idle", 500, 250],
+    ["attack", 360, 180],
+    ["impact", 420, 210],
+    ["settle", 520, 260],
+    ["complete", 0, 0],
+  ] as const)("%s phase는 ×1/×2에서 정해진 wait를 쓴다", (phase, atOne, atTwo) => {
+    expect(u5BattleFrameDurationMs(phase, 1)).toBe(atOne);
+    expect(u5BattleFrameDurationMs(phase, 2)).toBe(atTwo);
+  });
+
+  it("새 replay signature는 frame과 속도를 초기화한다", () => {
+    expect(u5BattlePlaybackForSignature(
+      { signature: "before", frameIndex: 4, playbackRate: 2 },
+      "after",
+    )).toEqual({ signature: "after", frameIndex: 0, playbackRate: 1 });
+  });
+
+  it("같은 replay signature는 선택한 속도를 유지한다", () => {
+    const playback = { signature: "same", frameIndex: 0, playbackRate: 2 } as const;
+
+    expect(u5BattlePlaybackForSignature(playback, "same")).toBe(playback);
+  });
+
   it("같은 내용의 새 객체는 같은 signature를 가진다", () => {
     expect(u5ReplaySignature(U5_TEST_BATTLE_REPLAY))
       .toBe(u5ReplaySignature({ ...U5_TEST_BATTLE_REPLAY }));

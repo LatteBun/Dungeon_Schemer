@@ -11,12 +11,36 @@ const FRAME_DURATION_MS: Readonly<Record<U5BattleReplayPhase, number>> = {
   complete: 0,
 };
 
+export type U5BattlePlaybackRate = 1 | 2;
+
+export interface U5BattlePlaybackState {
+  readonly signature: string;
+  readonly frameIndex: number;
+  readonly playbackRate: U5BattlePlaybackRate;
+}
+
 export interface U5BattlePlayback {
   readonly frame: U5BattleReplayFrame | undefined;
   readonly frameIndex: number;
+  readonly playbackRate: U5BattlePlaybackRate;
   readonly isComplete: boolean;
+  readonly togglePlaybackRate: () => void;
   readonly skipToComplete: () => void;
   readonly replayFromStart: () => void;
+}
+
+export function u5BattleFrameDurationMs(
+  phase: U5BattleReplayPhase,
+  playbackRate: U5BattlePlaybackRate,
+): number {
+  return FRAME_DURATION_MS[phase] / playbackRate;
+}
+
+export function u5BattlePlaybackForSignature(
+  playback: U5BattlePlaybackState,
+  signature: string,
+): U5BattlePlaybackState {
+  return playback.signature === signature ? playback : { signature, frameIndex: 0, playbackRate: 1 };
 }
 
 export function u5ReplaySignature(replay: U5BattleReplay | undefined): string {
@@ -62,30 +86,45 @@ export function nextU5BattleFrameIndex(replay: U5BattleReplay, current: number):
 
 export function useU5BattlePlayback(replay: U5BattleReplay | undefined): U5BattlePlayback {
   const signature = u5ReplaySignature(replay);
-  const [playback, setPlayback] = useState({ signature, frameIndex: 0 });
-  const frameIndex = playback.signature === signature ? playback.frameIndex : 0;
+  const [playback, setPlayback] = useState<U5BattlePlaybackState>({ signature, frameIndex: 0, playbackRate: 1 });
+  const activePlayback = u5BattlePlaybackForSignature(playback, signature);
+  const { frameIndex, playbackRate } = activePlayback;
   const frame = replay?.frames[Math.min(frameIndex, replay.frames.length - 1)];
 
   useEffect(() => {
     if (replay === undefined || frame === undefined || frame.phase === "complete") return;
     const timeout = window.setTimeout(
-      () => setPlayback((current) => ({
-        signature,
-        frameIndex: nextU5BattleFrameIndex(replay, current.signature === signature ? current.frameIndex : 0),
-      })),
-      FRAME_DURATION_MS[frame.phase],
+      () => setPlayback((current) => {
+        const currentPlayback = u5BattlePlaybackForSignature(current, signature);
+        return {
+          ...currentPlayback,
+          frameIndex: nextU5BattleFrameIndex(replay, currentPlayback.frameIndex),
+        };
+      }),
+      u5BattleFrameDurationMs(frame.phase, playbackRate),
     );
     return () => window.clearTimeout(timeout);
-  }, [frame?.phase, frameIndex, replay?.frames.length, signature]);
+  }, [frame?.phase, frameIndex, playbackRate, replay?.frames.length, signature]);
 
   return {
     frame,
     frameIndex,
+    playbackRate,
     isComplete: frame?.phase === "complete",
-    skipToComplete: () => setPlayback({
-      signature,
-      frameIndex: Math.max(0, (replay?.frames.length ?? 1) - 1),
+    togglePlaybackRate: () => setPlayback((current) => {
+      const currentPlayback = u5BattlePlaybackForSignature(current, signature);
+      return {
+        ...currentPlayback,
+        playbackRate: currentPlayback.playbackRate === 1 ? 2 : 1,
+      };
     }),
-    replayFromStart: () => setPlayback({ signature, frameIndex: 0 }),
+    skipToComplete: () => setPlayback((current) => ({
+      ...u5BattlePlaybackForSignature(current, signature),
+      frameIndex: Math.max(0, (replay?.frames.length ?? 1) - 1),
+    })),
+    replayFromStart: () => setPlayback((current) => ({
+      ...u5BattlePlaybackForSignature(current, signature),
+      frameIndex: 0,
+    })),
   };
 }
