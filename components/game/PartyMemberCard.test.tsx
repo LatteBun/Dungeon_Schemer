@@ -27,6 +27,12 @@ const render = (over: Partial<PartyMemberCardView> = {}, props = {}) =>
   );
 
 describe("PartyMemberCard", () => {
+  it("전투 수치 증감을 카드 안의 접근 가능한 output으로 표시한다", () => {
+    const html = render({}, { effect: { kind: "hp", delta: -3, token: "private-token" } });
+    expect(html).toContain("HP −3");
+    expect(html).toContain("party-card__effect--hp");
+    expect(html).not.toContain("private-token");
+  });
   it("이름·직업·성격을 함께 보여준다", () => {
     const html = render();
 

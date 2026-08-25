@@ -172,6 +172,12 @@
   background: linear-gradient(90deg, #4d6b3f, #8db56b);
 }
 
+.party-card__effect { grid-column: 1 / -1; margin: 0; font-size: clamp(0.68rem, 0.72cqw, 0.96rem); font-weight: 800; animation: party-card-effect 650ms ease both; }
+.party-card__effect--hp { color: #ef9a83; }
+.party-card__effect--trust { color: #b5da83; }
+@keyframes party-card-effect { from { opacity: 0; transform: translateY(0.28rem); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .party-card__effect { animation: none; } }
+
 /* 라벨 문구 없이 아이콘과 금액을 붙인다. */
 .party-card__gold {
   display: flex;

@@ -276,6 +276,7 @@ export function U5ProgressScreen({
                   replay={battleReplay}
                   frame={battlePlayback.frame}
                   onReplayFromStart={battlePlayback.replayFromStart}
+                  showReplayControl={feedbackComplete}
                 />
               )}
             </div>

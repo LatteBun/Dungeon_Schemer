@@ -52,6 +52,7 @@ export interface PartyMemberCardProps {
    * 않고, 그때는 카드가 뒤집히지 않는다.
    */
   changes?: readonly PartyMemberChangeEntry[];
+  effect?: { readonly kind: "hp" | "trust"; readonly delta: number; readonly token: string };
 }
 
 const GOLD_ICON = "/assets/u2/status-gold.svg";
@@ -101,7 +102,7 @@ function percent(value: number, max: number): number {
   return Math.max(0, Math.min(100, (value / max) * 100));
 }
 
-export function PartyMemberCard({ member, index, testId, changes }: PartyMemberCardProps) {
+export function PartyMemberCard({ member, index, testId, changes, effect }: PartyMemberCardProps) {
   const alive = member.alive ?? true;
   const [flipped, setFlipped] = useState(false);
   const canFlip = changes !== undefined;
@@ -148,6 +149,7 @@ export function PartyMemberCard({ member, index, testId, changes }: PartyMemberC
             <span className="party-meter" aria-hidden="true">
               <i style={{ width: `${alive ? percent(member.hp, member.maxHp) : 0}%` }} />
             </span>
+            {effect?.kind === "hp" ? <output className="party-card__effect party-card__effect--hp" aria-live="polite">HP {effect.delta > 0 ? `+${effect.delta}` : `−${Math.abs(effect.delta)}`}</output> : null}
           </div>
 
           <div className="party-card__stat">
@@ -156,6 +158,7 @@ export function PartyMemberCard({ member, index, testId, changes }: PartyMemberC
             <span className="party-meter party-meter--trust" aria-hidden="true">
               <i style={{ width: `${percent(member.trust, 100)}%` }} />
             </span>
+            {effect?.kind === "trust" ? <output className="party-card__effect party-card__effect--trust" aria-live="polite">신뢰 {effect.delta > 0 ? `+${effect.delta}` : `−${Math.abs(effect.delta)}`}</output> : null}
           </div>
 
           {/* 라벨 문구를 두지 않는다. 아이콘과 금액이 붙어 있으면 읽힌다. */}

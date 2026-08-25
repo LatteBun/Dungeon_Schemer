@@ -15,6 +15,7 @@ export interface U5BattleSceneProps {
   readonly replay: U5BattleReplay;
   readonly frame: U5BattleReplayFrame;
   readonly onReplayFromStart: () => void;
+  readonly showReplayControl?: boolean;
 }
 
 function participantById(replay: U5BattleReplay, id: string | null) {
@@ -246,7 +247,7 @@ function Participant({ participant, frame, reducedMotion }: {
   );
 }
 
-export function U5BattleScene({ replay, frame, onReplayFromStart }: U5BattleSceneProps) {
+export function U5BattleScene({ replay, frame, onReplayFromStart, showReplayControl = true }: U5BattleSceneProps) {
   const reducedMotion = useReducedMotion() ?? false;
 
   const party = replay.participants.filter((participant) => participant.side === "party");
@@ -271,7 +272,7 @@ export function U5BattleScene({ replay, frame, onReplayFromStart }: U5BattleScen
       <p className="u5-battle-live" data-empty={caption(replay, frame) === "" ? "true" : "false"}>
         {caption(replay, frame)}
       </p>
-      {!complete || replay.verifications.length === 0 ? null : (
+      {!complete || !showReplayControl || replay.verifications.length === 0 ? null : (
         <ul className="u5-battle-verifications" data-testid="u5-battle-verifications">
           {replay.verifications.map((one) => (
             <li key={`${one.characterId}-${one.action}`}>
@@ -281,7 +282,7 @@ export function U5BattleScene({ replay, frame, onReplayFromStart }: U5BattleScen
         </ul>
       )}
       <p className="u5-battle-announcement" aria-live="polite">{announcement(replay, frame)}</p>
-      {complete ? (
+      {complete && showReplayControl ? (
         <div className="u5-battle-controls">
           <button type="button" onClick={onReplayFromStart}>다시 보기</button>
         </div>

@@ -24,6 +24,7 @@ import {
   publicKindByNodeId,
   statusFor,
 } from "./campaign-adapters";
+import { bossCombatFeedbackFor, eventCombatFeedbackFor } from "./u5-combat-feedback-adapter";
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
 import { createU4MapNodeViews, createU4PartyMemberViews } from "./u4-dungeon-map-model";
@@ -223,6 +224,7 @@ function ExpeditionScreens() {
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={bossReplay ?? undefined}
         battleExitPolicy={bossReplay === null ? undefined : "after-playback"}
+        combatFeedback={bossCombatFeedbackFor(campaign, active)}
         changesByMemberId={changesByMemberId(active)}
         onAcknowledge={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
         acknowledgeLabel="정산으로"
@@ -249,6 +251,7 @@ function ExpeditionScreens() {
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={replay ?? undefined}
         battleExitPolicy={gateBattle ? "after-playback" : undefined}
+        combatFeedback={seeing ? eventCombatFeedbackFor(campaign, active) : undefined}
         changesByMemberId={changesByMemberId(active)}
         onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });
