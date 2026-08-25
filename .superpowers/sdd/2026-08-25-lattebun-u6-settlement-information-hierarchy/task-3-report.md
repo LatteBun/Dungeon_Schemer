@@ -30,3 +30,11 @@
 
 - Task 4가 새 class의 시각 배치 및 프리뷰의 추가 상태 검증을 맡는다.
 - lint의 기존 `ScreenFit.tsx:118` 오류는 범위 밖으로 유지했다.
+
+## 리뷰 수정 1/5
+
+- 사망한 신뢰 0 인물 회귀는 실제 화면 문구인 `정체 발각`과 `원정 출전 불가`가 모두 없음을 확인하도록 바꿔, 존재하지 않는 `이후 원정 출전 불가`를 검사하던 false-pass를 제거했다.
+- 화면 단위 검증을 보강했다: ★5 위험도 상한과 상승 불가, 전멸 재도전 보상의 조건부 표시, 변화 없는 양수 신뢰 숨김, 결과→원인→원정대의 DOM 순서와 세 인물, 사망·중상 `<em>` 배지를 다룬다.
+- RED/mutation 증거: `pnpm vitest run components/game/U6SettlementScreen.test.ts -t "위험도 상한"`에서 상한 문구를 일시적으로 `상한에 도달했다`로 바꾸자 1개 실패했고, `최대 위험도라 더 오르지 않는다` 기대가 실패 원인이었다. 즉시 원문을 복원했다.
+- GREEN: `pnpm vitest run components/game/U6SettlementScreen.test.ts components/game/u6-settlement-model.test.ts components/game/campaign-render.test.tsx && pnpm typecheck` → 3 files, 45 tests 통과 및 `tsc --noEmit` 성공.
+- 이번 수정은 화면 테스트와 보고서만 변경했다. Task 4 CSS/프리뷰 데이터와 Task 5의 `causeInputs` 원천 이전은 건드리지 않았다.

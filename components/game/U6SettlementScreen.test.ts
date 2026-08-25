@@ -146,7 +146,8 @@ describe("U6SettlementScreen", () => {
 
     expect(html).toContain("사망 · HP 24 → 0");
     expect(html).toContain("마지막 신뢰 8 → 0");
-    expect(html).not.toContain("이후 원정 출전 불가");
+    expect(html).not.toContain("정체 발각");
+    expect(html).not.toContain("원정 출전 불가");
   });
 
   it("전멸은 계약 보상과 유품 골드를 분리한다", () => {
@@ -165,6 +166,78 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("+84");
     expect(html).toContain("★2");
     expect(html).toContain("★3");
+  });
+
+  it("위험도 상한은 ★5와 상승 불가를 말하고 실패 상승을 말하지 않는다", () => {
+    const html = render({
+      outcome: { kind: "wiped", title: "원정대 전멸", summary: "3명 전원 사망 · 계약 실패" },
+      dungeonOutcome: { kind: "riskCapped", level: 5 },
+    });
+
+    expect(html).toContain("던전 위험도");
+    expect(html).toContain("★5");
+    expect(html).toContain("최대 위험도라 더 오르지 않는다");
+    expect(html).not.toContain("실패로 위험도가 올랐다");
+  });
+
+  it("전멸의 재도전 보상은 있을 때만 다시 맡을 던전으로 말한다", () => {
+    const wiped = render({
+      outcome: { kind: "wiped", title: "원정대 전멸", summary: "3명 전원 사망 · 계약 실패" },
+      dungeonOutcome: { kind: "riskIncreased", before: 2, after: 3 },
+      nextReward: { reputation: 15, gold: 32 },
+    });
+
+    expect(wiped).toContain("이 던전을 다시 맡으면 · 3명 생환 기준");
+    expect(wiped).toContain("명성 15");
+    expect(wiped).toContain("골드 32");
+    expect(render()).not.toContain("이 던전을 다시 맡으면");
+  });
+
+  it("변화 없는 0 초과 신뢰는 결과 줄에 적지 않는다", () => {
+    const html = render({
+      members: [
+        member({
+          trust: {
+            before: 40,
+            after: 40,
+            changed: false,
+            isZero: false,
+            becameZero: false,
+            countsTowardCampaign: false,
+          },
+        }),
+        ...BASE_MEMBERS.slice(1),
+      ],
+    });
+
+    expect(html).not.toContain("신뢰 40");
+  });
+
+  it("세 사람을 결과·선택과 판단·원정대 결과 순서로 모두 보여준다", () => {
+    const html = render();
+    const outcomeAt = html.indexOf("거미굴 3 정복");
+    const causesAt = html.indexOf("선택과 판단");
+    const partyAt = html.indexOf("원정대 결과");
+
+    expect(html).toContain("실바나");
+    expect(html).toContain("카일");
+    expect(html).toContain("오스왈드");
+    expect(outcomeAt).toBeGreaterThanOrEqual(0);
+    expect(causesAt).toBeGreaterThan(outcomeAt);
+    expect(partyAt).toBeGreaterThan(causesAt);
+  });
+
+  it("사망과 중상을 문구뿐 아니라 각각의 배지로 표시한다", () => {
+    const html = render({
+      members: [
+        member({ gravelyWounded: true }),
+        ...BASE_MEMBERS.slice(1),
+      ],
+    });
+
+    expect(html).toContain("사망 · HP 28 → 0");
+    expect(html).toContain("<em>사망</em>");
+    expect(html).toContain("<em>중상</em>");
   });
 
   it("정산에는 승급 제어가 없다", () => {
