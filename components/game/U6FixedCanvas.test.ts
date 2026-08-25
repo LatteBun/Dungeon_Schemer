@@ -45,12 +45,22 @@ describe("U6 고정 캔버스 계약", () => {
     expect(rule).toMatch(/grid-template-rows:\s*auto\s+auto\s+minmax\(0,\s*1fr\)/);
   });
 
-  it("원정대 결과 목록은 세 인물을 세로로 담고 넘치지 않는다", () => {
+  it("원정대 결과 목록은 세 인물을 3열 세로형 카드로 담는다", () => {
     const rule = css.match(/\.u6-party-results__list\s*\{([^}]*)\}/)?.[1] ?? "";
+    const card = css.match(/\.u6-party-results__list li\s*\{([^}]*)\}/)?.[1] ?? "";
+    const portrait = css.match(/\.u6-party-results__list li > img\s*\{([^}]*)\}/)?.[1] ?? "";
 
     expect(rule).toMatch(/display:\s*grid/);
-    expect(rule).toMatch(/grid-template-rows:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    expect(rule).toMatch(/grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
     expect(rule).toMatch(/min-height:\s*0/);
+    expect(card).toMatch(/grid-template-rows:\s*auto\s+auto\s+auto\s+minmax\(0,\s*1fr\)/);
+    expect(portrait).toMatch(/width:\s*100%/);
+    const badge = css.match(/\.u6-party-result__badges em\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(portrait).toMatch(/height:\s*clamp\(11rem,\s*17\.2cqw,\s*23rem\)/);
+    expect(badge).toMatch(/display:\s*block/);
+    expect(badge).toMatch(/width:\s*100%/);
+    expect(badge).toMatch(/font-size:\s*clamp\(0\.82rem,\s*0\.9cqw,\s*1\.15rem\)/);
   });
 
   it("폐기한 다섯 단계와 다녀온 사람 선택자를 남기지 않는다", () => {

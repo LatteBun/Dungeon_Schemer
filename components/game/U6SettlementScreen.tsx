@@ -64,6 +64,7 @@ function CauseSummary({ settlement }: { settlement: U6SettlementView }) {
 
 function MemberResult({ member }: { member: U6SettlementMember }) {
   const className = [
+    "u6-party-result",
     member.diedThisExpedition ? "is-dead" : null,
     member.trust.countsTowardCampaign ? "is-exposed" : null,
     member.gravelyWounded ? "is-gravely-wounded" : null,
@@ -87,11 +88,11 @@ function MemberResult({ member }: { member: U6SettlementMember }) {
           </strong>
         )}
         {member.diedThisExpedition && member.trust.changed ? (
-          <small>마지막 신뢰 {member.trust.before} → {member.trust.after}</small>
+          <strong className="u6-party-result__trust">마지막 신뢰 {member.trust.before} → {member.trust.after}</strong>
         ) : !member.diedThisExpedition && member.trust.isZero ? (
-          <small>{member.trust.changed ? `신뢰 ${member.trust.before} → 0` : "신뢰 0"}</small>
+          <strong className="u6-party-result__trust">{member.trust.changed ? `신뢰 ${member.trust.before} → 0` : "신뢰 0"}</strong>
         ) : !member.diedThisExpedition && member.trust.changed ? (
-          <small>신뢰 {member.trust.before} → {member.trust.after}</small>
+          <strong className="u6-party-result__trust">신뢰 {member.trust.before} → {member.trust.after}</strong>
         ) : null}
       </span>
       <span className="u6-party-result__badges">

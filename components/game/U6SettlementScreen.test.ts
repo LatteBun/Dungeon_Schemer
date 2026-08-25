@@ -245,6 +245,15 @@ describe("U6SettlementScreen", () => {
     expect(html).not.toContain("신뢰 40");
   });
 
+  it("신뢰 변화는 HP와 같은 강조 요소로 보여준다", () => {
+    const html = render();
+
+    expect(html).toContain("<strong>HP 24 → 16 / 24</strong>");
+    expect(html).toContain('<strong class="u6-party-result__trust">신뢰 53 → 35</strong>');
+    expect(html).toContain('<strong class="u6-party-result__trust">마지막 신뢰 53 → 35</strong>');
+    expect(html).not.toContain("<small>신뢰 53 → 35</small>");
+  });
+
   it("세 사람을 결과·선택과 판단·원정대 결과 순서로 모두 보여준다", () => {
     const html = render();
     const outcomeAt = html.indexOf("거미굴 3 정복");
@@ -257,6 +266,28 @@ describe("U6SettlementScreen", () => {
     expect(outcomeAt).toBeGreaterThanOrEqual(0);
     expect(causesAt).toBeGreaterThan(outcomeAt);
     expect(partyAt).toBeGreaterThan(causesAt);
+  });
+
+  it("생환과 전멸 모두 세 사람을 같은 세로형 결과 카드로 보여준다", () => {
+    const partial = render();
+    const wiped = render({
+      outcome: {
+        kind: "wiped",
+        title: "원정대 전멸",
+        summary: "귀환자 없음 · 실바나 · 카일 · 오스왈드 사망",
+      },
+      dungeonOutcome: { kind: "riskIncreased", before: 3, after: 4 },
+      members: BASE_MEMBERS.map((entry) => ({
+        ...entry,
+        alive: false,
+        diedThisExpedition: true,
+        gravelyWounded: false,
+        hp: { ...entry.hp, after: 0 },
+      })),
+    });
+
+    expect(partial.match(/class="u6-party-result(?:\s|\")/g)).toHaveLength(3);
+    expect(wiped.match(/class="u6-party-result(?:\s|\")/g)).toHaveLength(3);
   });
 
   it("사망과 중상을 문구뿐 아니라 각각의 배지로 표시한다", () => {
@@ -290,8 +321,8 @@ describe("U6SettlementScreen", () => {
       ],
     });
 
-    expect(html).toContain('<li class="is-exposed">');
-    expect(html).toContain('<li class="is-gravely-wounded">');
+    expect(html).toContain('<li class="u6-party-result is-exposed">');
+    expect(html).toContain('<li class="u6-party-result is-gravely-wounded">');
   });
 
   it("정산에는 승급 제어가 없다", () => {

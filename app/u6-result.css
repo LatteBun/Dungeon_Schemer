@@ -134,8 +134,10 @@
 
 .u6-party-results__list {
   display: grid;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-  gap: clamp(0.3rem, 0.4cqh, 0.55rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+  gap: clamp(0.45rem, 0.55cqw, 0.85rem);
   min-height: 0;
   margin: 0;
   padding: 0;
@@ -144,24 +146,28 @@
 
 .u6-party-results__list li {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.35fr);
-  align-items: center;
-  gap: clamp(0.35rem, 0.45cqw, 0.7rem);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  align-items: start;
+  align-content: stretch;
+  gap: clamp(0.24rem, 0.3cqh, 0.45rem);
   min-height: 0;
-  padding: clamp(0.25rem, 0.3cqh, 0.45rem) clamp(0.4rem, 0.5cqw, 0.75rem);
+  overflow: hidden;
+  padding: 0 0 clamp(0.5rem, 0.62cqh, 0.9rem);
   border: 1px solid #6b4f2c;
-  border-left-width: 3px;
-  border-radius: 0.2rem;
-  background: rgb(16 11 8 / 76%);
+  border-top-width: 3px;
+  border-radius: 0.28rem;
+  background: linear-gradient(180deg, rgb(30 22 14 / 94%), rgb(13 10 7 / 92%));
+  box-shadow: inset 0 1px 0 rgb(244 214 145 / 6%), 0 0.35rem 0.8rem rgb(0 0 0 / 18%);
 }
 
 .u6-party-results__list li > img {
-  width: clamp(1.9rem, 2.2cqw, 3.1rem);
-  height: clamp(1.9rem, 2.2cqw, 3.1rem);
-  border: 1px solid #4d3922;
-  border-radius: 0.16rem;
+  width: 100%;
+  height: clamp(11rem, 17.2cqw, 23rem);
+  border: 0;
+  border-bottom: 1px solid #4d3922;
   object-fit: cover;
-  object-position: top;
+  object-position: 50% 8%;
+  filter: sepia(0.08) saturate(0.9) contrast(1.04);
 }
 
 .u6-party-result__who,
@@ -169,34 +175,59 @@
 .u6-party-result__badges {
   display: grid;
   min-width: 0;
-  gap: 0.1rem;
+  gap: 0.16rem;
+  padding-inline: clamp(0.55rem, 0.65cqw, 0.95rem);
 }
 
-.u6-party-result__who strong,
+.u6-party-result__who {
+  padding-top: clamp(0.42rem, 0.5cqh, 0.7rem);
+}
+
+.u6-party-result__who strong {
+  color: #ead9b7;
+  font-size: clamp(1rem, 1.06cqw, 1.45rem);
+  line-height: 1.15;
+}
+
+.u6-party-result__state {
+  padding-top: clamp(0.18rem, 0.22cqh, 0.32rem);
+  border-top: 1px solid rgb(151 117 67 / 24%);
+}
+
 .u6-party-result__state strong {
   color: #dcc9a4;
-  font-size: clamp(0.74rem, 0.79cqw, 1.1rem);
+  font-size: clamp(0.82rem, 0.88cqw, 1.2rem);
+  line-height: 1.25;
 }
 
 .u6-party-result__who small,
 .u6-party-result__state small {
   color: #907c5c;
-  font-size: clamp(0.64rem, 0.68cqw, 0.9rem);
-  line-height: 1.25;
+  font-size: clamp(0.72rem, 0.75cqw, 1rem);
+  line-height: 1.3;
 }
 
 .u6-party-result__badges {
-  justify-items: start;
+  align-self: end;
+  align-content: end;
+  justify-items: stretch;
+  padding-top: clamp(0.35rem, 0.45cqh, 0.65rem);
 }
 
 .u6-party-result__badges em {
-  border: 1px solid #a7654f;
-  border-radius: 999px;
-  padding: 0.08rem 0.35rem;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid #a7654f;
+  border-radius: 0.2rem;
+  padding: clamp(0.28rem, 0.34cqh, 0.48rem) clamp(0.48rem, 0.58cqw, 0.82rem);
+  background: rgb(104 42 31 / 38%);
   color: #f0b09c;
-  font-size: clamp(0.6rem, 0.64cqw, 0.82rem);
+  font-size: clamp(0.82rem, 0.9cqw, 1.15rem);
+  font-weight: 700;
   font-style: normal;
-  line-height: 1.25;
+  line-height: 1.3;
+  text-align: center;
 }
 
 .u6-party-results__list li.is-dead {
@@ -209,6 +240,14 @@
   color: #f0a18b;
 }
 
+.u6-party-results__list li.is-dead .u6-party-result__badges em {
+  background: rgb(126 38 30 / 56%);
+}
+
+.u6-party-results__list li.is-dead > img {
+  filter: grayscale(0.68) sepia(0.18) contrast(1.08);
+}
+
 .u6-party-results__list li.is-exposed {
   border-color: #b07945;
   background: rgb(48 34 16 / 78%);
@@ -216,6 +255,7 @@
 
 .u6-party-results__list li.is-exposed .u6-party-result__badges em {
   border-color: #d2a35e;
+  background: rgb(117 75 25 / 52%);
   color: #f2ce8c;
 }
 
@@ -226,6 +266,7 @@
 
 .u6-party-results__list li.is-gravely-wounded .u6-party-result__badges em {
   border-color: #b985b4;
+  background: rgb(89 43 84 / 52%);
   color: #e4b0de;
 }
 
