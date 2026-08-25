@@ -101,6 +101,7 @@
 
 ## 이번 개편 설계
 
+- [던전 계약 보상 랜덤화 설계](superpowers/specs/2026-08-26-lattebun-dungeon-reward-randomization-design.md): 위험도별 기대값을 유지하는 독립 균등 보상, 공고 확정·계약 snapshot·정산 소비와 미래 보상 제거 계약
 - [U5 조언 카드 번호 제거 설계](superpowers/specs/2026-08-25-lattebun-u5-advice-number-removal-design.md): 조언 카드 세 장의 숫자 배지만 제거하고 내부 슬롯 선택 계약을 유지하는 UI 변경
 - [U5 조언 카드 번호 제거 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-advice-number-removal.md): 조언 카드의 숫자 배지를 테스트 우선으로 제거하고 내부 슬롯 선택 계약을 유지하는 구현 순서
 - [보스전 정산 CTA 게이트 설계](superpowers/specs/2026-08-25-lattebun-boss-battle-exit-gate-design.md): 보스전 재생 중 정산을 잠그고 우측 하단 CTA를 `전투 건너뛰기`에서 `정산으로`로 전환하는 계약
