@@ -44,6 +44,7 @@ function metric({
     finalReputation: 0, finalGold: 0, contractGold: 0, relicGold: 0, cumulativeGold: 0,
     meanTrust: 0, medianTrust: 0, meanHpRatio: 0, medianHpRatio: 0,
     reputationPromotions: 0, goldPromotions: 0, firstRankAtExpedition: {},
+    remainingDungeonsByRisk: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
     nodeCategoryChoices: { rest: 0, merchant: 0, special: 0, monster: 0, boss: 0 },
     intendedAdviceCounts: { help: 0, harm: 0, neutral: 0 },
     selectedAdviceCounts: { help: 0, harm: 0, neutral: 0 },
@@ -58,6 +59,28 @@ function metric({
     ...overrides,
   } as CampaignRunMetrics;
 }
+
+describe("진행 진단 지표", () => {
+  it("종료 시 미클리어 던전을 현재 위험도별로 센다", () => {
+    const run = runCampaign({
+      seed: "metrics-remaining-risk",
+      strategy: createStrategy("survival"),
+      accuracy: 0.7,
+    });
+    const metrics = metricsForRun(run);
+    const remaining = Object.values(metrics.remainingDungeonsByRisk)
+      .reduce((sum, count) => sum + count, 0);
+
+    if (run.ok) {
+      expect(remaining).toBe(run.campaign.dungeons.filter((dungeon) => dungeon.status !== "cleared").length);
+      for (const risk of [1, 2, 3, 4, 5] as const) {
+        expect(metrics.remainingDungeonsByRisk[risk]).toBe(
+          run.campaign.dungeons.filter((dungeon) => dungeon.status !== "cleared" && dungeon.riskLevel === risk).length,
+        );
+      }
+    }
+  });
+});
 
 function withTerminationEvidence(
   run: CampaignRunMetrics,
@@ -438,6 +461,27 @@ describe("백테스트 통계", () => {
       clearRateWilson95: wilsonInterval(1, 2),
     });
     expect(combination.firstAttemptByThemeRisk["spider/2"]).toMatchObject({ starts: 2, wipes: 1, interrupted: 1 });
+  });
+
+  it("조합별 승급 도달과 종료 시 잔여 위험도 평균을 집계한다", () => {
+    const combination = aggregateRuns([
+      metric({
+        seed: "progression/a",
+        finalRank: "A",
+        firstRankAtExpedition: { B: 3, A: 8 },
+        remainingDungeonsByRisk: { 1: 0, 2: 1, 3: 2, 4: 3, 5: 1 },
+      }),
+      metric({
+        seed: "progression/b",
+        finalRank: "B",
+        firstRankAtExpedition: { B: 5 },
+        remainingDungeonsByRisk: { 1: 2, 2: 3, 3: 4, 4: 3, 5: 1 },
+      }),
+    ]).combinations["survival@0.7"]!;
+
+    expect(combination.rankReachedCounts).toEqual({ B: 2, A: 1, S: 0 });
+    expect(combination.meanFirstRankAtExpedition).toEqual({ B: 4, A: 8, S: null });
+    expect(combination.meanRemainingDungeonsByRisk).toEqual({ 1: 1, 2: 2, 3: 3, 4: 3, 5: 1 });
   });
 
   it("원정 압력 표본이 없으면 0으로 위장하지 않고 집계 오류를 낸다", () => {

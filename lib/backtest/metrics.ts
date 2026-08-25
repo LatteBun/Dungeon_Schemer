@@ -53,6 +53,7 @@ export interface CampaignRunMetrics {
   readonly reputationPromotions: number;
   readonly goldPromotions: number;
   readonly firstRankAtExpedition: Readonly<Partial<Record<Exclude<GuideRank, "C">, number>>>;
+  readonly remainingDungeonsByRisk: Readonly<Record<RiskLevel, number>>;
   readonly nodeCategoryChoices: Readonly<Record<PublicNodeCategory, number>>;
   readonly intendedAdviceCounts: Readonly<Record<AdviceOutcome, number>>;
   readonly selectedAdviceCounts: Readonly<Record<AdviceOutcome, number>>;
@@ -127,6 +128,9 @@ export interface CombinationAggregate {
   readonly eventualDungeonByInitialRisk: Readonly<Record<RiskLevel, EventualDungeonRate>>;
   readonly firstAttemptByThemeRisk: Readonly<Record<string, ExpeditionFunnel>>;
   readonly firstAttemptDepletionByThemeRisk: Readonly<Record<string, Readonly<Record<DepletionSource, DepletionTotals>>>>;
+  readonly rankReachedCounts: Readonly<Record<Exclude<GuideRank, "C">, number>>;
+  readonly meanFirstRankAtExpedition: Readonly<Record<Exclude<GuideRank, "C">, number | null>>;
+  readonly meanRemainingDungeonsByRisk: Readonly<Record<RiskLevel, number>>;
   readonly rankSCount: number;
   readonly endingCounts: Readonly<Record<EndingKind | "run-error", number>>;
   readonly terminationCounts: Readonly<Record<CampaignTerminationReason, number>>;
@@ -174,6 +178,15 @@ const NODE_CATEGORIES: readonly PublicNodeCategory[] = ["rest", "merchant", "spe
 const OUTCOMES: readonly AdviceOutcome[] = ["help", "harm", "neutral"];
 const REACTIONS: readonly InfoReaction[] = ["accepted", "suspected", "exposed"];
 const RISK_LEVELS = [1, 2, 3, 4, 5] as const satisfies readonly RiskLevel[];
+const GUIDE_RANKS = ["B", "A", "S"] as const satisfies readonly Exclude<GuideRank, "C">[];
+
+function remainingDungeonsByRisk(campaign: CampaignState): Record<RiskLevel, number> {
+  const counts: Record<RiskLevel, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  for (const dungeon of campaign.dungeons) {
+    if (dungeon.status !== "cleared") counts[dungeon.riskLevel] += 1;
+  }
+  return counts;
+}
 
 function terminationForEnding(ending: EndingKind | "run-error"): CampaignTerminationReason {
   switch (ending) {
@@ -200,6 +213,7 @@ function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetri
     finalReputation: 0, finalGold: 0, contractGold: 0, relicGold: 0, cumulativeGold: 0,
     meanTrust: 0, medianTrust: 0, meanHpRatio: 0, medianHpRatio: 0,
     reputationPromotions: 0, goldPromotions: 0, firstRankAtExpedition: {},
+    remainingDungeonsByRisk: remainingDungeonsByRisk(run.campaign),
     nodeCategoryChoices: { ...run.trace.nodeCategoryChoices },
     intendedAdviceCounts: { ...run.trace.intendedAdviceCounts },
     selectedAdviceCounts: { ...run.trace.selectedAdviceCounts },
@@ -255,6 +269,7 @@ function successfulMetrics(campaign: CampaignState, run: Extract<CampaignRun, { 
     reputationPromotions: promotionEvents.filter((event) => event.method === "reputation").length,
     goldPromotions: promotionEvents.filter((event) => event.method === "gold").length,
     firstRankAtExpedition,
+    remainingDungeonsByRisk: remainingDungeonsByRisk(campaign),
     nodeCategoryChoices: { ...run.trace.nodeCategoryChoices },
     intendedAdviceCounts: { ...run.trace.intendedAdviceCounts },
     selectedAdviceCounts: { ...run.trace.selectedAdviceCounts },
@@ -631,6 +646,21 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
   const firstAttemptByThemeRisk = Object.fromEntries([...new Set(firstAttempts.map((expedition) => `${expedition.theme}/${expedition.initialRiskLevel}`))]
     .sort((left, right) => left.localeCompare(right))
     .map((themeRisk) => [themeRisk, finalizeFunnel(firstAttempts.filter((expedition) => `${expedition.theme}/${expedition.initialRiskLevel}` === themeRisk))])) as Record<string, ExpeditionFunnel>;
+  const rankReachedCounts = Object.fromEntries(GUIDE_RANKS.map((rank) => [
+    rank,
+    runs.filter((run) => run.firstRankAtExpedition[rank] !== undefined).length,
+  ])) as Record<Exclude<GuideRank, "C">, number>;
+  const meanFirstRankAtExpedition = Object.fromEntries(GUIDE_RANKS.map((rank) => {
+    const values = runs.flatMap((run) => {
+      const value = run.firstRankAtExpedition[rank];
+      return value === undefined ? [] : [value];
+    });
+    return [rank, meanOrNull(values)];
+  })) as Record<Exclude<GuideRank, "C">, number | null>;
+  const meanRemainingDungeonsByRisk = Object.fromEntries(RISK_LEVELS.map((risk) => [
+    risk,
+    runs.reduce((total, run) => total + run.remainingDungeonsByRisk[risk], 0) / runs.length,
+  ])) as Record<RiskLevel, number>;
   return {
     id, count: runs.length, completedCount: completed.length,
     completionRate: completed.length / runs.length,
@@ -644,6 +674,7 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
     allAttemptsByCurrentRisk: funnelsByRisk(allExpeditions, (expedition) => expedition.currentRiskLevel),
     eventualDungeonByInitialRisk: eventualDungeonRates(runs),
     firstAttemptByThemeRisk, firstAttemptDepletionByThemeRisk: firstAttemptDepletionByThemeRisk(runs),
+    rankReachedCounts, meanFirstRankAtExpedition, meanRemainingDungeonsByRisk,
     rankSCount: runs.filter((run) => run.reachedRankS).length, endingCounts,
     terminationCounts, depletionBySource, depletionVerdict,
     adviceHits: runs.reduce((total, run) => total + run.adviceHits, 0),

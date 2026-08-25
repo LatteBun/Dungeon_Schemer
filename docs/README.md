@@ -117,6 +117,10 @@
 - [B1 위험도별 던전 클리어율 보정 구현 계획](superpowers/plans/2026-08-25-lattebun-b1-risk-clearance-calibration.md): 원정 trace·위험도별 funnel·acceptance gate·단계별 보스 배율 calibration과 승인 뒤 holdout 실행 순서
   - `backtest:structure`(조합당 50시드 구조 검증), `backtest:tune`(100시드 1차 보정), `backtest:quick`(200시드 최종 calibration), `backtest`(승인 뒤 조합당 2,000시드 holdout)을 사용한다.
 - [B1-C 캠페인 손실 원인 판정·보정 설계](superpowers/specs/2026-08-25-lattebun-b1-campaign-depletion-attribution-design.md): 원정·월드턴·캠페인 종료 손실을 같은 원장으로 계측하고, 지배 원인 하나만 보정하는 경계와 재측정 기준
+- [B1 생존형 진행 정책 교정 설계](superpowers/specs/2026-08-25-lattebun-b1-survival-progression-policy-design.md): 등급 잠금 구간에서 현재 접근 가능한 최고 위험도를 우선해 생존형 백테스트의 실직 편향을 교정하는 공개 정보 전략 계약
+- [B1 생존형 진행 정책 교정 구현 계획](superpowers/plans/2026-08-25-lattebun-b1-survival-progression-policy.md): 승급·잔여 던전 진단 기준선을 먼저 보존하고 생존형 정책을 테스트 우선으로 교정한 뒤 같은 50·200시드로 비교하는 실행 순서
+- [B1 위험도 곡선 v2 보정 설계](superpowers/specs/2026-08-25-lattebun-b1-risk-curve-v2-calibration-design.md): ★1 85~90%에서 ★5 55~65%까지의 새 첫 시도 목표와 보스 배율 단일 축, risk-curve 전용 gate 범위를 정의하는 후속 calibration 계약
+- [B1 위험도 곡선 v2 보정 구현 계획](superpowers/plans/2026-08-25-lattebun-b1-risk-curve-v2-calibration.md): focus별 gate 분리부터 독립 namespace, 테스트 수집 경계, 50·100·200시드 보스 배율 보정과 공식 문서 동기화까지의 테스트 우선 실행 순서
 - [C4 원정 정산 설계](superpowers/specs/2026-08-23-lattebun-c4-expedition-settlement-design.md): 정산 계약, 유품, 응급 편성, C7·C8·U6 경계
 - [C4 원정 정산 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-expedition-settlement.md): C4와 연계 계약의 테스트 우선 구현 순서
 - [C4 PR 리뷰 수정 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-pr-review-fixes.md): 전멸 전용 다음 보상과 중상 경계 판정 수정 순서
