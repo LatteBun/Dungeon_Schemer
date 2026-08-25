@@ -1,9 +1,8 @@
 import { CLASSES } from "@/lib/content/classes";
-import { CHARACTER_NAMES } from "@/lib/content/character-names";
+import { CHARACTER_ROSTER } from "@/lib/content/character-roster";
 import type { Rng } from "@/lib/rng";
 import {
   CHARACTER_POOL_SIZE,
-  CHARACTERS_PER_CLASS,
   CHARACTERS_PER_PERSONALITY,
   PERSONALITIES,
   TRUST_MAX,
@@ -38,24 +37,26 @@ const GOLD_MAX = 45;
 export function generateCharacterPool(rng: Rng): CharacterPool {
   const pool = rng.derive("pool");
 
-  const classSlots = CLASSES.flatMap((classDef) =>
-    Array.from({ length: CHARACTERS_PER_CLASS }, () => classDef),
-  );
   const personalitySlots = PERSONALITIES.flatMap((personality) =>
     Array.from({ length: CHARACTERS_PER_PERSONALITY }, () => personality),
   );
 
-  const shuffledClasses = pool.shuffle(classSlots);
+  const shuffledRoster = pool.shuffle(CHARACTER_ROSTER);
   const shuffledPersonalities = pool.shuffle(personalitySlots);
-  const shuffledNames = pool.shuffle(CHARACTER_NAMES).slice(0, CHARACTER_POOL_SIZE);
 
   const byId: Record<CharacterId, Character> = {};
   const order: CharacterId[] = [];
 
   for (let index = 0; index < CHARACTER_POOL_SIZE; index += 1) {
-    const classDef = shuffledClasses[index];
+    const entry = shuffledRoster[index];
     const personality = shuffledPersonalities[index];
-    const id = `character-${String(index + 1).padStart(3, "0")}` as CharacterId;
+    if (entry === undefined || personality === undefined) {
+      throw new Error(`캐릭터 로스터 또는 성격 슬롯이 부족합니다: ${index}`);
+    }
+    const classDef = CLASSES.find((candidate) => candidate.id === entry.classId);
+    if (classDef === undefined) {
+      throw new Error(`로스터 직업을 찾을 수 없습니다: ${entry.classId}`);
+    }
 
     const trustSpread = pool.int(-TRUST_SEED_SPREAD, TRUST_SEED_SPREAD);
     const trust = Math.min(
@@ -65,8 +66,8 @@ export function generateCharacterPool(rng: Rng): CharacterPool {
     const gold = pool.int(GOLD_MIN, GOLD_MAX);
 
     const character: Character = {
-      id,
-      name: shuffledNames[index],
+      id: entry.id,
+      name: entry.name,
       classId: classDef.id,
       personality,
       maxHp: classDef.maxHp,
@@ -77,8 +78,8 @@ export function generateCharacterPool(rng: Rng): CharacterPool {
       gravelyWounded: false,
     };
 
-    byId[id] = character;
-    order.push(id);
+    byId[entry.id] = character;
+    order.push(entry.id);
   }
 
   return { byId, order };

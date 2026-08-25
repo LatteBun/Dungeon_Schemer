@@ -140,3 +140,8 @@ PR 설명, 대화에 흩어져 있어서 통째로 훑어야만 보였다. PR �
 - [캠페인 개편 작업 배정표](CAMPAIGN_REWORK_WORK_ASSIGNMENT.md)
 - [화면·규칙 인수인계 계약](SCREEN_ADAPTER_CONTRACT.md)
 - [세션 저장 검토](SESSION_PERSISTENCE_REVIEW.md)
+# 완료된 항목: 캐릭터 고유 초상화 (2026-08-26)
+
+기존 U3의 “캐릭터 고유 초상화” 보류 항목은 완료되었다. 30명 공식 로스터와
+live A–F 자산을 추가했고, 모든 소비 화면은 로스터 기반 resolver를 사용한다.
+이전 사망 전용 초상화와 A/B 해시 선택 설명은 더 이상 현재 규칙이 아니다.

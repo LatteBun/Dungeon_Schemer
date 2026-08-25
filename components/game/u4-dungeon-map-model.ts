@@ -1,4 +1,5 @@
 import { CLASSES } from "@/lib/content/classes";
+import { portraitSrcForCharacterId } from "./character-labels";
 import type {
   Character,
   CharacterId,
@@ -100,10 +101,6 @@ export function createU4MapNodeViews(input: {
 }
 
 /* 초상 매핑은 character-labels.ts 로 옮겼다. 기존 import 를 위해 다시 내보낸다. */
-import { portraitSrcForCharacter, portraitVariantForCharacterId } from "./character-labels";
-
-export { portraitSrcForCharacter, portraitVariantForCharacterId };
-
 export function createU4PartyMemberViews(
   characters: readonly Character[],
 ): readonly U4PartyMemberView[] {
@@ -118,6 +115,6 @@ export function createU4PartyMemberViews(
     trust: character.trust,
     gold: character.gold,
     alive: character.alive,
-    portraitSrc: portraitSrcForCharacter(character),
+    portraitSrc: portraitSrcForCharacterId(character.id),
   }));
 }

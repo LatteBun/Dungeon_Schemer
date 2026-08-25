@@ -7,7 +7,7 @@
 ## 정적 경로 규칙
 
 ```text
-/assets/characters/{live|dead}/{archer|cleric|mage|rogue|warrior}/{class}_{a|b}.png
+/assets/characters/live/{archer|cleric|mage|rogue|warrior}/{class}_{a..f}.png
 ```
 
 상태 디렉터리와 직업 디렉터리를 모두 포함해야 한다. `a`·`b`는 시각 변형이며 성격, 신뢰, 고유 캐릭터 ID, 능력치를 뜻하지 않는다.
@@ -77,3 +77,15 @@
 - [화면 규격](SCREEN_LAYOUT.md)
 
 이 카탈로그는 캐릭터의 생존·신뢰·출전 가능 규칙을 새로 정의하지 않는다. 상태의 의미와 판정은 [캐릭터와 신뢰 시스템](../systems/CHARACTERS_AND_TRUST.md)을 기준으로 한다.
+# 현재 초상화 자산 계약 (2026-08-26)
+
+초상화는 공식 캐릭터 ID에서만 해석하며, 경로는 아래로 고정한다.
+
+```text
+/assets/characters/live/{class}/{class}_{a..f}.png
+```
+
+- `lib/content/character-roster.ts`의 `portraitVariant`가 파일 suffix를 결정한다.
+- 사망, 중상, 신뢰, 출전 가능 여부는 초상화 파일 경로를 바꾸지 않는다.
+- `dead/` 자산은 더 이상 제공하지 않는다. 사망은 카드 상태와 텍스트로 표현한다.
+- 원본 이미지의 해상도와 비율은 서로 다를 수 있으며 UI는 이를 강제 통일하지 않는다.

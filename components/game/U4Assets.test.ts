@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { CHARACTER_ROSTER } from "@/lib/content/character-roster";
 
 const U4_ASSETS = [
   "public/assets/u4/map/map_background_base.png",
@@ -52,10 +53,15 @@ describe("U4 assets", () => {
     expect(existsSync(path)).toBe(true);
   });
 
-  it("reuses existing U2/U3 and character assets", () => {
+  it("reuses existing U2/U3 assets and provides every official live portrait", () => {
     expect(existsSync("public/assets/u2/status-gold.svg")).toBe(true);
     expect(existsSync("public/assets/u3/extracted/risk-star.png")).toBe(true);
-    expect(existsSync("public/assets/characters/live/warrior/warrior_a.png")).toBe(true);
-    expect(existsSync("public/assets/characters/dead/warrior/warrior_a.png")).toBe(true);
+    for (const entry of CHARACTER_ROSTER) {
+      expect(
+        existsSync(
+          `public/assets/characters/live/${entry.classId}/${entry.classId}_${entry.portraitVariant}.png`,
+        ),
+      ).toBe(true);
+    }
   });
 });

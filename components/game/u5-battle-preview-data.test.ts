@@ -54,7 +54,7 @@ describe("U5 battle preview data", () => {
       const party = entry.replay.participants.filter((participant) => participant.side === "party");
       expect(party).toHaveLength(3);
       for (const participant of party) {
-        expect(participant.imageSrc).toMatch(/^\/assets\/characters\/live\/(warrior|archer|cleric|mage|rogue)\/\1_[ab]\.png$/);
+        expect(participant.imageSrc).toMatch(/^\/assets\/characters\/live\/(warrior|archer|cleric|mage|rogue)\/\1_[a-f]\.png$/);
       }
     }
   });

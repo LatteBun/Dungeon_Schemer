@@ -344,7 +344,7 @@ describe("U5ProgressScreen", () => {
     expect(tabs).toMatch(/font-size:\s*clamp\(0\.88rem,\s*0\.96cqw,\s*1\.3(?:0)?rem\)/);
     expect(title).toMatch(/font-size:\s*clamp\(0\.9(?:0)?rem,\s*1(?:\.00)?cqw,\s*1\.25rem\)/);
     expect(body).toMatch(/font-size:\s*clamp\(1(?:\.00)?rem,\s*1\.12cqw,\s*1\.5(?:0)?rem\)/);
-    expect(body).toMatch(/line-height:\s*1\.45/);
+    expect(body).toMatch(/line-height:\s*1\.35/);
   });
 
   it("조언 마크업에 판정 어휘가 새지 않는다", () => {
