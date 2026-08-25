@@ -361,9 +361,10 @@ test("생태 기록은 hover와 키보드 초점에서 scrollbar를 드러내고
       list.append(item);
     }
   });
-  await expect(ecology).toBeFocused({ timeout: 1 }).catch(() => undefined);
   await ecology.focus();
+  await expect(ecology).toBeFocused();
   for (let index = 0; index < 300; index += 1) await ecology.press("ArrowDown");
+  await expect(ecology).toBeFocused();
 
   const focusMetrics = await ecology.evaluate((element) => {
     const style = getComputedStyle(element);
@@ -386,6 +387,8 @@ test("생태 기록은 hover와 키보드 초점에서 scrollbar를 드러내고
   expect(focusMetrics.scrollbarColor).toContain("rgb(90, 70, 48)");
   expect(focusMetrics.thumbColor).toBe("rgb(90, 70, 48)");
   expect(focusMetrics.lastBottom).toBeLessThanOrEqual(focusMetrics.boxBottom + 1);
+  await ecology.evaluate((element) => element.blur());
+  await expect(ecology).not.toBeFocused();
   await ecology.hover();
   await expect(ecology).toHaveCSS("scrollbar-color", "rgb(90, 70, 48) rgba(0, 0, 0, 0)");
   expectNoBrowserErrors(failures, "긴 U5 생태 기록 내부 스크롤");
