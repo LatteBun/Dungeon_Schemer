@@ -29,7 +29,27 @@ test("캠페인이 인트로에서 첫 사건 결과까지 진행된다", async 
 
   const move = page.getByRole("button", { name: "이 지점으로 이동" });
   await expect(move).toBeEnabled();
-  await move.click();
+  const defaultSkin = move.locator(
+    ".u4-move-button__center:not(.u4-move-button__center--active)",
+  );
+  const pressedSkin = move.locator(".u4-move-button__center--active");
+  const [defaultBox, pressedBox] = await Promise.all([
+    defaultSkin.boundingBox(),
+    pressedSkin.boundingBox(),
+  ]);
+  expect(defaultBox).not.toBeNull();
+  expect(pressedBox).not.toBeNull();
+  if (defaultBox !== null && pressedBox !== null) {
+    expect(Math.abs(pressedBox.x - defaultBox.x)).toBeLessThan(1);
+    expect(Math.abs(pressedBox.y - defaultBox.y)).toBeLessThan(1);
+    expect(Math.abs(pressedBox.width - defaultBox.width)).toBeLessThan(1);
+    expect(Math.abs(pressedBox.height - defaultBox.height)).toBeLessThan(1);
+  }
+
+  await move.hover();
+  await page.mouse.down();
+  await expect(pressedSkin).toHaveCSS("opacity", "1");
+  await page.mouse.up();
 
   const adviceList = page.getByTestId("u5-advice-list");
   await expect(adviceList).toBeVisible();

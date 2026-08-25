@@ -664,6 +664,8 @@ button.u4-room {
  * 겹친다.
  */
 .u4-move-button__center--active {
+  position: absolute;
+  inset: 0;
   opacity: 0;
   transition: opacity 90ms ease;
 }
