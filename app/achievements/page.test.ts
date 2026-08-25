@@ -1,8 +1,9 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { safeAchievementReturnTo } from "@/lib/achievements/achievement-return-to";
 import RootLayout from "../layout";
-import AchievementPage, { metadata, safeAchievementReturnTo } from "./page";
+import AchievementPage, { metadata } from "./page";
 
 describe("업적 기록 페이지", () => {
   it("길잡이 업적 기록을 설명하는 고유 메타데이터를 제공한다", () => {

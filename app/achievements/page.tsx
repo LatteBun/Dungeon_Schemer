@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Achievements } from "@/components/game/AchievementScreen";
+import { safeAchievementReturnTo } from "@/lib/achievements/achievement-return-to";
 
 export const metadata: Metadata = {
   title: "길잡이 업적 기록 | Dungeon Schemer",
@@ -7,23 +8,6 @@ export const metadata: Metadata = {
 };
 
 type AchievementSearchParams = Promise<{ returnTo?: string | string[] }>;
-
-export function safeAchievementReturnTo(
-  value: string | readonly string[] | undefined,
-): string {
-  if (typeof value !== "string") return "/";
-  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return "/";
-
-  try {
-    const base = new URL("https://dungeon-schemer.local");
-    const destination = new URL(value, base);
-    if (destination.origin !== base.origin) return "/";
-    if (destination.pathname.startsWith("/achievements")) return "/";
-    return `${destination.pathname}${destination.search}${destination.hash}`;
-  } catch {
-    return "/";
-  }
-}
 
 export default async function AchievementPage({ searchParams }: {
   readonly searchParams: AchievementSearchParams;
