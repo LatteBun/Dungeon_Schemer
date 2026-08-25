@@ -106,8 +106,7 @@ U4는 E1의 NodeId와 `nextNodeIds`를 바꾸지 않고, 각 Depth의 좌우 순
 - `/assets/u2/status-reputation.svg`
 - `/assets/u2/status-promotion.svg`
 - 기존 TopStatusBar의 던전/위험도 표시 자산
-- `/assets/characters/live/{class}/{class}_{a|b}.png`
-- `/assets/characters/dead/{class}/{class}_{a|b}.png`
+- `/assets/characters/live/{class}/{class}_{a..f}.png`
 
 ## 10. 새 U4 에셋
 
@@ -232,7 +231,7 @@ U4는 E1의 NodeId와 `nextNodeIds`를 바꾸지 않고, 각 Depth의 좌우 순
 
 - `/assets/characters/live/...`
 - 직업과 일치하는 directory
-- 같은 캐릭터는 stable A/B variant
+- 같은 캐릭터는 로스터에 고정된 A–F variant
 - 네모 1:1 slot
 - `object-fit: cover`
 - `object-position: 50% 0%`
@@ -241,7 +240,7 @@ U4는 E1의 NodeId와 `nextNodeIds`를 바꾸지 않고, 각 Depth의 좌우 순
 
 `alive === false`일 때만:
 
-- 같은 직업, 같은 A/B variant의 `/dead/...` 이미지로 교체
+- 같은 live 초상화를 유지하고 카드 상태와 텍스트로 사망을 표시
 - portrait 및 card를 grayscale/저채도 처리
 - `사망` 텍스트 또는 형태 단서 표시
 
@@ -283,3 +282,8 @@ U4는 E1의 NodeId와 `nextNodeIds`를 바꾸지 않고, 각 Depth의 좌우 순
 - [x] 사용자 확인용 브라우저 캡처 제공
 - [x] feature branch commit
 - [x] 사용자 요청 전 PR 생성 금지
+# 초상화 규칙 변경 (2026-08-26)
+
+U4 파티 카드는 `portraitSrcForCharacterId`를 통해 공식 로스터의 live 초상화를
+사용한다. `alive === false`여도 같은 초상화를 유지하고 카드의 사망 상태와 `사망`
+표시로만 구분한다. 사망 전용 초상화 파일 경로는 사용하지 않는다.

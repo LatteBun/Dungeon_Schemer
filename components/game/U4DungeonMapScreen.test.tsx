@@ -81,7 +81,7 @@ const party: readonly U4PartyMemberView[] = [
     trust: 42,
     gold: 24,
     alive: false,
-    portraitSrc: "/assets/characters/dead/cleric/cleric_b.png",
+    portraitSrc: "/assets/characters/live/cleric/cleric_b.png",
   },
   {
     id: characterId("archer-1"),
@@ -176,7 +176,7 @@ describe("U4DungeonMapScreen", () => {
     const html = render();
     expect((html.match(/data-testid=\"u4-party-member\"/g) ?? [])).toHaveLength(3);
     expect(html).toContain("/assets/characters/live/warrior/warrior_a.png");
-    expect(html).toContain("/assets/characters/dead/cleric/cleric_b.png");
+    expect(html).toContain("/assets/characters/live/cleric/cleric_b.png");
     expect(html).toContain("/assets/characters/live/archer/archer_a.png");
     expect(html).toContain("party-card is-dead");
     expect(html).toContain("사망");

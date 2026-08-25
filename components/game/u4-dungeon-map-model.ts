@@ -1,5 +1,5 @@
 import { CLASSES } from "@/lib/content/classes";
-import { portraitSrcForCharacter } from "./character-labels";
+import { portraitSrcForCharacterId } from "./character-labels";
 import type {
   Character,
   CharacterId,
@@ -115,6 +115,6 @@ export function createU4PartyMemberViews(
     trust: character.trust,
     gold: character.gold,
     alive: character.alive,
-    portraitSrc: portraitSrcForCharacter(character),
+    portraitSrc: portraitSrcForCharacterId(character.id),
   }));
 }

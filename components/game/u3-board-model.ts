@@ -2,7 +2,7 @@ import { CLASSES } from "@/lib/content/classes";
 import { createRng } from "@/lib/rng";
 import { inSeatOrder } from "./party-seat-order";
 import { RANK_RISK_LIMIT, rewardForSurvivors } from "@/lib/domain";
-import { PERSONALITY_LABEL, portraitSrcForCharacter } from "./character-labels";
+import { PERSONALITY_LABEL, portraitSrcForCharacterId } from "./character-labels";
 import type {
   BoardOffer,
   CampaignState,
@@ -168,7 +168,7 @@ export function createU3BoardView(
       }
 
       /* 주입된 초상이 없으면 공용 매핑으로 채운다. 화면마다 빈 자리가 나오면 안 된다. */
-      const portraitSrc = portraitSrcForCharacter(character);
+      const portraitSrc = portraitSrcForCharacterId(character.id);
       return {
         id: character.id,
         name: character.name,

@@ -29,8 +29,7 @@ export function classLabel(classId: ClassId): string {
 }
 
 /**
- * CharacterId 문자열만으로 A/B 를 정한다. 렌더 시점이나 생사 상태와 무관하게
- * 같은 캐릭터는 늘 같은 변형을 쓴다.
+ * 공식 로스터가 CharacterId의 초상화 variant를 소유한다.
  */
 export function portraitVariantForCharacterId(characterId: CharacterId): PortraitVariant {
   return characterRosterEntryFor(characterId).portraitVariant;
@@ -40,8 +39,4 @@ export function portraitVariantForCharacterId(characterId: CharacterId): Portrai
 export function portraitSrcForCharacterId(characterId: CharacterId): string {
   const entry = characterRosterEntryFor(characterId);
   return `/assets/characters/live/${entry.classId}/${entry.classId}_${entry.portraitVariant}.png`;
-}
-
-export function portraitSrcForCharacter(input: { id: CharacterId }): string {
-  return portraitSrcForCharacterId(input.id);
 }

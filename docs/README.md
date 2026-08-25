@@ -184,3 +184,9 @@
 - [C1 캠페인 초기화·게시판 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-c1-campaign-initialization-board.md)
 - [C1·F1·F2 통합 검증 하네스 설계](superpowers/specs/2026-08-14-sanghwan-yoo-c1-f1-f2-integration-harness-design.md)
 - [F1·F2·C1 통합 검증 하네스 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-f1-f2-c1-integration-harness.md)
+# 최신 캐릭터 콘텐츠 계약
+
+캐릭터 정체성과 초상화는 [캐릭터 풀과 월드 턴](systems/CHARACTER_POOL_AND_WORLDTURN.md) 및
+[캐릭터 UI 자산](experience/CHARACTER_UI_ASSETS.md)을 기준으로 한다. 구현 설계와 실행 순서는
+[고정 로스터 설계](superpowers/specs/2026-08-26-lattebun-character-fixed-roster-portraits-design.md),
+[구현 계획](superpowers/plans/2026-08-26-lattebun-character-fixed-roster-portraits.md)에 기록한다.
