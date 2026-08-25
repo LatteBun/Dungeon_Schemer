@@ -14,6 +14,7 @@ import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import { U5_PREVIEW_ENTRIES } from "./u5-preview-data";
 import type { U5ProgressView } from "./u5-progress-model";
+import type { U5CombatFeedbackView } from "./u5-combat-feedback";
 
 export type U5BattlePreviewId = "e3-monster" | "e4-boss";
 
@@ -27,6 +28,7 @@ export interface U5BattlePreviewEntry {
   readonly ecology: U5EcologyView;
   readonly resolution: BattleResolution;
   readonly replay: U5BattleReplay;
+  readonly feedback: U5CombatFeedbackView;
 }
 
 const campaign = initializeCampaign("u5-dungeon-progress-preview");
@@ -203,6 +205,7 @@ export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] 
       ecology: base.ecology,
       resolution: e3Resolution,
       replay: e3Replay,
+      feedback: { signature: "preview:e3", kind: "event", consequenceText: "거미가 추가로 등장한다.", preBattleReaction: { memberId: members[0]!.id, memberName: members[0]!.name, text: "알겠어. 네 말대로 하지." }, immediateTrustChanges: [], postBattleReaction: null, postBattleTrustChanges: [] },
     },
     {
       id: "e4-boss",
@@ -219,6 +222,7 @@ export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] 
       ecology: base.ecology,
       resolution: bossResolution,
       replay: bossReplay,
+      feedback: { signature: "preview:e4", kind: "boss", consequenceText: null, preBattleReaction: null, immediateTrustChanges: [], postBattleReaction: null, postBattleTrustChanges: [] },
     },
   ];
 }

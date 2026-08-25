@@ -36,6 +36,7 @@ export function U5BattlePreview() {
         log={entry.log}
         ecology={entry.ecology}
         battleReplay={entry.replay}
+        combatFeedback={entry.feedback}
         previewPlaybackControls
       />
     </div>
