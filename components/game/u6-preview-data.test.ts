@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ENDING_ORDER } from "@/lib/domain";
 import { U6_PREVIEW_ENTRIES, U6_PREVIEW_IDS } from "./u6-preview-data";
 
+const FUTURE_REWARD_PROPERTY = "next" + "Reward";
+
 describe("U6 프리뷰 데이터", () => {
   it("정산 3종과 엔딩 5종을 모두 담는다", () => {
     expect(U6_PREVIEW_IDS).toHaveLength(8);
@@ -30,15 +32,15 @@ describe("U6 프리뷰 데이터", () => {
     expect(wipe?.relicGold).toBeGreaterThan(0);
     expect(wipe?.reputationDelta).toBeLessThan(0);
     expect(wipe?.riskAfter).toBe((wipe?.riskBefore ?? 0) + 1);
-    expect(wipe?.nextReward).toEqual({ reputation: 15, gold: 32 });
+    expect(wipe).not.toHaveProperty(FUTURE_REWARD_PROPERTY);
   });
 
-  it("클리어 정산에는 다음 계약 보상이 없다", () => {
+  it("클리어 정산도 미래 보상 계약을 갖지 않는다", () => {
     const partial = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-partial")?.settlement;
     const promotion = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-promotion")?.settlement;
 
-    expect(partial?.nextReward).toBeNull();
-    expect(promotion?.nextReward).toBeNull();
+    expect(partial).not.toHaveProperty(FUTURE_REWARD_PROPERTY);
+    expect(promotion).not.toHaveProperty(FUTURE_REWARD_PROPERTY);
   });
 
   it("★5 전멸이 아니면 위험도 상한 표시를 하지 않는다", () => {

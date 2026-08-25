@@ -1,12 +1,13 @@
 import { CLASSES } from "@/lib/content/classes";
 import { createRng } from "@/lib/rng";
 import { inSeatOrder } from "./party-seat-order";
-import { RANK_RISK_LIMIT, rewardForSurvivors } from "@/lib/domain";
+import { contractRewardForSurvivors, RANK_RISK_LIMIT } from "@/lib/domain";
 import { PERSONALITY_LABEL, portraitSrcForCharacter } from "./character-labels";
 import type {
   BoardOffer,
   CampaignState,
   CharacterId,
+  ContractReward,
   RiskLevel,
   ThemeId,
 } from "@/lib/domain";
@@ -63,10 +64,12 @@ export interface U3BoardView {
 
 export type U3PortraitMap = Readonly<Partial<Record<CharacterId, string>>>;
 
-export function contractOutcomesForRisk(
-  riskLevel: RiskLevel,
+export function contractOutcomesForReward(
+  fullReward: ContractReward,
 ): readonly U3ContractOutcomeView[] {
-  const full = rewardForSurvivors(riskLevel, 3);
+  const full = contractRewardForSurvivors(fullReward, 3);
+  const two = contractRewardForSurvivors(fullReward, 2);
+  const one = contractRewardForSurvivors(fullReward, 1);
 
   return [
     {
@@ -79,15 +82,15 @@ export function contractOutcomesForRisk(
     {
       survivors: 2,
       label: "2명 생존 시",
-      reputation: rewardForSurvivors(riskLevel, 2).reputation,
-      gold: rewardForSurvivors(riskLevel, 2).gold,
+      reputation: two.reputation,
+      gold: two.gold,
       reputationLoss: 0,
     },
     {
       survivors: 1,
       label: "1명 생존 시",
-      reputation: rewardForSurvivors(riskLevel, 1).reputation,
-      gold: rewardForSurvivors(riskLevel, 1).gold,
+      reputation: one.reputation,
+      gold: one.gold,
       reputationLoss: 0,
     },
     {
@@ -150,7 +153,6 @@ export function createU3BoardView(
       throw new Error(`U3 공고의 던전을 찾을 수 없습니다: ${offer.dungeonId}`);
     }
 
-    const fullReward = rewardForSurvivors(offer.riskLevel, 3);
     const notice: U3BoardNoticeView = {
       offerId: offer.id,
       dungeonId: offer.dungeonId,
@@ -158,8 +160,8 @@ export function createU3BoardView(
       theme: dungeon.theme,
       themeLabel: THEME_LABELS[dungeon.theme],
       riskLevel: offer.riskLevel,
-      reputationReward: fullReward.reputation,
-      goldReward: fullReward.gold,
+      reputationReward: offer.reward.reputation,
+      goldReward: offer.reward.gold,
       locked: offer.lockReason !== null,
       lockReasonLabel: lockReasonLabel(campaign, offer),
     };
@@ -194,7 +196,7 @@ export function createU3BoardView(
     detailsByOfferId[offer.id] = {
       ...notice,
       party,
-      contractOutcomes: contractOutcomesForRisk(offer.riskLevel),
+      contractOutcomes: contractOutcomesForReward(offer.reward),
     };
   }
 

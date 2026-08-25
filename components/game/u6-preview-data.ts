@@ -15,7 +15,7 @@ import {
   finalizeImmediateAdviceTrust,
   presentShuffledAdvice,
 } from "@/lib/rules/advice-evaluation";
-import { createBoardOffers } from "@/lib/rules/board";
+import { createBoardOffers, createOfferReward } from "@/lib/rules/board";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
 import {
@@ -234,6 +234,7 @@ function playedThrough(
       expeditionId: `${PREVIEW_SEED}/${target.id}/${index}`,
       dungeonId: target.id,
       contractRisk: target.riskLevel,
+      contractReward: createOfferReward(current, target),
       party: { memberIds: trio.map((member) => member.id) },
       finalMembers,
       status: wiped ? "wiped" : "cleared",
@@ -256,10 +257,13 @@ function settlementFor(input: {
   readonly finalMembers: readonly Character[];
   readonly status: "cleared" | "wiped";
 }): { readonly view: U6SettlementView; readonly campaign: CampaignState } {
+  const contractDungeon = input.campaign.dungeons.find((candidate) => candidate.id === dungeon.id);
+  if (contractDungeon === undefined) throw new Error("정산 프리뷰 던전이 없다");
   const snapshot: SettlementSnapshot = {
     expeditionId: `${PREVIEW_SEED}/${dungeon.id}/${input.status}`,
     dungeonId: dungeon.id,
-    contractRisk: input.campaign.dungeons.find((candidate) => candidate.id === dungeon.id)!.riskLevel,
+    contractRisk: contractDungeon.riskLevel,
+    contractReward: createOfferReward(input.campaign, contractDungeon),
     party: { memberIds: party.map((member) => member.id) },
     finalMembers: input.finalMembers,
     status: input.status,

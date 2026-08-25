@@ -103,6 +103,8 @@
 
 - [캠페인 기본 진입 무작위 시드 설계](superpowers/specs/2026-08-26-lattebun-campaign-random-seed-design.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 탐색 계약
 - [캠페인 기본 진입 무작위 시드 구현 계획](superpowers/plans/2026-08-26-lattebun-campaign-random-seed.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 테스트 우선 실행 순서
+- [던전 계약 보상 랜덤화 설계](superpowers/specs/2026-08-26-lattebun-dungeon-reward-randomization-design.md): 위험도별 기대값을 유지하는 독립 균등 보상, 공고 확정·계약 snapshot·정산 소비와 미래 보상 제거 계약
+- [던전 계약 보상 랜덤화 구현 계획](superpowers/plans/2026-08-26-lattebun-dungeon-reward-randomization.md): 자원·승급 기준선부터 도메인 범위, 공고 생성, U3·정산·U6 전환, 통합 회귀와 50·100·200시드 재측정까지의 테스트 우선 순서
 - [ScreenFit 전체 화면 외부 상태 구독 설계](superpowers/specs/2026-08-26-lattebun-screen-fit-external-store-design.md): 모바일 세로 안내의 전체 화면 가능 여부를 브라우저 외부 상태로 구독해 Effect 동기 상태 갱신과 ESLint 오류를 제거하는 기술 계약
 - [ScreenFit 전체 화면 외부 상태 구독 구현 계획](superpowers/plans/2026-08-26-lattebun-screen-fit-external-store.md): fullscreenchange 구독, SSR snapshot, React Hooks lint 회귀를 테스트 우선으로 구현·검증하는 순서
 - [U5 전투 피드백 시퀀스 설계](superpowers/specs/2026-08-25-lattebun-u5-combat-feedback-sequence-design.md): 조언 선택부터 일반전·보스전, 우측 카드 HP 동기화, 사후 대사와 신뢰 변화까지 결과를 인과 순서로 공개하는 UI 계약

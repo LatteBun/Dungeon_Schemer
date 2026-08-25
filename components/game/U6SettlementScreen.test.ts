@@ -14,6 +14,7 @@ const status: TopStatusView = {
 };
 
 const LABELS = ["선택", "개인 반응", "피해", "보상·손실", "캠페인 변화"] as const;
+const FUTURE_WIPE_COPY = "이 던전을 다시 " + "맡으면";
 
 const view = (over: Partial<U6SettlementView> = {}): U6SettlementView => ({
   dungeonName: "거미굴 3",
@@ -31,7 +32,6 @@ const view = (over: Partial<U6SettlementView> = {}): U6SettlementView => ({
   reputationDelta: 9,
   goldDelta: 19,
   relicGold: 0,
-  nextReward: { reputation: 15, gold: 32 },
   ...over,
 });
 
@@ -65,15 +65,12 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("계약 시점");
   });
 
-  /*
-   * 이 값은 전멸했을 때만 나오고, 그 던전을 다시 맡을 때의 보상이다.
-   *
-   * 「다음 계약 보상」이라고만 적으면 게시판의 다음 공고가 이미 정해진 것처럼
-   * 읽힌다. 무엇에 대한 값인지를 문구가 말해야 한다.
-   */
-  it("전멸에서만 재도전 보상을 보여준다", () => {
-    expect(render({ nextReward: null })).not.toContain("다시 맡으면");
-    expect(render({ survivors: 0 })).toContain("이 던전을 다시 맡으면");
+  it("전멸 정산은 아직 생성되지 않은 다음 보상을 보여주지 않는다", () => {
+    const html = render({ survivors: 0, riskBefore: 2, riskAfter: 3 });
+
+    expect(html).not.toContain(FUTURE_WIPE_COPY);
+    expect(html).not.toContain("3명 생존 기준");
+    expect(html).not.toContain("다음 계약 보상");
   });
 
   it("위험도 변화를 전후로 함께 보여준다", () => {
