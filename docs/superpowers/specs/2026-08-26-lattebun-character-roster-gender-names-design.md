@@ -3,7 +3,7 @@
 **작성일:** 2026-08-26
 **작성자:** LatteBun
 **작성 도구:** Codex
-**상태:** 성별 확정 · 이름 제안 대기
+**상태:** 승인됨
 
 ## 목적
 
@@ -53,40 +53,44 @@ interface CharacterRosterEntry {
 
 사용자 입력에서 `M`은 `male`, `작성 필요`는 `female`을 뜻한다. 아래 표는 이를
 콘텐츠 계약값으로 정규화한 결과다. `새 이름`은 동일한 ID와 초상화에 맞춰
-제안·검토하며, `character-mage-f`의 `코코`는 사용자 고정값이다.
+제안·검토하며, `character-mage-f`의 `헨서라`는 사용자 고정값이다.
+
+이름안은 유럽 판타지 한국어 음역풍으로 정한다. 성별에 맞는 어감, 30명 전체의
+이름 고유성, 직업·초상과의 자연스러운 조화를 만족해야 하며, 현실 인물·유명
+프랜차이즈 고유명사는 피한다.
 
 | ID                    | 직업    | 변형 | 현재 이름 | 성별      | 새 이름 |
 | --------------------- | ------- | ---- | --------- | --------- | ------- |
-| `character-warrior-a` | warrior | a    | 가론      | male      | 미정    |
-| `character-warrior-b` | warrior | b    | 라이문드  | female    | 미정    |
-| `character-warrior-c` | warrior | c    | 바스티안  | male      | 미정    |
-| `character-warrior-d` | warrior | d    | 하르멜    | female    | 미정    |
-| `character-warrior-e` | warrior | e    | 헬가      | male      | 미정    |
-| `character-warrior-f` | warrior | f    | 브릭스턴  | female    | 미정    |
-| `character-archer-a`  | archer  | a    | 네리사    | female    | 미정    |
-| `character-archer-b`  | archer  | b    | 다이린    | male      | 미정    |
-| `character-archer-c`  | archer  | c    | 파에린    | male      | 미정    |
-| `character-archer-d`  | archer  | d    | 노엘라    | male      | 미정    |
-| `character-archer-e`  | archer  | e    | 실바나    | female    | 미정    |
-| `character-archer-f`  | archer  | f    | 카트린    | female    | 미정    |
-| `character-cleric-a`  | cleric  | a    | 마요라    | male      | 미정    |
-| `character-cleric-b`  | cleric  | b    | 세라핀    | female    | 미정    |
-| `character-cleric-c`  | cleric  | c    | 이졸데    | male      | 미정    |
-| `character-cleric-d`  | cleric  | d    | 로자린드  | female    | 미정    |
-| `character-cleric-e`  | cleric  | e    | 제라딘    | female    | 미정    |
-| `character-cleric-f`  | cleric  | f    | 미라벨    | male      | 미정    |
-| `character-mage-a`    | mage    | a    | 아드리크  | male      | 미정    |
-| `character-mage-b`    | mage    | b    | 타리엘    | female    | 미정    |
-| `character-mage-c`    | mage    | c    | 베로니크  | male      | 미정    |
-| `character-mage-d`    | mage    | d    | 사이러스  | female    | 미정    |
-| `character-mage-e`    | mage    | e    | 루시안    | male      | 미정    |
-| `character-mage-f`    | mage    | f    | 이반드로  | female    | 코코 (고정) |
-| `character-rogue-a`   | rogue   | a    | 카심      | male      | 미정    |
-| `character-rogue-b`   | rogue   | b    | 델런      | female    | 미정    |
-| `character-rogue-c`   | rogue   | c    | 무렌      | male      | 미정    |
-| `character-rogue-d`   | rogue   | d    | 오린      | male      | 미정    |
-| `character-rogue-e`   | rogue   | e    | 코르빈    | female    | 미정    |
-| `character-rogue-f`   | rogue   | f    | 펠릭스    | female    | 미정    |
+| `character-warrior-a` | warrior | a    | 가론      | male      | 발드릭 |
+| `character-warrior-b` | warrior | b    | 라이문드  | female    | 브리엘라 |
+| `character-warrior-c` | warrior | c    | 바스티안  | male      | 로데릭 |
+| `character-warrior-d` | warrior | d    | 하르멜    | female    | 마르셀라 |
+| `character-warrior-e` | warrior | e    | 헬가      | male      | 토르벤 |
+| `character-warrior-f` | warrior | f    | 브릭스턴  | female    | 이솔라 |
+| `character-archer-a`  | archer  | a    | 네리사    | female    | 엘리시아 |
+| `character-archer-b`  | archer  | b    | 다이린    | male      | 알렌 |
+| `character-archer-c`  | archer  | c    | 파에린    | male      | 카엘 |
+| `character-archer-d`  | archer  | d    | 노엘라    | male      | 레오니스 |
+| `character-archer-e`  | archer  | e    | 실바나    | female    | 리비아 |
+| `character-archer-f`  | archer  | f    | 카트린    | female    | 아델린 |
+| `character-cleric-a`  | cleric  | a    | 마요라    | male      | 세드릭 |
+| `character-cleric-b`  | cleric  | b    | 세라핀    | female    | 세실리아 |
+| `character-cleric-c`  | cleric  | c    | 이졸데    | male      | 루시엔 |
+| `character-cleric-d`  | cleric  | d    | 로자린드  | female    | 로레나 |
+| `character-cleric-e`  | cleric  | e    | 제라딘    | female    | 아멜리아 |
+| `character-cleric-f`  | cleric  | f    | 미라벨    | male      | 에드윈 |
+| `character-mage-a`    | mage    | a    | 아드리크  | male      | 발테르 |
+| `character-mage-b`    | mage    | b    | 타리엘    | female    | 비비안 |
+| `character-mage-c`    | mage    | c    | 베로니크  | male      | 오스카르 |
+| `character-mage-d`    | mage    | d    | 사이러스  | female    | 셀레네 |
+| `character-mage-e`    | mage    | e    | 루시안    | male      | 에리온 |
+| `character-mage-f`    | mage    | f    | 이반드로  | female    | 헨서라 (고정) |
+| `character-rogue-a`   | rogue   | a    | 카심      | male      | 라울 |
+| `character-rogue-b`   | rogue   | b    | 델런      | female    | 카밀라 |
+| `character-rogue-c`   | rogue   | c    | 무렌      | male      | 다미안 |
+| `character-rogue-d`   | rogue   | d    | 오린      | male      | 니콜라스 |
+| `character-rogue-e`   | rogue   | e    | 코르빈    | female    | 베로니카 |
+| `character-rogue-f`   | rogue   | f    | 펠릭스    | female    | 이네스 |
 
 ## 검증 계약
 
@@ -109,6 +113,6 @@ interface CharacterRosterEntry {
 ## 승인 기준
 
 1. 성별 값은 15명 `male`, 15명 `female`로 확정한다.
-2. `character-mage-f`의 새 이름은 `코코`로 고정한다.
-3. 나머지 29명의 새 이름이 중복 없이 승인된다.
-4. 이 설계와 후속 구현 계획을 검토·승인한 뒤에만 코드를 변경한다.
+2. `character-mage-f`의 새 이름은 `헨서라`로 고정한다.
+3. 나머지 29명의 새 이름은 사용자가 작명을 위임한 위 표의 값으로 확정한다.
+4. 사용자가 이 설계를 승인했으며, 후속 구현 계획을 작성한 뒤에만 코드를 변경한다.
