@@ -267,7 +267,7 @@ function settlementFor(input: {
   };
   const execution = settleExpedition(input.campaign, snapshot);
   return {
-    view: createU6SettlementView(execution.result, dungeon.name, dungeon.theme satisfies ThemeId),
+    view: createU6SettlementView(execution.campaign, execution.result, dungeon.name, dungeon.theme satisfies ThemeId),
     /* 상태 바는 정산 뒤의 캠페인을 보여준다. 명성과 골드가 이미 반영된 값이다. */
     campaign: execution.campaign,
   };

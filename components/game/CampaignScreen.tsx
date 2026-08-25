@@ -161,7 +161,7 @@ function CurrentScreen() {
     return (
       <U6SettlementScreen
         status={status}
-        settlement={createU6SettlementView(shownSettlement, dungeon?.name ?? "", dungeon?.theme ?? "spider")}
+        settlement={createU6SettlementView(campaign, shownSettlement, dungeon?.name ?? "", dungeon?.theme ?? "spider")}
         onContinue={() => {
           /*
            * 정산을 확인하면 세상이 한 턴 돈다.

@@ -32,6 +32,13 @@ const view = (over: Partial<U6SettlementView> = {}): U6SettlementView => ({
   goldDelta: 19,
   relicGold: 0,
   nextReward: { reputation: 15, gold: 32 },
+  outcome: { kind: "cleared", title: "거미굴 3 정복", summary: "2명 귀환 · 이름 사망" },
+  causes: [
+    { kind: "choice", label: "마지막 조언", detail: "선택 내용" },
+    { kind: "reactions", label: "파티의 판단", detail: "반응 내용" },
+  ],
+  dungeonOutcome: { kind: "cleared" },
+  trustPressure: null,
   ...over,
 });
 
@@ -107,8 +114,17 @@ describe("다녀온 사람", () => {
     classLabel: "마법사",
     portraitSrc: "/assets/characters/live/mage/mage_a.png",
     alive: true,
+    diedThisExpedition: false,
+    gravelyWounded: false,
     hp: { before: 24, after: 16, max: 24 },
-    trust: { before: 53, after: 35 },
+    trust: {
+      before: 53,
+      after: 35,
+      changed: true,
+      isZero: false,
+      becameZero: false,
+      countsTowardCampaign: false,
+    },
     ...over,
   });
 

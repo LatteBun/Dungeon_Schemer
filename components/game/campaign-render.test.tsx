@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
+import { countLivingZeroTrust } from "@/lib/rules/ending";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
@@ -279,13 +280,15 @@ describe("정산이 실제 결과로 그려진다", () => {
     const settlement = last!.settlement!;
     const dungeon = campaign.dungeons.find((one) => one.id === settlement.dungeonId);
 
+    const view = createU6SettlementView(campaign, settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider");
     const markup = renderToStaticMarkup(createElement(U6SettlementScreen, {
       status: statusFor(campaign, null),
-      settlement: createU6SettlementView(settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider"),
+      settlement: view,
       onContinue: noop,
     }));
 
     assertClean(markup, "정산");
+    expect(view.trustPressure?.afterCount ?? 0).toBe(countLivingZeroTrust(campaign));
     expect(markup).toContain(settlement.causeChain.choice);
     expect(markup).toContain(settlement.causeChain.reactions);
     expect(markup).toContain(settlement.causeChain.damage);
