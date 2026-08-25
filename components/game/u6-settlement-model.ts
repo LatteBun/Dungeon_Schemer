@@ -155,8 +155,8 @@ export function createU6SettlementView(
     },
   }));
   const causes: readonly U6SettlementCause[] = [
-    { kind: "choice", label: "마지막 조언", detail: settlement.causeChain.choice },
-    { kind: "reactions", label: "파티의 판단", detail: settlement.causeChain.reactions },
+    { kind: "choice", label: "마지막 조언", detail: settlement.causeInputs.choice },
+    { kind: "reactions", label: "파티의 판단", detail: settlement.causeInputs.reactions },
   ];
   const beforeCount = countLivingZeroTrustBefore(campaignAfterSettlement, settlement);
   const afterCount = countLivingZeroTrust(campaignAfterSettlement);

@@ -25,7 +25,7 @@ function result(campaign: ReturnType<typeof initializeCampaign>, over: Partial<S
     memberChanges: members.map((member) => ({ characterId: member.id, before: member, after: member })),
     reputationDelta: -6, goldDelta: 0, relicGold: 84, riskBefore: 1, riskAfter: 2, riskCapped: false,
     nextReward: { reputation: 10, gold: 20 },
-    causeChain: { choice: "선택 내용", reactions: "반응 내용", damage: "피해 내용", economy: "경제 내용", campaignChange: "변화 내용" },
+    causeInputs: { choice: "선택 내용", reactions: "반응 내용", damage: "피해 내용" },
     ...over,
   };
 }

@@ -56,6 +56,38 @@ function withMembers(
 }
 
 describe("settleExpedition", () => {
+  it("정산 결과는 원정 근거만 보존하고 UI용 경제·캠페인 문장을 만들지 않는다", () => {
+    const campaign = campaignFixture();
+    const snapshot = snapshotFixture(campaign, {
+      causeInputs: {
+        choice: "마지막 조언",
+        reactions: "파티의 판단",
+        damage: "결정적 피해",
+      },
+    });
+
+    const { result } = settleExpedition(campaign, snapshot);
+
+    expect(result.causeInputs).toEqual(snapshot.causeInputs);
+    expect(result).not.toHaveProperty("causeChain");
+    expect(JSON.stringify(result)).not.toContain("던전 위험도");
+  });
+
+  it("memberChanges는 finalMembers 입력 순서와 무관하게 계약 파티 순서를 따른다", () => {
+    const campaign = campaignFixture();
+    const snapshot = snapshotFixture(campaign);
+    const reversed = [...snapshot.finalMembers].reverse();
+
+    const { result } = settleExpedition(campaign, {
+      ...snapshot,
+      finalMembers: reversed,
+    });
+
+    expect(result.memberChanges.map((change) => change.characterId)).toEqual(
+      snapshot.party.memberIds,
+    );
+  });
+
   it.each([
     [3, 15, 32],
     [2, 9, 19],

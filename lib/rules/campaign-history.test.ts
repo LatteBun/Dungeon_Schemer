@@ -82,12 +82,10 @@ function settlementFixture(expeditionId = "exp-1"): SettlementResult {
     riskAfter: 4,
     riskCapped: false,
     nextReward: { reputation: 10, gold: 30 },
-    causeChain: {
+    causeInputs: {
       choice: "choice",
       reactions: "reactions",
       damage: "damage",
-      economy: "economy",
-      campaignChange: "campaignChange",
     },
   };
 }

@@ -8,7 +8,6 @@ import {
 import type {
   CampaignState,
   Character,
-  SettlementCauseChain,
   SettlementResult,
   SettlementSnapshot,
 } from "@/lib/domain";
@@ -85,28 +84,6 @@ function normalizedMember(member: Character): Character {
   };
 }
 
-function createCauseChain(
-  snapshot: SettlementSnapshot,
-  survivorCount: 0 | 1 | 2 | 3,
-  reputationDelta: number,
-  goldDelta: number,
-  relicGold: number,
-  riskBefore: number,
-  riskAfter: number,
-): SettlementCauseChain {
-  return {
-    choice: snapshot.causeInputs.choice,
-    reactions: snapshot.causeInputs.reactions,
-    damage: snapshot.causeInputs.damage,
-    economy: survivorCount === 0
-      ? `전멸: 명성 ${reputationDelta}, 유품 골드 ${relicGold}`
-      : `${survivorCount}명 생존: 명성 ${reputationDelta}, 계약 골드 ${goldDelta}`,
-    campaignChange: riskBefore === riskAfter
-      ? `던전 위험도 ★${riskBefore} 유지`
-      : `던전 위험도 ★${riskBefore} → ★${riskAfter}`,
-  };
-}
-
 export function settleExpedition(
   campaign: CampaignState,
   snapshot: SettlementSnapshot,
@@ -115,7 +92,14 @@ export function settleExpedition(
   const dungeon = campaign.dungeons.find((candidate) => candidate.id === snapshot.dungeonId);
   if (dungeon === undefined) invalid("정산 던전이 없다");
 
-  const finalMembers = snapshot.finalMembers.map(normalizedMember);
+  const finalById = new Map(
+    snapshot.finalMembers.map((member) => [member.id, member] as const),
+  );
+  const finalMembers = snapshot.party.memberIds.map((id) => {
+    const member = finalById.get(id);
+    if (member === undefined) invalid("계약 파티원의 최종 상태가 없다", { characterId: id });
+    return normalizedMember(member);
+  });
   const survivorIds = finalMembers.filter((member) => member.alive).map((member) => member.id);
   const survivorCount = survivorIds.length as 0 | 1 | 2 | 3;
   const fullReward = rewardForSurvivors(snapshot.contractRisk, 3);
@@ -165,7 +149,7 @@ export function settleExpedition(
     riskAfter,
     riskCapped: wiped && riskBefore === RISK_LEVEL_MAX,
     nextReward: wiped ? rewardForSurvivors(riskAfter, 3) : null,
-    causeChain: createCauseChain(snapshot, survivorCount, reputationDelta, goldDelta, relicGold, riskBefore, riskAfter),
+    causeInputs: { ...snapshot.causeInputs },
   };
   return { campaign: nextCampaign, result };
 }

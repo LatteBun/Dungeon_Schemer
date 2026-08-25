@@ -35,14 +35,6 @@ export interface SettlementCauseInputs {
   readonly damage: string;
 }
 
-export interface SettlementCauseChain {
-  readonly choice: string;
-  readonly reactions: string;
-  readonly damage: string;
-  readonly economy: string;
-  readonly campaignChange: string;
-}
-
 export interface SettlementSnapshot {
   readonly expeditionId: string;
   readonly dungeonId: DungeonId;
@@ -76,5 +68,5 @@ export interface SettlementResult {
   readonly riskCapped: boolean;
   /** 전멸 뒤에만 계산한다. 클리어한 던전에는 다음 계약이 없다. */
   readonly nextReward: Reward | null;
-  readonly causeChain: SettlementCauseChain;
+  readonly causeInputs: SettlementCauseInputs;
 }

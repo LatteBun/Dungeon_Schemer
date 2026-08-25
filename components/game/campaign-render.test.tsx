@@ -289,8 +289,9 @@ describe("정산이 실제 결과로 그려진다", () => {
 
     assertClean(markup, "정산");
     expect(view.trustPressure?.afterCount ?? 0).toBe(countLivingZeroTrust(campaign));
-    expect(markup).toContain(settlement.causeChain.choice);
-    expect(markup).toContain(settlement.causeChain.reactions);
+    expect(markup).toContain(settlement.causeInputs.choice);
+    expect(markup).toContain(settlement.causeInputs.reactions);
+    expect(markup).not.toContain("<strong>피해</strong>");
     const changedMember = settlement.memberChanges.find((change) =>
       change.before.hp !== change.after.hp || change.before.alive !== change.after.alive,
     );

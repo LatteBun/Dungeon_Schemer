@@ -77,7 +77,6 @@ export {
 } from "./settlement";
 export type {
   Reward,
-  SettlementCauseChain,
   SettlementCauseInputs,
   SettlementMemberChange,
   SettlementResult,
