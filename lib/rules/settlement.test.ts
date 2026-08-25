@@ -6,6 +6,7 @@ import type {
   ExpeditionParty,
   SettlementSnapshot,
 } from "@/lib/domain";
+import { createOfferReward } from "./board";
 import { settleExpedition } from "./settlement";
 
 function partyMembers(campaign: CampaignState): Character[] {
@@ -30,10 +31,12 @@ function snapshotFixture(
   const contractRisk = over.contractRisk ?? campaign.dungeons[0].riskLevel;
   const dungeon = campaign.dungeons.find((candidate) => candidate.riskLevel === contractRisk)
     ?? campaign.dungeons[0];
+  const contractReward = over.contractReward ?? createOfferReward(campaign, dungeon);
   return {
     expeditionId: "expedition-settlement-test",
     dungeonId: dungeon.id,
     contractRisk: dungeon.riskLevel,
+    contractReward,
     party: { memberIds: members.map((member) => member.id) },
     finalMembers: members,
     status: "cleared",
@@ -89,10 +92,10 @@ describe("settleExpedition", () => {
   });
 
   it.each([
-    [3, 15, 32],
-    [2, 9, 19],
-    [1, 4, 9],
-  ] as const)("%i명 생존 클리어는 계약금을 현재·누적 골드에 더한다", (survivors, reputation, gold) => {
+    [3, 16, 35],
+    [2, 9, 21],
+    [1, 4, 10],
+  ] as const)("%i명 생존은 계약 확정 보상 비율을 적용한다", (survivors, reputation, gold) => {
     const campaign = campaignFixture();
     const members = partyMembers(campaign);
     const finalMembers = members.map((member, index) => ({
@@ -103,7 +106,12 @@ describe("settleExpedition", () => {
     }));
     const { campaign: resultCampaign, result } = settleExpedition(
       campaign,
-      snapshotFixture(campaign, { contractRisk: 3, finalMembers, status: "cleared" }),
+      snapshotFixture(campaign, {
+        contractRisk: 3,
+        contractReward: { reputation: 16, gold: 35 },
+        finalMembers,
+        status: "cleared",
+      }),
     );
 
     expect(result).toMatchObject({
@@ -111,7 +119,6 @@ describe("settleExpedition", () => {
       reputationDelta: reputation,
       goldDelta: gold,
       relicGold: 0,
-      nextReward: null,
     });
     expect(resultCampaign).toMatchObject({ reputation: 30 + reputation, gold: 10 + gold, cumulativeGold: gold });
   });
@@ -129,6 +136,7 @@ describe("settleExpedition", () => {
       campaign,
       snapshotFixture(campaign, {
         contractRisk: 2,
+        contractReward: { reputation: 11, gold: 23 },
         finalMembers: members,
         status: "wiped",
       }),
@@ -136,12 +144,11 @@ describe("settleExpedition", () => {
 
     expect(result).toMatchObject({
       status: "wiped",
-      reputationDelta: -10,
+      reputationDelta: -11,
       goldDelta: 0,
       relicGold: 90,
       riskBefore: 2,
       riskAfter: 3,
-      nextReward: { reputation: 15, gold: 32 },
     });
     expect(resultCampaign.reputation).toBe(0);
     expect(resultCampaign.gold).toBe(100);
@@ -211,6 +218,15 @@ describe("settleExpedition", () => {
       : member);
     expect(() => settleExpedition(campaign, snapshotFixture(campaign, {
       finalMembers: duplicateClassMembers,
+    }))).toThrowError(expect.objectContaining({ code: "INVALID_SETTLEMENT" }));
+  });
+
+  it("계약 위험도 범위 밖 보상은 INVALID_SETTLEMENT로 거부한다", () => {
+    const campaign = campaignFixture();
+
+    expect(() => settleExpedition(campaign, snapshotFixture(campaign, {
+      contractRisk: 2,
+      contractReward: { reputation: 15, gold: 20 },
     }))).toThrowError(expect.objectContaining({ code: "INVALID_SETTLEMENT" }));
   });
 });

@@ -182,13 +182,16 @@ function Changes({ settlement }: { settlement: U6SettlementView }) {
           <small>{trustPressureDetail(settlement.trustPressure)}</small>
         </div>
       )}
-      {settlement.nextReward === null ? null : (
-        <p className="u6-next-reward">
-          <span>이 던전을 다시 맡으면 · 3명 생환 기준</span>
-          <strong>명성 {settlement.nextReward.reputation}</strong>
-          <strong>골드 {settlement.nextReward.gold}</strong>
-        </p>
-      )}
+
+      {/*
+        * 봉인으로 닫는다.
+        *
+        * 정산은 길드에 넘기는 문서다. 봉인이 찍혀야 끝난 문서로 읽힌다.
+        *
+        * 인주는 한 장뿐이라 색을 입힌다. 다 살아 돌아왔으면 초록, 누군가를
+        * 잃었으면 호박색, 전멸이면 그대로 붉은색이다 - 문서를 읽기 전에 색으로
+         * 먼저 안다.
+         */}
       <img
         className={`u6-changes__seal is-${outcomeTone(settlement)}`}
         src={`${ASSET}/emblems/wax_seal.png`}

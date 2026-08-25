@@ -3,6 +3,8 @@ import { TRUST_MIN, type SettlementResult } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createU6SettlementView } from "./u6-settlement-model";
 
+const FUTURE_REWARD_PROPERTY = "next" + "Reward";
+
 function distinctMembers(campaign: ReturnType<typeof initializeCampaign>) {
   const members = [];
   const classes = new Set<string>();
@@ -24,7 +26,6 @@ function result(campaign: ReturnType<typeof initializeCampaign>, over: Partial<S
     expeditionId: "exp-u6", dungeonId: dungeon.id, status: "wiped", survivorIds: [], survivorCount: 0,
     memberChanges: members.map((member) => ({ characterId: member.id, before: member, after: member })),
     reputationDelta: -6, goldDelta: 0, relicGold: 84, riskBefore: 1, riskAfter: 2, riskCapped: false,
-    nextReward: { reputation: 10, gold: 20 },
     causeInputs: { choice: "선택 내용", reactions: "반응 내용", damage: "피해 내용" },
     ...over,
   };
@@ -46,9 +47,11 @@ describe("U6 정산 화면 모델", () => {
     expect(view.dungeonOutcome).toEqual({ kind: "riskCapped", level: 5 });
   });
 
-  it("클리어 결과의 다음 보상 null을 재계산 없이 보존한다", () => {
+  it("정산 결과는 미래 보상 계약을 U6으로 옮기지 않는다", () => {
     const campaign = initializeCampaign("u6-cleared-reward");
-    expect(createU6SettlementView(campaign, result(campaign, { status: "cleared", survivorCount: 3, nextReward: null }), "사막 5", "desert").nextReward).toBeNull();
+    const view = createU6SettlementView(campaign, result(campaign, { status: "cleared", survivorCount: 3 }), "사막 5", "desert");
+
+    expect(view).not.toHaveProperty(FUTURE_REWARD_PROPERTY);
   });
 
   it("클리어는 위험도 유지가 아니라 정복 결과로 분류한다", () => {
@@ -61,7 +64,7 @@ describe("U6 정산 화면 모델", () => {
     const settlementResult = result(campaign, {
       status: "cleared", survivorCount: 2, survivorIds: [first.id, second.id],
       memberChanges: afterMembers.map((after, index) => ({ characterId: after.id, before: [first, second, third][index]!, after })),
-      riskBefore: 2, riskAfter: 2, riskCapped: false, nextReward: null,
+      riskBefore: 2, riskAfter: 2, riskCapped: false,
     });
     const view = createU6SettlementView(afterCampaign, settlementResult, "거미굴 2", "spider");
     expect(view.outcome).toEqual({ kind: "cleared", title: "거미굴 2 정복", summary: `2명 귀환 · ${third.name} 사망` });
@@ -84,7 +87,6 @@ describe("U6 정산 화면 모델", () => {
     const settlementResult = result(campaign, {
       status: "cleared", survivorCount: 3, survivorIds: [first.id, second.id, third.id],
       memberChanges: [{ characterId: first.id, before: first, after: afterFirst }, { characterId: second.id, before: second, after: second }, { characterId: third.id, before: third, after: third }],
-      nextReward: null,
     });
     const view = createU6SettlementView(afterCampaign, settlementResult, "묘지 1", "graveyard");
     expect(view.trustPressure).toMatchObject({ beforeCount: 1, afterCount: 2, threshold: 5, acceptModifier: -5, exposeModifier: 0, reachedThreshold: false });
@@ -102,7 +104,7 @@ describe("U6 정산 화면 모델", () => {
     const afterCampaign = { ...beforeCampaign, pool: { ...beforeCampaign.pool, byId: afterById } };
     const settlementResult = result(campaign, {
       status: "cleared", survivorCount: 2, survivorIds: [second.id, third.id],
-      memberChanges: [{ characterId: first.id, before: beforeFirst, after: deadFirst }, { characterId: second.id, before: second, after: second }, { characterId: third.id, before: third, after: third }], nextReward: null,
+      memberChanges: [{ characterId: first.id, before: beforeFirst, after: deadFirst }, { characterId: second.id, before: second, after: second }, { characterId: third.id, before: third, after: third }],
     });
     const view = createU6SettlementView(afterCampaign, settlementResult, "사막 1", "desert");
     expect(view.trustPressure).toMatchObject({ beforeCount: 1, afterCount: 0 });
@@ -117,7 +119,7 @@ describe("U6 정산 화면 모델", () => {
     const afterCampaign = { ...campaign, pool: { ...campaign.pool, byId: afterById } };
     const settlementResult = result(campaign, {
       status: "cleared", survivorCount: 3, survivorIds: [first.id, second.id, third.id],
-      memberChanges: [{ characterId: first.id, before: zeroFirst, after: zeroFirst }, { characterId: second.id, before: second, after: second }, { characterId: third.id, before: third, after: third }], nextReward: null,
+      memberChanges: [{ characterId: first.id, before: zeroFirst, after: zeroFirst }, { characterId: second.id, before: second, after: second }, { characterId: third.id, before: third, after: third }],
     });
     const view = createU6SettlementView(afterCampaign, settlementResult, "거미굴 1", "spider");
     expect(view.members[0]?.trust).toMatchObject({ changed: false, isZero: true, becameZero: false, countsTowardCampaign: true });
@@ -132,7 +134,7 @@ describe("U6 정산 화면 모델", () => {
     const afterCampaign = { ...campaign, pool: { ...campaign.pool, byId: afterById } };
     const settlementResult = result(campaign, {
       status: "cleared", survivorCount: 2, survivorIds: [second.id, third.id],
-      memberChanges: [{ characterId: first.id, before: beforeFirst, after: deadFirst }, { characterId: second.id, before: second, after: second }, { characterId: third.id, before: third, after: third }], nextReward: null,
+      memberChanges: [{ characterId: first.id, before: beforeFirst, after: deadFirst }, { characterId: second.id, before: second, after: second }, { characterId: third.id, before: third, after: third }],
     });
     const view = createU6SettlementView(afterCampaign, settlementResult, "사막 1", "desert");
     expect(view.members[0]?.trust).toMatchObject({ changed: true, isZero: true, becameZero: true, countsTowardCampaign: false });

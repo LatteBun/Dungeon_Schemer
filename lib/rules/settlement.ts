@@ -4,6 +4,8 @@ import {
   RuleError,
   TRUST_MAX,
   TRUST_MIN,
+  contractRewardForSurvivors,
+  isContractRewardInRange,
 } from "@/lib/domain";
 import type {
   CampaignState,
@@ -11,7 +13,6 @@ import type {
   SettlementResult,
   SettlementSnapshot,
 } from "@/lib/domain";
-import { rewardForSurvivors } from "@/lib/domain";
 
 export interface SettlementExecution {
   readonly campaign: CampaignState;
@@ -52,6 +53,12 @@ function validateSettlement(campaign: CampaignState, snapshot: SettlementSnapsho
       dungeonId: snapshot.dungeonId,
       contractRisk: snapshot.contractRisk,
       currentRisk: dungeon.riskLevel,
+    });
+  }
+  if (!isContractRewardInRange(snapshot.contractRisk, snapshot.contractReward)) {
+    invalid("계약 보상이 위험도 범위를 벗어났다", {
+      contractRisk: snapshot.contractRisk,
+      contractReward: snapshot.contractReward,
     });
   }
   if (snapshot.party.memberIds.length !== 3 || new Set(snapshot.party.memberIds).size !== 3) {
@@ -102,8 +109,8 @@ export function settleExpedition(
   });
   const survivorIds = finalMembers.filter((member) => member.alive).map((member) => member.id);
   const survivorCount = survivorIds.length as 0 | 1 | 2 | 3;
-  const fullReward = rewardForSurvivors(snapshot.contractRisk, 3);
-  const clearReward = rewardForSurvivors(snapshot.contractRisk, survivorCount);
+  const fullReward = contractRewardForSurvivors(snapshot.contractReward, 3);
+  const clearReward = contractRewardForSurvivors(snapshot.contractReward, survivorCount);
   const wiped = snapshot.status === "wiped";
   const riskBefore = dungeon.riskLevel;
   const riskAfter = wiped ? Math.min(RISK_LEVEL_MAX, riskBefore + 1) as typeof riskBefore : riskBefore;
@@ -148,7 +155,6 @@ export function settleExpedition(
     riskBefore,
     riskAfter,
     riskCapped: wiped && riskBefore === RISK_LEVEL_MAX,
-    nextReward: wiped ? rewardForSurvivors(riskAfter, 3) : null,
     causeInputs: { ...snapshot.causeInputs },
   };
   return { campaign: nextCampaign, result };

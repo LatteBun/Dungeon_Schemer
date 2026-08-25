@@ -157,12 +157,14 @@ describe("게시판이 실제 캠페인으로 그려진다", () => {
   it("공고와 계약 조건이 찍힌다", () => {
     const run = driven();
     run.act({ type: "OPEN_BOARD" });
-    const { campaign, context, last } = run.state();
+    const { campaign, last } = run.state();
+    const board = createU3BoardView(campaign, campaign.offers);
+    const notice = board.notices[0]!;
 
     const markup = renderToStaticMarkup(createElement(U3BoardScreen, {
       status: statusFor(campaign, null),
-      board: createU3BoardView(campaign, campaign.offers),
-      selectedOfferId: context.selectedOffer?.id ?? "",
+      board,
+      selectedOfferId: notice.offerId,
       promotion: createU3PromotionView(getGuidePromotionEligibility(campaign), campaign.phase, last?.promotion ?? null),
       onSelectOffer: noop, onContract: noop, onOpenPromotion: noop,
       onCancelPromotion: noop, onConfirmPromotion: noop, onDismissPromotionResult: noop,
@@ -172,6 +174,14 @@ describe("게시판이 실제 캠페인으로 그려진다", () => {
     /* 공고가 하나도 없으면 위 검사는 통과하지만 화면은 비어 있다. */
     expect(markup).toContain(campaign.offers[0]!.dungeonId.length > 0 ? "위험도" : "위험도");
     expect(markup.length).toBeGreaterThan(500);
+    /* Break caught: U3가 공고의 확정 보상 대신 다른 숫자를 렌더링하면 실패한다. */
+    const selectedMarker = markup.indexOf('aria-pressed="true"');
+    const selectedStart = markup.lastIndexOf("<button", selectedMarker);
+    const selectedEnd = markup.indexOf("</button>", selectedMarker);
+    const selectedNoticeMarkup = markup.slice(selectedStart, selectedEnd);
+    expect(selectedMarker).toBeGreaterThan(-1);
+    expect(selectedNoticeMarkup).toContain(`>명성</span>${notice.reputationReward}</span>`);
+    expect(selectedNoticeMarkup).toContain(`>골드</span>${notice.goldReward}</span>`);
   });
 });
 

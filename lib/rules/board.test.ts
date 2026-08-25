@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
-import { createBoardOffers } from "@/lib/rules/board";
-import { canDeploy } from "@/lib/domain";
+import { createBoardOffers, rollContractReward } from "@/lib/rules/board";
+import { canDeploy, isContractRewardInRange } from "@/lib/domain";
 import type {
   CampaignState,
   Character,
@@ -103,9 +103,48 @@ describe("createBoardOffers", () => {
     expect(second).toEqual(first);
     expect(second).not.toBe(first);
     expect(second[0]).not.toBe(first[0]);
+    expect(second[0]?.reward).not.toBe(first[0]?.reward);
     expect(second[0].party).not.toBe(first[0].party);
     expect(second[0].party.memberIds).not.toBe(first[0].party.memberIds);
     expect(state.offers).toEqual([]);
+  });
+
+  it("명성과 골드를 각자 범위에서 두 번의 독립 추첨한다", () => {
+    const calls: Array<readonly [number, number]> = [];
+    const rng = {
+      int(min: number, max: number) {
+        calls.push([min, max]);
+        return calls.length === 1 ? max : min;
+      },
+    };
+
+    expect(rollContractReward(3, rng)).toEqual({ reputation: 17, gold: 27 });
+    expect(calls).toEqual([[13, 17], [27, 37]]);
+  });
+
+  it("모든 공고 보상은 범위 내이고 같은 입력에서 재현된다", () => {
+    const state = initializeCampaign("offer-reward-repro");
+    const first = createBoardOffers(state);
+    const second = createBoardOffers(state);
+
+    expect(second.map((offer) => offer.reward)).toEqual(first.map((offer) => offer.reward));
+    for (const offer of first) {
+      expect(isContractRewardInRange(offer.riskLevel, offer.reward)).toBe(true);
+    }
+  });
+
+  it("잠금 공고도 고정 보상을 가진다", () => {
+    const initial = initializeCampaign("offer-reward-locked");
+    const state = {
+      ...initial,
+      dungeons: initial.dungeons.map((dungeon) => dungeon.riskLevel <= 2
+        ? { ...dungeon, status: "cleared" as const }
+        : dungeon),
+    };
+    const offers = createBoardOffers(state);
+
+    expect(offers.every((offer) => offer.lockReason === "rankTooLow")).toBe(true);
+    expect(offers.every((offer) => isContractRewardInRange(offer.riskLevel, offer.reward))).toBe(true);
   });
 
   it("한 게시판의 모든 공고는 서로 다른 직업 3인과 서로 다른 캐릭터를 가진다", () => {
@@ -145,6 +184,47 @@ describe("createBoardOffers", () => {
     expect(offers).toHaveLength(5);
     expect(offers.every((offer) => offer.lockReason === "rankTooLow")).toBe(true);
     expect(offers.map((offer) => offer.riskLevel)).toEqual([3, 3, 3, 3, 4]);
+  });
+
+  it("승급으로 공고 구성이 바뀌어도 공통 던전 보상은 같다", () => {
+    const state = initializeCampaign("offer-reward-promotion");
+    const first = createBoardOffers(state);
+    const promoted = createBoardOffers({ ...state, rank: "B" });
+    let commonDungeonCount = 0;
+
+    for (const offer of first) {
+      const sameDungeon = promoted.find((candidate) => candidate.dungeonId === offer.dungeonId);
+      if (sameDungeon !== undefined) {
+        commonDungeonCount += 1;
+        expect(sameDungeon.reward).toEqual(offer.reward);
+      }
+    }
+
+    expect(commonDungeonCount).toBeGreaterThan(0);
+  });
+
+  it("다음 세계 턴의 위험도 변경은 새 위험도 범위의 보상을 만든다", () => {
+    const state = initializeCampaign("offer-reward-risk-change");
+    const target = state.dungeons.find((dungeon) => dungeon.riskLevel === 2)!;
+    const currentState = {
+      ...state,
+      dungeons: state.dungeons.map((dungeon) => dungeon.id === target.id
+        ? { ...dungeon, status: "unexplored" as const, riskLevel: 2 as const }
+        : { ...dungeon, status: "cleared" as const }),
+    };
+    const currentOffer = createBoardOffers(currentState)[0]!;
+    const nextState = {
+      ...currentState,
+      worldTurn: currentState.worldTurn + 1,
+      dungeons: currentState.dungeons.map((dungeon) => dungeon.id === target.id
+        ? { ...dungeon, riskLevel: 3 as const }
+        : dungeon),
+    };
+    const nextOffer = createBoardOffers(nextState)[0]!;
+
+    expect(isContractRewardInRange(2, currentOffer.reward)).toBe(true);
+    expect(isContractRewardInRange(3, nextOffer.reward)).toBe(true);
+    expect(nextOffer.reward).not.toEqual(currentOffer.reward);
   });
 
   it("직업 분포가 달라도 최대한 많은 완전 3인 파티만 만든다", () => {

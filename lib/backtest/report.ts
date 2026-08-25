@@ -208,6 +208,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
   const themeFunnelRows: string[] = [];
   const endingRows: string[] = [];
   const progressionRows: string[] = [];
+  const resourceRows: string[] = [];
   const remainingRiskRows: string[] = [];
   const depletionRows: string[] = [];
   const terminationRows: string[] = [];
@@ -259,6 +260,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
       }
       endingRows.push(`| ${strategy} | ${accuracy} | ${combination.endingCounts.completed} | ${combination.endingCounts.exhausted} | ${combination.endingCounts.unemployed} | ${combination.endingCounts.denounced} | ${combination.endingCounts.distrust} | ${combination.endingCounts["run-error"]} | ${rate(combination.rankSCount, combination.count)} |`);
       progressionRows.push(`| ${strategy} | ${accuracy} | ${rate(combination.rankReachedCounts.B, combination.count)} | ${nullable(combination.meanFirstRankAtExpedition.B)} | ${rate(combination.rankReachedCounts.A, combination.count)} | ${nullable(combination.meanFirstRankAtExpedition.A)} | ${rate(combination.rankReachedCounts.S, combination.count)} | ${nullable(combination.meanFirstRankAtExpedition.S)} |`);
+      resourceRows.push(`| ${strategy} | ${accuracy} | ${combination.means.finalReputation.toFixed(4)} | ${combination.means.finalGold.toFixed(4)} | ${combination.means.contractGold.toFixed(4)} | ${combination.means.relicGold.toFixed(4)} | ${combination.means.cumulativeGold.toFixed(4)} | ${combination.means.reputationPromotions.toFixed(4)} | ${combination.means.goldPromotions.toFixed(4)} |`);
       remainingRiskRows.push(`| ${strategy} | ${accuracy} | ${([1, 2, 3, 4, 5] as const).map((risk) => combination.meanRemainingDungeonsByRisk[risk].toFixed(4)).join(" | ")} |`);
     }
   }
@@ -391,6 +393,12 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "| 전략 | 정확도 | B 도달률 | B 평균 원정 | A 도달률 | A 평균 원정 | S 도달률 | S 평균 원정 |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...progressionRows,
+    "",
+    "## 자원과 승급 방식",
+    "",
+    "| 전략 | 정확도 | 평균 최종 명성 | 평균 최종 골드 | 평균 계약 골드 | 평균 유물 골드 | 평균 누적 골드 | 평균 명성 승급 | 평균 골드 승급 |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...resourceRows,
     "",
     "## 종료 시 평균 잔여 던전 위험도",
     "",

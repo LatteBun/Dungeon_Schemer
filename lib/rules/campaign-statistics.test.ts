@@ -70,7 +70,6 @@ function settlementFixture(
     riskBefore: 3,
     riskAfter: 3,
     riskCapped: false,
-    nextReward: null,
     causeInputs: {
       choice: "선택",
       reactions: "반응",
@@ -117,6 +116,7 @@ function snapshotFor(
     expeditionId: active.expeditionId,
     dungeonId: active.expedition.dungeonId,
     contractRisk: active.expedition.riskLevel,
+    contractReward: { ...active.offer.reward },
     party: active.expedition.party,
     finalMembers: membersFor(active.offer, campaign),
     status: "cleared",
@@ -178,7 +178,6 @@ describe("recordSettlementStatistics", () => {
       goldDelta: 0,
       relicGold: 45,
       riskAfter: 4,
-      nextReward: { reputation: 21, gold: 45 },
     });
 
     const result = recordSettlementStatistics(createCampaignStatistics(), wiped, dungeon(4));

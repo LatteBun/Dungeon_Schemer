@@ -106,7 +106,9 @@ createU6SettlementView(
 ): U6SettlementView
 ```
 
-화면은 생존자 수로 클리어·전멸을 재판정하지 않는다. `SettlementResult.status`를 보존한 `outcome.kind`와 `dungeonOutcome`을 사용한다. 살아 있는 신뢰 0 정산 전후 인원은 같은 정산에서 나온 캠페인과 `memberChanges.before`로 만들며, 현재 보정은 C6의 `getCampaignTrustModifier`를 그대로 옮긴다. `memberChanges`와 사망자 이름은 계약 파티 순서를 유지한다.
+화면은 생존자 수로 클리어·전멸을 재판정하지 않는다. `SettlementResult.status`를 보존한 `outcome.kind`와 `dungeonOutcome`을 사용한다. `causeInputs`의 선택과 반응은 화면 원인 요약으로 옮기고, 피해는 `memberChanges`의 인물별 결과에서 보여준다. 살아 있는 신뢰 0 정산 전후 인원은 같은 정산에서 나온 캠페인과 `memberChanges.before`로 만들며, 현재 보정은 C6의 `getCampaignTrustModifier`를 그대로 옮긴다. `memberChanges`와 사망자 이름은 계약 파티 순서를 유지한다.
+
+`reputationDelta`와 `goldDelta`는 계약 시 확정된 보상에 생존 결과를 적용한 실제 증감이며, `relicGold`는 전멸에서만 별도로 회수한다. 전멸 뒤 다음 공고 보상은 아직 생성되지 않은 값이므로 `SettlementResult`와 `U6SettlementView`에 포함하지 않는다. U6은 승급 버튼·선택 오버레이·결과 ViewModel을 제공하지 않으며, 승급의 유일한 진입점은 U3 게시판 상단 등급 버튼이다.
 
 ### `U6EndingView` — C6 엔딩 · C8 통계
 

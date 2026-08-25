@@ -297,8 +297,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--color-shell-metal) 30%, transparent);
 }
 
-.u6-dungeon-change > span,
-.u6-next-reward {
+.u6-dungeon-change > span {
   color: var(--color-muted);
   font-size: clamp(0.8rem, 0.8cqw, 1.15rem);
 }
@@ -337,16 +336,6 @@
   font-weight: 700;
 }
 
-.u6-next-reward {
-  display: flex;
-  gap: 0.6rem;
-  margin: 0;
-}
-
-.u6-next-reward strong {
-  color: var(--color-shell-gold);
-}
-
 .u6-trust-pressure {
   display: grid;
   gap: 0.2rem;
@@ -365,7 +354,6 @@
   color: #f0b09c;
   font-size: clamp(1rem, 1.1cqw, 1.55rem);
 }
-
 /* ── /u6-test 프리뷰 전환 ──
  * 프리뷰 껍데기는 캔버스 안에서 화면 위에 겹친다. 여덟 상태를 오가며 보는
  * 도구일 뿐이라 화면의 세로 공간을 빼앗으면 안 된다. */

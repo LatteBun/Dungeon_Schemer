@@ -3,7 +3,6 @@ import type {
   CampaignState,
   GuideRank,
   RiskLevel,
-  Reward,
   SettlementResult,
   ThemeId,
 } from "@/lib/domain";
@@ -26,7 +25,6 @@ export interface U6SettlementView {
   readonly goldDelta: number;
   /** 전멸에서만 회수한다. 그 외에는 0. */
   readonly relicGold: number;
-  readonly nextReward: Reward | null;
   readonly outcome: U6SettlementOutcome;
   readonly causes: readonly U6SettlementCause[];
   readonly dungeonOutcome: U6DungeonOutcome;
@@ -176,7 +174,6 @@ export function createU6SettlementView(
     reputationDelta: settlement.reputationDelta,
     goldDelta: settlement.goldDelta,
     relicGold: settlement.relicGold,
-    nextReward: settlement.nextReward,
     outcome: outcomeFor(settlement, dungeonName, members),
     causes,
     dungeonOutcome: dungeonOutcomeFor(settlement),

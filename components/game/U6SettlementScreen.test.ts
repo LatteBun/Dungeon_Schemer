@@ -13,6 +13,8 @@ const status: TopStatusView = {
   remainingDungeons: 11,
 };
 
+const FUTURE_WIPE_COPY = "이 던전을 다시 " + "맡으면";
+
 const member = (over: Partial<U6SettlementMember> = {}): U6SettlementMember => ({
   id: "character-1",
   name: "실바나",
@@ -62,7 +64,6 @@ const view = (over: Partial<U6SettlementView> = {}): U6SettlementView => ({
   reputationDelta: 9,
   goldDelta: 19,
   relicGold: 0,
-  nextReward: null,
   trustPressure: null,
   ...over,
 });
@@ -140,6 +141,17 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("조언 수용 -5");
   });
 
+  it("전멸 정산은 아직 생성되지 않은 다음 보상을 보여주지 않는다", () => {
+    const html = render({
+      outcome: { kind: "wiped", title: "원정대 전멸", summary: "3명 전원 사망 · 계약 실패" },
+      dungeonOutcome: { kind: "riskIncreased", before: 2, after: 3 },
+    });
+
+    expect(html).not.toContain(FUTURE_WIPE_COPY);
+    expect(html).not.toContain("3명 생존 기준");
+    expect(html).not.toContain("다음 계약 보상");
+  });
+
   it("신뢰 0 누적이 줄면 전후 인원과 불이익 해제를 함께 보여준다", () => {
     const html = render({
       trustPressure: {
@@ -189,7 +201,6 @@ describe("U6SettlementScreen", () => {
       reputationDelta: -10,
       goldDelta: 0,
       relicGold: 84,
-      nextReward: { reputation: 15, gold: 32 },
     });
 
     expect(html).toContain("계약 보상");
@@ -210,19 +221,6 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("★5");
     expect(html).toContain("최대 위험도라 더 오르지 않는다");
     expect(html).not.toContain("실패로 위험도가 올랐다");
-  });
-
-  it("전멸의 재도전 보상은 있을 때만 다시 맡을 던전으로 말한다", () => {
-    const wiped = render({
-      outcome: { kind: "wiped", title: "원정대 전멸", summary: "3명 전원 사망 · 계약 실패" },
-      dungeonOutcome: { kind: "riskIncreased", before: 2, after: 3 },
-      nextReward: { reputation: 15, gold: 32 },
-    });
-
-    expect(wiped).toContain("이 던전을 다시 맡으면 · 3명 생환 기준");
-    expect(wiped).toContain("명성 15");
-    expect(wiped).toContain("골드 32");
-    expect(render()).not.toContain("이 던전을 다시 맡으면");
   });
 
   it("변화 없는 0 초과 신뢰는 결과 줄에 적지 않는다", () => {

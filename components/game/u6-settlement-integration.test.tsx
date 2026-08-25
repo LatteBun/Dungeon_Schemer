@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CampaignState, Character, SettlementSnapshot } from "@/lib/domain";
+import { createOfferReward } from "@/lib/rules/board";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { settleExpedition } from "@/lib/rules/settlement";
 import { statusFor } from "./campaign-adapters";
@@ -56,6 +57,7 @@ describe("U6 정산 통합", () => {
       expeditionId: "u6-integration-clear-expedition",
       dungeonId: dungeon.id,
       contractRisk: dungeon.riskLevel,
+      contractReward: createOfferReward(campaign, dungeon),
       party: { memberIds: [first.id, second.id, third.id] },
       finalMembers,
       status: "cleared",
@@ -85,6 +87,7 @@ describe("U6 정산 통합", () => {
       expeditionId: "u6-integration-wipe-expedition",
       dungeonId: dungeon.id,
       contractRisk: dungeon.riskLevel,
+      contractReward: createOfferReward(campaign, dungeon),
       party: { memberIds: members.map((member) => member.id) },
       finalMembers,
       status: "wiped",

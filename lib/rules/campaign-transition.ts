@@ -250,6 +250,9 @@ function validateSnapshot(
   ) {
     invalidTransition("정산 계약 정보가 활성 원정과 다르다");
   }
+  const rewardMatches = snapshot.contractReward.reputation === active.offer.reward.reputation
+    && snapshot.contractReward.gold === active.offer.reward.gold;
+  if (!rewardMatches) invalidTransition("정산 계약 보상이 활성 공고와 다르다");
 }
 
 function validateTrustBatch(
@@ -768,6 +771,7 @@ export function createSettlementSnapshotFor(
     dungeonId: expedition.dungeonId,
     /* 계약 시점의 위험도다. 던전이 그 사이 올랐어도 이 원정은 이 값으로 센다. */
     contractRisk: expedition.riskLevel,
+    contractReward: { ...active.offer.reward },
     party: { memberIds: [...expedition.party.memberIds] },
     finalMembers: active.partyMembers.map((member) => ({ ...member })),
     status,
@@ -844,6 +848,7 @@ function copyActiveExpedition(
     expeditionId: action.expeditionId,
     offer: {
       ...offer,
+      reward: { ...offer.reward },
       party: { memberIds: [...offer.party.memberIds] },
     },
     expedition: {

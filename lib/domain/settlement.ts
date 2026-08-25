@@ -3,31 +3,7 @@ import type { Character } from "./character";
 import type { CharacterId, DungeonId } from "./ids";
 import type { ExpeditionParty } from "./pool";
 import type { ExpeditionStatus } from "./expedition";
-
-export interface Reward {
-  readonly reputation: number;
-  readonly gold: number;
-}
-
-export const FULL_SURVIVOR_REWARDS: Readonly<Record<RiskLevel, Reward>> = {
-  1: { reputation: 6, gold: 12 },
-  2: { reputation: 10, gold: 20 },
-  3: { reputation: 15, gold: 32 },
-  4: { reputation: 21, gold: 45 },
-  5: { reputation: 28, gold: 60 },
-};
-
-export function rewardForSurvivors(
-  risk: RiskLevel,
-  survivors: 0 | 1 | 2 | 3,
-): Reward {
-  const full = FULL_SURVIVOR_REWARDS[risk];
-  const factor = ([0, 0.3, 0.6, 1] as const)[survivors];
-  return {
-    reputation: Math.floor(full.reputation * factor),
-    gold: Math.floor(full.gold * factor),
-  };
-}
+import type { ContractReward } from "./contract-reward";
 
 export interface SettlementCauseInputs {
   readonly choice: string;
@@ -39,6 +15,7 @@ export interface SettlementSnapshot {
   readonly expeditionId: string;
   readonly dungeonId: DungeonId;
   readonly contractRisk: RiskLevel;
+  readonly contractReward: ContractReward;
   readonly party: ExpeditionParty;
   readonly finalMembers: readonly Character[];
   readonly status: ExpeditionStatus;
@@ -66,7 +43,5 @@ export interface SettlementResult {
   readonly riskBefore: RiskLevel;
   readonly riskAfter: RiskLevel;
   readonly riskCapped: boolean;
-  /** 전멸 뒤에만 계산한다. 클리어한 던전에는 다음 계약이 없다. */
-  readonly nextReward: Reward | null;
   readonly causeInputs: SettlementCauseInputs;
 }

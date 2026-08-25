@@ -57,6 +57,17 @@ export type {
 } from "./dungeon";
 
 export {
+  CONTRACT_REWARD_RANGES,
+  contractRewardForSurvivors,
+  isContractRewardInRange,
+} from "./contract-reward";
+export type {
+  ContractReward,
+  ContractRewardRange,
+  IntegerRange,
+} from "./contract-reward";
+
+export {
   BOARD_OFFER_MAX,
   CAMPAIGN_DUNGEON_COUNT,
   CAMPAIGN_PHASES,
@@ -71,12 +82,7 @@ export {
   REPUTATION_START,
 } from "./campaign";
 
-export {
-  FULL_SURVIVOR_REWARDS,
-  rewardForSurvivors,
-} from "./settlement";
 export type {
-  Reward,
   SettlementCauseInputs,
   SettlementMemberChange,
   SettlementResult,
