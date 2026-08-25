@@ -148,7 +148,7 @@ test("보스전은 재생이 끝난 뒤에만 정산으로 이동한다", async 
   await expect(page.getByTestId("u6-settlement")).toBeVisible();
 });
 
-test("같은 원정의 다음 전투도 선택한 ×2 속도를 유지한다", async ({ page }) => {
+test("같은 앱 실행의 다음 전투와 다음 원정도 선택한 ×2 속도를 유지한다", async ({ page }) => {
   test.setTimeout(120_000);
   const failures = watchBrowserErrors(page);
   await page.goto("/campaign?seed=dungeon-schemer");
@@ -208,7 +208,7 @@ test("같은 원정의 다음 전투도 선택한 ×2 속도를 유지한다", a
   await page.getByRole("button", { name: "이 공고 계약하기" }).click();
 
   await enterNextBattle();
-  await expect(speed).toHaveText("×1");
-  await expect(speed).toHaveAttribute("aria-pressed", "false");
+  await expect(speed).toHaveText("×2");
+  await expect(speed).toHaveAttribute("aria-pressed", "true");
   expectNoBrowserErrors(failures, `campaign ${page.url()}`);
 });

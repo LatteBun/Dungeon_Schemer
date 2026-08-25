@@ -28,44 +28,46 @@
 
 **Files:**
 - Create: `components/game/AppBattlePlaybackRateProvider.tsx`
-- Create: `components/game/AppBattlePlaybackRateProvider.test.tsx`
 - Modify: `components/game/use-u5-battle-playback.ts`
 - Modify: `components/game/CampaignScreen.tsx`
 - Modify: `components/game/U5Preview.tsx`
 - Modify: `components/game/U5BattlePreview.tsx`
+- Modify: `components/game/GlobalQuickMenu.test.tsx`
+- Modify: `e2e/audio-menu.spec.ts`
 - Modify: `app/layout.tsx`
 
 **Interfaces:**
 - Consumes: `U5BattlePlaybackRate`, `nextU5BattlePlaybackRate(current)` from `use-u5-battle-playback.ts`
 - Produces: `AppBattlePlaybackRateProvider({ children })` and `useAppBattlePlaybackRate(): U5BattlePlaybackRateControl`
 
-- [ ] **Step 1: Write the failing Provider contract test**
+- [x] **Step 1: Write failing consumer-visible shared-state tests**
 
-```tsx
-function PlaybackRateProbe() {
-  const control = useAppBattlePlaybackRate();
-  return <output>{`×${control.playbackRate}`}</output>;
-}
+```ts
+expect(html).toContain("전투 속도");
+expect(html).toContain("×1");
 
-expect(renderToStaticMarkup(
-  <AppBattlePlaybackRateProvider><PlaybackRateProbe /></AppBattlePlaybackRateProvider>,
-)).toContain("×1");
-expect(() => renderToStaticMarkup(<PlaybackRateProbe />)).toThrow(
-  "AppBattlePlaybackRateProvider 안에서만 쓸 수 있다",
-);
+await page.goto("/u5-2-test");
+const sceneSpeed = page.getByRole("button", { name: "전투 재생 속도" });
+await sceneSpeed.click();
+await page.getByRole("button", { name: "빠른 메뉴 열기" }).click();
+await expect(page.getByRole("button", { name: "전투 속도 ×2, 누르면 ×1" })).toBeVisible();
 ```
 
-- [ ] **Step 2: Run the focused tests and verify failure**
+Provider 내부 구조를 다시 주장하는 별도 단위 테스트 대신 실제 메뉴와 U5-2 소비자가
+같은 값을 보는 통합 경계를 먼저 실패시킨다.
+
+- [x] **Step 2: Run the focused tests and verify failure**
 
 Run:
 
 ```bash
-source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm exec vitest run components/game/AppBattlePlaybackRateProvider.test.tsx components/game/use-u5-battle-playback.test.ts
+source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm exec vitest run components/game/GlobalQuickMenu.test.tsx
+source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm exec playwright test e2e/audio-menu.spec.ts --grep "전투 속도|U5-2"
 ```
 
-Expected: FAIL because `AppBattlePlaybackRateProvider.tsx` does not exist.
+Expected: FAIL because the menu has no speed control and the U5-2 scene owns a local rate.
 
-- [ ] **Step 3: Implement the root memory context**
+- [x] **Step 3: Implement the root memory context**
 
 ```tsx
 "use client";
@@ -90,22 +92,23 @@ export function useAppBattlePlaybackRate(): U5BattlePlaybackRateControl {
 
 Remove the local-state `useU5BattlePlaybackRate` hook, wrap `AppFrame` in the new Provider in `app/layout.tsx`, and update the three U5 consumers to call `useAppBattlePlaybackRate()`.
 
-- [ ] **Step 4: Run focused tests and typecheck**
+- [x] **Step 4: Run focused tests and typecheck**
 
 Run:
 
 ```bash
-source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm exec vitest run components/game/AppBattlePlaybackRateProvider.test.tsx components/game/use-u5-battle-playback.test.ts components/game/U5BattleScene.test.tsx components/game/U5ProgressScreen.test.tsx
+source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm exec vitest run components/game/GlobalQuickMenu.test.tsx components/game/use-u5-battle-playback.test.ts components/game/U5BattleScene.test.tsx components/game/U5ProgressScreen.test.tsx
 source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm typecheck
+source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm exec playwright test e2e/audio-menu.spec.ts --grep "전투 속도|U5-2"
 ```
 
 Expected: all focused tests and typecheck PASS.
 
-- [ ] **Step 5: Commit Task 1**
+- [x] **Step 5: Commit Task 1**
 
 ```bash
-git add app/layout.tsx components/game/AppBattlePlaybackRateProvider.tsx components/game/AppBattlePlaybackRateProvider.test.tsx components/game/use-u5-battle-playback.ts components/game/CampaignScreen.tsx components/game/U5Preview.tsx components/game/U5BattlePreview.tsx
-git commit -m "기능: 전투 재생 속도를 앱 세션에서 공유한다" -m "루트 메모리 Provider를 추가해 퀵 메뉴와 U5 전투 화면이 같은 배속 상태를 사용할 기반을 만든다. 저장소에는 쓰지 않아 새로고침 시 기본 배속으로 돌아간다."
+git add app/layout.tsx components/game/AppBattlePlaybackRateProvider.tsx components/game/use-u5-battle-playback.ts components/game/CampaignScreen.tsx components/game/U5Preview.tsx components/game/U5BattlePreview.tsx components/game/GlobalQuickMenu.test.tsx e2e/audio-menu.spec.ts
+git commit -m "개선: 퀵 메뉴에서 전투 속도를 공유한다" -m "루트 메모리 Provider를 추가해 퀵 메뉴와 U5 전투 화면이 같은 배속 상태를 사용한다. 저장소에는 쓰지 않아 새로고침 시 기본 배속으로 돌아간다."
 ```
 
 ### Task 2: 퀵 메뉴 정보 구조와 세로 점 trigger
@@ -120,7 +123,7 @@ git commit -m "기능: 전투 재생 속도를 앱 세션에서 공유한다" -m
 - Consumes: `useAppBattlePlaybackRate()` from Task 1
 - Produces: `GlobalQuickMenuProps.playbackRate: 1 | 2` and `GlobalQuickMenuProps.onTogglePlaybackRate(): void`
 
-- [ ] **Step 1: Extend the static markup test with the approved hierarchy**
+- [x] **Step 1: Extend the static markup test with the approved hierarchy**
 
 ```ts
 expect(html).toContain("전투 속도");
@@ -132,7 +135,7 @@ expect(html).toContain('class="global-quick-menu__achievements"');
 expect(html.match(/class="global-quick-menu__dot"/g)).toHaveLength(3);
 ```
 
-- [ ] **Step 2: Run the menu test and verify failure**
+- [x] **Step 2: Run the menu test and verify failure**
 
 Run:
 
@@ -142,7 +145,7 @@ source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=err
 
 Expected: FAIL because the old shield, visible header, and three-item panel remain.
 
-- [ ] **Step 3: Implement the approved menu markup and wiring**
+- [x] **Step 3: Implement the approved menu markup and wiring**
 
 ```tsx
 <span className="global-quick-menu__dots" aria-hidden="true">
@@ -170,11 +173,11 @@ Expected: FAIL because the old shield, visible header, and three-item panel rema
 
 `AppFrame` reads the root playback-rate context and passes the current value and toggle callback. Menu trigger, speed toggle, and achievement CTA keep `data-ui-sound="none"` because `AppFrame` plays their menu sound explicitly.
 
-- [ ] **Step 4: Replace shield/header CSS with the grouped panel CSS**
+- [x] **Step 4: Replace shield/header CSS with the grouped panel CSS**
 
 Use a three-row `.global-quick-menu__settings` grid, fixed right value column, a subtle metal divider, and a full-width but non-oversized achievement CTA. Keep `rem`, `cqw`, and `cqh` units and existing focus-visible treatment.
 
-- [ ] **Step 5: Run the focused menu and canvas tests**
+- [x] **Step 5: Run the focused menu and canvas tests**
 
 Run:
 
@@ -184,7 +187,7 @@ source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=err
 
 Expected: all focused tests PASS.
 
-- [ ] **Step 6: Commit Task 2**
+- [x] **Step 6: Commit Task 2**
 
 ```bash
 git add components/game/GlobalQuickMenu.test.tsx components/game/GlobalQuickMenu.tsx components/game/AppFrame.tsx app/app-frame.css
@@ -206,7 +209,7 @@ git commit -m "개선: 전역 퀵 메뉴의 설정 계층을 정돈한다" -m "�
 - Consumes: existing `pnpm audio:generate` command and `AudioPlaybackController`
 - Produces: deterministic 64-second `어두운 길드의 밤 1B` loop and fixed UI volume `0.28`
 
-- [ ] **Step 1: Change the tests to the approved audio contract**
+- [x] **Step 1: Change the tests to the approved audio contract**
 
 ```ts
 expect(select.volume).toBe(0.28);
@@ -216,7 +219,7 @@ expect(wav.sampleRate).toBe(44_100);
 
 Keep the existing duration, peak, DC offset, loop seam, and SFX tail assertions.
 
-- [ ] **Step 2: Run audio tests and verify failure**
+- [x] **Step 2: Run audio tests and verify failure**
 
 Run:
 
@@ -226,11 +229,11 @@ source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=err
 
 Expected: FAIL at old `0.45` UI volume and old 22,050Hz generated assets.
 
-- [ ] **Step 3: Update playback mix and deterministic generator**
+- [x] **Step 3: Update playback mix and deterministic generator**
 
 Set `UI_VOLUME = 0.28` and `SAMPLE_RATE = 44_100`. Replace the simple sine pluck arrangement with deterministic bowed drones, seeded Karplus-Strong lute, dulcimer partials, low frame drum, sparse breathy pipe, and circular room reflections. Quantize sustained frequencies to the 64-second loop and avoid transient starts close enough to the seam to leave a clipped tail.
 
-- [ ] **Step 4: Regenerate the three committed WAV assets**
+- [x] **Step 4: Regenerate the three committed WAV assets**
 
 Run:
 
@@ -240,7 +243,7 @@ source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=err
 
 Expected: exactly the three canonical WAV filenames are regenerated.
 
-- [ ] **Step 5: Run audio contract tests twice around regeneration**
+- [x] **Step 5: Run audio contract tests twice around regeneration**
 
 Run:
 
@@ -252,7 +255,7 @@ git diff --exit-code -- public/assets/audio/dungeon-schemer-guild-loop.wav publi
 
 Expected: tests PASS and the second deterministic generation creates no diff.
 
-- [ ] **Step 6: Commit Task 3**
+- [x] **Step 6: Commit Task 3**
 
 ```bash
 git add lib/audio/audio-playback.test.ts lib/audio/audio-playback.ts lib/audio/audio-assets.test.ts scripts/generate-audio-assets.mjs public/assets/audio/dungeon-schemer-guild-loop.wav public/assets/audio/ui-select.wav public/assets/audio/ui-menu.wav
@@ -263,6 +266,8 @@ git commit -m "개선: 길드 BGM과 조작음 믹스를 다듬는다" -m "승�
 
 **Files:**
 - Modify: `e2e/audio-menu.spec.ts`
+- Modify: `e2e/campaign-smoke.spec.ts`
+- Modify: `components/game/campaign-render.test.tsx`
 - Modify: `docs/README.md`
 - Modify: `docs/experience/SCREEN_LAYOUT.md`
 - Modify: `docs/experience/ONBOARDING_AND_INTERFACE.md`
@@ -270,12 +275,13 @@ git commit -m "개선: 길드 BGM과 조작음 믹스를 다듬는다" -m "승�
 - Modify: `docs/technical/DEVELOPMENT_ENVIRONMENT.md`
 - Modify: `docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md`
 - Modify: `docs/technical/SESSION_PERSISTENCE_REVIEW.md`
+- Modify: `docs/diagram/png/screen-global-menu.png`
 
 **Interfaces:**
 - Consumes: global menu and playback-rate context from Tasks 1–2
 - Produces: browser proof that route transitions preserve `×2`, reload resets to `×1`, and U5 scene/menu controls stay synchronized
 
-- [ ] **Step 1: Add failing Playwright coverage**
+- [x] **Step 1: Add failing Playwright coverage**
 
 ```ts
 await page.goto("/");
@@ -292,7 +298,7 @@ await expect(page.getByRole("button", { name: /전투 속도 ×1/ })).toBeVisibl
 
 Add a `/u5-2-test` assertion that toggling the scene control updates the menu and toggling the menu updates the scene control.
 
-- [ ] **Step 2: Run the focused E2E test and resolve selector-only mismatches**
+- [x] **Step 2: Run the focused E2E test and resolve selector-only mismatches**
 
 Run:
 
@@ -302,25 +308,25 @@ source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=err
 
 Expected: all audio-menu scenarios PASS without changing product behavior to satisfy a brittle selector.
 
-- [ ] **Step 3: Synchronize official docs and remove preview-only assets from `public`**
+- [x] **Step 3: Synchronize official docs and remove preview-only assets from `public`**
 
 Document the grouped menu, session-only speed, 1B BGM, 44,100Hz generation, and UI volume `0.28`. Move `public/assets/audio/previews/` out of the worktree because previews are review artifacts rather than shipped assets.
 
-- [ ] **Step 4: Run full verification**
+- [x] **Step 4: Run full verification**
 
 Run:
 
 ```bash
 source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm lint
 source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm typecheck
-source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm test
+source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm exec vitest run --maxWorkers=1
 source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm test:e2e
 source /Users/semin/.nvm/nvm.sh && export pnpm_config_verify_deps_before_run=error && nvm exec 24.19.0 corepack pnpm build --webpack
 ```
 
 Expected: typecheck, unit, E2E, and build PASS. If full lint still reports only the documented pre-existing `components/game/ScreenFit.tsx:118 react-hooks/set-state-in-effect`, run ESLint on every changed TS/TSX file and record that clean result separately.
 
-- [ ] **Step 5: Commit Task 4**
+- [x] **Step 5: Commit Task 4**
 
 ```bash
 git add e2e/audio-menu.spec.ts docs
