@@ -57,6 +57,17 @@ export type {
 } from "./dungeon";
 
 export {
+  CONTRACT_REWARD_RANGES,
+  contractRewardForSurvivors,
+  isContractRewardInRange,
+} from "./contract-reward";
+export type {
+  ContractReward,
+  ContractRewardRange,
+  IntegerRange,
+} from "./contract-reward";
+
+export {
   BOARD_OFFER_MAX,
   CAMPAIGN_DUNGEON_COUNT,
   CAMPAIGN_PHASES,

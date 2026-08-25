@@ -24,6 +24,9 @@ import {
   THEME_IDS,
   canDeploy,
   canDeployEmergency,
+  CONTRACT_REWARD_RANGES,
+  contractRewardForSurvivors,
+  isContractRewardInRange,
   createCampaignTransitionContext,
   createCampaignStatistics,
   rewardForSurvivors,
@@ -232,5 +235,30 @@ describe("E3 사건 계약", () => {
   it("rest/special 기본 결과와 조언은 concrete 즉시 효과를 가질 수 있다", () => {
     const effect = { kind: "hp", hpDeltaPerMember: 4 } satisfies ImmediateEventEffect;
     expect(effect).toEqual({ kind: "hp", hpDeltaPerMember: 4 });
+  });
+
+  it("risk reward ranges have midpoint values matching the existing balance", () => {
+    const expected = [
+      [1, 6, 12], [2, 10, 20], [3, 15, 32], [4, 21, 45], [5, 28, 60],
+    ] as const;
+    for (const [risk, reputation, gold] of expected) {
+      const range = CONTRACT_REWARD_RANGES[risk];
+      expect((range.reputation.min + range.reputation.max) / 2).toBe(reputation);
+      expect((range.gold.min + range.gold.max) / 2).toBe(gold);
+    }
+  });
+
+  it("scales a full contract reward by survivor count at 100, 60, and 30 percent", () => {
+    const full = { reputation: 16, gold: 35 };
+    expect(contractRewardForSurvivors(full, 3)).toEqual({ reputation: 16, gold: 35 });
+    expect(contractRewardForSurvivors(full, 2)).toEqual({ reputation: 9, gold: 21 });
+    expect(contractRewardForSurvivors(full, 1)).toEqual({ reputation: 4, gold: 10 });
+    expect(contractRewardForSurvivors(full, 0)).toEqual({ reputation: 0, gold: 0 });
+  });
+
+  it("accepts only integer rewards inside the selected risk range", () => {
+    expect(isContractRewardInRange(3, { reputation: 13, gold: 37 })).toBe(true);
+    expect(isContractRewardInRange(3, { reputation: 12, gold: 37 })).toBe(false);
+    expect(isContractRewardInRange(3, { reputation: 13.5, gold: 32 })).toBe(false);
   });
 });
