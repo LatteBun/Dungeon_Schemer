@@ -6,7 +6,7 @@
 
 **Architecture:** 루트 layout의 기존 `AppAudioProvider` 아래에 메모리 전용 `AppBattlePlaybackRateProvider`를 두고 `AppFrame`과 U5 계열 화면이 같은 context를 소비한다. 퀵 메뉴는 세 설정 행과 독립 업적 CTA로 표현하며, 결정적 WAV 생성기는 승인된 음색을 64초 seamless loop로 재현한다.
 
-**Tech Stack:** Next.js 16 App Router, React 19, TypeScript, HTMLAudioElement, Node.js PCM WAV 생성, Vitest, Playwright Chromium
+**Tech Stack:** Next.js 16 App Router, React 19, TypeScript, Web Audio API(BGM), HTMLAudioElement(UI 효과음), Node.js PCM WAV 생성, Vitest, Playwright Chromium
 
 **Spec:** `docs/superpowers/specs/2026-08-26-sbh3821-global-audio-menu-design.md`
 

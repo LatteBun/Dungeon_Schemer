@@ -125,10 +125,14 @@ interface AppAudioState {
 ### BGM
 
 - `bgmEnabled === false`이면 재생하지 않고 현재 위치를 유지한다.
-- OFF에서 ON으로 바꾼 실제 클릭 안에서 `audio.play()`를 호출한다.
+- OFF에서 ON으로 바꾼 실제 클릭 안에서 BGM 전용 `AudioContext`를 resume하고
+  디코딩된 buffer source를 시작한다.
 - ON에서 OFF로 바꾸면 즉시 pause한다.
 - route 전환은 재생을 멈추거나 처음으로 돌리지 않는다.
-- 한 번 끝나면 이음새 없이 처음으로 돌아가는 `loop` 음원이다.
+- BGM은 `AudioBufferSourceNode.loop`로 sample-accurate 반복한다. 브라우저
+  `HTMLAudioElement.loop`의 경계 재시작 지연에 의존하지 않는다.
+- OFF 후 다시 ON으로 바꾸면 디코딩한 buffer를 재사용하고 멈춘 위치부터 새 source로
+  이어서 재생한다. `AudioBufferSourceNode` 인스턴스는 재사용하지 않는다.
 - 탭이 백그라운드로 가는 것만으로 설정을 바꾸지 않는다. 브라우저가 일시 정지하면
   다시 활성화됐을 때 ON 설정에 맞춰 재생을 재시도한다.
 
@@ -153,7 +157,7 @@ interface AppAudioState {
 
 ## 7. 음원 자산
 
-외부 음원과 런타임 네트워크 요청을 사용하지 않는다. 표준 Node.js만 쓰는 결정적
+외부 음원과 외부 런타임 네트워크 요청을 사용하지 않는다. 표준 Node.js만 쓰는 결정적
 생성 스크립트가 고정 seed로 PCM WAV를 만든다. 생성 결과와 스크립트를 함께
 커밋하여 자산의 출처와 재생산 방법을 남긴다.
 

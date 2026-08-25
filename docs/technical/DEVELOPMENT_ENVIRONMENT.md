@@ -214,7 +214,12 @@ Playwright는 하나의 Next 개발 서버와 오디오 재생 인스턴스를 �
 생성 뒤 `pnpm exec vitest run lib/audio/audio-assets.test.ts`로 RIFF/WAVE header,
 길이, channel, sample rate, peak, DC offset, loop seam과 끝단 감쇠를 검증한다.
 브라우저 흐름은 `pnpm exec playwright test e2e/audio-menu.spec.ts`로 확인한다.
-런타임은 세 파일을 읽기만 하며 음원을 생성하거나 네트워크에서 내려받지 않는다.
+런타임은 세 파일을 읽기만 하며 음원을 생성하거나 외부 네트워크에서 내려받지 않는다.
+
+BGM은 로컬 WAV를 최초 1회 fetch·decode한 뒤 `AudioBufferSourceNode.loop`로
+sample-accurate 반복한다. `HTMLAudioElement.loop`는 브라우저에 따라 경계에서 짧은
+재시작 공백이 생길 수 있으므로 BGM에는 사용하지 않는다. UI 효과음은 짧은 단발성
+재생이므로 기존 `HTMLAudioElement` 방식을 유지한다.
 
 세 파일은 44,100Hz signed PCM16으로 생성한다. BGM은 승인된 `어두운 길드의 밤
 1B`의 음색을 64초 seamless loop로 확장하고, UI 효과음의 애플리케이션 재생

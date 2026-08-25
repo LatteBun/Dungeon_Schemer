@@ -17,6 +17,16 @@ async function mockMediaPlayback(page: Page): Promise<void> {
     HTMLMediaElement.prototype.pause = function pause() {
       calls.push(`pause:${this.src}`);
     };
+    const createBufferSource = AudioContext.prototype.createBufferSource;
+    AudioContext.prototype.createBufferSource = function trackedCreateBufferSource() {
+      const source = createBufferSource.call(this);
+      const start = source.start.bind(source);
+      source.start = (...args) => {
+        calls.push("bgm:start");
+        start(...args);
+      };
+      return source;
+    };
   });
 }
 
@@ -27,6 +37,11 @@ async function audioCalls(page: Page): Promise<readonly string[]> {
 async function playCount(page: Page, filename: string): Promise<number> {
   const calls = await audioCalls(page);
   return calls.filter((call) => call.startsWith("play:") && call.endsWith(filename)).length;
+}
+
+async function bgmStartCount(page: Page): Promise<number> {
+  const calls = await audioCalls(page);
+  return calls.filter((call) => call === "bgm:start").length;
 }
 
 async function playCalls(page: Page): Promise<readonly string[]> {
@@ -70,7 +85,7 @@ test("오디오 토글은 저장되고 reload와 campaign route 전환에도 BGM
   const sfx = page.getByRole("switch", { name: /효과음/ });
   await bgm.click();
   await expect(bgm).toHaveAttribute("aria-checked", "true");
-  await expect.poll(() => playCount(page, "dungeon-schemer-guild-loop.wav")).toBe(1);
+  await expect.poll(() => bgmStartCount(page)).toBe(1);
 
   await sfx.click();
   await expect(sfx).toHaveAttribute("aria-checked", "true");
@@ -84,12 +99,12 @@ test("오디오 토글은 저장되고 reload와 campaign route 전환에도 BGM
   await page.getByRole("button", { name: "빠른 메뉴 열기" }).click();
   await expect(page.getByRole("switch", { name: /BGM/ })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByRole("switch", { name: /효과음/ })).toHaveAttribute("aria-checked", "true");
-  await expect.poll(() => playCount(page, "dungeon-schemer-guild-loop.wav")).toBe(1);
+  await expect.poll(() => bgmStartCount(page)).toBe(1);
 
   await page.getByRole("link", { name: "캠페인 시작" }).click();
   await expect(page).toHaveURL(/\/campaign$/);
   await expect(page.getByRole("button", { name: "길드 게시판으로" })).toBeVisible();
-  expect(await playCount(page, "dungeon-schemer-guild-loop.wav")).toBe(1);
+  expect(await bgmStartCount(page)).toBe(1);
 });
 
 test("전투 속도는 client route 전환에는 남고 reload에는 기본값으로 돌아간다", async ({ page }) => {
