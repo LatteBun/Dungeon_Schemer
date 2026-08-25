@@ -424,11 +424,11 @@ git commit -m "화면: 사망 상태에도 같은 초상을 유지한다" -m "U4
 
 **Files:**
 
-- Create: `public/assets/characters/live/archer/archer_{c,d,e,f}.png`
-- Create: `public/assets/characters/live/cleric/cleric_{c,d,e,f}.png`
-- Create: `public/assets/characters/live/mage/mage_{c,d,e,f}.png`
-- Create: `public/assets/characters/live/rogue/rogue_{c,d,e,f}.png`
-- Create: `public/assets/characters/live/warrior/warrior_{c,d,e,f}.png`
+- Verify: `public/assets/characters/live/archer/archer_{c,d,e,f}.png`
+- Verify: `public/assets/characters/live/cleric/cleric_{c,d,e,f}.png`
+- Verify: `public/assets/characters/live/mage/mage_{c,d,e,f}.png`
+- Verify: `public/assets/characters/live/rogue/rogue_{c,d,e,f}.png`
+- Verify: `public/assets/characters/live/warrior/warrior_{c,d,e,f}.png`
 - Remove: `public/assets/characters/dead/`
 - Modify: `components/game/U4Assets.test.ts`
 - Modify: `docs/systems/CHARACTER_POOL_AND_WORLDTURN.md`
@@ -469,20 +469,24 @@ Run:
 pnpm.cmd vitest run components/game/U4Assets.test.ts
 ```
 
-Expected: FAIL — C~F는 아직 브랜치에 없고 `dead` 디렉터리가 남아 있다.
+Expected: FAIL — C~F 파일은 이미 존재하지만 `dead` 디렉터리가 남아 있다.
 
-- [ ] **Step 3: 원본 C~F PNG를 추가하고 dead 자산을 삭제한다**
+- [x] **Step 3: 원본 C~F PNG를 브랜치에 추가한다**
 
-승인된 원본 20개를 각 직업의 기존 `live` 디렉터리에 정확히 아래 이름으로 복사한다. 변환, 리사이즈, 재저장을 하지 않는다.
+승인된 원본 20개를 각 직업의 기존 `live` 디렉터리에 정확히 아래 이름으로 복사했다. 변환, 리사이즈, 재저장을 하지 않았으며, 원본 SHA-256과 PNG signature가 일치하는지 확인했다.
 
 ```text
 archer_{c,d,e,f}.png   cleric_{c,d,e,f}.png   mage_{c,d,e,f}.png
 rogue_{c,d,e,f}.png    warrior_{c,d,e,f}.png
 ```
 
+완료 커밋: `6ccf0f9` (`자산: 캐릭터 live 초상 C부터 F를 추가한다`).
+
+- [ ] **Step 4: 모든 dead 참조 제거 뒤 dead 자산을 삭제한다**
+
 모든 생산 코드와 현행 문서에서 dead 참조가 제거된 뒤에만 정확한 대상 `public/assets/characters/dead`를 삭제한다. 삭제 직전 `Get-ChildItem public/assets/characters/dead -Recurse -File`로 10개 기존 A/B PNG만 있는지 확인한다.
 
-- [ ] **Step 4: 공식·운영 문서를 새 계약으로 갱신한다**
+- [ ] **Step 5: 공식·운영 문서를 새 계약으로 갱신한다**
 
 다음 내용을 한 번만 직접 소유하고 나머지 문서는 연결한다.
 
@@ -492,7 +496,7 @@ rogue_{c,d,e,f}.png    warrior_{c,d,e,f}.png
 - `DEFERRED_WORK.md`: 완료된 `캐릭터 고유 초상` 항목 전체를 삭제한다.
 - `docs/README.md`: 이번 개편 설계 목록에 Spec과 이 Plan의 상대 링크를 각각 한 번 추가한다.
 
-- [ ] **Step 5: 자산·문서 계약을 통과시키고 커밋한다**
+- [ ] **Step 6: 자산·문서 계약을 통과시키고 커밋한다**
 
 Run:
 
@@ -504,8 +508,8 @@ rg -n -g '!docs/superpowers/**' -g '!node_modules/**' '/characters/dead/|\{live\
 Expected: 테스트 PASS, 현행 문서·코드 검색 결과 0개.
 
 ```powershell
-git add -- public/assets/characters/live public/assets/characters/dead components/game/U4Assets.test.ts docs/systems/CHARACTER_POOL_AND_WORLDTURN.md docs/experience/CHARACTER_UI_ASSETS.md docs/experience/U4_DUNGEON_MAP.md docs/technical/DEFERRED_WORK.md docs/README.md docs/DOCUMENT_LINKS.test.ts
-git commit -m "자산: 캐릭터 초상을 A부터 F까지 확장한다" -m "30개 live 원본 초상과 고정 로스터 문서를 반영하고 사망 이미지 자산 계약을 제거한다."
+git add -- public/assets/characters/dead components/game/U4Assets.test.ts docs/systems/CHARACTER_POOL_AND_WORLDTURN.md docs/experience/CHARACTER_UI_ASSETS.md docs/experience/U4_DUNGEON_MAP.md docs/technical/DEFERRED_WORK.md docs/README.md docs/DOCUMENT_LINKS.test.ts
+git commit -m "문서: 캐릭터 초상 live 전용 계약을 반영한다" -m "사망 이미지 자산을 제거하고 고정 로스터의 30개 live 초상 계약을 현행 문서와 검증에 반영한다."
 ```
 
 ### Task 6: 통합 검증과 시각 QA
