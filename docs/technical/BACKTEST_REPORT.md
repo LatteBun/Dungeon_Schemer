@@ -3,7 +3,7 @@
 - 모드: calibration
 - focus: risk-curve
 - namespace: b1-risk-curve-v2-calibration
-- source revision: ab65c44
+- source revision: 768d042
 - 전략: survival, opportunist, selective-betrayal
 - 정확도: 0.4, 0.7
 - 조합당 표본: 200
