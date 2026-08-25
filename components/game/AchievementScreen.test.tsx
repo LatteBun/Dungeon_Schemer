@@ -32,6 +32,7 @@ function renderEmptyGallery(): string {
     unlockedCount: unlockedAchievementCount(progress),
     status: "ready",
     message: null,
+    backAction: { kind: "link", href: "/" },
     onClear: () => {},
   }));
 }
@@ -44,6 +45,7 @@ describe("길잡이 업적 기록 화면", () => {
       unlockedCount: unlockedAchievementCount(progress),
       status: "ready",
       message: null,
+      backAction: { kind: "link", href: "/" },
       onClear: () => {},
     }));
 
@@ -80,6 +82,7 @@ describe("길잡이 업적 기록 화면", () => {
       unlockedCount: unlockedAchievementCount(progress),
       status: "ready",
       message: null,
+      backAction: { kind: "link", href: "/" },
       onClear: () => {},
     }));
 
@@ -98,6 +101,7 @@ describe("길잡이 업적 기록 화면", () => {
       unlockedCount: unlockedAchievementCount(progress),
       status: "ready",
       message: null,
+      backAction: { kind: "link", href: "/" },
       onClear: () => {},
     }));
 
@@ -112,6 +116,7 @@ describe("길잡이 업적 기록 화면", () => {
       unlockedCount: 0,
       status: "ready",
       message: null,
+      backAction: { kind: "link", href: "/" },
       confirming: true,
       onRequestClear: () => {},
       onCancelClear: () => {},
@@ -123,6 +128,35 @@ describe("길잡이 업적 기록 화면", () => {
     expect(html).not.toMatch(/<dialog[^>]*\sopen=/);
     expect(html.indexOf("취소")).toBeLessThan(html.indexOf("정말 초기화"));
     expect(html).toContain("autofocus");
+  });
+
+  it("독립 화면은 검증된 링크로 이전 화면 CTA를 렌더한다", () => {
+    const html = renderToStaticMarkup(createElement(AchievementScreen, {
+      cards: achievementCardViewsFor(createEmptyPlayerProgress()),
+      unlockedCount: 0,
+      status: "ready",
+      message: null,
+      backAction: { kind: "link", href: "/campaign?seed=return-test" },
+      onClear: () => {},
+    }));
+
+    expect(html).toContain('href="/campaign?seed=return-test"');
+    expect(html).toContain("이전 화면으로");
+    expect(html).not.toContain("메인 메뉴로");
+  });
+
+  it("overlay는 route 이동 없는 button 이전 동작을 렌더한다", () => {
+    const html = renderToStaticMarkup(createElement(AchievementScreen, {
+      cards: achievementCardViewsFor(createEmptyPlayerProgress()),
+      unlockedCount: 0,
+      status: "ready",
+      message: null,
+      backAction: { kind: "button", onActivate: () => {} },
+      onClear: () => {},
+    }));
+
+    expect(html).toMatch(/<button class="shell-cta" type="button">이전 화면으로<\/button>/);
+    expect(html).not.toContain('href="/"');
   });
 
   it("dialog mount는 native modal을 열고 cleanup은 열린 dialog를 닫는다", () => {
