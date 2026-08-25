@@ -22,26 +22,37 @@ async function expectSituationAndOutcomeFitConsole(page: Page, hasOutcome: boole
   const metrics = await page.getByTestId("u5-console").evaluate((console, expected) => {
     const panel = console.querySelector<HTMLElement>(".u5-situation-panel");
     const situation = console.querySelector<HTMLElement>("[data-testid='u5-situation']");
+    const adviceList = console.querySelector<HTMLElement>(".u5-advice-list");
+    const cards = [...console.querySelectorAll<HTMLElement>(".u5-advice__button")];
     const outcome = console.querySelector<HTMLElement>("[data-testid='u5-outcome']");
+    const steps = [...console.querySelectorAll<HTMLElement>(".u5-outcome__step")];
     if (panel === null || situation === null) throw new Error("현재 상황 패널이 없다");
+    if (!expected.hasOutcome && (adviceList === null || cards.length !== 3)) {
+      throw new Error("선택 전 조언 카드 세 장이 없다");
+    }
     if (expected.hasOutcome && outcome === null) throw new Error("선택 후 결과가 없다");
+    if (expected.hasOutcome && steps.length !== 3) throw new Error("선택 후 결과 단계 세 개가 없다");
 
     const consoleBox = console.getBoundingClientRect();
-    const panelBox = panel.getBoundingClientRect();
-    const outcomeBox = outcome?.getBoundingClientRect();
+    const measure = (element: HTMLElement) => {
+      const box = element.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        bottom: box.bottom,
+        scrollHeight: element.scrollHeight,
+        clientHeight: element.clientHeight,
+      };
+    };
 
     return {
       situationText: situation.textContent,
-      panelLeft: panelBox.left,
-      panelRight: panelBox.right,
-      panelTop: panelBox.top,
-      panelBottom: panelBox.bottom,
-      panelScrollHeight: panel.scrollHeight,
-      panelClientHeight: panel.clientHeight,
-      outcomeLeft: outcomeBox?.left,
-      outcomeRight: outcomeBox?.right,
-      outcomeTop: outcomeBox?.top,
-      outcomeBottom: outcomeBox?.bottom,
+      panel: measure(panel),
+      adviceList: adviceList === null ? null : measure(adviceList),
+      cards: cards.map(measure),
+      outcome: outcome === null ? null : measure(outcome),
+      steps: steps.map(measure),
       consoleLeft: consoleBox.left,
       consoleRight: consoleBox.right,
       consoleTop: consoleBox.top,
@@ -50,16 +61,32 @@ async function expectSituationAndOutcomeFitConsole(page: Page, hasOutcome: boole
   }, { hasOutcome });
 
   expect(metrics.situationText).toBe(longestSituation);
-  expect(metrics.panelLeft).toBeGreaterThanOrEqual(metrics.consoleLeft - 1);
-  expect(metrics.panelRight).toBeLessThanOrEqual(metrics.consoleRight + 1);
-  expect(metrics.panelTop).toBeGreaterThanOrEqual(metrics.consoleTop - 1);
-  expect(metrics.panelBottom).toBeLessThanOrEqual(metrics.consoleBottom + 1);
-  expect(metrics.panelScrollHeight).toBeLessThanOrEqual(metrics.panelClientHeight + 1);
+  const expectContained = (element: typeof metrics.panel) => {
+    expect(element.left).toBeGreaterThanOrEqual(metrics.consoleLeft - 1);
+    expect(element.right).toBeLessThanOrEqual(metrics.consoleRight + 1);
+    expect(element.top).toBeGreaterThanOrEqual(metrics.consoleTop - 1);
+    expect(element.bottom).toBeLessThanOrEqual(metrics.consoleBottom + 1);
+    expect(element.scrollHeight).toBeLessThanOrEqual(element.clientHeight + 1);
+  };
+
+  expectContained(metrics.panel);
   if (hasOutcome) {
-    expect(metrics.outcomeLeft).toBeGreaterThanOrEqual(metrics.consoleLeft - 1);
-    expect(metrics.outcomeRight).toBeLessThanOrEqual(metrics.consoleRight + 1);
-    expect(metrics.outcomeTop).toBeGreaterThanOrEqual(metrics.consoleTop - 1);
-    expect(metrics.outcomeBottom).toBeLessThanOrEqual(metrics.consoleBottom + 1);
+    expect(metrics.outcome).not.toBeNull();
+    if (metrics.outcome === null) throw new Error("선택 후 결과 측정값이 없다");
+    expectContained(metrics.outcome);
+    expect(metrics.outcome.top).toBeGreaterThanOrEqual(metrics.panel.bottom - 1);
+    expect(metrics.steps).toHaveLength(3);
+    for (const step of metrics.steps) expectContained(step);
+    for (let index = 1; index < metrics.steps.length; index += 1) {
+      expect(metrics.steps[index].top).toBeGreaterThanOrEqual(metrics.steps[index - 1].bottom - 1);
+    }
+  } else {
+    expect(metrics.adviceList).not.toBeNull();
+    if (metrics.adviceList === null) throw new Error("선택 전 조언 목록 측정값이 없다");
+    expectContained(metrics.adviceList);
+    expect(metrics.adviceList.top).toBeGreaterThanOrEqual(metrics.panel.bottom - 1);
+    expect(metrics.cards).toHaveLength(3);
+    for (const card of metrics.cards) expectContained(card);
   }
 }
 
@@ -70,12 +97,15 @@ test("행동/조언과 진행 기록은 실제 클릭으로 aria-pressed와 표�
   const log = page.getByRole("button", { name: "진행 기록", exact: true });
 
   await expect(advice).toHaveAttribute("aria-pressed", "true");
+  await expect(log).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("u5-situation")).toBeVisible();
   await log.click();
+  await expect(advice).toHaveAttribute("aria-pressed", "false");
   await expect(log).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("u5-log")).toBeVisible();
   await advice.click();
   await expect(advice).toHaveAttribute("aria-pressed", "true");
+  await expect(log).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("u5-situation")).toBeVisible();
   expectNoBrowserErrors(failures, "U5 콘솔 모드 전환");
 });
@@ -84,28 +114,66 @@ test("진행 기록 필터는 기존 계산 스타일을 유지한다", async ({
   const failures = watchBrowserErrors(page);
   await useFhd(page);
   await page.getByRole("button", { name: "진행 기록", exact: true }).click();
-  const styles = await page.getByRole("button", { name: "단서", exact: true }).evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      borderTopWidth: style.borderTopWidth,
-      borderTopColor: style.borderTopColor,
-      backgroundColor: style.backgroundColor,
-      color: style.color,
-      paddingTop: style.paddingTop,
-      paddingRight: style.paddingRight,
-      fontSize: style.fontSize,
-    };
-  });
+  const filterStyles = async () => page.locator(".u5-log__filters button").evaluateAll((buttons) =>
+    buttons.map((element) => {
+      const style = getComputedStyle(element);
+      return {
+        label: element.textContent,
+        pressed: element.getAttribute("aria-pressed"),
+        height: style.height,
+        borderTopWidth: style.borderTopWidth,
+        borderTopColor: style.borderTopColor,
+        backgroundColor: style.backgroundColor,
+        color: style.color,
+        paddingTop: style.paddingTop,
+        paddingRight: style.paddingRight,
+        fontSize: style.fontSize,
+      };
+    }),
+  );
+  const initial = await filterStyles();
 
-  expect(styles).toEqual({
+  expect(initial).toHaveLength(4);
+  expect(initial.map(({ label }) => label)).toEqual(["전체", "단서", "전투", "생태"]);
+  expect(initial.map(({ height }) => height)).toEqual(["36.5312px", "36.5312px", "36.5312px", "36.5312px"]);
+  expect(initial[0]).toEqual({
+    label: "전체",
+    pressed: "true",
+    height: "36.5312px",
     borderTopWidth: "1px",
-    borderTopColor: "rgb(58, 46, 35)",
-    backgroundColor: "rgba(12, 9, 6, 0.8)",
-    color: "rgb(203, 188, 165)",
+    borderTopColor: "rgb(216, 170, 67)",
+    backgroundColor: "rgb(59, 42, 20)",
+    color: "rgb(255, 243, 204)",
     paddingTop: "5.76px",
     paddingRight: "13.44px",
     fontSize: "15.36px",
   });
+  for (const filter of initial.slice(1)) {
+    expect(filter).toEqual({
+      label: filter.label,
+      pressed: "false",
+      height: "36.5312px",
+      borderTopWidth: "1px",
+      borderTopColor: "rgb(58, 46, 35)",
+      backgroundColor: "rgba(12, 9, 6, 0.8)",
+      color: "rgb(203, 188, 165)",
+      paddingTop: "5.76px",
+      paddingRight: "13.44px",
+      fontSize: "15.36px",
+    });
+  }
+
+  await page.getByRole("button", { name: "단서", exact: true }).click();
+  const afterClick = await filterStyles();
+  expect(afterClick[0].pressed).toBe("false");
+  expect(afterClick[0].borderTopColor).toBe("rgb(58, 46, 35)");
+  expect(afterClick[0].backgroundColor).toBe("rgba(12, 9, 6, 0.8)");
+  expect(afterClick[0].color).toBe("rgb(203, 188, 165)");
+  expect(afterClick[1].pressed).toBe("true");
+  expect(afterClick[1].borderTopColor).toBe("rgb(216, 170, 67)");
+  expect(afterClick[1].backgroundColor).toBe("rgb(59, 42, 20)");
+  expect(afterClick[1].color).toBe("rgb(255, 243, 204)");
+  expect(afterClick.map(({ height }) => height)).toEqual(["36.5312px", "36.5312px", "36.5312px", "36.5312px"]);
   expectNoBrowserErrors(failures, "진행 기록 필터 스타일");
 });
 

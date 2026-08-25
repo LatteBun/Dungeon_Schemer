@@ -202,7 +202,8 @@ describe("U5ProgressScreen", () => {
 
   it("상황 패널은 경계와 여백을 가지되 내용을 자르지 않는다", () => {
     const sheet = readFileSync("app/u5-progress.css", "utf8");
-    const panel = sheet.match(/\.u5-situation-panel\s*\{[^}]*\}/)?.[0] ?? "";
+    const panel = cssRule(sheet, ".u5-situation-panel");
+    const situation = cssRule(sheet, ".u5-situation");
     const title = sheet.match(/\.u5-situation-panel__title\s*\{[^}]*\}/)?.[0] ?? "";
 
     expect(panel).toMatch(/box-sizing:\s*border-box/);
@@ -210,8 +211,10 @@ describe("U5ProgressScreen", () => {
     expect(panel).toMatch(/padding:/);
     expect(panel).toMatch(/border:/);
     expect(panel).toMatch(/background:/);
-    expect(panel).not.toMatch(/(?:^|\s)(?:max-)?height\s*:/);
-    expect(panel).not.toMatch(/overflow\s*:/);
+    for (const rule of [panel, situation]) {
+      expect(rule).not.toMatch(/(?:^|\s)(?:max-)?height\s*:/);
+      expect(rule).not.toMatch(/overflow(?:-x|-y)?\s*:/);
+    }
     expect(title).toMatch(/margin:\s*0/);
   });
 
@@ -267,12 +270,16 @@ describe("U5ProgressScreen", () => {
       expect(rule).toMatch(/border:\s*0\.125rem solid/);
       expect(rule).toMatch(/background:\s*linear-gradient\(/);
       expect(rule.match(/\binset\b/g)).toHaveLength(2);
+      expect(rule).not.toMatch(/\burl\(/);
     }
     const html = render();
     const tabsMarkup = html.match(/<nav class="u5-console__tabs"[\s\S]*?<\/nav>/)?.[0] ?? "";
     const panelMarkup = html.match(/<section class="u5-situation-panel"[\s\S]*?<\/section>/)?.[0] ?? "";
     expect(tabsMarkup).not.toContain("u5-advice__rivet");
     expect(panelMarkup).not.toContain("u5-advice__rivet");
+    for (const markup of [tabsMarkup, panelMarkup]) {
+      expect(markup).not.toMatch(/<(?:img|svg)\b/);
+    }
   });
 
   it("현재 상황 제목과 본문을 승인 크기로 함께 키운다", () => {
