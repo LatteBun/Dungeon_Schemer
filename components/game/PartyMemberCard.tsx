@@ -61,6 +61,8 @@ export interface PartyMemberCardProps {
   effect?: { readonly kind: "hp" | "trust"; readonly delta: number; readonly token: string };
   /** 현재 결과에서 확인을 마친 변화량. 다음 화면으로 이동할 때까지 앞면에 남긴다. */
   settledResult?: PartyMemberSettledResult;
+  /** U5 결과 카드처럼 변화량 유무와 무관하게 결과 한 줄의 높이를 유지한다. */
+  reserveSettledResultSpace?: boolean;
 }
 
 const GOLD_ICON = "/assets/u2/status-gold.svg";
@@ -114,13 +116,23 @@ function signedDelta(delta: number): string {
   return delta > 0 ? `+${delta}` : `−${Math.abs(delta)}`;
 }
 
-export function PartyMemberCard({ member, index, testId, changes, effect, settledResult }: PartyMemberCardProps) {
+export function PartyMemberCard({
+  member,
+  index,
+  testId,
+  changes,
+  effect,
+  settledResult,
+  reserveSettledResultSpace = false,
+}: PartyMemberCardProps) {
   const alive = member.alive ?? true;
   const reducedMotion = useReducedMotion() ?? false;
   const [flipped, setFlipped] = useState(false);
   const canFlip = changes !== undefined;
   const settledHp = settledResult?.hpDelta === 0 ? undefined : settledResult?.hpDelta;
   const settledTrust = settledResult?.trustDelta === 0 ? undefined : settledResult?.trustDelta;
+  const hasSettledResult = settledHp !== undefined || settledTrust !== undefined;
+  const showSettledResultSpace = reserveSettledResultSpace || hasSettledResult;
 
   /*
    * 뒤집을 수 있는 카드만 누를 수 있게 한다.
@@ -185,12 +197,17 @@ export function PartyMemberCard({ member, index, testId, changes, effect, settle
           </div>
         </dl>
 
-        {settledHp === undefined && settledTrust === undefined ? null : (
-          <div className="party-card__settled-results" data-reduced-motion={reducedMotion} aria-live="polite">
+        {showSettledResultSpace ? (
+          <div
+            className="party-card__settled-results"
+            data-reduced-motion={reducedMotion}
+            aria-live="polite"
+            aria-hidden={hasSettledResult ? undefined : true}
+          >
             {settledHp === undefined ? null : <output className="party-card__settled-result party-card__settled-result--hp">HP {signedDelta(settledHp)}</output>}
             {settledTrust === undefined ? null : <output className="party-card__settled-result party-card__settled-result--trust">신뢰 {signedDelta(settledTrust)}</output>}
           </div>
-        )}
+        ) : null}
       </div>
 
       {canFlip && (

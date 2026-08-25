@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 일반전과 보스전에서 결과를 인과 순서대로 공개하고, 확인한 HP·신뢰 변화량을 우측 파티 카드에 유지하며 다시보기는 중앙 전투 장면만 재생한다.
+**Goal:** 일반전과 보스전에서 결과를 인과 순서대로 공개하고, 확인한 HP·신뢰 변화량을 같은 크기의 우측 파티 카드에 유지하며 결과 단계와 다시보기에서는 최종 HP를 보존한다.
 
-**Architecture:** 규칙 결과를 바꾸지 않는 순수 `U5CombatFeedbackView` adapter와 표시 전용 phase reducer를 사용한다. `U5ProgressScreen`은 최초 전투 중에만 같은 replay frame을 장면과 우측 카드 HP에 투영하고, 완료 뒤 다시보기에서는 장면만 frame을 소비하게 한다. `PartyMemberCard`는 사후 확인 뒤 이번 결과의 0이 아닌 HP·신뢰 변화량을 동시에 받아 다음 화면 전까지 지속 표시한다.
+**Architecture:** 규칙 결과를 바꾸지 않는 순수 `U5CombatFeedbackView` adapter와 표시 전용 phase reducer를 사용한다. `U5ProgressScreen`은 최초 전투 중에만 같은 replay frame을 장면과 우측 카드 HP에 투영하고, 전투 이후에는 replay participant의 `finalHp`를 party view보다 우선하며 완료 뒤 다시보기에서는 장면만 frame을 소비하게 한다. `PartyMemberCard`는 모든 카드에 한 줄 높이의 결과 슬롯을 기본으로 두고, 사후 확인 뒤 이번 결과의 0이 아닌 HP·신뢰 변화량만 그 슬롯에 지속 표시한다.
 
 **Tech Stack:** Next.js 16.3 App Router, React 19, TypeScript, Framer Motion 13, Zustand 5, Vitest 4, Playwright
 
@@ -19,9 +19,11 @@
 - 전투 건너뛰기는 battle frame만 complete로 이동시킨다. `postBattleHp`, `postBattleDialogue`, `postBattleTrust`는 생략하지 않는다.
 - 자동 beat 시간은 핵심 반응 1100ms, 사건 결과 1100ms, 즉시/사후 신뢰 강조 650ms, 사후 HP 강조 500ms다. 사후 대사는 `반응 확인` 클릭 전까지 유지한다.
 - 최초 battle playback의 현재 frame 하나를 전투 장면과 우측 파티 카드가 함께 소비한다. HP가 0이 되는 frame에서 카드의 전투 불능 표시도 동시에 바뀐다. 완료 뒤 다시보기에서는 우측 카드가 frame을 소비하지 않는다.
+- battle 이후 우측 카드 HP는 같은 id의 replay participant `finalHp`를 `progress.party[].hp`보다 우선한다. participant가 없을 때만 party view 값을 fallback으로 쓴다.
 - 사후 대사 확인 전에는 우측 카드 신뢰가 이전 값이다. 확인 뒤 trust phase에서만 최종값과 증감 effect를 표시한다.
 - 좌측 하단은 현재 beat 하나만 표시한다. 전체 반응·결과·수치 세 묶음을 동시에 노출하지 않는다.
 - HP·신뢰 수치 변화 effect는 우측 카드에 둔다. 전체 이력은 해당 phase가 지난 뒤 로그와 카드 뒷면에서만 공개한다.
+- U5의 모든 파티 카드는 변화량 badge 한 줄의 최소 높이를 기본으로 확보한다. 변화량이 0인 항목은 output과 장식을 만들지 않지만 빈 결과 슬롯은 유지한다. U3·U4는 이 슬롯을 요청하지 않는다.
 - 핵심 인물은 spec의 stable seat order와 절댓값 tie-break 규칙으로 정한다. 내부 kind/key 값은 DOM text, accessible name, `data-*`에 출력하지 않는다.
 - `accepted`, `suspected`, `exposed`, `adviceHelped`, `adviceHarmed`, `suspicionWasCorrect`, `suspicionWasCostly` 문구는 spec에 승인된 고정 한국어 문구를 그대로 사용한다. 성격별 문구나 새 에셋을 추가하지 않는다.
 - replay control은 전체 feedback sequence가 complete일 때만 보인다. 다시 보기는 중앙 장면만 되감고 우측 카드의 최종 HP·신뢰·변화량을 유지하며 대사·신뢰 phase를 반복하지 않는다.
@@ -44,7 +46,7 @@
 - `components/game/use-u5-battle-playback.ts`: pre-battle beat 동안 replay frame 진행을 멈추는 `playing` 입력을 받는다.
 - `components/game/u5-log.ts`: feedback phase에 따른 로그 공개 경계를 정의한다.
 - `components/game/campaign-adapters.ts`: 실제 pending outcome/record와 boss result에서 feedback와 단계별 로그를 만든다.
-- `components/game/PartyMemberCard.tsx`, `app/party-card.css`: 카드의 HP·신뢰 증감 effect를 접근 가능한 output으로 표시한다.
+- `components/game/PartyMemberCard.tsx`, `app/party-card.css`: 카드의 HP·신뢰 증감 effect를 접근 가능한 output으로 표시하고 모든 카드에 같은 결과 슬롯 높이를 확보한다.
 - `components/game/U5BattleScene.tsx`: 전체 시퀀스 완료 전 replay control과 완료 검증 목록을 숨긴다.
 - `components/game/U5ProgressScreen.tsx`, `app/u5-progress.css`, `app/u5-battle.css`: current beat, 하단 대사 ribbon, CTA gate, 카드 값 투영을 통합한다.
 - `components/game/CampaignScreen.tsx`: 실제 일반전·보스전에 feedback view를 전달한다.
@@ -828,3 +830,138 @@ If no official doc changed, do not create an empty commit.
 - [ ] **Step 7: Apply verification-before-completion**
 
 Use `superpowers:verification-before-completion`, rerun every command whose output will be cited, and report exact pass counts plus any intentionally untracked user files. Do not claim completion from an earlier or partial run.
+
+### Task 9: 결과 단계 HP 회귀와 카드 기본 높이를 고친다
+
+**Files:**
+- Modify: `components/game/u5-combat-feedback.ts`
+- Modify: `components/game/u5-combat-feedback.test.ts`
+- Modify: `components/game/U5ProgressScreen.tsx`
+- Modify: `components/game/PartyMemberCard.tsx`
+- Modify: `components/game/PartyMemberCard.test.tsx`
+- Modify: `app/party-card.css`
+- Modify: `e2e/u5-battle-preview.spec.ts`
+- Modify: `docs/experience/SCREEN_LAYOUT.md`
+- Modify: `docs/experience/ONBOARDING_AND_INTERFACE.md`
+- Modify: `docs/experience/UI_IMPLEMENTATION_GUIDE.md`
+
+**Interfaces:**
+- Changes: `u5VisibleHp({ phase, frameHp, replayFinalHp, fallbackHp })` selects the frame only in `battle`, then replay final HP, then party-view fallback.
+- Preserves: `PartyMemberSettledResult` and its non-zero `HP ±N` / `신뢰 ±N` outputs.
+- Adds: `reserveSettledResultSpace?: boolean` lets U5 mount `.party-card__settled-results` as a one-line layout slot without changing U3·U4.
+
+- [x] **Step 1: Write the failing final-HP projection test**
+
+Add literal assertions that reproduce the boss preview mismatch:
+
+~~~ts
+expect(u5VisibleHp({ phase: "battle", frameHp: 11, replayFinalHp: 5, fallbackHp: 32 })).toBe(11);
+expect(u5VisibleHp({ phase: "postBattleDialogue", frameHp: 11, replayFinalHp: 5, fallbackHp: 32 })).toBe(5);
+expect(u5VisibleHp({ phase: "postBattleTrust", frameHp: 11, replayFinalHp: 5, fallbackHp: 32 })).toBe(5);
+expect(u5VisibleHp({ phase: "complete", frameHp: 11, replayFinalHp: 5, fallbackHp: 32 })).toBe(5);
+expect(u5VisibleHp({ phase: "complete", frameHp: 11, replayFinalHp: undefined, fallbackHp: 32 })).toBe(32);
+~~~
+
+The production mutation this catches is passing stale `progress.party[].hp` as the final HP or choosing it before replay `finalHp`.
+
+- [x] **Step 2: Run the focused HP test and verify RED**
+
+Run: `npx vitest run components/game/u5-combat-feedback.test.ts`
+
+Expected: FAIL because the current three-argument helper cannot distinguish replay final HP `5` from party fallback HP `32`.
+
+- [x] **Step 3: Implement replay-final HP precedence**
+
+Change the helper to:
+
+~~~ts
+export function u5VisibleHp({ phase, frameHp, replayFinalHp, fallbackHp }: {
+  readonly phase: U5CombatFeedbackPhase;
+  readonly frameHp: number | undefined;
+  readonly replayFinalHp: number | undefined;
+  readonly fallbackHp: number;
+}): number {
+  const finalHp = replayFinalHp ?? fallbackHp;
+  return phase === "battle" ? frameHp ?? finalHp : finalHp;
+}
+~~~
+
+In `U5ProgressScreen`, resolve the member's replay participant once and pass
+`participant?.finalHp` before `member.hp`. Use that same participant for the settled-result delta.
+
+- [x] **Step 4: Run the focused HP tests and verify GREEN**
+
+Run: `npx vitest run components/game/u5-combat-feedback.test.ts components/game/U5ProgressScreen.test.tsx`
+
+Expected: PASS, including replay fallback and existing initial-playback frame behavior.
+
+- [x] **Step 5: Write the failing default result-slot tests**
+
+Change the zero-delta card expectation so the wrapper remains but outputs do not:
+
+~~~tsx
+const html = render({}, { settledResult: { hpDelta: 0, trustDelta: 0 } });
+expect(html).toContain('class="party-card__settled-results"');
+expect(html).not.toContain('party-card__settled-result--hp');
+expect(html).not.toContain('party-card__settled-result--trust');
+~~~
+
+Add a CSS contract assertion for a concrete `min-height` on
+`.party-card__settled-results`. The production mutation this catches is conditionally removing
+the wrapper, which makes only cards with results grow.
+
+- [x] **Step 6: Run the card test and verify RED**
+
+Run: `npx vitest run components/game/PartyMemberCard.test.tsx`
+
+Expected: FAIL because the current wrapper is conditional and has no reserved minimum height.
+
+- [x] **Step 7: Mount the result slot for every card and reserve one row**
+
+Add `reserveSettledResultSpace?: boolean` to `PartyMemberCard` and pass it from
+`U5ProgressScreen`. Render `.party-card__settled-results` when U5 reserves the slot or a
+non-zero result exists. Keep the existing conditional `output` children, set
+`aria-live="polite"`, and add `aria-hidden="true"` only while the slot has no outputs.
+Give the wrapper a `min-height` sized for one badge row using existing `rem/cqw` units. Do not
+render placeholder copy, a border, or an invisible output. Do not add an empty slot to U3·U4.
+
+- [x] **Step 8: Run focused component tests and verify GREEN**
+
+Run: `npx vitest run components/game/PartyMemberCard.test.tsx components/game/U5ProgressScreen.test.tsx components/game/u5-combat-feedback.test.ts`
+
+Expected: PASS for final HP precedence, zero-output omission, signed deltas, reduced motion, and always-mounted layout slots.
+
+- [x] **Step 9: Strengthen the boss browser regression**
+
+In `e2e/u5-battle-preview.spec.ts`, select the damaged boss participant from its persistent
+HP result. Record its HP immediately when `반응 확인` appears, click confirmation, and assert
+the HP is unchanged. Record all `.party-card` heights before confirmation and assert the same
+height array after the results appear; also assert the three final card heights differ by less
+than one CSS pixel.
+
+Run: `npx playwright test e2e/u5-battle-preview.spec.ts --reporter=line`
+
+Expected: PASS for general, boss, natural playback, skip, speed, replay, final HP continuity,
+and equal card size with no browser errors.
+
+- [x] **Step 10: Run full verification and commit**
+
+Run:
+
+~~~bash
+npm test
+npm run typecheck
+npx eslint . --ignore-pattern 'playwright-report/**' --ignore-pattern 'test-results/**'
+npm run build -- --webpack
+npx playwright test e2e/u5-battle-preview.spec.ts --reporter=line
+git diff --check
+~~~
+
+Expected: all tests, typecheck, lint, production build, focused Chromium E2E, and whitespace
+verification pass. Then commit and push to the existing PR branch:
+
+~~~bash
+git add app/party-card.css components/game/PartyMemberCard.test.tsx components/game/PartyMemberCard.tsx components/game/U5ProgressScreen.tsx components/game/u5-combat-feedback.test.ts components/game/u5-combat-feedback.ts docs/experience/ONBOARDING_AND_INTERFACE.md docs/experience/SCREEN_LAYOUT.md docs/experience/UI_IMPLEMENTATION_GUIDE.md docs/superpowers/plans/2026-08-25-lattebun-u5-combat-feedback-sequence.md docs/superpowers/specs/2026-08-25-lattebun-u5-combat-feedback-sequence-design.md e2e/u5-battle-preview.spec.ts
+git commit -m "수정: 전투 결과 카드의 HP와 높이를 고정한다" -m "결과 단계에서는 replay 최종 HP를 우선하고 모든 파티 카드가 변화량 슬롯 높이를 기본으로 확보한다."
+git push origin feature/u5-combat-feedback-sequence
+~~~

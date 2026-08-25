@@ -46,10 +46,26 @@ describe("PartyMemberCard", () => {
     expect(html).toContain("신뢰 +2");
   });
 
-  it("0인 완료 변화량은 카드 앞면에 남기지 않는다", () => {
-    const html = render({}, { settledResult: { hpDelta: 0, trustDelta: 0 } });
+  it("변화가 없어도 기본 결과 슬롯은 남기고 수치 output만 만들지 않는다", () => {
+    const html = render({}, {
+      reserveSettledResultSpace: true,
+      settledResult: { hpDelta: 0, trustDelta: 0 },
+    });
 
-    expect(html).not.toContain("party-card__settled-results");
+    expect(html).toContain('class="party-card__settled-results"');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).not.toContain("party-card__settled-result--hp");
+    expect(html).not.toContain("party-card__settled-result--trust");
+  });
+
+  it("결과 슬롯을 쓰지 않는 기존 화면에는 빈 영역을 추가하지 않는다", () => {
+    expect(render()).not.toContain("party-card__settled-results");
+  });
+
+  it("모든 카드의 결과 슬롯은 badge 한 줄 높이를 기본 확보한다", () => {
+    expect(partyCardCss).toMatch(
+      /\.party-card__settled-results\s*\{[^}]*min-height:\s*clamp\(/,
+    );
   });
 
   it("동작 줄이기 상태는 미디어 쿼리 없이 완료 변화량의 진입 모션만 제거한다", () => {

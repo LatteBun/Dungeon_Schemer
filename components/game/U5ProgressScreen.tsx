@@ -263,8 +263,17 @@ export function U5ProgressScreen({
   }, [battlePlayback.isComplete, feedback]);
   const feedbackComplete = combatFeedback === undefined || u5FeedbackIsComplete(feedback.phase);
   const showingBattleFrames = feedback.phase === "battle";
+  const battleParticipantsById = new Map(
+    battleReplay?.participants.map((participant) => [participant.id, participant] as const) ?? [],
+  );
   const shownParty = combatFeedback === undefined ? progress.party : progress.party.map((member) => {
-    const hp = u5VisibleHp(feedback.phase, battlePlayback.frame?.hpByParticipantId[member.id], member.hp);
+    const participant = battleParticipantsById.get(member.id);
+    const hp = u5VisibleHp({
+      phase: feedback.phase,
+      frameHp: battlePlayback.frame?.hpByParticipantId[member.id],
+      replayFinalHp: participant?.finalHp,
+      fallbackHp: member.hp,
+    });
     return {
       ...member,
       hp,
@@ -381,11 +390,12 @@ export function U5ProgressScreen({
                       member={member}
                       index={index}
                       testId="u5-party-member"
+                      reserveSettledResultSpace
                       changes={feedbackComplete ? changesByMemberId?.[member.id] : undefined}
                       settledResult={combatFeedback === undefined ? undefined : u5SettledPartyResult(
                         combatFeedback,
                         feedback.phase,
-                        battleReplay?.participants.find((participant) => participant.id === member.id),
+                        battleParticipantsById.get(member.id),
                         member.id,
                       )}
                       effect={showingBattleFrames && battlePlayback.frame?.targetId === member.id && battlePlayback.frame.damage !== null

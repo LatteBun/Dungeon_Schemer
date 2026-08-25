@@ -81,10 +81,12 @@ describe("u5 combat feedback", () => {
     expect(u5SettledTrustDelta(chained, "unrelated")).toBeUndefined();
   });
 
-  it("완료 뒤 다시보기 frame은 우측 카드의 최종 HP를 되감지 않는다", () => {
-    expect(u5VisibleHp("battle", 7, 4)).toBe(7);
-    expect(u5VisibleHp("complete", 7, 4)).toBe(4);
-    expect(u5VisibleHp("postBattleTrust", 7, 4)).toBe(4);
+  it("전투 뒤에는 오래된 파티 HP보다 replay 최종 HP를 우선한다", () => {
+    expect(u5VisibleHp({ phase: "battle", frameHp: 11, replayFinalHp: 5, fallbackHp: 32 })).toBe(11);
+    expect(u5VisibleHp({ phase: "postBattleDialogue", frameHp: 11, replayFinalHp: 5, fallbackHp: 32 })).toBe(5);
+    expect(u5VisibleHp({ phase: "postBattleTrust", frameHp: 11, replayFinalHp: 5, fallbackHp: 32 })).toBe(5);
+    expect(u5VisibleHp({ phase: "complete", frameHp: 11, replayFinalHp: 5, fallbackHp: 32 })).toBe(5);
+    expect(u5VisibleHp({ phase: "complete", frameHp: 11, replayFinalHp: undefined, fallbackHp: 32 })).toBe(32);
   });
 
   it("노출된 거짓말의 즉시 신뢰는 전투 전에 반영한다", () => {

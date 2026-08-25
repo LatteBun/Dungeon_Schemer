@@ -105,11 +105,13 @@ export function u5VisibleTrust(
   return finalTrust;
 }
 
-export function u5VisibleHp(
-  phase: U5CombatFeedbackPhase,
-  frameHp: number | undefined,
-  finalHp: number,
-): number {
+export function u5VisibleHp({ phase, frameHp, replayFinalHp, fallbackHp }: {
+  readonly phase: U5CombatFeedbackPhase;
+  readonly frameHp: number | undefined;
+  readonly replayFinalHp: number | undefined;
+  readonly fallbackHp: number;
+}): number {
+  const finalHp = replayFinalHp ?? fallbackHp;
   return phase === "battle" ? frameHp ?? finalHp : finalHp;
 }
 

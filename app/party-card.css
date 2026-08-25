@@ -180,7 +180,9 @@
 .party-card__settled-results {
   grid-column: 1 / -1;
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
+  min-height: clamp(1.12rem, 1.28cqw, 1.72rem);
   gap: clamp(0.22rem, 0.28cqw, 0.44rem);
   margin-top: clamp(0.08rem, 0.12cqw, 0.2rem);
   animation: party-card-effect 650ms ease both;

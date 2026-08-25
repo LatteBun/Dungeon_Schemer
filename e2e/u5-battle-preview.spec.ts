@@ -1,6 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 import { expectNoBrowserErrors, watchBrowserErrors } from "./browser-errors";
 
+async function partyHpValues(page: Page): Promise<readonly string[]> {
+  return page.locator(".party-card__stat").filter({ hasText: "HP" }).locator("dd").allTextContents();
+}
+
+async function partyCardHeights(page: Page): Promise<readonly number[]> {
+  return page.locator(".party-card").evaluateAll((cards) =>
+    cards.map((card) => card.getBoundingClientRect().height));
+}
+
 async function expectPlaybackControls(entryName: string, page: Page, expectsHpResult: boolean): Promise<void> {
   const failures = watchBrowserErrors(page);
   await page.goto("/u5-2-test");
@@ -16,7 +25,10 @@ async function expectPlaybackControls(entryName: string, page: Page, expectsHpRe
   await skip.click();
   const reaction = page.getByRole("button", { name: "반응 확인" });
   await expect(reaction).toBeVisible({ timeout: 10_000 });
-  await expect(page.locator(".party-card__settled-results")).toHaveCount(0);
+  await expect(page.locator(".party-card__settled-results")).toHaveCount(3);
+  await expect(page.locator(".party-card__settled-result")).toHaveCount(0);
+  const hpBeforeReaction = await partyHpValues(page);
+  const heightsBeforeReaction = await partyCardHeights(page);
   await reaction.click();
 
   const replay = page.getByRole("button", { name: "다시 보기" });
@@ -29,6 +41,13 @@ async function expectPlaybackControls(entryName: string, page: Page, expectsHpRe
   } else {
     await expect(page.locator(".party-card__settled-result--hp")).toHaveCount(0);
   }
+  expect(await partyHpValues(page)).toEqual(hpBeforeReaction);
+  const heightsAfterReaction = await partyCardHeights(page);
+  expect(heightsAfterReaction).toHaveLength(heightsBeforeReaction.length);
+  heightsAfterReaction.forEach((height, index) => {
+    expect(Math.abs(height - heightsBeforeReaction[index]!)).toBeLessThan(1);
+  });
+  expect(Math.max(...heightsAfterReaction) - Math.min(...heightsAfterReaction)).toBeLessThan(1);
   const finalHp = await settledCard.locator(".party-card__stat").filter({ hasText: "HP" }).locator("dd").innerText();
   const finalTrust = await settledCard.locator(".party-card__stat").filter({ hasText: "신뢰" }).locator("dd").innerText();
   const settledResults = await settledCard.locator(".party-card__settled-result").allTextContents();
