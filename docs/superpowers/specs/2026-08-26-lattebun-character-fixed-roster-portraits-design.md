@@ -2,6 +2,8 @@
 
 작성일: 2026-08-26
 
+작성 도구: Codex
+
 ## 목적
 
 현재 캐릭터 풀은 이름·직업·성격을 각각 독립적으로 섞은 뒤 같은 인덱스끼리 결합하고, 캐릭터 초상은 `CharacterId` 해시로 `a` 또는 `b` 변형을 고른다. 그 결과 같은 이름이 캠페인마다 다른 직업이 될 수 있고, 직업당 6명이 있는데 초상은 2종뿐이라 서로 다른 인물이 같은 얼굴을 반복해서 사용한다.
@@ -38,6 +40,7 @@
 4. **사망은 상태이지 별도 캐릭터 그림이 아니다.** 생존/사망 모두 같은 원본 초상을 사용하고 UI 상태 효과로 구분한다.
 5. **초상 선택을 이름 문자열이나 런타임 해시에 의존하지 않는다.** 고정된 캐릭터 ID가 공식 로스터 정의를 가리킨다.
 6. **색만으로 사망을 전달하지 않는다.** grayscale 효과와 함께 기존 `사망`, `돌아오지 못했다` 같은 텍스트 상태를 유지한다.
+7. **도메인 ID와 공식 콘텐츠 ID의 책임을 분리한다.** `CharacterId`는 규칙 계층에서 일반적인 branded string으로 유지하고, 공식 로스터 포함 여부는 초상·콘텐츠 조회 경계에서 검증한다.
 
 ## 고정 캐릭터 로스터
 
@@ -122,6 +125,8 @@ character-mage-f
 
 게임 시스템은 ID 문자열의 내부 구조를 파싱해 규칙을 결정하지 않는다. 직업과 초상 정보는 공식 로스터 데이터에서 읽는다. 구조화된 ID는 디버깅과 콘텐츠 추적성을 위한 안정적인 식별자일 뿐이다.
 
+`CharacterId` 타입 자체를 30개 공식 ID의 유니온으로 좁히지 않는다. 도메인 규칙과 독립 단위 테스트는 캐릭터 ID의 내부 문자열 구조를 몰라도 동작해야 한다. 공식 로스터 포함 여부는 로스터 조회 또는 초상 조회를 수행하는 콘텐츠·표현 경계의 책임이다.
+
 ## 캐릭터 풀 생성
 
 `generateCharacterPool()`은 30명의 정체성을 새로 조립하지 않는다. 공식 `CHARACTER_ROSTER`를 입력으로 사용한다.
@@ -143,6 +148,19 @@ character-mage-f
 
 기존 5직업 × 6명, 5성격 × 6명 분포 계약도 그대로 유지한다.
 
+### 기존 시드와의 호환 범위
+
+같은 구현 버전에서 같은 시드는 계속 같은 결과를 만든다. 다만 고정 로스터 전환 전과 전환 후의 동일 시드가 똑같은 성격·신뢰·골드 값을 만들 필요는 없다.
+
+현재 구현은 직업 슬롯, 성격 슬롯, 32개 이름 후보를 차례로 섞은 뒤 신뢰와 골드를 생성한다. 새 구현에서 이름 후보 shuffle이 사라지면 `pool` RNG 소비 순서가 달라지므로, 전환 전과 같은 시드라도 신뢰와 골드가 달라질 수 있다. 이것은 허용되는 결정적 콘텐츠 마이그레이션이다.
+
+이전 호출 횟수를 맞추기 위한 더미 shuffle이나 의미 없는 RNG 소비는 추가하지 않는다. 보존해야 하는 계약은 다음과 같다.
+
+- 같은 구현 버전과 같은 시드의 결과는 결정적이다.
+- 직업과 성격의 인원 분포, 신뢰·골드 범위는 유지된다.
+- 다른 시드에서는 성격·신뢰·골드·표시 순서가 달라질 수 있다.
+- `pool` 외의 파생 RNG stream은 기존처럼 독립적이다.
+
 ## 초상 자산 계약
 
 공식 캐릭터 초상 경로는 `live` 하나만 사용한다.
@@ -162,6 +180,8 @@ public/assets/characters/live/{archer|cleric|mage|rogue|warrior}/{class}_{a|b|c|
 사용자가 준비한 신규 C~F 이미지는 구현 단계에서 기존 A/B와 같은 직업 디렉터리에 추가한다. 파일명은 본 문서의 표와 동일해야 한다.
 
 원본 이미지는 임의로 재압축·리사이즈하지 않는다. 화면에서는 기존 초상 슬롯 규칙에 따라 표시한다.
+
+신규 파일의 원본 해상도와 종횡비가 직업 안에서도 완전히 같다고 가정하지 않는다. 현재 준비된 전사 자산은 1086×1448과 1024×1536 원본이 함께 존재한다. 자산 검증은 직업별 동일 해상도를 요구하지 않고 PNG 유효성, 파일명, 필요한 30개 경로의 존재를 검사한다. `object-fit: cover`를 쓰는 화면은 A~F에서 얼굴·장비·실루엣이 과도하게 잘리지 않는지 시각적으로 확인한다.
 
 ## 사망 초상 정책
 
@@ -204,13 +224,23 @@ portraitSrcForCharacterId(characterId)
 // 공식 로스터의 classId + variant로 live 경로를 반환
 ```
 
-공식 로스터에 없는 `CharacterId`에 임의 해시 fallback을 제공하지 않는다. 프리뷰와 테스트 fixture도 공식 캐릭터 ID를 사용하도록 바꾼다. 알 수 없는 ID가 UI까지 도달하면 데이터 계약 위반으로 명확히 실패해야 한다.
+공식 로스터에 없는 `CharacterId`에 임의 해시 fallback을 제공하지 않는다. 초상 조회를 호출하는 프리뷰와 테스트 fixture는 공식 캐릭터 ID를 사용하도록 바꾼다. 알 수 없는 ID가 UI까지 도달하면 데이터 계약 위반으로 명확히 실패해야 한다.
+
+이 요구는 모든 도메인 테스트 fixture를 공식 로스터에 결합하라는 뜻이 아니다.
+
+- 초상 조회 API를 호출하는 런타임 adapter, 프리뷰, 통합 테스트 fixture는 공식 캐릭터 ID를 사용한다.
+- 초상 조회와 무관한 도메인·규칙 단위 테스트는 의도를 드러내는 임의 `CharacterId`를 계속 사용할 수 있다.
+- 알 수 없는 ID에 대한 실패 테스트는 초상·로스터 조회 경계에 둔다.
+
+실패 방식은 조용한 빈 문자열이나 임의 placeholder 반환이 아니라, 문제의 `CharacterId`를 포함한 명시적 오류다.
 
 ## 화면 영향
 
 ### U3 게시판
 
 계약 상세의 파티원 초상은 캐릭터의 고정 ID를 통해 공식 로스터 초상을 사용한다. 같은 이름은 언제나 같은 직업과 얼굴로 보인다.
+
+현재 `createU3BoardView()`의 선택적 `portraitByCharacterId` 주입은 공식 resolver보다 우선하여 같은 ID의 얼굴을 바꿀 수 있다. 런타임은 이 주입을 사용하지 않고 테스트만 사용하므로, 구현에서는 해당 override와 전용 테스트를 제거하고 공식 resolver를 단일 경로로 사용한다.
 
 ### U4 지도
 
@@ -248,6 +278,14 @@ portraitSrcForCharacterId(characterId)
 - 신뢰 0과 사망을 혼동하지 않는다.
 - 별도 `dead` 초상은 더 이상 공식 계약이 아니다.
 
+다음 공식·운영 문서도 함께 갱신한다.
+
+- `docs/systems/CHARACTER_POOL_AND_WORLDTURN.md`: 이름·직업·초상의 고정 정체성과 성격·신뢰·골드·순서의 랜덤 배정을 구분한다. 이름·직업·성격이 모두 중복되지 않는다는 기존의 부정확한 문장을 바로잡는다.
+- `docs/experience/U4_DUNGEON_MAP.md`: A/B 및 `dead` 경로 계약을 A~F live-only 계약과 상태 기반 grayscale 표현으로 바꾼다.
+- `docs/technical/DEFERRED_WORK.md`: 구현 완료 시 `캐릭터 고유 초상` 유예 항목을 제거한다.
+
+과거 spec과 plan은 당시 결정의 기록이므로 일괄 수정하지 않는다. 현행 공식·운영 문서와 런타임 코드에서만 `/characters/dead/` 참조가 0개여야 한다.
+
 ## 예상 구현 파일
 
 구현 계획을 작성할 때 최소한 다음 범위를 검토한다.
@@ -257,10 +295,15 @@ portraitSrcForCharacterId(characterId)
 - Modify: `lib/content/character-pool.ts`
 - Modify: `lib/content/character-pool.test.ts`
 - Modify: `components/game/character-labels.ts`
+- Modify: `components/game/u3-board-model.ts`
+- Modify: `components/game/u3-board-model.test.ts`
 - Modify: `components/game/u4-dungeon-map-model.ts`
 - Modify: `components/game/u4-dungeon-map-model.test.ts`
-- Modify consumers/fixtures that construct non-canonical CharacterIds
+- Modify consumers/fixtures that call portrait lookup with non-canonical CharacterIds
 - Modify: `docs/experience/CHARACTER_UI_ASSETS.md`
+- Modify: `docs/systems/CHARACTER_POOL_AND_WORLDTURN.md`
+- Modify: `docs/experience/U4_DUNGEON_MAP.md`
+- Modify: `docs/technical/DEFERRED_WORK.md`
 - Add: `public/assets/characters/live/*/*_{c,d,e,f}.png`
 - Delete after migration: `public/assets/characters/dead/`
 
@@ -284,6 +327,7 @@ portraitSrcForCharacterId(characterId)
 - 성격은 전체 5종 × 6명 분포를 유지한다.
 - 초기 신뢰와 골드는 기존 범위를 유지한다.
 - 서로 다른 시드에서는 성격·신뢰·골드·순서가 달라질 수 있다.
+- 전환 전과 전환 후의 동일 시드 결과가 같을 필요는 없으며, 더미 RNG 소비로 과거 호출 횟수를 흉내 내지 않는다.
 
 ### 초상 계약
 
@@ -303,7 +347,15 @@ portraitSrcForCharacterId(characterId)
 - `public/assets/characters/live` 아래 PNG가 정확히 30개다.
 - 5개 직업 모두 A~F 파일을 가진다.
 - 신규 C~F 파일이 유효한 PNG인지 확인한다.
+- 서로 다른 원본 해상도를 허용하며 직업별 동일 해상도를 불변식으로 검사하지 않는다.
 - 구현 완료 후 코드·문서에서 `/characters/dead/` 참조가 0개인지 확인한다.
+
+### 시각 검증
+
+- U3·U4·U5·U6에서 공식 A~F 초상이 깨진 경로 없이 표시되는지 확인한다.
+- `object-fit: cover`를 사용하는 슬롯에서 혼합 종횡비 자산의 얼굴·장비·실루엣이 과도하게 잘리지 않는지 확인한다.
+- 동일 캐릭터가 생존·사망 상태에서 같은 원본 초상을 쓰고, 사망 상태에서는 기존 grayscale과 텍스트 단서가 함께 보이는지 확인한다.
+- 구현 전 전체 테스트 기준선을 기록한다. 백테스트의 기존 5초 timeout처럼 부하에 민감한 실패는 기능 회귀와 구분하여 보고하며, 이번 기능 범위에서 관련 없는 timeout 상향이나 백테스트 변경으로 숨기지 않는다.
 
 ## 비목표
 
@@ -330,3 +382,4 @@ portraitSrcForCharacterId(characterId)
 7. `public/assets/characters/dead/`와 런타임 dead 경로 의존이 제거된다.
 8. U3·U4·U5·U6에서 한 캐릭터가 항상 같은 얼굴로 표시된다.
 9. 관련 단위 테스트, 타입 검사, 전체 테스트가 통과한다.
+10. 현행 공식·운영 문서가 고정 로스터와 live-only 초상 계약을 일관되게 설명하고, 완료된 `캐릭터 고유 초상` 유예 항목이 제거된다.
