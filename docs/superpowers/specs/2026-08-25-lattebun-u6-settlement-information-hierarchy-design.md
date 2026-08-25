@@ -5,6 +5,8 @@
 - 작성자: LatteBun
 - 작성 도구: ChatGPT (GPT-5.6 Pro)
 - 작성일: 2026-08-25
+- 보완 도구: Codex (GPT-5)
+- 보완일: 2026-08-26
 - 대상: `U6SettlementScreen`과 정산 ViewModel 경계
 - 기준 브랜치: `main`
 
@@ -130,6 +132,8 @@
 
 각 인물은 얼굴, 이름, 직업, HP 변화, 신뢰 변화, 중대 상태를 한 행에 표시한다.
 
+인물 행과 결과 표제의 사망자 이름은 `SettlementResult.memberChanges` 순서를 그대로 따른다. `settleExpedition`은 호출자가 넘긴 `finalMembers` 배열 순서에 기대지 않고 `SettlementSnapshot.party.memberIds`의 계약 파티 순서로 `memberChanges`를 만든다. 어댑터는 `CampaignState.pool.order`나 이름으로 다시 정렬하지 않는다. 프리뷰와 테스트 fixture도 같은 계약 파티 순서로 `memberChanges`를 만든다.
+
 ### 5.2 우측 패널
 
 우측은 캠페인 전체에 남는 변화만 보여준다.
@@ -200,6 +204,10 @@
 - 기준 인원: `DENOUNCE_THRESHOLD`
 - 현재 보정: `getCampaignTrustModifier(campaignAfterSettlement)` 사용
 
+`campaignAfterSettlement`는 반드시 같은 `settlement`가 적용된 직후 상태다. 이후 원정까지 진행된 캠페인과 과거 정산을 섞어 어댑터에 넘기지 않는다. 실제 `/campaign` 호출부와 `/u6-test` 프리뷰는 `settleExpedition` 또는 같은 `COMPLETE_EXPEDITION` 전이가 함께 반환한 캠페인과 결과를 한 쌍으로 전달한다.
+
+신뢰 0 여부는 숫자 리터럴을 별도 규칙으로 만들지 않고 도메인의 `TRUST_MIN`을 사용한다. 출전 불가 설명은 기존 `canDeploy` 계약과 모순되지 않아야 하며, 누적 인원과 보정 수치는 각각 `countLivingZeroTrust`와 `getCampaignTrustModifier`의 결과를 다시 계산하지 않고 옮긴다.
+
 화면은 둘 중 하나가 0보다 클 때만 누적 구역을 만든다.
 
 | 정산 뒤 누적 | 설명 |
@@ -243,6 +251,8 @@ export interface SettlementResult {
 `SettlementCauseChain` 타입과 `createCauseChain` 함수는 제거한다. `settleExpedition`은 `snapshot.causeInputs`를 복사해 결과에 보존하며, 경제와 던전 상태 문장은 만들지 않는다.
 
 보상과 위험도 계산은 기존 구조화된 필드가 계속 소유한다.
+
+이 타입 변경은 U6만의 로컬 변경이 아니다. `SettlementResult` 원본을 보관하는 캠페인 통계와 이력 테스트 fixture, 실제 Store 재현성 테스트, 캠페인 렌더 통합 테스트도 같은 계약을 소비한다. 기존 `causeChain.choice/reactions/damage` 검증은 삭제하지 않고 `causeInputs.choice/reactions/damage` 보존 검증으로 이전한다. `SettlementCauseChain`의 도메인 barrel export와 모든 수동 `SettlementResult` fixture도 함께 제거하거나 새 필드로 옮긴다.
 
 ### 7.2 U6 View 타입
 
@@ -322,6 +332,8 @@ export function createU6SettlementView(
 
 화면 컴포넌트는 `CampaignState`를 직접 읽지 않는다. 캠페인 전체가 필요한 신뢰 누적 계산은 어댑터가 맡는다.
 
+호출자는 `campaignAfterSettlement`와 `settlement`를 같은 정산 실행 또는 전이에서 얻은 쌍으로 넘긴다. 어댑터는 과거 정산을 임의의 최신 캠페인에 적용하는 이력 조회 API가 아니다.
+
 ## 8. 데이터 흐름
 
 ```text
@@ -347,11 +359,12 @@ U6SettlementScreen
 
 - 실제 정산은 파티원 3명을 보장한다. 프리뷰와 테스트도 빈 `members`를 정상 화면으로 취급하지 않고 실제 3명 데이터를 사용한다.
 - `cleared`인데 사망자가 0명이면 `전원 귀환`을 쓴다.
-- `cleared`인데 사망자가 있으면 사망자 이름을 순서대로 나열한다.
+- `cleared`인데 사망자가 있으면 `memberChanges`의 계약 파티 순서대로 사망자 이름을 나열한다.
 - `wiped`는 항상 `3명 전원 사망 · 계약 실패`를 쓴다.
 - `riskCapped`가 참인 전멸만 `riskCapped` View로 만든다.
-- 신뢰 0 누적 계산은 살아 있는 인물만 센다. 사망자의 `trust === 0`은 인물 행의 마지막 변화로만 남는다.
+- 신뢰 0 누적 계산은 `TRUST_MIN`인 살아 있는 인물만 센다. 사망자의 `trust === TRUST_MIN`은 인물 행의 마지막 변화로만 남는다.
 - 신뢰 보정 문구는 어댑터가 받은 실제 보정값을 출력하며 별도 수치표를 다시 계산하지 않는다.
+- 같은 정산 직후 캠페인과 결과를 한 쌍으로 전달한다. 이후 캠페인과 과거 정산을 섞은 입력은 지원하지 않는다.
 
 ## 10. 시각·접근성 계약
 
@@ -369,6 +382,9 @@ U6SettlementScreen
 - `SettlementResult`가 `causeInputs`를 그대로 보존한다.
 - 결과에 `causeChain`, `economy`, `campaignChange`가 남지 않는다.
 - 보상, 유품, 위험도 계산의 기존 테스트는 그대로 통과한다.
+- 입력 `finalMembers` 순서와 무관하게 `memberChanges`가 `snapshot.party.memberIds` 순서를 따른다.
+- `lib/store/campaign-reproducibility.test.ts`의 실제 한 판 검증은 `causeInputs`가 비어 있지 않고 보스전 결과까지 보존하는지 계속 확인한다.
+- 캠페인 통계·이력 테스트의 수동 `SettlementResult` fixture와 도메인 barrel export가 새 계약을 사용한다.
 
 ### ViewModel
 
@@ -378,6 +394,8 @@ U6SettlementScreen
 - 신뢰 `N → 0`, 기존 `0 → 0`, 사망자의 `N → 0`을 서로 다른 플래그로 만든다.
 - 정산 전후 살아 있는 신뢰 0 누적과 현재 보정값이 정확하다.
 - 사망한 신뢰 0 인물은 누적에서 빠진다.
+- `memberChanges`의 계약 파티 순서가 인물 행과 사망자 이름 순서에 그대로 보존된다.
+- 같은 정산 실행에서 나온 캠페인과 결과를 전달하는 호출부 계약을 검증한다.
 
 ### 화면
 
@@ -397,6 +415,8 @@ U6SettlementScreen
 
 첫 번째 결과에는 `위험도 유지`가 없어야 하고, 두 번째 결과에는 위험도 전후와 유품이 있어야 한다.
 
+기존 `components/game/campaign-render.test.tsx`는 새 어댑터 시그니처로 실제 캠페인 정산을 렌더링하며, 선택과 반응은 표시되고 `causeInputs.damage`는 중복 카드로 표시되지 않는지 확인한다. `components/game/u6-preview-data.test.ts`는 더 이상 제거된 `causeChain`에서 피해 줄을 찾지 않고, 세 프리뷰가 실제 3명 `members`와 결과별 구조화 값을 갖는지 검증한다.
+
 ## 12. 공식 문서 영향
 
 구현 시작 시 다음 문서를 먼저 갱신한다.
@@ -408,6 +428,10 @@ U6SettlementScreen
   - 정산 표시 순서를 이번 원정 결과 중심으로 개정
 - `docs/technical/SCREEN_ADAPTER_CONTRACT.md`
   - U6가 실제 C4/C6/C8을 소비한다는 현재 상태와 새 어댑터 시그니처 기록
+- `docs/technical/DEFERRED_WORK.md`
+  - `SettlementResult.memberChanges`를 U6가 의도적으로 사용하지 않는다는 유예 항목 제거
+- `docs/technical/CAMPAIGN_REWORK_WORK_ASSIGNMENT.md`
+  - U6가 `memberChanges`를 사용하지 않는다는 현재 상태 설명을 새 정보 위계와 소비 계약으로 교체
 - `docs/README.md`
   - 이 설계와 구현 계획 색인
 
@@ -418,5 +442,7 @@ U6SettlementScreen
 - 살아 있는 신뢰 0과 누적 불이익을 놓치지 않는다.
 - 사망, 중상, 정체 발각이 텍스트로 구분된다.
 - 정산 수치 규칙과 엔딩 규칙은 바뀌지 않는다.
+- `SettlementCauseChain` 참조가 구현 코드, 도메인 export, 테스트 fixture에 남지 않고 실제 원정 근거 검증은 `causeInputs`로 유지된다.
+- 정산 ViewModel 호출부가 같은 정산 직후 캠페인과 결과를 한 쌍으로 전달한다.
 - 단위 테스트, 통합 테스트, lint, typecheck, build가 통과한다.
 - `/u6-test` 세 정산 상태와 실제 `/campaign` 정산을 1920×1080 고정 캔버스에서 확인한다.
