@@ -101,6 +101,7 @@
 
 ## 이번 개편 설계
 
+- [고정 캐릭터 로스터 성별·이름 정비 설계](superpowers/specs/2026-08-26-lattebun-character-roster-gender-names-design.md): 30명 성별 입력과 성별을 고려한 이름 정비, `live` 전용 초상화 계약을 위한 검토표
 - [캠페인 기본 진입 무작위 시드 설계](superpowers/specs/2026-08-26-lattebun-campaign-random-seed-design.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 탐색 계약
 - [캠페인 기본 진입 무작위 시드 구현 계획](superpowers/plans/2026-08-26-lattebun-campaign-random-seed.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 테스트 우선 실행 순서
 - [던전 계약 보상 랜덤화 설계](superpowers/specs/2026-08-26-lattebun-dungeon-reward-randomization-design.md): 위험도별 기대값을 유지하는 독립 균등 보상, 공고 확정·계약 snapshot·정산 소비와 미래 보상 제거 계약
