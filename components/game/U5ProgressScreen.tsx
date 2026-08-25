@@ -341,6 +341,15 @@ export function U5ProgressScreen({
                       index={index}
                       testId="u5-party-member"
                       changes={feedbackComplete ? changesByMemberId?.[member.id] : undefined}
+                      effect={feedback.phase === "battle" && battlePlayback.frame?.targetId === member.id && battlePlayback.frame.damage !== null
+                        ? { kind: "hp", delta: -battlePlayback.frame.damage, token: `${battlePlayback.frameIndex}:${member.id}:hp` }
+                        : feedback.phase === "postBattleTrust"
+                          ? (() => {
+                              const change = combatFeedback?.postBattleTrustChanges.find((one) => one.memberId === member.id)
+                                ?? combatFeedback?.immediateTrustChanges.find((one) => one.memberId === member.id);
+                              return change === undefined ? undefined : { kind: "trust" as const, delta: change.after - change.before, token: `${combatFeedback?.signature ?? "feedback"}:${member.id}:trust` };
+                            })()
+                          : undefined}
                     />
                   </li>
                 ))}
