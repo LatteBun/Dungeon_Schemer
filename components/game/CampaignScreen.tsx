@@ -31,6 +31,7 @@ import { createU4DungeonMapLayout } from "./u4-dungeon-map-layout";
 import { createU6SettlementView } from "./u6-settlement-model";
 import { createU6EndingView } from "./u6-ending-adapter";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
+import { CampaignCompletionRecorder } from "./CampaignCompletionRecorder";
 
 /**
  * `phase` 가 화면을 정한다.
@@ -47,11 +48,13 @@ import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
  * 것이 그 증상이었고, 같은 일이 또 생기면 또 조용할 것이었다.
  */
 export function CampaignScreen() {
+  const campaign = useCampaignStore((state) => state.campaign);
   const rejected = useCampaignStore((state) => state.rejected);
   const clearRejected = useCampaignStore((state) => state.clearRejected);
 
   return (
     <>
+      <CampaignCompletionRecorder campaign={campaign} />
       <CurrentScreen />
       {rejected !== null && <RejectionNotice reason={rejected.reason} onDismiss={clearRejected} />}
     </>
@@ -232,13 +235,18 @@ function ExpeditionScreens() {
    */
   if (active.pendingEvent !== null || active.pendingOutcome !== null) {
     const seeing = active.pendingOutcome !== null;
+    const replay = eventReplayFor(campaign, active);
+    const gateMonsterBattle = seeing
+      && active.pendingOutcome?.event.kind === "monster"
+      && active.pendingOutcome.battle !== null;
     return (
       <U5ProgressScreen
         status={status}
         progress={progressViewFor(campaign, active)!}
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
-        battleReplay={eventReplayFor(campaign, active) ?? undefined}
+        battleReplay={replay ?? undefined}
+        battleExitPolicy={gateMonsterBattle ? "after-playback" : undefined}
         changesByMemberId={changesByMemberId(active)}
         onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });

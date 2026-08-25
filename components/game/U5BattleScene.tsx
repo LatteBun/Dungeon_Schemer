@@ -2,27 +2,20 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { withObjectParticle, withSubjectParticle } from "./korean-particle";
 import type {
   U5BattleCueView,
   U5BattleReplay,
   U5BattleReplayFrame,
   U5BattleReplayParticipant,
-  U5BattleReplayPhase,
 } from "./u5-battle-replay";
 
 export interface U5BattleSceneProps {
   readonly replay: U5BattleReplay;
+  readonly frame: U5BattleReplayFrame;
+  readonly onReplayFromStart: () => void;
 }
-
-const FRAME_DURATION_MS: Readonly<Record<U5BattleReplayPhase, number>> = {
-  idle: 500,
-  attack: 360,
-  impact: 420,
-  settle: 520,
-  complete: 0,
-};
 
 function participantById(replay: U5BattleReplay, id: string | null) {
   return id === null ? undefined : replay.participants.find((participant) => participant.id === id);
@@ -98,19 +91,24 @@ function announcement(replay: U5BattleReplay, frame: U5BattleReplayFrame): strin
 }
 
 /*
- * replay 를 내용으로 식별한다.
+ * 화면에 남기는 문장은 사건뿐이다.
  *
- * 객체 신원으로 보면 호출부가 렌더 안에서 createU5BattleReplay 를 부르는 순간
- * 매 렌더마다 첫 프레임으로 되돌아가 재생이 영영 진행되지 않는다. 공개 prop
- * 이라 호출부에 useMemo 를 강제할 방법이 없으므로 이쪽에서 막는다.
+ * 프레임마다 "누가 누구를 공격합니다 / N 피해를 받습니다 / HP가 N까지
+ * 떨어졌습니다" 를 갈아 끼우면, 스무 행동 전투에서 예순 줄이 지나간다. 그런데
+ * 그 셋은 화면이 이미 보여 주는 것을 글로 옮긴 것이다 — 달려드는 몸짓이 공격
+ * 이고, 머리 위 숫자가 피해이고, 줄어드는 막대가 HP다. 글이 그림과 경쟁하면
+ * 눈이 글로 가고, 정작 봐야 할 피해 숫자를 놓친다.
+ *
+ * 그림이 말하지 못하는 것만 남긴다 — 시작, 누군가 쓰러진 순간, 승패.
+ * 읽어 주는 자리(.u5-battle-announcement)는 그대로 다 말하므로 눈으로 못 보는
+ * 사람이 잃는 것은 없다.
  */
-function replaySignature(replay: U5BattleReplay): string {
-  return [
-    replay.frames.length,
-    replay.outcome,
-    replay.termination,
-    replay.participants.map((participant) => `${participant.id}@${participant.initialHp}/${participant.finalHp}`).join(","),
-  ].join("|");
+function caption(replay: U5BattleReplay, frame: U5BattleReplayFrame): string {
+  if (frame.phase === "idle" || frame.phase === "complete") return frameDescription(replay, frame);
+  if (frame.phase === "settle" && frame.defeatedParticipantIds.includes(String(frame.targetId))) {
+    return frameDescription(replay, frame);
+  }
+  return "";
 }
 
 function motionForParticipant(
@@ -132,9 +130,28 @@ function motionForParticipant(
       transition: { duration: 0.24 },
     };
   }
+  /*
+   * 숨 쉬는 것은 y 뿐이다. 되풀이를 그 하나에만 건다.
+   *
+   * 예전에는 transition 을 통째로 줘서 `repeat: Infinity` 가 opacity 에도
+   * 걸렸다. 쓰러져 0.38 이 된 사람을 두고 다시 보기를 누르면, 0.38 에서 1 로
+   * 가던 애니메이션이 끝나기 전에 처음으로 되돌아가기를 무한히 반복한다.
+   * 게다가 프레임이 넘어갈 때마다 다시 시작하므로 영영 1 에 닿지 못한다.
+   * 죽을 사람이 첫 프레임부터 흐린 채로 서 있던 까닭이다.
+   */
   return {
     animate: { x: 0, y: reducedMotion ? 0 : [0, "-2%", 0], opacity: 1 },
-    transition: reducedMotion ? { duration: 0 } : { duration: 1.8, repeat: Infinity, ease: "easeInOut" as const },
+    transition: reducedMotion ? { duration: 0 } : {
+      y: { duration: 1.8, repeat: Infinity, ease: "easeInOut" as const },
+      x: { duration: 0.24 },
+      /*
+       * 살아 있는 사람의 투명도는 애니메이션 대상이 아니다.
+       *
+       * 다시 보기는 쓰러졌던 사람을 되살려 놓고 시작한다. 그때 0.38 에서 1 로
+       * 스며들면 첫 0.24 초 동안 멀쩡한 사람이 흐리게 보인다. 곧바로 1 이 된다.
+       */
+      opacity: { duration: 0 },
+    },
   };
 }
 
@@ -154,8 +171,18 @@ function Participant({ participant, frame, reducedMotion }: {
     "--u5-battle-lunge-x": participant.side === "party" ? "16%" : "-16%",
   } as CSSProperties;
 
+  /*
+   * 쓰러진 사람은 흐려진다. 그런데 흐려지기만 하면 무슨 일이 난 건지 알기
+   * 어렵다 — 화면이 잠깐 반투명해진 것처럼 보인다. 상태를 표식으로 내놓아
+   * 색을 빼고 배지를 키운다.
+   */
   return (
-    <article className="u5-battle-participant" data-participant-id={participant.id} style={participantStyle}>
+    <article
+      className="u5-battle-participant"
+      data-participant-id={participant.id}
+      data-defeated={defeated ? "true" : "false"}
+      style={participantStyle}
+    >
       <motion.div
         className="u5-battle-motion"
         animate={motionState.animate}
@@ -219,30 +246,8 @@ function Participant({ participant, frame, reducedMotion }: {
   );
 }
 
-export function U5BattleScene({ replay }: U5BattleSceneProps) {
-  const [frameIndex, setFrameIndex] = useState(0);
+export function U5BattleScene({ replay, frame, onReplayFromStart }: U5BattleSceneProps) {
   const reducedMotion = useReducedMotion() ?? false;
-
-  // 다른 replay 로 바뀌면 첫 frame 부터 다시 재생한다. effect 가 아니라 렌더
-  // 중에 맞춰야 낡은 frame 을 한 번 그리고 나서 되감는 일이 없다.
-  const signature = replaySignature(replay);
-  const [renderedSignature, setRenderedSignature] = useState(signature);
-  if (signature !== renderedSignature) {
-    setRenderedSignature(signature);
-    setFrameIndex(0);
-  }
-
-  const frame = replay.frames[Math.min(frameIndex, replay.frames.length - 1)];
-
-  useEffect(() => {
-    if (frame === undefined || frame.phase === "complete") return;
-    const timeout = window.setTimeout(() => {
-      setFrameIndex((current) => Math.min(current + 1, replay.frames.length - 1));
-    }, FRAME_DURATION_MS[frame.phase]);
-    return () => window.clearTimeout(timeout);
-  }, [frame, replay.frames.length]);
-
-  if (frame === undefined) return null;
 
   const party = replay.participants.filter((participant) => participant.side === "party");
   const enemies = replay.participants.filter((participant) => participant.side === "enemy");
@@ -262,7 +267,10 @@ export function U5BattleScene({ replay }: U5BattleSceneProps) {
           ))}
         </div>
       </div>
-      <p className="u5-battle-live">{frameDescription(replay, frame)}</p>
+      {/* 빈 문장에도 자리는 지킨다. 줄이 나타났다 사라지면 화면이 덜컹거린다. */}
+      <p className="u5-battle-live" data-empty={caption(replay, frame) === "" ? "true" : "false"}>
+        {caption(replay, frame)}
+      </p>
       {!complete || replay.verifications.length === 0 ? null : (
         <ul className="u5-battle-verifications" data-testid="u5-battle-verifications">
           {replay.verifications.map((one) => (
@@ -273,13 +281,11 @@ export function U5BattleScene({ replay }: U5BattleSceneProps) {
         </ul>
       )}
       <p className="u5-battle-announcement" aria-live="polite">{announcement(replay, frame)}</p>
-      <div className="u5-battle-controls">
-        {complete ? (
-          <button type="button" onClick={() => setFrameIndex(0)}>다시 보기</button>
-        ) : (
-          <button type="button" onClick={() => setFrameIndex(replay.frames.length - 1)}>전투 건너뛰기</button>
-        )}
-      </div>
+      {complete ? (
+        <div className="u5-battle-controls">
+          <button type="button" onClick={onReplayFromStart}>다시 보기</button>
+        </div>
+      ) : null}
     </section>
   );
 }

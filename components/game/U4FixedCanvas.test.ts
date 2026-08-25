@@ -154,6 +154,20 @@ describe("U4 fixed 16:9 canvas contract", () => {
     );
     expect(fixes).toMatch(/\.u4-move-button__left,[\s\S]*display:\s*none/);
   });
+
+  it("keeps the pressed move-button skin over the default skin", () => {
+    const base = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const pressed = base.match(
+      /\.u4-move-button__center--active\s*\{([^}]*)\}/,
+    )?.[1] ?? "";
+    const active = base.match(
+      /\.u4-move-button:not\(:disabled\):active \.u4-move-button__center--active\s*\{([^}]*)\}/,
+    )?.[1] ?? "";
+
+    expect(pressed).toMatch(/position:\s*absolute/);
+    expect(pressed).toMatch(/inset:\s*0/);
+    expect(active).toMatch(/opacity:\s*1/);
+  });
 });
 
 describe("선택한 지점 썸네일", () => {

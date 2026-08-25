@@ -33,13 +33,13 @@
 
 ### 결정적 던전 슬롯
 
-던전 ID는 `dungeon-{theme}-{순번}` 형식의 영문 안정 ID를, 표시 이름은 `{테마 이름} {순번}` 형식을 쓴다. 순번은 테마 안에서 초기 위험도가 낮은 슬롯부터 `01`~`05`로 고정한다.
+던전 ID는 `dungeon-{theme}-{순번}` 형식의 영문 안정 ID를 쓴다. 표시 이름은 해당 슬롯의 보스와 장소에 얽힌 전설형 고유 이름을 사용한다. 순번은 테마 안에서 초기 위험도가 낮은 슬롯부터 `01`~`05`로 고정한다.
 
 | 테마 | 고정 슬롯 (`ID` · 표시 이름 · 초기 위험도) |
 | --- | --- |
-| 거미굴 | `dungeon-spider-01` · 거미굴 1 · ★1 / `dungeon-spider-02` · 거미굴 2 · ★1 / `dungeon-spider-03` · 거미굴 3 · ★2 / `dungeon-spider-04` · 거미굴 4 · ★3 / `dungeon-spider-05` · 거미굴 5 · ★4 |
-| 사막 | `dungeon-desert-01` · 사막 1 · ★1 / `dungeon-desert-02` · 사막 2 · ★2 / `dungeon-desert-03` · 사막 3 · ★2 / `dungeon-desert-04` · 사막 4 · ★3 / `dungeon-desert-05` · 사막 5 · ★4 |
-| 묘지 | `dungeon-graveyard-01` · 묘지 1 · ★2 / `dungeon-graveyard-02` · 묘지 2 · ★3 / `dungeon-graveyard-03` · 묘지 3 · ★3 / `dungeon-graveyard-04` · 묘지 4 · ★4 / `dungeon-graveyard-05` · 묘지 5 · ★5 |
+| 거미굴 | `dungeon-spider-01` · 라그나의 산란굴 · ★1 / `dungeon-spider-02` · 라그나의 검은실굴 · ★1 / `dungeon-spider-03` · 모르칸의 사체길 · ★2 / `dungeon-spider-04` · 세리나의 그림자굴 · ★3 / `dungeon-spider-05` · 아라크샤의 왕좌 · ★4 |
+| 사막 | `dungeon-desert-01` · 자카르의 불탄 우물 · ★1 / `dungeon-desert-02` · 카르둠의 바람길 · ★2 / `dungeon-desert-03` · 카르둠의 매장로 · ★2 / `dungeon-desert-04` · 오벨론의 순례길 · ★3 / `dungeon-desert-05` · 네프리스의 황무지 · ★4 |
+| 묘지 | `dungeon-graveyard-01` · 모르비안의 묘문 · ★2 / `dungeon-graveyard-02` · 아즈라엘의 납골당 · ★3 / `dungeon-graveyard-03` · 아즈라엘의 묘역 · ★3 / `dungeon-graveyard-04` · 발드라크의 사냥터 · ★4 / `dungeon-graveyard-05` · 발드라크의 왕묘 · ★5 |
 
 개별 슬롯의 ID·이름·초기 위험도는 시드로 바뀌지 않는다.
 

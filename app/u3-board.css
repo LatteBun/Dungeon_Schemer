@@ -175,13 +175,13 @@
 
 .u3-guild-board__notices {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.58rem, 1cqw, 0.85rem);
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+  grid-template-rows: repeat(12, minmax(0, 1fr));
+  gap: 0;
   width: 100%;
   height: 100%;
   min-height: 0;
-  padding: 0.15rem 0.2rem 0.2rem;
+  padding: clamp(0.35rem, 0.45cqw, 0.7rem);
 }
 
 .u3-notice {
@@ -209,11 +209,35 @@
 }
 
 /* Same dimensions; only position/rotation differ. */
-.u3-notice--0 { transform: translate(0.12rem, 0.18rem) rotate(-0.65deg); }
-.u3-notice--1 { transform: translate(-0.08rem, -0.06rem) rotate(0.45deg); }
-.u3-notice--2 { transform: translate(0.04rem, 0.22rem) rotate(-0.25deg); }
-.u3-notice--3 { transform: translate(0.38rem, -0.08rem) rotate(0.55deg); }
-.u3-notice--4 { transform: translate(-0.22rem, 0.06rem) rotate(-0.5deg); }
+.u3-notice--0 {
+  grid-column: 1 / span 4;
+  grid-row: 1 / span 5;
+  transform: translate(0.25rem, 0.35rem) rotate(-2.1deg);
+}
+
+.u3-notice--1 {
+  grid-column: 6 / span 4;
+  grid-row: 2 / span 5;
+  transform: translate(-0.15rem, 0.1rem) rotate(1.4deg);
+}
+
+.u3-notice--2 {
+  grid-column: 11 / span 4;
+  grid-row: 1 / span 5;
+  transform: translate(0.12rem, 0.45rem) rotate(-1.2deg);
+}
+
+.u3-notice--3 {
+  grid-column: 3 / span 4;
+  grid-row: 7 / span 5;
+  transform: translate(0.45rem, 0.85rem) rotate(2.2deg);
+}
+
+.u3-notice--4 {
+  grid-column: 10 / span 4;
+  grid-row: 7 / span 5;
+  transform: translate(-0.35rem, 0.70rem) rotate(-1.8deg);
+}
 
 .u3-notice:hover,
 .u3-notice:focus-visible {
@@ -581,60 +605,12 @@
   display: none;
 }
 
-/* ── 계약 카드 ──
- *
- * 던전 정보와 계약 조건을 한 덩어리로 묶는다. 어느 던전에 어떤 조건으로
- * 들어가는지가 하나의 판단이라 따로 두면 눈이 두 번 움직인다.
- *
- * 바탕에 그 던전의 장면을 깔되 글씨가 묻히면 안 된다. 장면은 어둡게 덮고
- * 글자에는 그림자를 준다. 색만으로 읽히게 하지 않는다.
- */
 .u3-contract-card {
   position: relative;
   display: grid;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  /* 배경 장면은 u3-card-theme.css 에서 정한다. 그 파일이 뒤에 실려 공통
-   * 질감이 여기 규칙을 덮기 때문이다. */
-}
-
-/*
- * 장면을 덮는 막.
- *
- * 위쪽은 옅게 두어 던전 그림이 보이게 하고, 계약 조건이 앉는 아래쪽만 짙게
- * 덮는다. 전체를 고르게 덮으면 그림이 사라져 배경을 깐 뜻이 없어지고,
- * 얇게 덮으면 숫자가 그림에 묻힌다.
- */
-.u3-contract-card__scrim {
-  position: absolute;
-  inset: 0;
-  background:
-    /* 표제가 앉는 왼쪽 위만 한 번 더 덮는다. 사막 장면이 밝아 글자가 묻힌다. */
-    linear-gradient(105deg, rgb(8 6 4 / 58%) 0%, rgb(8 6 4 / 14%) 38%, transparent 58%),
-    /*
-     * 가장자리를 카드 바탕색으로 되돌린다.
-     *
-     * 장면을 원래 크기 가까이 줄여 놓았으므로 카드 안에 직사각형으로 앉는다.
-     * 그 테두리를 그대로 두면 그림을 붙여 놓은 것처럼 보이고, 옆 칸의 장면도
-     * 조금 비쳐 든다. 장면이 끝나는 지점(가로 10%·세로 10%)까지는 완전히
-     * 덮고, 거기서부터 장면 안쪽으로 더 들어가며 걷어 내야 경계가 사라진다.
-     */
-    linear-gradient(90deg,
-      #0b0806 0%,
-      #0b0806 4%,
-      rgb(11 8 6 / 0%) 15%,
-      rgb(11 8 6 / 0%) 85%,
-      #0b0806 96%,
-      #0b0806 100%),
-    /* 아래는 계약 조건이 앉으므로 조금 더 남긴다. */
-    linear-gradient(180deg,
-      #0b0806 0%,
-      #0b0806 4%,
-      rgb(11 8 6 / 0%) 14%,
-      rgb(11 8 6 / 0%) 62%,
-      rgb(9 7 5 / 34%) 82%,
-      rgb(8 6 5 / 66%) 100%);
 }
 
 .u3-contract-card__body {
@@ -649,10 +625,9 @@
   padding: clamp(0.55rem, 0.75cqw, 1.15rem);
 }
 
-/* 색만으로 읽히게 하지 않는다. 어느 장면 위에서도 글자가 서게 그림자를 준다. */
 .u3-contract-card__body > *,
 .u3-contract-card__head * {
-  text-shadow: 0 1px 2px rgb(0 0 0 / 95%), 0 0 8px rgb(0 0 0 / 70%);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 72%);
 }
 
 .u3-contract-card__head {
