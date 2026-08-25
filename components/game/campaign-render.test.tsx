@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
+import { countLivingZeroTrust } from "@/lib/rules/ending";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
@@ -283,22 +284,34 @@ describe("진행 화면이 실제 사건으로 그려진다", () => {
 });
 
 describe("정산이 실제 결과로 그려진다", () => {
-  it("원인 사슬 네 칸이 다 찍힌다", () => {
+  it("선택과 판단, 인물별 결과가 다 찍힌다", () => {
     const run = settled();
     const { campaign, last } = run.state();
     const settlement = last!.settlement!;
     const dungeon = campaign.dungeons.find((one) => one.id === settlement.dungeonId);
 
+    const view = createU6SettlementView(campaign, settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider");
     const markup = renderToStaticMarkup(createElement(U6SettlementScreen, {
       status: statusFor(campaign, null),
-      settlement: createU6SettlementView(settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider"),
+      settlement: view,
       onContinue: noop,
     }));
 
     assertClean(markup, "정산");
-    expect(markup).toContain(settlement.causeChain.choice);
-    expect(markup).toContain(settlement.causeChain.reactions);
-    expect(markup).toContain(settlement.causeChain.damage);
+    expect(view.trustPressure?.afterCount ?? 0).toBe(countLivingZeroTrust(campaign));
+    expect(markup).toContain(settlement.causeInputs.choice);
+    expect(markup).toContain(settlement.causeInputs.reactions);
+    expect(markup).not.toContain("<strong>피해</strong>");
+    const changedMember = settlement.memberChanges.find((change) =>
+      change.before.hp !== change.after.hp || change.before.alive !== change.after.alive,
+    );
+    if (changedMember === undefined) throw new Error("피해 또는 사망한 원정대원이 없다");
+    expect(markup).toContain(changedMember.after.name);
+    expect(markup).toContain(
+      changedMember.before.alive && !changedMember.after.alive
+        ? `사망 · HP ${changedMember.before.hp} → ${changedMember.after.hp}`
+        : `HP ${changedMember.before.hp} → ${changedMember.after.hp} / ${changedMember.after.maxHp}`,
+    );
   });
 });
 

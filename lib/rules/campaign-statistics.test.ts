@@ -70,12 +70,10 @@ function settlementFixture(
     riskBefore: 3,
     riskAfter: 3,
     riskCapped: false,
-    causeChain: {
+    causeInputs: {
       choice: "선택",
       reactions: "반응",
       damage: "피해",
-      economy: "경제",
-      campaignChange: "캠페인 변화",
     },
     ...overrides,
   };

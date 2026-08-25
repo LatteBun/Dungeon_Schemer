@@ -83,7 +83,6 @@ export {
 } from "./campaign";
 
 export type {
-  SettlementCauseChain,
   SettlementCauseInputs,
   SettlementMemberChange,
   SettlementResult,

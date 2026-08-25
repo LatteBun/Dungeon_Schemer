@@ -117,16 +117,16 @@ describe("시드 재현", () => {
     expect(store.getState().context.activeExpedition).toBeNull();
   });
 
-  /* 정산이 원인 사슬을 세 줄 다 채운다. 빈 줄이 있으면 화면이 빈칸을 그린다. */
-  it("정산의 원인 사슬이 지어낸 값이 아니다", () => {
+  /* 정산이 원정 근거를 세 줄 다 보존한다. 빈 줄이면 사후 검증 근거가 사라진다. */
+  it("정산의 원정 근거가 지어낸 값이 아니다", () => {
     const { settlement } = playOne(SEED);
     if (settlement === null) throw new Error("정산 결과가 없다");
 
-    expect(settlement.causeChain.choice.length).toBeGreaterThan(0);
-    expect(settlement.causeChain.reactions.length).toBeGreaterThan(0);
-    expect(settlement.causeChain.damage.length).toBeGreaterThan(0);
+    expect(settlement.causeInputs.choice.length).toBeGreaterThan(0);
+    expect(settlement.causeInputs.reactions.length).toBeGreaterThan(0);
+    expect(settlement.causeInputs.damage.length).toBeGreaterThan(0);
     /* 조언 문구는 사건에서 온다. 자리를 채우는 기본값이 아니다. */
-    expect(settlement.causeChain.choice).not.toBe("조언을 고를 일이 없었다");
+    expect(settlement.causeInputs.choice).not.toBe("조언을 고를 일이 없었다");
   });
 
   /*
@@ -142,12 +142,12 @@ describe("시드 재현", () => {
       throw new Error("이 시드는 보스전까지 가지 않는다");
     }
 
-    expect(settlement.causeChain.choice).toContain("보스");
+    expect(settlement.causeInputs.choice).toContain("보스");
     /* 전멸했다면 누군가는 HP 0 이 되었다. 피해 없이 전멸할 수는 없다. */
-    if (settlement.survivorIds.length === 0) expect(settlement.causeChain.damage).toContain("→ 0");
+    if (settlement.survivorIds.length === 0) expect(settlement.causeInputs.damage).toContain("→ 0");
   });
 
-  /* 조언마다 이력이 쌓여야 정산의 원인 사슬과 엔딩의 전환점이 선다. */
+  /* 조언마다 이력이 쌓여야 정산의 원정 근거와 엔딩의 전환점이 선다. */
   it("걸은 만큼 이력이 쌓인다", () => {
     const { store, taken } = playOne(SEED);
     const advices = taken.filter((type) => type === "CHOOSE_ADVICE").length;

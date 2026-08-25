@@ -49,21 +49,15 @@
   gap: clamp(0.6rem, 0.7cqw, 1.1rem);
 }
 
-/* ── 정산 좌측: 원인 사슬 ── */
+/* ── 정산 좌측: 결과 · 판단 · 원정대 ── */
 
 .u6-settlement-main {
-  /*
-   * 결과 한 줄 · 구분선 · 원인 사슬 셋이다.
-   *
-   * 둘로 두었더니 구분선이 남는 자리를 차지해 사슬이 화면 아래로 밀렸다.
-   */
   grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 .u6-outcome {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
+  display: grid;
+  gap: 0.2rem;
   margin: 0;
 }
 
@@ -77,66 +71,203 @@
   font-size: clamp(0.8rem, 0.78cqw, 1.15rem);
 }
 
-.u6-cause-chain {
+.u6-cause-summary {
+  min-width: 0;
+}
+
+.u6-cause-summary h3 {
+  margin: 0 0 clamp(0.3rem, 0.38cqw, 0.55rem);
+  color: var(--color-shell-gold);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(0.9rem, 0.92cqw, 1.35rem);
+}
+
+.u6-cause-summary ul {
   display: grid;
-  /*
-   * 칸은 내용만큼만 차지한다.
-   *
-   * 전에는 다섯 칸이 남는 높이를 똑같이 나눠 가져서, 한 줄짜리 문장 아래로
-   * 빈자리가 크게 남았다. 사슬은 위에서부터 이어지면 된다.
-   */
-  grid-auto-rows: min-content;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(0.4rem, 0.5cqw, 0.8rem);
   margin: 0;
   padding: 0;
-  min-height: 0;
   list-style: none;
 }
 
-.u6-cause {
+.u6-cause-summary li {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: clamp(0.6rem, 0.7cqw, 1rem);
-  min-height: 0;
-  padding: clamp(0.5rem, 0.6cqw, 0.9rem);
+  gap: clamp(0.35rem, 0.45cqw, 0.65rem);
+  padding: clamp(0.4rem, 0.45cqw, 0.65rem);
   border: 1px solid color-mix(in srgb, var(--color-shell-metal) 40%, var(--color-edge));
   border-radius: 0.28rem;
   background: linear-gradient(180deg, rgb(28 21 14 / 88%), rgb(16 12 8 / 92%));
 }
 
-.u6-cause__order {
-  position: relative;
+.u6-cause-summary li > img {
+  width: clamp(1.1rem, 1.25cqw, 1.75rem);
+  height: auto;
+  margin-top: 0.1rem;
+  object-fit: contain;
+}
+
+.u6-cause-summary li > span {
   display: grid;
-  width: clamp(2.2rem, 2.4cqw, 3.2rem);
-  height: clamp(2.2rem, 2.4cqw, 3.2rem);
-  place-items: center;
-  border: 1px solid var(--color-shell-gold);
-  border-radius: 999px;
-  background: radial-gradient(circle, rgb(60 44 24 / 55%), rgb(20 14 9 / 75%));
-  color: var(--color-shell-gold);
-  font-size: clamp(0.85rem, 0.85cqw, 1.25rem);
-  font-weight: 700;
-}
-
-.u6-cause__body {
   min-width: 0;
+  gap: 0.1rem;
 }
 
-.u6-cause__body strong {
+.u6-cause-summary strong {
   color: var(--color-parchment);
-  font-size: clamp(0.95rem, 0.95cqw, 1.4rem);
+  font-size: clamp(0.8rem, 0.84cqw, 1.2rem);
 }
 
-.u6-cause__body p {
-  margin: 0.2rem 0 0;
+.u6-cause-summary small {
   color: var(--color-muted);
-  font-size: clamp(0.82rem, 0.82cqw, 1.2rem);
+  font-size: clamp(0.7rem, 0.73cqw, 1rem);
   line-height: 1.35;
 }
 
-.u6-cause__note {
-  color: #d8a68e !important;
+.u6-party-results {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+.u6-party-results__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+  gap: clamp(0.45rem, 0.55cqw, 0.85rem);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.u6-party-results__list li {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  align-items: start;
+  align-content: stretch;
+  gap: clamp(0.24rem, 0.3cqh, 0.45rem);
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 0 clamp(0.5rem, 0.62cqh, 0.9rem);
+  border: 1px solid #6b4f2c;
+  border-top-width: 3px;
+  border-radius: 0.28rem;
+  background: linear-gradient(180deg, rgb(30 22 14 / 94%), rgb(13 10 7 / 92%));
+  box-shadow: inset 0 1px 0 rgb(244 214 145 / 6%), 0 0.35rem 0.8rem rgb(0 0 0 / 18%);
+}
+
+.u6-party-results__list li > img {
+  width: 100%;
+  height: clamp(11rem, 17.2cqw, 23rem);
+  border: 0;
+  border-bottom: 1px solid #4d3922;
+  object-fit: cover;
+  object-position: 50% 8%;
+  filter: sepia(0.08) saturate(0.9) contrast(1.04);
+}
+
+.u6-party-result__who,
+.u6-party-result__state,
+.u6-party-result__badges {
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+  padding-inline: clamp(0.55rem, 0.65cqw, 0.95rem);
+}
+
+.u6-party-result__who {
+  padding-top: clamp(0.42rem, 0.5cqh, 0.7rem);
+}
+
+.u6-party-result__who strong {
+  color: #ead9b7;
+  font-size: clamp(1rem, 1.06cqw, 1.45rem);
+  line-height: 1.15;
+}
+
+.u6-party-result__state {
+  padding-top: clamp(0.18rem, 0.22cqh, 0.32rem);
+  border-top: 1px solid rgb(151 117 67 / 24%);
+}
+
+.u6-party-result__state strong {
+  color: #dcc9a4;
+  font-size: clamp(0.82rem, 0.88cqw, 1.2rem);
+  line-height: 1.25;
+}
+
+.u6-party-result__who small,
+.u6-party-result__state small {
+  color: #907c5c;
+  font-size: clamp(0.72rem, 0.75cqw, 1rem);
+  line-height: 1.3;
+}
+
+.u6-party-result__badges {
+  align-self: end;
+  align-content: end;
+  justify-items: stretch;
+  padding-top: clamp(0.35rem, 0.45cqh, 0.65rem);
+}
+
+.u6-party-result__badges em {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid #a7654f;
+  border-radius: 0.2rem;
+  padding: clamp(0.28rem, 0.34cqh, 0.48rem) clamp(0.48rem, 0.58cqw, 0.82rem);
+  background: rgb(104 42 31 / 38%);
+  color: #f0b09c;
+  font-size: clamp(0.82rem, 0.9cqw, 1.15rem);
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.u6-party-results__list li.is-dead {
+  border-color: #9a4e3e;
+  background: rgb(47 18 15 / 78%);
+}
+
+.u6-party-results__list li.is-dead .u6-party-result__state strong,
+.u6-party-results__list li.is-dead .u6-party-result__badges em {
+  color: #f0a18b;
+}
+
+.u6-party-results__list li.is-dead .u6-party-result__badges em {
+  background: rgb(126 38 30 / 56%);
+}
+
+.u6-party-results__list li.is-dead > img {
+  filter: grayscale(0.68) sepia(0.18) contrast(1.08);
+}
+
+.u6-party-results__list li.is-exposed {
+  border-color: #b07945;
+  background: rgb(48 34 16 / 78%);
+}
+
+.u6-party-results__list li.is-exposed .u6-party-result__badges em {
+  border-color: #d2a35e;
+  background: rgb(117 75 25 / 52%);
+  color: #f2ce8c;
+}
+
+.u6-party-results__list li.is-gravely-wounded {
+  border-color: #80567d;
+  background: rgb(39 20 37 / 78%);
+}
+
+.u6-party-results__list li.is-gravely-wounded .u6-party-result__badges em {
+  border-color: #b985b4;
+  background: rgb(89 43 84 / 52%);
+  color: #e4b0de;
 }
 
 /* ── 정산 우측: 캠페인 변화 ── */
@@ -159,24 +290,24 @@
   text-align: center;
 }
 
-.u6-risk-change {
+.u6-dungeon-change {
   display: grid;
   gap: 0.15rem;
   padding-bottom: clamp(0.4rem, 0.5cqw, 0.8rem);
   border-bottom: 1px solid color-mix(in srgb, var(--color-shell-metal) 30%, transparent);
 }
 
-.u6-risk-change > span {
+.u6-dungeon-change > span {
   color: var(--color-muted);
   font-size: clamp(0.8rem, 0.8cqw, 1.15rem);
 }
 
-.u6-risk-change strong {
+.u6-dungeon-change strong {
   color: var(--color-parchment);
   font-size: clamp(1.15rem, 1.2cqw, 1.75rem);
 }
 
-.u6-risk-change small {
+.u6-dungeon-change small {
   color: var(--color-muted);
   font-size: clamp(0.74rem, 0.74cqw, 1.05rem);
 }
@@ -205,6 +336,24 @@
   font-weight: 700;
 }
 
+.u6-trust-pressure {
+  display: grid;
+  gap: 0.2rem;
+  padding: clamp(0.45rem, 0.55cqw, 0.8rem);
+  border: 1px solid color-mix(in srgb, #a7654f 55%, var(--color-edge));
+  background: rgb(35 18 14 / 72%);
+}
+
+.u6-trust-pressure > span,
+.u6-trust-pressure small {
+  color: var(--color-muted);
+  font-size: clamp(0.72rem, 0.74cqw, 1.05rem);
+}
+
+.u6-trust-pressure strong {
+  color: #f0b09c;
+  font-size: clamp(1rem, 1.1cqw, 1.55rem);
+}
 /* ── /u6-test 프리뷰 전환 ──
  * 프리뷰 껍데기는 캔버스 안에서 화면 위에 겹친다. 여덟 상태를 오가며 보는
  * 도구일 뿐이라 화면의 세로 공간을 빼앗으면 안 된다. */
@@ -665,30 +814,6 @@
   background-size: cover;
 }
 
-/* 칸마다 제 문양. 번호는 문양 위에 작게 얹는다. */
-.u6-cause__order img {
-  width: 68%;
-  height: 68%;
-  object-fit: contain;
-  opacity: 0.9;
-}
-
-.u6-cause__order b {
-  position: absolute;
-  right: -0.15rem;
-  bottom: -0.15rem;
-  display: grid;
-  width: clamp(1rem, 1.05cqw, 1.4rem);
-  height: clamp(1rem, 1.05cqw, 1.4rem);
-  place-items: center;
-  border: 1px solid var(--color-shell-gold);
-  border-radius: 999px;
-  background: #140e09;
-  font-size: clamp(0.62rem, 0.65cqw, 0.85rem);
-  font-weight: 700;
-  line-height: 1;
-}
-
 .u6-changes {
   position: relative;
 }
@@ -865,108 +990,22 @@
 }
 
 /*
- * 다녀온 사람.
- *
- * 정산이 주인공이라 조촐하게 둔다 - 카드가 아니라 한 줄씩이다. 얼굴은 작게
- * 두고, 읽어야 하는 것은 살아 돌아왔는지와 얼마나 상했는지다.
- */
-.u6-returned {
-  min-height: 0;
-}
-
-.u6-returned__list {
-  display: grid;
-  row-gap: clamp(0.25rem, 0.35cqh, 0.45rem);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.u6-returned__list li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: clamp(0.4rem, 0.55cqw, 0.85rem);
-  border-left: 2px solid #6b4f2c;
-  padding: clamp(0.2rem, 0.28cqh, 0.35rem) 0 clamp(0.2rem, 0.28cqh, 0.35rem) clamp(0.4rem, 0.5cqw, 0.7rem);
-}
-
-.u6-returned__list li.is-dead {
-  border-left-color: #7a3a2a;
-  opacity: 0.72;
-}
-
-.u6-returned__list img {
-  width: clamp(1.8rem, 2.1cqw, 2.9rem);
-  height: clamp(1.8rem, 2.1cqw, 2.9rem);
-  border: 1px solid #4d3922;
-  border-radius: 0.16rem;
-  object-fit: cover;
-  object-position: top;
-}
-
-.u6-returned__list li.is-dead img {
-  filter: grayscale(0.75);
-}
-
-.u6-returned__who {
-  display: grid;
-  min-width: 0;
-}
-
-.u6-returned__who strong {
-  color: #dcc9a4;
-  font-size: clamp(0.82rem, 0.86cqw, 1.02rem);
-}
-
-.u6-returned__who small {
-  color: #907c5c;
-  font-size: clamp(0.7rem, 0.72cqw, 0.85rem);
-}
-
-.u6-returned__state {
-  display: grid;
-  justify-items: end;
-  color: #bda27a;
-  font-size: clamp(0.74rem, 0.78cqw, 0.92rem);
-}
-
-.u6-returned__state em {
-  color: #907c5c;
-  font-size: clamp(0.68rem, 0.7cqw, 0.82rem);
-  font-style: normal;
-}
-
-.u6-returned__state.is-dead {
-  color: #c9836a;
-}
-
-/*
  * 인주 색이 결과를 말한다.
  *
  * 붉은 인주 한 장뿐이라 색을 돌린다. 다 돌아왔으면 초록, 누군가를 잃었으면
  * 호박색, 전멸이면 그대로 붉은색이다.
  */
-/* 인주와 피해 문양이 같은 색으로 같은 말을 한다. */
-.u6-changes__seal.is-whole,
-.u6-cause__order.is-whole img {
+.u6-changes__seal.is-whole {
   filter: hue-rotate(88deg) saturate(0.85) brightness(1.05);
 }
 
-.u6-changes__seal.is-costly,
-.u6-cause__order.is-costly img {
+.u6-changes__seal.is-costly {
   filter: hue-rotate(28deg) saturate(1.05) brightness(1.08);
 }
 
-.u6-changes__seal.is-lost,
-.u6-cause__order.is-lost img {
+.u6-changes__seal.is-lost {
   filter: saturate(1.1);
 }
-
-/* 테두리도 같은 색을 탄다. 문양만 물들면 칸이 겉돈다. */
-.u6-cause__order.is-whole { border-color: #7fa86a; }
-.u6-cause__order.is-costly { border-color: #c79a54; }
-.u6-cause__order.is-lost { border-color: #b5624a; }
 
 /*
  * 끝난 판에 남는 것은 길드가 찍은 판결이다.
