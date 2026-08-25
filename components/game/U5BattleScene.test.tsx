@@ -253,3 +253,31 @@ describe("U5BattleScene 피해 숫자", () => {
     expect(sizeOf(".u5-battle-damage")).toBeGreaterThan(sizeOf(".u5-battle-live") * 2);
   });
 });
+
+/*
+ * 숨쉬기가 투명도를 붙잡고 있었다.
+ *
+ * 대기 상태의 transition 을 통째로 주면 `repeat: Infinity` 가 opacity 에도
+ * 걸린다. 쓰러져 0.38 이 된 사람을 두고 다시 보기를 누르면 0.38 → 1 이 끝나기
+ * 전에 처음으로 되돌아가기를 무한히 반복해, 멀쩡한 사람이 흐린 채로 서 있었다.
+ * 실측으로 HP 가 남았는데 흐려진 프레임이 3,597 장이었다.
+ */
+describe("U5BattleScene 대기 애니메이션", () => {
+  const source = readFileSync(join(process.cwd(), "components", "game", "U5BattleScene.tsx"), "utf8");
+
+  it("되풀이를 숨쉬기(y)에만 걸고 투명도에는 걸지 않는다", () => {
+    const idle = source.match(/animate: \{ x: 0, y: reducedMotion[\s\S]*?\n  \};/)?.[0];
+    expect(idle, "대기 분기").toBeDefined();
+
+    /* repeat 은 y 안에서만 나온다. */
+    const repeats = [...idle!.matchAll(/repeat:\s*Infinity/g)];
+    expect(repeats).toHaveLength(1);
+    expect(idle).toMatch(/y:\s*\{[^}]*repeat:\s*Infinity/);
+    expect(idle).not.toMatch(/opacity:\s*\{[^}]*repeat/);
+  });
+
+  it("살아 있는 사람의 투명도는 애니메이션하지 않고 곧바로 1이 된다", () => {
+    const idle = source.match(/animate: \{ x: 0, y: reducedMotion[\s\S]*?\n  \};/)?.[0];
+    expect(idle).toMatch(/opacity:\s*\{\s*duration:\s*0\s*\}/);
+  });
+});

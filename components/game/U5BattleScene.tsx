@@ -153,9 +153,28 @@ function motionForParticipant(
       transition: { duration: 0.24 },
     };
   }
+  /*
+   * 숨 쉬는 것은 y 뿐이다. 되풀이를 그 하나에만 건다.
+   *
+   * 예전에는 transition 을 통째로 줘서 `repeat: Infinity` 가 opacity 에도
+   * 걸렸다. 쓰러져 0.38 이 된 사람을 두고 다시 보기를 누르면, 0.38 에서 1 로
+   * 가던 애니메이션이 끝나기 전에 처음으로 되돌아가기를 무한히 반복한다.
+   * 게다가 프레임이 넘어갈 때마다 다시 시작하므로 영영 1 에 닿지 못한다.
+   * 죽을 사람이 첫 프레임부터 흐린 채로 서 있던 까닭이다.
+   */
   return {
     animate: { x: 0, y: reducedMotion ? 0 : [0, "-2%", 0], opacity: 1 },
-    transition: reducedMotion ? { duration: 0 } : { duration: 1.8, repeat: Infinity, ease: "easeInOut" as const },
+    transition: reducedMotion ? { duration: 0 } : {
+      y: { duration: 1.8, repeat: Infinity, ease: "easeInOut" as const },
+      x: { duration: 0.24 },
+      /*
+       * 살아 있는 사람의 투명도는 애니메이션 대상이 아니다.
+       *
+       * 다시 보기는 쓰러졌던 사람을 되살려 놓고 시작한다. 그때 0.38 에서 1 로
+       * 스며들면 첫 0.24 초 동안 멀쩡한 사람이 흐리게 보인다. 곧바로 1 이 된다.
+       */
+      opacity: { duration: 0 },
+    },
   };
 }
 
