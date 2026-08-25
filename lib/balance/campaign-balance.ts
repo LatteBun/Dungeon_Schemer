@@ -43,10 +43,10 @@ export interface CampaignCalibrationSettings {
 }
 
 export const CAMPAIGN_BALANCE = {
-  revision: "b1c-boss-depletion-v1",
+  revision: "b1-risk-curve-v2",
   generalMonsterBaseStatMultiplier: 1.00,
   worldTurn: { restRecoveryRatio: 0.20, backgroundLossPercent: { min: 5, max: 10 } },
-  bossBaseStatMultiplierByInitialRisk: { 1: 1.10, 2: 0.825, 3: 0.65, 4: 0.55, 5: 0.60 },
+  bossBaseStatMultiplierByInitialRisk: { 1: 1.05, 2: 0.80, 3: 0.60, 4: 0.475, 5: 0.45 },
   advicePressure: {
     0: { incomingDamageMultiplier: 1.00, outgoingDamageMultiplier: 1.00 },
     1: { incomingDamageMultiplier: 1.05, outgoingDamageMultiplier: 1.00 },
@@ -63,13 +63,13 @@ export const CAMPAIGN_BALANCE = {
   },
 } as const satisfies CampaignBalance;
 
-export const B1C_CALIBRATION_SELECTION = {
+export const B1_RISK_CURVE_V2_CALIBRATION_SELECTION = {
   selectedAxis: "bossBaseStatMultiplierByInitialRisk",
   before: {
-    revision: "b1b-risk-curve-v1",
+    revision: "b1c-boss-depletion-v1",
     generalMonsterBaseStatMultiplier: 1.00,
     restRecoveryRatio: 0.20,
-    bossBaseStatMultiplierByInitialRisk: { 1: 1.125, 2: 0.85, 3: 0.675, 4: 0.575, 5: 0.625 },
+    bossBaseStatMultiplierByInitialRisk: { 1: 1.10, 2: 0.825, 3: 0.65, 4: 0.55, 5: 0.60 },
   },
   after: {
     revision: CAMPAIGN_BALANCE.revision,

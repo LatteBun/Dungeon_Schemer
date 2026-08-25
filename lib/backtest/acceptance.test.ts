@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RiskLevel } from "@/lib/domain";
-import { B1B_RISK_CLEARANCE_TARGETS, evaluateB1BAcceptance } from "./acceptance";
+import { B1_RISK_CURVE_V2_TARGETS, evaluateB1BAcceptance } from "./acceptance";
 import { aggregateRuns, type CampaignRunMetrics } from "./metrics";
 import type { Accuracy, StrategyId } from "./public-state";
 
@@ -65,7 +65,7 @@ function aggregateAtRiskRates(
         attemptNumber: 1,
         startAdvicePressure: 0,
         maxAdvicePressure: 0,
-        bossEntry: cleared ? { advicePressure: 0, aliveCount: 3, hp: 100, maxHp: 100 } : null,
+        bossEntry: { advicePressure: 0, aliveCount: 3, hp: 100, maxHp: 100 },
         endAdvicePressure: 0,
         result: cleared ? "cleared" as const : "wiped" as const,
       }];
@@ -110,40 +110,40 @@ describe("B1-B 승인 gate", () => {
   });
 
   it("위험도별 첫 시도 클리어율 목표의 하한과 상한을 통과시킨다", () => {
-    expect(B1B_RISK_CLEARANCE_TARGETS).toEqual({
-      1: [0.80, 0.90],
-      2: [0.65, 0.75],
-      3: [0.50, 0.60],
-      4: [0.35, 0.45],
-      5: [0.20, 0.30],
+    expect(B1_RISK_CURVE_V2_TARGETS).toEqual({
+      1: [0.85, 0.90],
+      2: [0.78, 0.85],
+      3: [0.70, 0.78],
+      4: [0.62, 0.70],
+      5: [0.55, 0.65],
     });
 
-    for (const rates of [[0.80, 0.65, 0.50, 0.35, 0.20], [0.90, 0.75, 0.60, 0.45, 0.30]] as const) {
-      const gates = evaluateB1BAcceptance(aggregateAtRiskRates(rates), { mode: "calibration", seedsPerCombination: 200 });
+    for (const rates of [[0.85, 0.78, 0.70, 0.62, 0.55], [0.90, 0.85, 0.78, 0.70, 0.65]] as const) {
+      const gates = evaluateB1BAcceptance(aggregateAtRiskRates(rates), { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" });
       expect(gates.filter(isRiskGate).every((gate) => gate.enforced && gate.passed)).toBe(true);
     }
   });
 
   it("목표 밖 값과 위험도 역전을 실패시킨다", () => {
-    const outside = evaluateB1BAcceptance(aggregateAtRiskRates([0.79, 0.65, 0.50, 0.35, 0.20]), { mode: "calibration", seedsPerCombination: 200 });
+    const outside = evaluateB1BAcceptance(aggregateAtRiskRates([0.84, 0.78, 0.70, 0.62, 0.55]), { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" });
     expect(outside.find((gate) => gate.id.endsWith("risk-1"))).toMatchObject({ enforced: true, passed: false });
 
-    const inverted = evaluateB1BAcceptance(aggregateAtRiskRates([0.80, 0.81, 0.50, 0.35, 0.20]), { mode: "calibration", seedsPerCombination: 200 });
+    const inverted = evaluateB1BAcceptance(aggregateAtRiskRates([0.85, 0.86, 0.70, 0.62, 0.55]), { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" });
     expect(inverted.find((gate) => gate.id.endsWith("monotonic"))).toMatchObject({ enforced: true, passed: false });
   });
 
   it("기본값과 50, 100시드 calibration에서는 위험도 gate를 관찰로 남긴다", () => {
-    const aggregate = aggregateAtRiskRates([0.79, 0.65, 0.50, 0.35, 0.20]);
+    const aggregate = aggregateAtRiskRates([0.84, 0.78, 0.70, 0.62, 0.55]);
     for (const context of [undefined, { mode: "calibration", seedsPerCombination: 50 }, { mode: "calibration", seedsPerCombination: 100 }] as const) {
-      const gates = context === undefined ? evaluateB1BAcceptance(aggregate) : evaluateB1BAcceptance(aggregate, context);
+      const gates = context === undefined ? evaluateB1BAcceptance(aggregate) : evaluateB1BAcceptance(aggregate, { ...context, focus: "risk-curve" });
       expect(gates.filter(isRiskGate).every((gate) => gate.enforced === false)).toBe(true);
       expect(gates.find((gate) => gate.id.endsWith("risk-1"))).toMatchObject({ passed: false });
     }
   });
 
   it("최종 calibration은 위험도별 최소 30개 표본을 요구한다", () => {
-    const aggregate = aggregateAtRiskRates([0.80, 0.65, 0.50, 0.35, 0.20], { 1: 100, 2: 100, 3: 100, 4: 100, 5: 29 });
-    const gate = evaluateB1BAcceptance(aggregate, { mode: "calibration", seedsPerCombination: 200 }).find((candidate) => candidate.id.endsWith("risk-5"));
+    const aggregate = aggregateAtRiskRates([0.85, 0.78, 0.70, 0.62, 0.55], { 1: 100, 2: 100, 3: 100, 4: 100, 5: 29 });
+    const gate = evaluateB1BAcceptance(aggregate, { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" }).find((candidate) => candidate.id.endsWith("risk-5"));
     expect(gate).toMatchObject({
       enforced: true,
       passed: false,
@@ -152,26 +152,85 @@ describe("B1-B 승인 gate", () => {
   });
 
   it("holdout은 위험도별 최소 300개 표본을 요구한다", () => {
-    const targetRates = [0.80, 0.65, 0.50, 0.35, 0.20] as const;
-    const withinBandsAt299 = [250 / 299, 210 / 299, 165 / 299, 120 / 299, 75 / 299] as const;
+    const targetRates = [0.85, 0.78, 0.70, 0.62, 0.55] as const;
+    const withinBandsAt299 = [255 / 299, 235 / 299, 215 / 299, 190 / 299, 165 / 299] as const;
     const aggregateAt299 = aggregateAtRiskRates(withinBandsAt299, 299);
     const observedAt299 = RISK_LEVELS.map((risk) => aggregateAt299.combinations["opportunist@0.7"]!.firstAttemptByInitialRisk[risk].clearRate);
     expect(observedAt299).toEqual(withinBandsAt299);
     for (const risk of RISK_LEVELS) {
       const rate = aggregateAt299.combinations["opportunist@0.7"]!.firstAttemptByInitialRisk[risk].clearRate;
-      const [minimum, maximum] = B1B_RISK_CLEARANCE_TARGETS[risk];
+      const [minimum, maximum] = B1_RISK_CURVE_V2_TARGETS[risk];
       expect(rate).toBeGreaterThan(minimum);
       expect(rate).toBeLessThan(maximum);
     }
 
-    const insufficient = evaluateB1BAcceptance(aggregateAt299, { mode: "holdout", seedsPerCombination: 2000 });
+    const insufficient = evaluateB1BAcceptance(aggregateAt299, { mode: "holdout", seedsPerCombination: 2000, focus: "full-campaign" });
     expect(insufficient.find((gate) => gate.id.endsWith("risk-1"))).toMatchObject({
       enforced: true,
       passed: false,
       evidence: expect.stringContaining("표본 299/최소 300"),
     });
 
-    const sufficient = evaluateB1BAcceptance(aggregateAtRiskRates(targetRates, 300), { mode: "holdout", seedsPerCombination: 2000 });
+    const sufficient = evaluateB1BAcceptance(aggregateAtRiskRates(targetRates, 300), { mode: "holdout", seedsPerCombination: 2000, focus: "full-campaign" });
     expect(sufficient.filter(isRiskGate).every((gate) => gate.enforced && gate.passed)).toBe(true);
+  });
+
+  it("risk-curve 200에서는 캠페인 gate를 관찰로 남기고 full-campaign에서는 강제한다", () => {
+    const aggregate = aggregateAtRiskRates([0.85, 0.78, 0.70, 0.62, 0.55]);
+    const riskCurve = evaluateB1BAcceptance(aggregate, { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" });
+    const fullCampaign = evaluateB1BAcceptance(aggregate, { mode: "calibration", seedsPerCombination: 200, focus: "full-campaign" });
+    expect(riskCurve.filter((gate) => gate.id.startsWith("completion-rate:")).every((gate) => !gate.enforced)).toBe(true);
+    expect(fullCampaign.filter((gate) => gate.id.startsWith("completion-rate:")).every((gate) => gate.enforced)).toBe(true);
+  });
+
+  it("보스 이전 실패 우세 또는 평균 진입 HP 0.70 미만이면 축 guard를 실패시킨다", () => {
+    const aggregate = aggregateAtRiskRates([0.85, 0.78, 0.70, 0.62, 0.55]);
+    const opportunist = aggregate.combinations["opportunist@0.7"]!;
+    const riskOne = opportunist.firstAttemptByInitialRisk[1];
+    const guardFailure = evaluateB1BAcceptance({
+      ...aggregate,
+      combinations: {
+        ...aggregate.combinations,
+        "opportunist@0.7": {
+          ...opportunist,
+          firstAttemptByInitialRisk: {
+            ...opportunist.firstAttemptByInitialRisk,
+            1: { ...riskOne, preBossFailures: 11, bossFailures: 10, meanBossEntryHpRatio: 0.80 },
+          },
+        },
+      },
+    }, { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" });
+    expect(guardFailure.find((gate) => gate.id === "boss-axis-guard:opportunist@0.7:risk-1")).toMatchObject({ passed: false, enforced: true });
+
+    const hpFailure = evaluateB1BAcceptance({
+      ...aggregate,
+      combinations: {
+        ...aggregate.combinations,
+        "opportunist@0.7": {
+          ...opportunist,
+          firstAttemptByInitialRisk: {
+            ...opportunist.firstAttemptByInitialRisk,
+            2: { ...opportunist.firstAttemptByInitialRisk[2], meanBossEntryHpRatio: 0.6999 },
+          },
+        },
+      },
+    }, { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" });
+    expect(hpFailure.find((gate) => gate.id === "boss-axis-guard:opportunist@0.7:risk-2")).toMatchObject({ passed: false, enforced: true });
+
+    const inclusiveRiskOne = aggregate.combinations["opportunist@0.7"]!.firstAttemptByInitialRisk[1];
+    const inclusiveBoundary = evaluateB1BAcceptance({
+      ...aggregate,
+      combinations: {
+        ...aggregate.combinations,
+        "opportunist@0.7": {
+          ...aggregate.combinations["opportunist@0.7"]!,
+          firstAttemptByInitialRisk: {
+            ...aggregate.combinations["opportunist@0.7"]!.firstAttemptByInitialRisk,
+            1: { ...inclusiveRiskOne, preBossFailures: 10, bossFailures: 10, meanBossEntryHpRatio: 0.70 },
+          },
+        },
+      },
+    }, { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" });
+    expect(inclusiveBoundary.find((gate) => gate.id === "boss-axis-guard:opportunist@0.7:risk-1")).toMatchObject({ passed: true, enforced: true });
   });
 });

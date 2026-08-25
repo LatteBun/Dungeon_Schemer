@@ -14,6 +14,7 @@ import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import { CampaignScreen } from "./CampaignScreen";
 import { CampaignStoreProvider } from "./CampaignStoreProvider";
+import { PlayerProgressProvider } from "./PlayerProgressProvider";
 import {
   adviceIdForSlotIn, bossReplayFor, ecologyViewFor, eventReplayFor, expeditionEndViewFor, logFor,
   memberChangesFor, progressViewFor, publicKindByNodeId, statusFor, surveyViewFor,
@@ -320,6 +321,36 @@ describe("엔딩이 실제 캠페인으로 그려진다", () => {
 });
 
 describe("결과 화면이 실제 판정으로 그려진다", () => {
+  it("실제 일반전 결과는 완료 전까지 우측 하단에서 전투만 건너뛴다", () => {
+    const run = contracted("party-roster-1");
+    for (let step = 0; step < 10; step += 1) {
+      const active = run.state().context.activeExpedition!;
+      if (active.pendingEvent !== null) break;
+      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
+      run.act({ type: "VISIT_NODE", nodeId: here.nextNodeIds[0]! });
+    }
+    const event = run.state().context.activeExpedition!.pendingEvent!;
+    if (event.kind !== "monster") throw new Error("monster 사건 fixture가 아니다");
+    run.act({ type: "CHOOSE_ADVICE", adviceId: event.advice[1]!.id });
+
+    const outcome = run.state().context.activeExpedition!.pendingOutcome!;
+    expect(outcome.battle).not.toBeNull();
+
+    const store = { ...run.store, getInitialState: () => run.store.getState() };
+    /* CampaignScreen 은 엔딩을 업적에 기록하므로 진행도 Provider 안에서만 선다. */
+    const markup = renderToStaticMarkup(createElement(
+      PlayerProgressProvider,
+      null,
+      createElement(CampaignStoreProvider as never, {
+        seed: "render-monster-outcome",
+        store,
+      }, createElement(CampaignScreen)),
+    ));
+
+    expect(markup).toContain("전투 건너뛰기");
+    expect(markup).not.toContain("지도로 돌아간다");
+  });
+
   it("전투 전멸 뒤에도 정산보다 결과를 먼저 그린다", () => {
     const run = contracted("party-roster-1");
     for (let step = 0; step < 10; step += 1) {
@@ -353,10 +384,14 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
     expect(run.state().context.activeExpedition!.expedition.result).toMatchObject({ status: "wiped" });
 
     const store = { ...run.store, getInitialState: () => run.store.getState() };
-    const markup = renderToStaticMarkup(createElement(CampaignStoreProvider as never, {
-      seed: "render-wipe-outcome",
-      store,
-    }, createElement(CampaignScreen)));
+    const markup = renderToStaticMarkup(createElement(
+      PlayerProgressProvider,
+      null,
+      createElement(CampaignStoreProvider as never, {
+        seed: "render-wipe-outcome",
+        store,
+      }, createElement(CampaignScreen)),
+    ));
 
     expect(markup).toContain("u5-outcome");
     expect(markup).not.toContain("u5-battle-settle");
