@@ -84,3 +84,22 @@ B1-B의 첫 calibration은 휴식 회복률 `0.20`으로 시작한다. 이 값�
 - [핵심 게임 루프](../design/CORE_GAME_LOOP.md)
 - [캐릭터와 신뢰](CHARACTERS_AND_TRUST.md)
 - [성장과 엔딩](PROGRESSION_AND_ENDINGS.md)
+# 고정 캐릭터 로스터 (2026-08-26)
+
+캠페인은 정확히 30명의 공식 캐릭터를 사용한다. ID, 이름, 성별, 직업, 초상화 variant는
+`lib/content/character-roster.ts`가 유일하게 소유한다. `generateCharacterPool`은 이
+로스터와 성격 슬롯을 각각 섞으므로 시드가 바뀌어도 캐릭터의 정체성은 바뀌지 않는다. 성별은 이름과
+콘텐츠의 정체성을 위한 메타데이터이며 게임 규칙, 능력치, 성격 배정, UI 표시에 관여하지 않는다.
+
+| 직업 | a | b | c | d | e | f |
+| --- | --- | --- | --- | --- | --- |
+| warrior | 발드릭 (male) | 브리엘라 (female) | 로데릭 (male) | 마르셀라 (female) | 토르벤 (male) | 이솔라 (female) |
+| archer | 엘리시아 (female) | 알렌 (male) | 카엘 (male) | 레오니스 (male) | 리비아 (female) | 아델린 (female) |
+| cleric | 세드릭 (male) | 세실리아 (female) | 루시엔 (male) | 로레나 (female) | 아멜리아 (female) | 에드윈 (male) |
+| mage | 발테르 (male) | 비비안 (female) | 오스카르 (male) | 셀레네 (female) | 에리온 (male) | 헨서라 (female) |
+| rogue | 라울 (male) | 카밀라 (female) | 다미안 (male) | 니콜라스 (male) | 베로니카 (female) | 이네스 (female) |
+
+- ID 형식은 `character-{class}-{a..f}`이다.
+- `male`과 `female`은 각각 15명이다.
+- 성격, 초기 HP, 신뢰, 소지 골드는 시드로 결정된다.
+- 공식 로스터 밖의 ID는 콘텐츠·초상화 경계에서 오류로 처리한다.

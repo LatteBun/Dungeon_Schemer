@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateCharacterPool } from "@/lib/content/character-pool";
 import { CLASSES } from "@/lib/content/classes";
+import { CHARACTER_ROSTER } from "@/lib/content/character-roster";
 import { createRng } from "@/lib/rng";
 import {
   CHARACTER_POOL_SIZE,
@@ -88,9 +89,35 @@ describe("generateCharacterPool", () => {
     expect(poolA).toEqual(poolB);
   });
 
+  it("시드가 달라도 모든 인물의 ID·이름·직업은 공식 로스터와 같다", () => {
+    const first = generateCharacterPool(createRng("fixed-roster-a"));
+    const second = generateCharacterPool(createRng("fixed-roster-b"));
+
+    for (const entry of CHARACTER_ROSTER) {
+      expect(first.byId[entry.id]).toMatchObject({
+        id: entry.id,
+        name: entry.name,
+        classId: entry.classId,
+      });
+      expect(second.byId[entry.id]).toMatchObject({
+        id: entry.id,
+        name: entry.name,
+        classId: entry.classId,
+      });
+    }
+  });
+
   it("다른 시드는 다른 배정을 만든다", () => {
     const poolA = generateCharacterPool(createRng("f4-pool-seed-a"));
     const poolB = generateCharacterPool(createRng("f4-pool-seed-b"));
     expect(poolA.byId).not.toEqual(poolB.byId);
+  });
+
+  it("성별은 로스터 메타데이터에만 두고 런타임 캐릭터 상태에는 복사하지 않는다", () => {
+    const pool = generateCharacterPool(createRng("fixed-roster-gender-boundary"));
+
+    for (const entry of CHARACTER_ROSTER) {
+      expect(pool.byId[entry.id]).not.toHaveProperty("gender");
+    }
   });
 });

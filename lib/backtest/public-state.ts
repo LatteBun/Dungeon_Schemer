@@ -1,9 +1,6 @@
 import { publicKindByNodeId } from "@/components/game/campaign-adapters";
 import { SHARED_MERCHANT_EVENTS } from "@/lib/content/shared-merchant-events";
 import { THEMES } from "@/lib/content/themes";
-import {
-  rewardForSurvivors,
-} from "@/lib/domain";
 import type {
   ActiveExpeditionContext,
   BaseAdviceOption,
@@ -12,6 +9,7 @@ import type {
   Character,
   CharacterId,
   ClassId,
+  ContractReward,
   DungeonId,
   EventKind,
   GuideRank,
@@ -21,7 +19,6 @@ import type {
   Personality,
   PresentedAdviceOption,
   PromotionEligibility,
-  Reward,
   RiskLevel,
   RuleId,
   ThemeId,
@@ -51,7 +48,7 @@ export interface PublicOfferView {
   readonly dungeonName: string;
   readonly theme: ThemeId;
   readonly riskLevel: RiskLevel;
-  readonly fullSurvivorReward: Reward;
+  readonly fullSurvivorReward: ContractReward;
   readonly lockReason: OfferLockReason | null;
   readonly party: readonly PublicMemberView[];
 }
@@ -130,7 +127,7 @@ function publicOffer(campaign: CampaignState, offer: BoardOffer): PublicOfferVie
     dungeonName: dungeon.name,
     theme: dungeon.theme,
     riskLevel: offer.riskLevel,
-    fullSurvivorReward: rewardForSurvivors(offer.riskLevel, 3),
+    fullSurvivorReward: { ...offer.reward },
     lockReason: offer.lockReason,
     party: publicParty(offer.party.memberIds.map((id) => campaign.pool.byId[id]).filter((member): member is Character => member !== undefined)),
   };

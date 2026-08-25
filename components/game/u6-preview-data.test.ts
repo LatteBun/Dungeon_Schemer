@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ENDING_ORDER } from "@/lib/domain";
 import { U6_PREVIEW_ENTRIES, U6_PREVIEW_IDS } from "./u6-preview-data";
 
+const FUTURE_REWARD_PROPERTY = "next" + "Reward";
+
 describe("U6 프리뷰 데이터", () => {
   it("정산 3종과 엔딩 5종을 모두 담는다", () => {
     expect(U6_PREVIEW_IDS).toHaveLength(8);
@@ -25,28 +27,48 @@ describe("U6 프리뷰 데이터", () => {
   it("전멸 정산이 계약 보상 없음·유품·위험도 상승을 함께 담는다", () => {
     const wipe = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-wipe")?.settlement;
 
-    expect(wipe?.survivors).toBe(0);
+    expect(wipe?.outcome.kind).toBe("wiped");
     expect(wipe?.goldDelta).toBe(0);
     expect(wipe?.relicGold).toBeGreaterThan(0);
     expect(wipe?.reputationDelta).toBeLessThan(0);
-    expect(wipe?.riskAfter).toBe((wipe?.riskBefore ?? 0) + 1);
-    expect(wipe?.nextReward).toEqual({ reputation: 15, gold: 32 });
+    expect(wipe?.dungeonOutcome.kind).toBe("riskIncreased");
+    expect(wipe).not.toHaveProperty(FUTURE_REWARD_PROPERTY);
   });
 
-  it("클리어 정산에는 다음 계약 보상이 없다", () => {
+  it("클리어 정산도 미래 보상 계약을 갖지 않는다", () => {
     const partial = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-partial")?.settlement;
     const promotion = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-promotion")?.settlement;
 
-    expect(partial?.nextReward).toBeNull();
-    expect(promotion?.nextReward).toBeNull();
+    expect(partial).not.toHaveProperty(FUTURE_REWARD_PROPERTY);
+    expect(promotion).not.toHaveProperty(FUTURE_REWARD_PROPERTY);
   });
 
   it("★5 전멸이 아니면 위험도 상한 표시를 하지 않는다", () => {
     const capped = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-promotion")?.settlement;
 
-    expect(capped?.riskBefore).toBe(5);
-    expect(capped?.riskAfter).toBe(5);
-    expect(capped?.riskCapped).toBe(false);
+    expect(capped?.outcome.kind).toBe("cleared");
+    expect(capped?.dungeonOutcome).toEqual({ kind: "cleared" });
+  });
+
+  it("부분 생존 정산은 정복·사망·생존자 신뢰 0을 함께 담는다", () => {
+    const partial = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-partial")?.settlement;
+    if (partial === undefined) throw new Error("부분 생존 프리뷰가 없다");
+
+    expect(partial.outcome.kind).toBe("cleared");
+    expect(partial.dungeonOutcome).toEqual({ kind: "cleared" });
+    expect(partial.members.some((member) => member.diedThisExpedition)).toBe(true);
+    expect(partial.members.some((member) => member.trust.countsTowardCampaign)).toBe(true);
+    expect(partial.trustPressure?.afterCount).toBeGreaterThan(0);
+  });
+
+  it("전멸 정산은 사망자 셋과 위험도 상승을 담는다", () => {
+    const wiped = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-wipe")?.settlement;
+    if (wiped === undefined) throw new Error("전멸 프리뷰가 없다");
+
+    expect(wiped.outcome.kind).toBe("wiped");
+    expect(wiped.members.every((member) => member.diedThisExpedition)).toBe(true);
+    expect(wiped.dungeonOutcome.kind).toBe("riskIncreased");
+    expect(wiped.members.some((member) => member.trust.countsTowardCampaign)).toBe(false);
   });
 
   it("엔딩마다 이유 세 줄과 보고서·결말 항목 넷을 갖춘다", () => {
@@ -63,31 +85,5 @@ describe("U6 프리뷰 데이터", () => {
     const again = await import("./u6-preview-data");
 
     expect(again.U6_PREVIEW_ENTRIES).toEqual(U6_PREVIEW_ENTRIES);
-  });
-});
-
-describe("프리뷰의 피해 줄", () => {
-  /*
-   * 한 번 만들어 모든 변형에 돌려 쓰고 있었다.
-   *
-   * 그러면 전멸 정산에도 "피해 없이 지나갔다" 가 실린다 - 셋이 다 죽었는데.
-   * 프리뷰가 거짓을 말하면 프리뷰를 보고 고친 화면도 거짓을 담는다.
-   */
-  it("전멸 정산이 피해 없다고 말하지 않는다", () => {
-    const wiped = U6_PREVIEW_ENTRIES.find((entry) => entry.settlement?.survivors === 0);
-    if (wiped?.settlement === undefined) throw new Error("전멸 정산 프리뷰가 없다");
-
-    const damage = wiped.settlement.causeChain.find((step) => step.label === "피해")?.detail ?? "";
-
-    expect(damage).not.toBe("피해 없이 지나갔다");
-    expect(damage).toContain("→ 0");
-  });
-
-  it("생존 정산과 전멸 정산의 피해 줄이 다르다", () => {
-    const lines = U6_PREVIEW_ENTRIES
-      .filter((entry) => entry.settlement !== undefined)
-      .map((entry) => entry.settlement!.causeChain.find((step) => step.label === "피해")?.detail);
-
-    expect(new Set(lines).size).toBeGreaterThan(1);
   });
 });

@@ -172,6 +172,34 @@
   background: linear-gradient(90deg, #4d6b3f, #8db56b);
 }
 
+.party-card__effect { margin: 0; font-size: clamp(0.68rem, 0.72cqw, 0.96rem); font-weight: 800; animation: party-card-effect 650ms ease both; }
+.party-card__effect--hp { color: #ef9a83; }
+.party-card__effect--trust { color: #b5da83; }
+@keyframes party-card-effect { from { opacity: 0; transform: translateY(0.28rem); } to { opacity: 1; transform: translateY(0); } }
+
+.party-card__settled-results {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  min-height: clamp(1.12rem, 1.28cqw, 1.72rem);
+  gap: clamp(0.22rem, 0.28cqw, 0.44rem);
+  margin-top: clamp(0.08rem, 0.12cqw, 0.2rem);
+  animation: party-card-effect 650ms ease both;
+}
+
+.party-card__settled-result {
+  padding: clamp(0.08rem, 0.1cqw, 0.16rem) clamp(0.2rem, 0.24cqw, 0.36rem);
+  border: 1px solid currentcolor;
+  border-radius: 0.18rem;
+  background: rgb(12 9 7 / 72%);
+  font-size: clamp(0.62rem, 0.66cqw, 0.88rem);
+  font-weight: 800;
+}
+
+.party-card__settled-result--hp { color: #ef9a83; }
+.party-card__settled-result--trust { color: #b5da83; }
+
 /* 라벨 문구 없이 아이콘과 금액을 붙인다. */
 .party-card__gold {
   display: flex;
@@ -382,3 +410,8 @@
 /* 오른 것과 깎인 것은 색으로 갈린다. 숫자를 읽기 전에 안다. */
 .party-card__net .is-down b { color: #d98b6a; }
 .party-card__net .is-up b { color: #8fc07a; }
+
+.party-card__effect[data-reduced-motion="true"],
+.party-card__settled-results[data-reduced-motion="true"] {
+  animation: none;
+}

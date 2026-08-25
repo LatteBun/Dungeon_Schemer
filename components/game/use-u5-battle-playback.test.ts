@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  advanceU5BattlePlayback,
   nextU5BattleFrameIndex,
   nextU5BattleFrameIndexForLength,
   nextU5BattlePlaybackRate,
+  replayU5BattlePlayback,
+  shouldAdvanceU5BattleFrame,
   u5BattleFrameDurationMs,
   u5BattlePlaybackForSignature,
   u5ReplaySignature,
@@ -23,13 +26,13 @@ describe("u5 battle playback", () => {
 
   it("새 replay signature는 frame만 처음으로 돌린다", () => {
     expect(u5BattlePlaybackForSignature(
-      { signature: "before", frameIndex: 4 },
+      { signature: "before", frameIndex: 4, replayingFromStart: true },
       "after",
-    )).toEqual({ signature: "after", frameIndex: 0 });
+    )).toEqual({ signature: "after", frameIndex: 0, replayingFromStart: false });
   });
 
   it("같은 replay signature는 현재 frame을 유지한다", () => {
-    const playback = { signature: "same", frameIndex: 0 } as const;
+    const playback = { signature: "same", frameIndex: 0, replayingFromStart: false } as const;
 
     expect(u5BattlePlaybackForSignature(playback, "same")).toBe(playback);
   });
@@ -88,6 +91,29 @@ describe("u5 battle playback", () => {
     };
 
     expect(u5ReplaySignature(changed)).not.toBe(u5ReplaySignature(U5_TEST_BATTLE_REPLAY));
+  });
+
+  it("playing이 false면 다음 frame을 예약하지 않는다", () => {
+    expect(shouldAdvanceU5BattleFrame(U5_TEST_BATTLE_REPLAY.frames[0]!, false)).toBe(false);
+    expect(shouldAdvanceU5BattleFrame(U5_TEST_BATTLE_REPLAY.frames[0]!, true)).toBe(true);
+    expect(shouldAdvanceU5BattleFrame(U5_TEST_BATTLE_REPLAY.frames.at(-1)!, true)).toBe(false);
+  });
+
+  it("피드백이 끝난 뒤 다시 보기는 수동 재생 상태로 마지막 frame까지 진행한다", () => {
+    const restarted = replayU5BattlePlayback(
+      { signature: "same", frameIndex: U5_TEST_BATTLE_REPLAY.frames.length - 1, replayingFromStart: false },
+      "same",
+    );
+
+    expect(restarted).toEqual({ signature: "same", frameIndex: 0, replayingFromStart: true });
+    expect(shouldAdvanceU5BattleFrame(U5_TEST_BATTLE_REPLAY.frames[0]!, false, restarted.replayingFromStart))
+      .toBe(true);
+
+    let current = restarted;
+    while (current.frameIndex < U5_TEST_BATTLE_REPLAY.frames.length - 1) {
+      current = advanceU5BattlePlayback(current, "same", U5_TEST_BATTLE_REPLAY.frames.length);
+    }
+    expect(current.replayingFromStart).toBe(false);
   });
 
   it("참가자 표현 정보가 바뀌면 새 replay로 식별한다", () => {

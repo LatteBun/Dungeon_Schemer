@@ -62,14 +62,14 @@ describe("U4 preview data", () => {
     );
   });
 
-  it("dead preview changes exactly one actual party member to dead art", () => {
+  it("dead preview keeps the official live portrait for the deceased member", () => {
     const live = createU4PreviewData({ deadPreview: false });
     const dead = createU4PreviewData({ deadPreview: true });
 
     expect(live.party.every((member) => member.alive)).toBe(true);
     expect(dead.party.filter((member) => !member.alive)).toHaveLength(1);
     expect(dead.party.filter((member) => !member.alive)[0]?.portraitSrc).toContain(
-      "/assets/characters/dead/",
+      "/assets/characters/live/",
     );
   });
 

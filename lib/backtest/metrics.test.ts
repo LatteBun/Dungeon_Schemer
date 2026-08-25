@@ -162,6 +162,23 @@ describe("백테스트 통계", () => {
     expect(metrics.termination).toBeDefined();
   });
 
+  it("aggregates means for resources and promotion counts", () => {
+    const aggregate = aggregateRuns([
+      metric({ finalReputation: 40, finalGold: 20, contractGold: 10, relicGold: 5, cumulativeGold: 15, reputationPromotions: 1, goldPromotions: 0 }),
+      metric({ finalReputation: 60, finalGold: 40, contractGold: 30, relicGold: 15, cumulativeGold: 45, reputationPromotions: 0, goldPromotions: 2 }),
+    ]).combinations["survival@0.7"]!;
+
+    expect(aggregate.means).toMatchObject({
+      finalReputation: 50,
+      finalGold: 30,
+      contractGold: 20,
+      relicGold: 10,
+      cumulativeGold: 30,
+      reputationPromotions: 0.5,
+      goldPromotions: 1,
+    });
+  });
+
   it("성공 실행에 campaign 또는 trace 종료 사유가 없으면 metrics 변환을 거절한다", () => {
     const run = runCampaign({ seed: "metrics-missing-termination", strategy: createStrategy("survival"), accuracy: 0.7 });
     if (!run.ok) throw new Error(`${run.errorKind}: ${run.message}`);

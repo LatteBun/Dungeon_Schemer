@@ -13,14 +13,14 @@ describe("U4TestPage", () => {
     expect((html.match(/data-testid=\"u4-party-member\"/g) ?? [])).toHaveLength(3);
   });
 
-  it("dead=1 switches exactly one preview party member to a dead portrait", async () => {
+  it("dead=1 keeps the official live portrait for the deceased preview member", async () => {
     const page = await U4TestPage({
       searchParams: Promise.resolve({ dead: "1" }),
     });
     const html = renderToStaticMarkup(page);
 
     expect((html.match(/class=\"party-card is-dead\"/g) ?? [])).toHaveLength(1);
-    expect(html).toContain("/assets/characters/dead/");
+    expect(html).toContain("/assets/characters/live/");
     expect(html).toContain("사망");
   });
 });

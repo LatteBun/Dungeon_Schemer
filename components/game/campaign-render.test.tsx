@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CampaignTransition, NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
+import { countLivingZeroTrust } from "@/lib/rules/ending";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
@@ -157,12 +158,14 @@ describe("게시판이 실제 캠페인으로 그려진다", () => {
   it("공고와 계약 조건이 찍힌다", () => {
     const run = driven();
     run.act({ type: "OPEN_BOARD" });
-    const { campaign, context, last } = run.state();
+    const { campaign, last } = run.state();
+    const board = createU3BoardView(campaign, campaign.offers);
+    const notice = board.notices[0]!;
 
     const markup = renderToStaticMarkup(createElement(U3BoardScreen, {
       status: statusFor(campaign, null),
-      board: createU3BoardView(campaign, campaign.offers),
-      selectedOfferId: context.selectedOffer?.id ?? "",
+      board,
+      selectedOfferId: notice.offerId,
       promotion: createU3PromotionView(getGuidePromotionEligibility(campaign), campaign.phase, last?.promotion ?? null),
       onSelectOffer: noop, onContract: noop, onOpenPromotion: noop,
       onCancelPromotion: noop, onConfirmPromotion: noop, onDismissPromotionResult: noop,
@@ -172,6 +175,14 @@ describe("게시판이 실제 캠페인으로 그려진다", () => {
     /* 공고가 하나도 없으면 위 검사는 통과하지만 화면은 비어 있다. */
     expect(markup).toContain(campaign.offers[0]!.dungeonId.length > 0 ? "위험도" : "위험도");
     expect(markup.length).toBeGreaterThan(500);
+    /* Break caught: U3가 공고의 확정 보상 대신 다른 숫자를 렌더링하면 실패한다. */
+    const selectedMarker = markup.indexOf('aria-pressed="true"');
+    const selectedStart = markup.lastIndexOf("<button", selectedMarker);
+    const selectedEnd = markup.indexOf("</button>", selectedMarker);
+    const selectedNoticeMarkup = markup.slice(selectedStart, selectedEnd);
+    expect(selectedMarker).toBeGreaterThan(-1);
+    expect(selectedNoticeMarkup).toContain(`>명성</span>${notice.reputationReward}</span>`);
+    expect(selectedNoticeMarkup).toContain(`>골드</span>${notice.goldReward}</span>`);
   });
 });
 
@@ -274,22 +285,34 @@ describe("진행 화면이 실제 사건으로 그려진다", () => {
 });
 
 describe("정산이 실제 결과로 그려진다", () => {
-  it("원인 사슬 네 칸이 다 찍힌다", () => {
+  it("선택과 판단, 인물별 결과가 다 찍힌다", () => {
     const run = settled();
     const { campaign, last } = run.state();
     const settlement = last!.settlement!;
     const dungeon = campaign.dungeons.find((one) => one.id === settlement.dungeonId);
 
+    const view = createU6SettlementView(campaign, settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider");
     const markup = renderToStaticMarkup(createElement(U6SettlementScreen, {
       status: statusFor(campaign, null),
-      settlement: createU6SettlementView(settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider"),
+      settlement: view,
       onContinue: noop,
     }));
 
     assertClean(markup, "정산");
-    expect(markup).toContain(settlement.causeChain.choice);
-    expect(markup).toContain(settlement.causeChain.reactions);
-    expect(markup).toContain(settlement.causeChain.damage);
+    expect(view.trustPressure?.afterCount ?? 0).toBe(countLivingZeroTrust(campaign));
+    expect(markup).toContain(settlement.causeInputs.choice);
+    expect(markup).toContain(settlement.causeInputs.reactions);
+    expect(markup).not.toContain("<strong>피해</strong>");
+    const changedMember = settlement.memberChanges.find((change) =>
+      change.before.hp !== change.after.hp || change.before.alive !== change.after.alive,
+    );
+    if (changedMember === undefined) throw new Error("피해 또는 사망한 원정대원이 없다");
+    expect(markup).toContain(changedMember.after.name);
+    expect(markup).toContain(
+      changedMember.before.alive && !changedMember.after.alive
+        ? `사망 · HP ${changedMember.before.hp} → ${changedMember.after.hp}`
+        : `HP ${changedMember.before.hp} → ${changedMember.after.hp} / ${changedMember.after.maxHp}`,
+    );
   });
 });
 
@@ -325,17 +348,38 @@ describe("엔딩이 실제 캠페인으로 그려진다", () => {
   });
 });
 
+/*
+ * 싸움이 되는 monster 사건을 만날 때까지 걷는다.
+ *
+ * 예전에는 열 걸음 안에 첫 사건이 나오고 그것이 monster 이기를 기대했다. 게시판이
+ * 캠페인마다 다른 던전을 걸게 되면서 같은 시드가 다른 지도를 주므로, 첫 사건이
+ * 무엇인지에 기대지 않고 monster 를 만날 때까지 지나간다.
+ */
+function walkToMonsterEvent(run: ReturnType<typeof contracted>) {
+  for (let step = 0; step < 40; step += 1) {
+    const active = run.state().context.activeExpedition;
+    if (active === null) break;
+
+    const pending = active.pendingEvent;
+    if (pending !== null) {
+      if (pending.kind === "monster") return pending;
+      run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+      run.act({ type: "ACKNOWLEDGE_OUTCOME" });
+      continue;
+    }
+
+    const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
+    const next = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
+    if (next === undefined) break;
+    run.act({ type: "VISIT_NODE", nodeId: next });
+  }
+  throw new Error("싸움이 되는 사건에 닿지 못했다");
+}
+
 describe("결과 화면이 실제 판정으로 그려진다", () => {
   it("실제 일반전 결과는 완료 전까지 우측 하단에서 전투만 건너뛴다", () => {
     const run = contracted("party-roster-1");
-    for (let step = 0; step < 10; step += 1) {
-      const active = run.state().context.activeExpedition!;
-      if (active.pendingEvent !== null) break;
-      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
-      run.act({ type: "VISIT_NODE", nodeId: here.nextNodeIds[0]! });
-    }
-    const event = run.state().context.activeExpedition!.pendingEvent!;
-    if (event.kind !== "monster") throw new Error("monster 사건 fixture가 아니다");
+    const event = walkToMonsterEvent(run);
     run.act({ type: "CHOOSE_ADVICE", adviceId: event.advice[1]!.id });
 
     const outcome = run.state().context.activeExpedition!.pendingOutcome!;
@@ -356,22 +400,16 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
       ),
     ));
 
-    expect(markup).toContain("전투 건너뛰기");
+    expect(markup).toContain("u5-feedback-beat");
+    expect(markup).not.toContain("전투 건너뛰기");
     expect(markup).not.toContain("지도로 돌아간다");
   });
 
   it("전투 전멸 뒤에도 정산보다 결과를 먼저 그린다", () => {
     const run = contracted("party-roster-1");
-    for (let step = 0; step < 10; step += 1) {
-      const active = run.state().context.activeExpedition!;
-      if (active.pendingEvent !== null) break;
-      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
-      run.act({ type: "VISIT_NODE", nodeId: here.nextNodeIds[0]! });
-    }
+    const event = walkToMonsterEvent(run);
     const before = run.state();
     const active = before.context.activeExpedition!;
-    const event = active.pendingEvent!;
-    if (event.kind !== "monster") throw new Error("monster 사건 fixture가 아니다");
     const dungeon = before.campaign.dungeons.find((candidate) => candidate.id === active.expedition.dungeonId)!;
     run.store.setState({
       context: {
@@ -406,7 +444,7 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
       ),
     ));
 
-    expect(markup).toContain("u5-outcome");
+    expect(markup).toContain("u5-feedback-beat");
     expect(markup).not.toContain("u5-battle-settle");
   });
 
@@ -429,9 +467,9 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
       progress: progressViewFor(campaign, active)!,
       log: logFor(campaign, active),
       ecology: ecologyViewFor(campaign, active),
-      battleReplay: eventReplayFor(campaign, active) ?? undefined,
       playbackRate: 1,
       onTogglePlaybackRate: noop,
+      battleReplay: eventReplayFor(campaign, active) ?? undefined,
       onAcknowledge: noop,
     }));
 

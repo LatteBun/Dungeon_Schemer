@@ -39,7 +39,7 @@ describe("U5BattleScene", () => {
     expect(html).toContain(">×1</button>");
   });
 
-  it("complete frame은 속도 토글과 다시 보기를 함께 제공한다", () => {
+  it("complete frame은 ×2 속도 토글과 다시 보기를 함께 제공한다", () => {
     const html = renderToStaticMarkup(createElement(U5BattleScene, {
       replay,
       frame: replay.frames.at(-1)!,

@@ -104,6 +104,22 @@
 - [전역 오디오·퀵 메뉴 설계](superpowers/specs/2026-08-26-sbh3821-global-audio-menu-design.md): 기본 OFF인 공통 BGM·UI 효과음, 세션 전투 속도, 전역 퀵 메뉴와 캠페인을 보존하는 업적 오버레이의 앱 공통 계약
 - [전역 오디오·퀵 메뉴 구현 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu.md): 설정 저장·결정적 WAV 생성·전역 재생기·업적 오버레이·브라우저 회귀를 순차 구현하는 테스트 우선 계획
 - [전역 오디오·퀵 메뉴 후속 개선 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu-follow-up.md): 세션 전투 속도 공유, 세로 점 메뉴 재구성, 승인된 `어두운 길드의 밤 1B` BGM과 낮춘 조작음 믹스를 적용하는 테스트 우선 계획
+- [고정 캐릭터 로스터 성별·이름 정비 설계](superpowers/specs/2026-08-26-lattebun-character-roster-gender-names-design.md): 성별 15명씩과 유럽 판타지풍 이름 30개를 확정하고 도메인·UI 비전파 경계를 정의한 콘텐츠 계약
+- [고정 캐릭터 로스터 성별·이름 정비 구현 계획](superpowers/plans/2026-08-26-lattebun-character-roster-gender-names.md): 로스터 테스트·콘텐츠·공식 설정집·live 전용 자산 회귀를 테스트 우선으로 반영하는 실행 순서
+- [U5 진행 기록 내부 스크롤 설계](superpowers/specs/2026-08-26-lattebun-u5-progress-log-scroll-design.md): 진행 기록과 생태 내용이 콘솔 높이를 넘을 때 필터는 고정하고 내용만 스크롤하며, 평소 숨고 hover·focus에서만 드러나는 얇은 스크롤바 계약
+- [U5 진행 기록 내부 스크롤 구현 계획](superpowers/plans/2026-08-26-lattebun-u5-progress-log-scroll.md): 접근성·CSS 실패 계약부터 긴 기록의 native 스크롤과 hover·focus scrollbar 브라우저 검증까지의 테스트 우선 실행 순서
+- [캠페인 기본 진입 무작위 시드 설계](superpowers/specs/2026-08-26-lattebun-campaign-random-seed-design.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 탐색 계약
+- [캠페인 기본 진입 무작위 시드 구현 계획](superpowers/plans/2026-08-26-lattebun-campaign-random-seed.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 테스트 우선 실행 순서
+- [던전 계약 보상 랜덤화 설계](superpowers/specs/2026-08-26-lattebun-dungeon-reward-randomization-design.md): 위험도별 기대값을 유지하는 독립 균등 보상, 공고 확정·계약 snapshot·정산 소비와 미래 보상 제거 계약
+- [던전 계약 보상 랜덤화 구현 계획](superpowers/plans/2026-08-26-lattebun-dungeon-reward-randomization.md): 자원·승급 기준선부터 도메인 범위, 공고 생성, U3·정산·U6 전환, 통합 회귀와 50·100·200시드 재측정까지의 테스트 우선 순서
+- [ScreenFit 전체 화면 외부 상태 구독 설계](superpowers/specs/2026-08-26-lattebun-screen-fit-external-store-design.md): 모바일 세로 안내의 전체 화면 가능 여부를 브라우저 외부 상태로 구독해 Effect 동기 상태 갱신과 ESLint 오류를 제거하는 기술 계약
+- [ScreenFit 전체 화면 외부 상태 구독 구현 계획](superpowers/plans/2026-08-26-lattebun-screen-fit-external-store.md): fullscreenchange 구독, SSR snapshot, React Hooks lint 회귀를 테스트 우선으로 구현·검증하는 순서
+- [U5 전투 피드백 시퀀스 설계](superpowers/specs/2026-08-25-lattebun-u5-combat-feedback-sequence-design.md): 조언 선택부터 일반전·보스전, 우측 카드 HP 동기화, 사후 대사와 신뢰 변화까지 결과를 인과 순서로 공개하는 UI 계약
+- [U5 전투 피드백 시퀀스 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-combat-feedback-sequence.md): 표시 상태 머신, 전투 프레임과 우측 카드 HP 동기화, 사후 대사 확인과 신뢰 공개를 테스트 우선으로 연결하는 구현 순서
+- [U5 행동/조언 헤더와 현재 상황 패널 가독성 개선 설계](superpowers/specs/2026-08-25-lattebun-u5-console-situation-readability-design.md): 행동·조언 탭과 현재 상황 패널을 금속 명패 계열로 맞추고, 패널의 잔여 높이 확장·좌측 상단 정렬·글자 확대와 조언 카드 하단 정렬을 정의하는 UI 경계
+- [U5 행동/조언 헤더와 현재 상황 패널 가독성 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-console-situation-readability.md): JSX·CSS 계약, FHD 브라우저 containment, 문서 색인을 테스트 우선으로 구현·검증하는 순서
+- [U5 콘솔 금속 명패 통일과 조언 카드 하단 정렬 구현 계획](superpowers/plans/2026-08-26-lattebun-u5-console-situation-readability-refinement.md): PR #180 이후 카드 하단 정렬, 상황 글자 확대와 탭·패널 금속 표면을 검증하는 후속 TDD 순서
+- [U5 현재 상황 패널 확장과 타이포그래피 2차 개선 구현 계획](superpowers/plans/2026-08-26-lattebun-u5-console-situation-panel-expansion.md): 패널의 잔여 높이 확장, 좌측 상단 정렬과 탭·제목·본문 추가 확대를 FHD에서 검증하는 후속 TDD 순서
 - [U5 조언 카드 번호 제거 설계](superpowers/specs/2026-08-25-lattebun-u5-advice-number-removal-design.md): 조언 카드 세 장의 숫자 배지만 제거하고 내부 슬롯 선택 계약을 유지하는 UI 변경
 - [U5 조언 카드 번호 제거 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-advice-number-removal.md): 조언 카드의 숫자 배지를 테스트 우선으로 제거하고 내부 슬롯 선택 계약을 유지하는 구현 순서
 - [보스전 정산 CTA 게이트 설계](superpowers/specs/2026-08-25-lattebun-boss-battle-exit-gate-design.md): 보스전 재생 중 정산을 잠그고 우측 하단 CTA를 `전투 건너뛰기`에서 `정산으로`로 전환하는 계약
@@ -112,6 +128,8 @@
 - [진행 화면 UX 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-progress-screen-ux.md): 전투 재생 제어 분리, 일반전 CTA 게이트, 비전투 파티와 A1 카드의 테스트 우선 구현 순서
 - [U6 정산 복귀 CTA 크기 개선 설계](superpowers/specs/2026-08-25-lattebun-u6-settlement-continue-size-design.md): 공통 다음 단계 CTA 크기를 유지하면서 정산 복귀 버튼을 내용 폭으로 줄이는 배치 기준
 - [U6 정산 복귀 CTA 크기 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u6-settlement-continue-size.md): CSS 계약 테스트부터 내용 폭 우측 정렬과 실제 정산 화면 검증까지의 테스트 우선 순서
+- [U6 정산 정보 위계 개선 설계](superpowers/specs/2026-08-25-lattebun-u6-settlement-information-hierarchy-design.md): 정복·전멸, 인물별 영구 상태, 신뢰 0 누적, 캠페인 변화를 중복 없이 보여주는 정산 화면 계약
+- [U6 정산 정보 위계 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u6-settlement-information-hierarchy.md): 공식 문서부터 ViewModel, 화면, 도메인 정리, 통합 검증까지의 테스트 우선 구현 순서
 - [U4 지도 우측 패널 순서 개선 설계](superpowers/specs/2026-08-25-lattebun-u4-map-right-panel-order-design.md): 계약 전 답사를 선택 지점 위로 옮기고 이동 CTA를 우측 최하단에 고정하는 배치 기준
 - [U4 지도 우측 패널 순서 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u4-map-right-panel-order.md): DOM 읽기 순서와 3행 CSS 계약을 테스트 우선으로 변경하고 실제 캠페인 지도에서 확인하는 순서
 - [브라우저 안정성 스모크 테스트 설계](superpowers/specs/2026-08-25-lattebun-browser-stability-smoke-design.md): 공개 경로·첫 사건 클릭 흐름·공식 viewport의 Chromium 회귀 계약
@@ -179,3 +197,9 @@
 - [C1 캠페인 초기화·게시판 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-c1-campaign-initialization-board.md)
 - [C1·F1·F2 통합 검증 하네스 설계](superpowers/specs/2026-08-14-sanghwan-yoo-c1-f1-f2-integration-harness-design.md)
 - [F1·F2·C1 통합 검증 하네스 구현 계획](superpowers/plans/2026-08-14-sanghwan-yoo-f1-f2-c1-integration-harness.md)
+# 최신 캐릭터 콘텐츠 계약
+
+캐릭터 정체성과 초상화는 [캐릭터 풀과 월드 턴](systems/CHARACTER_POOL_AND_WORLDTURN.md) 및
+[캐릭터 UI 자산](experience/CHARACTER_UI_ASSETS.md)을 기준으로 한다. 구현 설계와 실행 순서는
+[고정 로스터 설계](superpowers/specs/2026-08-26-lattebun-character-fixed-roster-portraits-design.md),
+[구현 계획](superpowers/plans/2026-08-26-lattebun-character-fixed-roster-portraits.md)에 기록한다.

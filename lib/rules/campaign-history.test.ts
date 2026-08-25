@@ -81,13 +81,10 @@ function settlementFixture(expeditionId = "exp-1"): SettlementResult {
     riskBefore: 3,
     riskAfter: 4,
     riskCapped: false,
-    nextReward: { reputation: 10, gold: 30 },
-    causeChain: {
+    causeInputs: {
       choice: "choice",
       reactions: "reactions",
       damage: "damage",
-      economy: "economy",
-      campaignChange: "campaignChange",
     },
   };
 }
@@ -414,6 +411,7 @@ describe("C7·C8-A·C8-B composition boundary", () => {
       expeditionId: active.expeditionId,
       dungeonId: active.expedition.dungeonId,
       contractRisk: active.expedition.riskLevel,
+      contractReward: { ...active.offer.reward },
       party: active.expedition.party,
       finalMembers: membersFor(active.offer, campaign),
       status: "cleared",

@@ -13,7 +13,11 @@ import {
 } from "@/lib/domain";
 import { initializeCampaign } from "./campaign-init";
 import { createBoardOffers } from "./board";
-import { createExpeditionForOffer, transitionCampaign } from "./campaign-transition";
+import {
+  createExpeditionForOffer,
+  createSettlementSnapshotFor,
+  transitionCampaign,
+} from "./campaign-transition";
 import { createRng } from "@/lib/rng";
 
 function membersFor(offer: BoardOffer, campaign: CampaignState): Character[] {
@@ -41,19 +45,21 @@ function startAction(
 function snapshotFor(
   campaign: CampaignState,
   context: CampaignTransitionContext,
-  expeditionId = "exp-c7-01",
 ): SettlementSnapshot {
   const active = context.activeExpedition;
   if (active === null) throw new Error("active expedition fixture is missing");
-  return {
-    expeditionId,
-    dungeonId: active.expedition.dungeonId,
-    contractRisk: active.expedition.riskLevel,
-    party: active.expedition.party,
-    finalMembers: membersFor(active.offer, campaign),
-    status: "cleared",
-    causeInputs: { choice: "선택", reactions: "반응", damage: "피해" },
-  };
+  const finalMembers = membersFor(active.offer, campaign);
+  return createSettlementSnapshotFor(campaign, {
+    ...active,
+    expedition: {
+      ...active.expedition,
+      result: {
+        status: "cleared",
+        survivorIds: finalMembers.map((member) => member.id),
+      },
+    },
+    partyMembers: finalMembers,
+  });
 }
 
 function openBoard(campaign = initializeCampaign("c7-transition")) {
@@ -172,6 +178,8 @@ describe("C7 캠페인 전이", () => {
     expect(expedition.campaign.phase).toBe("expedition");
     expect(expedition.context.selectedOffer).toBeNull();
     expect(expedition.context.activeExpedition?.offer.id).toBe(offer!.id);
+    expect(expedition.context.activeExpedition?.offer.reward).toEqual(offer!.reward);
+    expect(expedition.context.activeExpedition?.offer.reward).not.toBe(offer!.reward);
   });
 
   it("정산은 C4를 한 번 적용하고 C8 통계에는 기록하지 않는다", () => {
@@ -185,16 +193,41 @@ describe("C7 캠페인 전이", () => {
       contract.context,
       startAction(contract.campaign, contract.context),
     );
+    const snapshot = snapshotFor(expedition.campaign, expedition.context);
+    expect(snapshot.finalMembers).toHaveLength(3);
+    expect(snapshot.finalMembers.every((member) => member.alive)).toBe(true);
+    /* Break caught: 정산 snapshot이 활성 공고의 확정 보상과 갈라지면 실패한다. */
+    expect(snapshot.contractReward).toEqual(expedition.context.activeExpedition?.offer.reward);
+
     const result = transitionCampaign(
       expedition.campaign,
       expedition.context,
-      { type: "COMPLETE_EXPEDITION", snapshot: snapshotFor(expedition.campaign, expedition.context) },
+      { type: "COMPLETE_EXPEDITION", snapshot },
     );
 
     expect(result.campaign.phase).toBe("settlement");
     expect(result.campaign.settledExpeditionIds).toEqual(["exp-c7-01"]);
     expect(result.campaign.statistics).toEqual(createCampaignStatistics());
     expect(result.settlement?.expeditionId).toBe("exp-c7-01");
+    /* Break caught: 세 명 생존 정산이 계약 확정값을 다시 계산하거나 바꾸면 실패한다. */
+    expect(result.settlement?.reputationDelta).toBe(snapshot.contractReward.reputation);
+    expect(result.settlement?.goldDelta).toBe(snapshot.contractReward.gold);
+  });
+
+  it("활성 공고와 다른 계약 보상 snapshot을 거부한다", () => {
+    const expedition = expeditionFlow("c7-reward-mismatch").expedition;
+    const snapshot = snapshotFor(expedition.campaign, expedition.context);
+
+    expect(() => transitionCampaign(expedition.campaign, expedition.context, {
+      type: "COMPLETE_EXPEDITION",
+      snapshot: {
+        ...snapshot,
+        contractReward: {
+          ...snapshot.contractReward,
+          reputation: snapshot.contractReward.reputation + 1,
+        },
+      },
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
   });
 
   it("잠긴 공고·없는 공고와 계약 밖 원정은 INVALID_TRANSITION이다", () => {
@@ -445,5 +478,66 @@ describe("C7 캠페인 전이", () => {
     expect(completed.campaign.phase).toBe("ended");
     expect(completed.campaign.ending?.kind).toBe(kind);
     expect(completed.ending?.kind).toBe(kind);
+  });
+});
+
+/*
+ * 공고를 고를 수 없는 두 갈래는 서로 다른 일이다.
+ *
+ * 게시판에 없는 공고를 고르는 것은 정상 조작으로는 일어나지 않는다 — 화면이 낡은
+ * 목록을 들고 있거나 규칙이 틀린 것이다. 등급이 모자란 공고를 누르는 것은 길잡이가
+ * 늘 하는 일이다. 예전에는 둘을 「선택할 수 있는 공고가 없다」 로 묶어 말했는데,
+ * 뒤쪽에는 사실이 아니다 — 고를 수 있는 공고는 옆에 남아 있다.
+ */
+describe("공고를 고를 수 없을 때 무엇을 말하나", () => {
+  const reasonOf = (run: () => unknown): string => {
+    try {
+      run();
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
+    }
+    throw new Error("거부되지 않았다");
+  };
+
+  it("등급이 모자라면 무엇이 모자란지 말한다", () => {
+    const board = openBoard();
+    const locked: BoardOffer = { ...board.campaign.offers[0]!, riskLevel: 4, lockReason: "rankTooLow" };
+    const campaign = { ...board.campaign, offers: [locked] };
+
+    const reason = reasonOf(() => transitionCampaign(campaign, board.context, {
+      type: "SELECT_CONTRACT", offerId: locked.id,
+    }));
+
+    expect(reason).toContain(campaign.rank);
+    expect(reason).toContain("★4");
+    /* 고를 수 있는 공고가 없다고 말하지 않는다. 있기 때문이다. */
+    expect(reason).not.toContain("공고가 없다");
+  });
+
+  it("게시판에 없는 공고는 그렇게 말한다", () => {
+    const board = openBoard();
+
+    const reason = reasonOf(() => transitionCampaign(board.campaign, board.context, {
+      type: "SELECT_CONTRACT", offerId: "offer-missing" as BoardOffer["id"],
+    }));
+
+    expect(reason).toContain("게시판에 없는");
+    expect(reason).not.toContain("★");
+  });
+
+  it("두 갈래가 서로 다른 말을 한다", () => {
+    // 같은 말을 하면 어느 쪽인지 알 수 없어 고칠 곳도 찾지 못한다.
+    const board = openBoard();
+    const locked: BoardOffer = { ...board.campaign.offers[0]!, riskLevel: 5, lockReason: "rankTooLow" };
+
+    const lockedReason = reasonOf(() => transitionCampaign(
+      { ...board.campaign, offers: [locked] }, board.context,
+      { type: "SELECT_CONTRACT", offerId: locked.id },
+    ));
+    const missingReason = reasonOf(() => transitionCampaign(board.campaign, board.context, {
+      type: "SELECT_CONTRACT", offerId: "offer-missing" as BoardOffer["id"],
+    }));
+
+    expect(lockedReason).not.toBe(missingReason);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
-import { createBoardOffers } from "@/lib/rules/board";
-import { canDeploy } from "@/lib/domain";
+import { createBoardOffers, rollContractReward } from "@/lib/rules/board";
+import { canDeploy, isContractRewardInRange } from "@/lib/domain";
 import type {
   CampaignState,
   Character,
@@ -63,11 +63,23 @@ function woundMember(state: CampaignState, index: number): CampaignState {
 }
 
 describe("createBoardOffers", () => {
-  it("초기 C급에서 위험도 높은 네 ★2와 시드로 정한 ★1을 게시한다", () => {
+  it("초기 C급에서 갈 수 있는 던전 다섯을 게시한다", () => {
+    /*
+     * 예전에는 `[2, 2, 2, 2, 1]` 을 고정으로 요구했다 — 갈 수 있는 것 중 위험도가
+     * 높은 쪽부터 채우던 시절의 계약이다. 그 규칙 때문에 등급 C 의 일곱 중 ★2 넷이
+     * 언제나 먼저 차고 남은 한 칸만 ★1 이 돌아가며 채웠다. 시드 예순 판에서 서로
+     * 다른 조합이 세 가지뿐이라, 어느 캠페인을 시작해도 같은 게시판을 봤다.
+     *
+     * 이제 갈 수 있는 것 중에서는 무엇이 걸릴지 정하지 않는다. 다섯 칸이 차는
+     * 것과 등급을 넘지 않는 것만 남긴다.
+     */
     const offers = createBoardOffers(initializeCampaign("c2-board"));
 
     expect(offers).toHaveLength(5);
-    expect(offers.map((offer) => offer.riskLevel)).toEqual([2, 2, 2, 2, 1]);
+    for (const offer of offers) {
+      expect(offer.riskLevel).toBeLessThanOrEqual(2);
+      expect(offer.lockReason).toBeNull();
+    }
     expect(offers.every((offer) => offer.id.startsWith("offer-0-"))).toBe(true);
   });
 
@@ -91,9 +103,48 @@ describe("createBoardOffers", () => {
     expect(second).toEqual(first);
     expect(second).not.toBe(first);
     expect(second[0]).not.toBe(first[0]);
+    expect(second[0]?.reward).not.toBe(first[0]?.reward);
     expect(second[0].party).not.toBe(first[0].party);
     expect(second[0].party.memberIds).not.toBe(first[0].party.memberIds);
     expect(state.offers).toEqual([]);
+  });
+
+  it("명성과 골드를 각자 범위에서 두 번의 독립 추첨한다", () => {
+    const calls: Array<readonly [number, number]> = [];
+    const rng = {
+      int(min: number, max: number) {
+        calls.push([min, max]);
+        return calls.length === 1 ? max : min;
+      },
+    };
+
+    expect(rollContractReward(3, rng)).toEqual({ reputation: 17, gold: 27 });
+    expect(calls).toEqual([[13, 17], [27, 37]]);
+  });
+
+  it("모든 공고 보상은 범위 내이고 같은 입력에서 재현된다", () => {
+    const state = initializeCampaign("offer-reward-repro");
+    const first = createBoardOffers(state);
+    const second = createBoardOffers(state);
+
+    expect(second.map((offer) => offer.reward)).toEqual(first.map((offer) => offer.reward));
+    for (const offer of first) {
+      expect(isContractRewardInRange(offer.riskLevel, offer.reward)).toBe(true);
+    }
+  });
+
+  it("잠금 공고도 고정 보상을 가진다", () => {
+    const initial = initializeCampaign("offer-reward-locked");
+    const state = {
+      ...initial,
+      dungeons: initial.dungeons.map((dungeon) => dungeon.riskLevel <= 2
+        ? { ...dungeon, status: "cleared" as const }
+        : dungeon),
+    };
+    const offers = createBoardOffers(state);
+
+    expect(offers.every((offer) => offer.lockReason === "rankTooLow")).toBe(true);
+    expect(offers.every((offer) => isContractRewardInRange(offer.riskLevel, offer.reward))).toBe(true);
   });
 
   it("한 게시판의 모든 공고는 서로 다른 직업 3인과 서로 다른 캐릭터를 가진다", () => {
@@ -133,6 +184,47 @@ describe("createBoardOffers", () => {
     expect(offers).toHaveLength(5);
     expect(offers.every((offer) => offer.lockReason === "rankTooLow")).toBe(true);
     expect(offers.map((offer) => offer.riskLevel)).toEqual([3, 3, 3, 3, 4]);
+  });
+
+  it("승급으로 공고 구성이 바뀌어도 공통 던전 보상은 같다", () => {
+    const state = initializeCampaign("offer-reward-promotion");
+    const first = createBoardOffers(state);
+    const promoted = createBoardOffers({ ...state, rank: "B" });
+    let commonDungeonCount = 0;
+
+    for (const offer of first) {
+      const sameDungeon = promoted.find((candidate) => candidate.dungeonId === offer.dungeonId);
+      if (sameDungeon !== undefined) {
+        commonDungeonCount += 1;
+        expect(sameDungeon.reward).toEqual(offer.reward);
+      }
+    }
+
+    expect(commonDungeonCount).toBeGreaterThan(0);
+  });
+
+  it("다음 세계 턴의 위험도 변경은 새 위험도 범위의 보상을 만든다", () => {
+    const state = initializeCampaign("offer-reward-risk-change");
+    const target = state.dungeons.find((dungeon) => dungeon.riskLevel === 2)!;
+    const currentState = {
+      ...state,
+      dungeons: state.dungeons.map((dungeon) => dungeon.id === target.id
+        ? { ...dungeon, status: "unexplored" as const, riskLevel: 2 as const }
+        : { ...dungeon, status: "cleared" as const }),
+    };
+    const currentOffer = createBoardOffers(currentState)[0]!;
+    const nextState = {
+      ...currentState,
+      worldTurn: currentState.worldTurn + 1,
+      dungeons: currentState.dungeons.map((dungeon) => dungeon.id === target.id
+        ? { ...dungeon, riskLevel: 3 as const }
+        : dungeon),
+    };
+    const nextOffer = createBoardOffers(nextState)[0]!;
+
+    expect(isContractRewardInRange(2, currentOffer.reward)).toBe(true);
+    expect(isContractRewardInRange(3, nextOffer.reward)).toBe(true);
+    expect(nextOffer.reward).not.toEqual(currentOffer.reward);
   });
 
   it("직업 분포가 달라도 최대한 많은 완전 3인 파티만 만든다", () => {
@@ -196,5 +288,54 @@ describe("createBoardOffers", () => {
 
     expect(state).toEqual(before);
     expect(canDeploy(state.pool.byId[state.pool.order[0]])).toBe(true);
+  });
+});
+
+/*
+ * 캠페인마다 다른 게시판을 본다.
+ *
+ * 예전에는 갈 수 있는 것 중 위험도가 높은 쪽부터 채웠다. 등급 C 에서 갈 수 있는
+ * 일곱 중 ★2 가 넷이라 그 넷이 언제나 먼저 차고, 남은 한 칸만 ★1 셋이 돌아가며
+ * 채웠다 — 시드 예순 판에서 서로 다른 조합이 세 가지뿐이었다.
+ */
+describe("첫 게시판이 캠페인마다 다르다", () => {
+  const firstBoard = (seed: string): readonly string[] => {
+    const campaign = initializeCampaign(seed);
+    return createBoardOffers(campaign).map((offer) => String(offer.dungeonId)).sort();
+  };
+
+  const seeds = Array.from({ length: 40 }, (_, index) => `board-variety-${index}`);
+
+  it("같은 시드는 같은 게시판을 낸다", () => {
+    expect(firstBoard("board-variety-0")).toEqual(firstBoard("board-variety-0"));
+  });
+
+  it("조합이 여러 가지로 나온다", () => {
+    /* 셋뿐이던 시절을 되돌아가지 않게, 넉넉한 하한을 둔다. */
+    const combinations = new Set(seeds.map((seed) => firstBoard(seed).join("|")));
+
+    expect(combinations.size).toBeGreaterThan(8);
+  });
+
+  it("어느 던전도 매번 걸리지는 않는다", () => {
+    /*
+     * 예전에는 ★2 넷이 100% 로 걸렸다. 한 던전이 모든 캠페인에 나오면 그 던전은
+     * 캠페인의 일부가 아니라 배경이 된다.
+     */
+    const counts = new Map<string, number>();
+    for (const seed of seeds) {
+      for (const id of firstBoard(seed)) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+
+    const always = [...counts].filter(([, count]) => count === seeds.length);
+    expect(always.map(([id]) => id)).toEqual([]);
+  });
+
+  it("갈 수 있는 던전만 고른다", () => {
+    // 섞는 것은 차례이지 자격이 아니다. 등급을 넘는 던전이 열린 채로 걸리면 안 된다.
+    const campaign = initializeCampaign("board-variety-0");
+    for (const offer of createBoardOffers(campaign)) {
+      if (offer.lockReason === null) expect(offer.riskLevel).toBeLessThanOrEqual(2);
+    }
   });
 });
