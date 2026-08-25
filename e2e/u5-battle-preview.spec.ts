@@ -27,7 +27,7 @@ test.describe("U5-2 전투 프리뷰", () => {
     await expectPlaybackControls("E4 실제 보스전", page);
   });
 
-  test("속도는 다시 보기에는 남고 다른 전투에는 초기화된다", async ({ page }) => {
+  test("속도는 같은 원정의 다시 보기와 다음 전투에 남는다", async ({ page }) => {
     const failures = watchBrowserErrors(page);
     await page.goto("/u5-2-test");
 
@@ -45,8 +45,9 @@ test.describe("U5-2 전투 프리뷰", () => {
     await expect(speed).toHaveText("×2");
 
     await page.getByRole("button", { name: "E4 실제 보스전" }).click();
-    await expect(speed).toHaveText("×1");
-    await expect(speed).toHaveAttribute("aria-pressed", "false");
+    await expect(speed).toHaveText("×2");
+    await expect(speed).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("u5-battle-scene")).toHaveAttribute("data-playback-rate", "2");
     expectNoBrowserErrors(failures, "U5-2 speed lifecycle");
   });
 
