@@ -10,17 +10,18 @@
 2. [탐험 시퀀스](expedition-sequence.md): 경로, 조언 선택, 사건 결과와 순차 턴제 보스전 기록
 3. [캠페인 상태 전이](campaign-state.md): 월드턴과 엔딩 5종의 판정 우선순위
 4. [탐험 상태 전이](expedition-state.md): 공식 단계와 조건부·조기 전이
-5. [대표 화면](screens.md): 인트로부터 엔딩까지 화면 일곱 장의 실제 캡처
+5. [대표 화면](screens.md): 캠페인 화면 일곱 장과 메타 화면 두 장의 실제 캡처
 
 > 상태·시퀀스 4장의 SVG·PNG는 D7 산출물로 최신 규칙에 맞게 재생성했다.
-> 대표 화면 6장과 전체 모음은 남은 작업인 D8에서 재작업한다.
+> 대표 화면은 캠페인 일곱 장과 메타 두 장이다. 캠페인 전체 모음은 D8 산출물이고,
+> 메타 두 장은 실제 공개 라우트의 1920×1080 캡처다.
 
 ## 한눈에 보기
 
-[![대표 화면 전체 모음](png/screen-overview.png)](png/screen-overview.png)
+[![캠페인 대표 화면 전체 모음](png/screen-overview.png)](png/screen-overview.png)
 
-전체 모음은 탐색용이다. 글자와 세부 상태를 확인할 때는
-[개별 화면](screens.md)을 사용한다.
+전체 모음은 캠페인 탐색용이다. 메인 메뉴·업적 기록과 각 캠페인 화면의 글자와
+세부 상태를 확인할 때는 [개별 화면](screens.md)을 사용한다.
 
 ## 이미지 형식
 
@@ -35,6 +36,8 @@
 | 캠페인 상태 전이 | [열기](svg/campaign-state.svg) | [열기](png/campaign-state.png) |
 | 탐험 상태 전이 | [열기](svg/expedition-state.svg) | [열기](png/expedition-state.png) |
 | 대표 화면 전체 모음 | — | [열기](png/screen-overview.png) |
+| 메인 메뉴 | — | [열기](png/screen-main-menu.png) |
+| 길잡이 업적 기록 | — | [열기](png/screen-achievements.png) |
 
 ## 해석 원칙
 

@@ -98,3 +98,49 @@ describe("createU5BattleReplay", () => {
     expect(() => createU5BattleReplay(invalidInput)).toThrowError(/U5 전투 replay/);
   });
 });
+
+/*
+ * 다시 보기는 처음부터 다시 산다.
+ *
+ * 재생은 이미 끝난 전투를 되짚는 것이라, 마지막 결과를 알고 있다. 그 앎이
+ * 앞쪽 프레임으로 새면 죽을 사람이 처음부터 죽은 채로 서 있게 된다. 어느
+ * 프레임에서든 쓰러진 표시는 그 프레임의 HP가 0일 때만 붙어야 한다.
+ */
+describe("재생 프레임의 생사 표시", () => {
+  it("HP가 0이 되기 전에는 어느 프레임도 쓰러졌다고 하지 않는다", () => {
+    const replay = createU5BattleReplay(input());
+
+    const early: string[] = [];
+    for (const [index, frame] of replay.frames.entries()) {
+      for (const id of frame.defeatedParticipantIds) {
+        const hp = frame.hpByParticipantId[id];
+        if (hp !== 0) early.push(`frame ${index}(${frame.phase}) ${id} HP ${hp}`);
+      }
+    }
+    expect(early).toEqual([]);
+  });
+
+  it("HP가 0인 프레임은 반드시 쓰러졌다고 한다", () => {
+    const replay = createU5BattleReplay(input());
+
+    const missed: string[] = [];
+    for (const [index, frame] of replay.frames.entries()) {
+      for (const [id, hp] of Object.entries(frame.hpByParticipantId)) {
+        if (hp === 0 && !frame.defeatedParticipantIds.includes(id)) {
+          missed.push(`frame ${index}(${frame.phase}) ${id}`);
+        }
+      }
+    }
+    expect(missed).toEqual([]);
+  });
+
+  it("첫 프레임에서는 아무도 쓰러져 있지 않고 HP가 온전하다", () => {
+    const replay = createU5BattleReplay(input());
+    const first = replay.frames[0]!;
+
+    expect(first.defeatedParticipantIds).toEqual([]);
+    for (const participant of replay.participants) {
+      expect(first.hpByParticipantId[participant.id], participant.id).toBe(participant.initialHp);
+    }
+  });
+});
