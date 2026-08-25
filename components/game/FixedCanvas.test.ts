@@ -52,7 +52,16 @@ function uiSources(): Array<{ name: string; source: string }> {
 
 describe("16:9 고정 캔버스", () => {
   it("루트 글꼴 크기가 창에 맞춘 축척을 만든다", () => {
-    expect(css("globals.css")).toContain("min(100vw / 120, 100dvh / 67.5)");
+    const sheet = css("globals.css");
+
+    /*
+     * 두 줄이다. 앞은 `dvh` 를 모르는 브라우저가 읽는 대비이고, 뒤는 지금 보이는
+     * 높이와 가려지지 않는 폭으로 재는 본 줄이다. 앞 줄이 빠지면 뒤 줄을 모르는
+     * 브라우저에서 글자 크기가 기본값으로 돌아가 판이 화면 밖으로 부푼다.
+     */
+    expect(sheet).toContain("min(100vw / 120, 100vh / 67.5)");
+    expect(sheet).toContain("100dvw - env(safe-area-inset-left");
+    expect(sheet).toContain("100dvh - env(safe-area-inset-top");
   });
 
   it("캔버스는 1920x1080 비율의 크기 컨테이너다", () => {
@@ -123,9 +132,10 @@ describe("16:9 고정 캔버스", () => {
   });
 
   it("크기 계산은 창이 아니라 캔버스를 기준으로 한다", () => {
-    const scale = "min(100vw / 120, 100dvh / 67.5)";
+    /* 축척을 정하는 줄만 창을 본다. 그 줄을 걷어낸 나머지에 창 단위가 없어야 한다. */
+    const fallbackScale = "min(100vw / 120, 100vh / 67.5)";
     const offenders = styleSheets().filter((name) =>
-      /\d(vw|vh)\b/.test(css(name).replaceAll(scale, "")),
+      /\d(vw|vh)\b/.test(css(name).replaceAll(fallbackScale, "")),
     );
 
     expect(offenders).toEqual([]);

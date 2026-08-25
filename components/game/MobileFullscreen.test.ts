@@ -35,7 +35,25 @@ describe("휴대폰에서 주소창 감추기", () => {
 
   it("높이는 지금 보이는 만큼으로 잰다", () => {
     // 정적 뷰포트 높이로 재면 주소창이 떠 있는 동안 판이 위아래로 잘린다.
-    expect(read("app", "globals.css")).toContain("100dvh / 67.5");
+    expect(read("app", "globals.css")).toContain("100dvh - env(safe-area-inset-top");
+  });
+
+  it("노치가 가리는 만큼을 판에서 뺀다", () => {
+    /*
+     * `viewport-fit: cover` 로 가장자리까지 쓰기로 했으므로 화면 폭에는 노치가
+     * 가리는 부분도 들어 있다. 그것까지 판으로 치면 가로로 들었을 때 한쪽이
+     * 노치 밑으로 들어간다.
+     */
+    const sheet = read("app", "globals.css");
+
+    for (const side of ["left", "right", "top", "bottom"]) {
+      expect(sheet, side).toContain(`env(safe-area-inset-${side}, 0px)`);
+    }
+  });
+
+  it("dvh 를 모르는 브라우저를 위한 대비를 남긴다", () => {
+    // 이 줄이 없으면 뒤 줄이 통째로 무효가 되어 판이 화면 밖으로 부푼다.
+    expect(read("app", "globals.css")).toContain("min(100vw / 120, 100vh / 67.5)");
   });
 });
 
