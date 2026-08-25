@@ -2,27 +2,20 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { withObjectParticle, withSubjectParticle } from "./korean-particle";
 import type {
   U5BattleCueView,
   U5BattleReplay,
   U5BattleReplayFrame,
   U5BattleReplayParticipant,
-  U5BattleReplayPhase,
 } from "./u5-battle-replay";
 
 export interface U5BattleSceneProps {
   readonly replay: U5BattleReplay;
+  readonly frame: U5BattleReplayFrame;
+  readonly onReplayFromStart: () => void;
 }
-
-const FRAME_DURATION_MS: Readonly<Record<U5BattleReplayPhase, number>> = {
-  idle: 500,
-  attack: 360,
-  impact: 420,
-  settle: 520,
-  complete: 0,
-};
 
 function participantById(replay: U5BattleReplay, id: string | null) {
   return id === null ? undefined : replay.participants.find((participant) => participant.id === id);
@@ -116,22 +109,6 @@ function caption(replay: U5BattleReplay, frame: U5BattleReplayFrame): string {
     return frameDescription(replay, frame);
   }
   return "";
-}
-
-/*
- * replay 를 내용으로 식별한다.
- *
- * 객체 신원으로 보면 호출부가 렌더 안에서 createU5BattleReplay 를 부르는 순간
- * 매 렌더마다 첫 프레임으로 되돌아가 재생이 영영 진행되지 않는다. 공개 prop
- * 이라 호출부에 useMemo 를 강제할 방법이 없으므로 이쪽에서 막는다.
- */
-function replaySignature(replay: U5BattleReplay): string {
-  return [
-    replay.frames.length,
-    replay.outcome,
-    replay.termination,
-    replay.participants.map((participant) => `${participant.id}@${participant.initialHp}/${participant.finalHp}`).join(","),
-  ].join("|");
 }
 
 function motionForParticipant(
@@ -269,30 +246,8 @@ function Participant({ participant, frame, reducedMotion }: {
   );
 }
 
-export function U5BattleScene({ replay }: U5BattleSceneProps) {
-  const [frameIndex, setFrameIndex] = useState(0);
+export function U5BattleScene({ replay, frame, onReplayFromStart }: U5BattleSceneProps) {
   const reducedMotion = useReducedMotion() ?? false;
-
-  // 다른 replay 로 바뀌면 첫 frame 부터 다시 재생한다. effect 가 아니라 렌더
-  // 중에 맞춰야 낡은 frame 을 한 번 그리고 나서 되감는 일이 없다.
-  const signature = replaySignature(replay);
-  const [renderedSignature, setRenderedSignature] = useState(signature);
-  if (signature !== renderedSignature) {
-    setRenderedSignature(signature);
-    setFrameIndex(0);
-  }
-
-  const frame = replay.frames[Math.min(frameIndex, replay.frames.length - 1)];
-
-  useEffect(() => {
-    if (frame === undefined || frame.phase === "complete") return;
-    const timeout = window.setTimeout(() => {
-      setFrameIndex((current) => Math.min(current + 1, replay.frames.length - 1));
-    }, FRAME_DURATION_MS[frame.phase]);
-    return () => window.clearTimeout(timeout);
-  }, [frame, replay.frames.length]);
-
-  if (frame === undefined) return null;
 
   const party = replay.participants.filter((participant) => participant.side === "party");
   const enemies = replay.participants.filter((participant) => participant.side === "enemy");
@@ -326,13 +281,11 @@ export function U5BattleScene({ replay }: U5BattleSceneProps) {
         </ul>
       )}
       <p className="u5-battle-announcement" aria-live="polite">{announcement(replay, frame)}</p>
-      <div className="u5-battle-controls">
-        {complete ? (
-          <button type="button" onClick={() => setFrameIndex(0)}>다시 보기</button>
-        ) : (
-          <button type="button" onClick={() => setFrameIndex(replay.frames.length - 1)}>전투 건너뛰기</button>
-        )}
-      </div>
+      {complete ? (
+        <div className="u5-battle-controls">
+          <button type="button" onClick={onReplayFromStart}>다시 보기</button>
+        </div>
+      ) : null}
     </section>
   );
 }

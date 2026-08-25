@@ -235,13 +235,18 @@ function ExpeditionScreens() {
    */
   if (active.pendingEvent !== null || active.pendingOutcome !== null) {
     const seeing = active.pendingOutcome !== null;
+    const replay = eventReplayFor(campaign, active);
+    const gateMonsterBattle = seeing
+      && active.pendingOutcome?.event.kind === "monster"
+      && active.pendingOutcome.battle !== null;
     return (
       <U5ProgressScreen
         status={status}
         progress={progressViewFor(campaign, active)!}
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
-        battleReplay={eventReplayFor(campaign, active) ?? undefined}
+        battleReplay={replay ?? undefined}
+        battleExitPolicy={gateMonsterBattle ? "after-playback" : undefined}
         changesByMemberId={changesByMemberId(active)}
         onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });
