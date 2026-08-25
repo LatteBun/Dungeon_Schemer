@@ -227,6 +227,8 @@ test("탭과 현재 상황은 FHD에서 금속 표면과 확대된 글자를 사
     return {
       tab: surface(tab),
       panel: surface(panel),
+      tabSize: parseFloat(getComputedStyle(tab).fontSize),
+      tabHeights: [...document.querySelectorAll<HTMLElement>(".u5-console__tabs button")].map((button) => button.getBoundingClientRect().height),
       titleSize: parseFloat(getComputedStyle(title).fontSize),
       bodySize: parseFloat(getComputedStyle(body).fontSize),
     };
@@ -237,8 +239,66 @@ test("탭과 현재 상황은 FHD에서 금속 표면과 확대된 글자를 사
     expect(surface.backgroundImage).toContain("linear-gradient");
     expect(surface.boxShadow.match(/inset/g)).toHaveLength(2);
   }
-  expect(styles.titleSize).toBeGreaterThanOrEqual(15.7);
-  expect(styles.bodySize).toBeGreaterThanOrEqual(17.6);
+  expect(styles.tabSize).toBeGreaterThanOrEqual(18);
+  expect(styles.tabHeights).toHaveLength(2);
+  expect(styles.tabHeights[0]).toBeGreaterThanOrEqual(30);
+  expect(styles.tabHeights[1]).toBeGreaterThanOrEqual(30);
+  expect(Math.abs(styles.tabHeights[0] - styles.tabHeights[1])).toBeLessThanOrEqual(0.1);
+  expect(styles.titleSize).toBeGreaterThanOrEqual(19);
+  expect(styles.bodySize).toBeGreaterThanOrEqual(21);
   expect(styles.bodySize).toBeGreaterThan(styles.titleSize);
   expectNoBrowserErrors(failures, "U5 금속 표면과 상황 typography");
+});
+
+test("현재 상황 패널은 FHD에서 카드 바로 위까지 늘어나고 글자는 좌측 상단에 남는다", async ({ page }) => {
+  const failures = watchBrowserErrors(page);
+  await useFhd(page);
+
+  const metrics = await page.getByTestId("u5-console").evaluate((console) => {
+    const mode = console.querySelector<HTMLElement>(".u5-advice-mode");
+    const panel = console.querySelector<HTMLElement>(".u5-situation-panel");
+    const title = console.querySelector<HTMLElement>(".u5-situation-panel__title");
+    const body = console.querySelector<HTMLElement>(".u5-situation");
+    const cards = [...console.querySelectorAll<HTMLElement>(".u5-advice__button")];
+    if (mode === null || panel === null || title === null || body === null || cards.length !== 3) {
+      throw new Error("U5 상황 패널 확장 fixture가 없다");
+    }
+
+    const modeStyle = getComputedStyle(mode);
+    const panelStyle = getComputedStyle(panel);
+    const panelBox = panel.getBoundingClientRect();
+    const titleBox = title.getBoundingClientRect();
+    const bodyBox = body.getBoundingClientRect();
+    const cardTop = Math.min(...cards.map((card) => card.getBoundingClientRect().top));
+    return {
+      expectedGap: parseFloat(modeStyle.rowGap),
+      actualGap: cardTop - panelBox.bottom,
+      titleTopInset: titleBox.top - panelBox.top,
+      titleLeftInset: titleBox.left - panelBox.left,
+      panelPaddingTop: parseFloat(panelStyle.paddingTop),
+      panelPaddingLeft: parseFloat(panelStyle.paddingLeft),
+      freeSpaceBelowBody: panelBox.bottom - bodyBox.bottom,
+    };
+  });
+
+  expect(Math.abs(metrics.actualGap - metrics.expectedGap)).toBeLessThanOrEqual(1.5);
+  expect(Math.abs(metrics.titleTopInset - metrics.panelPaddingTop)).toBeLessThanOrEqual(3);
+  expect(Math.abs(metrics.titleLeftInset - metrics.panelPaddingLeft)).toBeLessThanOrEqual(3);
+  expect(metrics.freeSpaceBelowBody).toBeGreaterThan(16);
+
+  await page.getByRole("button", { name: "일반 사건 · 선택 후", exact: true }).click();
+  const outcomeGap = await page.getByTestId("u5-console").evaluate((console) => {
+    const mode = console.querySelector<HTMLElement>(".u5-advice-mode");
+    const panel = console.querySelector<HTMLElement>(".u5-situation-panel");
+    const outcome = console.querySelector<HTMLElement>("[data-testid='u5-outcome']");
+    if (mode === null || panel === null || outcome === null) {
+      throw new Error("U5 선택 후 패널 확장 fixture가 없다");
+    }
+    return {
+      expected: parseFloat(getComputedStyle(mode).rowGap),
+      actual: outcome.getBoundingClientRect().top - panel.getBoundingClientRect().bottom,
+    };
+  });
+  expect(Math.abs(outcomeGap.actual - outcomeGap.expected)).toBeLessThanOrEqual(1.5);
+  expectNoBrowserErrors(failures, "U5 현재 상황 패널 확장");
 });
