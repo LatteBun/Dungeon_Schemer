@@ -59,7 +59,14 @@ function statusNotice(status: AchievementScreenStatus, message: string | null): 
   if (status === "loading") return "업적 기록을 불러오는 중입니다.";
   if (status === "recovered") return "업적 기록을 복구했습니다.";
   if (status === "unavailable") return "이 브라우저에서는 업적 기록을 저장할 수 없습니다.";
-  return "길드 기록은 이 브라우저에 보관됩니다.";
+  /*
+   * 잘 되고 있을 때는 아무 말도 하지 않는다.
+   *
+   * 「길드 기록은 이 브라우저에 보관됩니다」 는 늘 떠 있어 제목 아래 한 줄을
+   * 차지했는데, 길잡이가 할 일도 알 일도 아니다. 불러오지 못했거나 저장할 수
+   * 없을 때만 말한다.
+   */
+  return "";
 }
 
 export interface AchievementScreenProps {

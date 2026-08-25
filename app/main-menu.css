@@ -98,18 +98,23 @@
     0 0.6rem 1.4rem rgb(0 0 0 / 52%);
 }
 
+/*
+ * 이름은 가운데, 달성 수는 오른쪽 끝.
+ *
+ * 두 칸 격자로 나누면 이름이 왼쪽으로 밀려 위의 「캠페인 시작」 과 축이
+ * 어긋난다. 이름은 버튼 한가운데 두고 숫자만 따로 띄운다.
+ */
 .main-menu-screen__achievements {
-  grid-template-columns: 1fr auto;
-  gap: 1rem;
+  position: relative;
   padding: 0 clamp(1.25rem, 2.8cqw, 2.2rem);
   font-size: clamp(0.98rem, 1.35cqw, 1.3rem);
 }
 
-.main-menu-screen__achievements span {
-  justify-self: start;
-}
-
 .main-menu-screen__achievements small {
+  position: absolute;
+  right: clamp(1.25rem, 2.8cqw, 2.2rem);
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--color-muted);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(0.72rem, 0.95cqw, 0.92rem);

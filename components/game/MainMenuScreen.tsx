@@ -25,11 +25,7 @@ export function MainMenuScreen({ unlockedCount, loading }: MainMenuScreenProps) 
         </Link>
         <Link className="shell-cta main-menu-screen__achievements" href="/achievements">
           <span>업적</span>
-          <small>
-            {loading
-              ? `달성 — / ${TOTAL_ACHIEVEMENTS}`
-              : `달성 ${unlockedCount} / ${TOTAL_ACHIEVEMENTS}`}
-          </small>
+          <small>{loading ? `— / ${TOTAL_ACHIEVEMENTS}` : `${unlockedCount} / ${TOTAL_ACHIEVEMENTS}`}</small>
         </Link>
       </nav>
     </main>

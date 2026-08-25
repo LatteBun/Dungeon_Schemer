@@ -22,6 +22,11 @@
   align-items: center;
 }
 
+/* 할 말이 없으면 자리도 두지 않는다. */
+.achievement-screen__header span:empty {
+  display: none;
+}
+
 .achievement-screen__header {
   justify-content: space-between;
   min-height: 6.2cqh;
@@ -219,11 +224,15 @@
 
 /* 아래 두 버튼의 살결은 공용 `.shell-cta` 가 준다. 확인 대화만 따로 남는다. */
 .achievement-screen__dialog button {
-  border: 0.0625rem solid #af8a45;
-  padding: 0.65rem 1.1rem;
-  color: #f5e4bc;
-  background: #24291f;
-  font: inherit;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  border: 1px solid #b99145;
+  border-radius: 0.18rem;
+  background: linear-gradient(180deg, #342417 0%, #1d140e 55%, #130d09 100%);
+  box-shadow: inset 0 0 0 2px #0e0906, inset 0 0 0 3px rgb(189 147 69 / 58%);
+  color: #e6d3a3;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.06em;
   text-decoration: none;
 }
 
@@ -244,17 +253,31 @@
   border-color: var(--color-shell-danger);
 }
 
+/* 지우는 쪽만 위험색으로. 살결은 옆 버튼과 같다. */
 .achievement-screen__dialog button:last-child {
-  background: #583827;
+  border-color: color-mix(in srgb, var(--color-shell-danger) 72%, #b99145);
+  color: #e7b8ab;
 }
 
+/*
+ * 확인 창은 화면 한가운데 선다.
+ *
+ * 모달 `dialog` 는 원래 `margin: auto` 로 가운데 서는데, Tailwind preflight 가
+ * 모든 요소의 margin 을 0 으로 만들어 좌상단 (0,0) 에 붙어 있었다. 되돌린다.
+ *
+ * 너비도 `cqw` 대신 `rem` 으로 잡는다. 최상위 층(top layer)에 올라간 요소라
+ * 컨테이너 질의가 걸리는 조상이 없다. `rem` 은 캔버스 크기에서 나오므로
+ * 창이 아니라 판과 함께 커진다 — `vw` 를 쓰면 고정 비율 계약이 깨진다.
+ */
 .achievement-screen__dialog {
-  width: 31cqw;
+  margin: auto;
+  width: 30rem;
   padding: 1.5rem;
-  border: 0.1875rem solid #bf9650;
-  color: #f3e3bb;
-  background: #22251d;
-  box-shadow: 0 1rem 3rem #050605;
+  border: 1px solid #b99145;
+  border-radius: 0.18rem;
+  color: var(--color-parchment);
+  background: linear-gradient(180deg, #241a11 0%, #1a120c 55%, #130d09 100%);
+  box-shadow: inset 0 0 0 2px #0e0906, inset 0 0 0 3px rgb(189 147 69 / 42%), 0 1rem 3rem #050605;
 }
 
 .achievement-screen__dialog::backdrop {

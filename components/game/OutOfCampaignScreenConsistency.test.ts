@@ -70,3 +70,29 @@ describe("캠페인 바깥 화면의 통일성", () => {
     expect(tsx("MainMenuScreen.tsx")).not.toMatch(/달성 [^`"]*\/ \d/);
   });
 });
+
+/*
+ * 확인 창은 화면 한가운데 선다.
+ *
+ * 모달 `dialog` 는 원래 `margin: auto` 로 가운데 서는데, Tailwind preflight 가
+ * 모든 요소의 margin 을 0 으로 만들어 좌상단 (0,0) 에 붙어 있었다. 프레임워크가
+ * 미는 값이라 되돌려 놓아도 조용히 다시 밀려날 수 있다.
+ */
+describe("업적 기록 초기화 확인 창", () => {
+  const rule = (): string =>
+    css("achievements.css").match(/\.achievement-screen__dialog\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  it("가운데 세우는 margin 을 되돌려 놓는다", () => {
+    expect(rule()).toMatch(/margin:\s*auto/);
+  });
+
+  it("너비를 창이 아니라 캔버스에서 잡는다", () => {
+    /* 최상위 층이라 컨테이너 질의가 없다. rem 은 캔버스에서 나오므로 rem 을 쓴다. */
+    const width = rule().match(/width:\s*([^;]+)/)?.[1] ?? "";
+
+    expect(width).not.toBe("");
+    expect(width).not.toMatch(/\d(vw|vh)\b/);
+    expect(width).not.toMatch(/cqw|cqh/);
+    expect(width).toMatch(/rem/);
+  });
+});
