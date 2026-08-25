@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { canvasFontSizePx, visibleSizeOf } from "./canvas-scale";
 
 /**
  * 휴대폰에서 판을 화면에 맞추는 두 가지.
@@ -73,10 +74,6 @@ export function shouldAskToTurn(input: {
   return input.portrait && input.coarsePointer;
 }
 
-function isPortrait(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.innerHeight > window.innerWidth;
-}
 
 /**
  * 손가락으로 쓰는 기기인가.
@@ -101,15 +98,35 @@ export function ScreenFit() {
   const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
 
   useEffect(() => {
-    const sync = () => setNeedsTurn(shouldAskToTurn({ portrait: isPortrait(), coarsePointer: hasCoarsePointer() }));
+    /*
+     * 판의 축척을 여기서 정한다.
+     *
+     * CSS 의 `dvh` 와 `env()` 는 브라우저마다 언제 무엇을 가리키는지가 달라서
+     * 휴대폰 사파리에서 판 아래가 계속 잘렸다. 값의 뜻을 맞히는 대신 지금 눈에
+     * 보이는 크기를 브라우저에게 직접 묻는다. CSS 쪽 계산은 이 스크립트가 돌기
+     * 전과 돌지 않는 경우의 자리로 남겨 둔다.
+     */
+    const sync = () => {
+      const size = visibleSizeOf(window);
+      document.documentElement.style.fontSize = `${canvasFontSizePx(size)}px`;
+      setNeedsTurn(shouldAskToTurn({
+        portrait: size.height > size.width,
+        coarsePointer: hasCoarsePointer(),
+      }));
+    };
     sync();
     setFullscreenAvailable(canGoFullscreen(document.documentElement) && document.fullscreenElement === null);
 
     window.addEventListener("resize", sync);
     window.addEventListener("orientationchange", sync);
+    /* 주소창이 나타나고 사라지는 동안은 이 두 가지만 알려 온다. */
+    window.visualViewport?.addEventListener("resize", sync);
+    window.visualViewport?.addEventListener("scroll", sync);
     return () => {
       window.removeEventListener("resize", sync);
       window.removeEventListener("orientationchange", sync);
+      window.visualViewport?.removeEventListener("resize", sync);
+      window.visualViewport?.removeEventListener("scroll", sync);
     };
   }, []);
 
