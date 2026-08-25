@@ -141,6 +141,14 @@ describe("U5ProgressScreen", () => {
     }
   });
 
+  it("조언 카드에 숫자 슬롯 배지를 표시하지 않는다", () => {
+    const html = render();
+    const adviceHtml = (html.match(/<ul class="u5-advice-list"[\s\S]*?<\/ul>/) ?? [""])[0];
+
+    expect(adviceHtml).not.toContain("u5-advice__slot");
+    expect(adviceHtml).not.toMatch(/>1<|>2<|>3</);
+  });
+
   it("조언 카드는 남은 높이를 채우지 않고 A1 금속 명패로 중앙 정렬한다", () => {
     const sheet = readFileSync("app/u5-progress.css", "utf8");
 
@@ -336,6 +344,7 @@ describe("잠긴 조언", () => {
     expect(html).toContain("disabled");
     expect(html).toContain("골드가 모자란다");
     expect(html).toContain("u5-advice__blocked");
+    expect(html).not.toContain("u5-advice__slot");
   });
 
   it("공백 없는 긴 잠금 이유도 잠긴 카드 안에서 줄바꿈할 수 있다", () => {

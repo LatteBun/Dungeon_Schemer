@@ -239,19 +239,6 @@
 .u5-advice__rivet.is-bottom-left { bottom: 0.55rem; left: 0.72rem; }
 .u5-advice__rivet.is-bottom-right { right: 0.72rem; bottom: 0.55rem; }
 
-/* 자리 번호. 셋이 같은 색이어야 한다. 색이 갈리면 그것이 단서가 된다. */
-.u5-advice__slot {
-  display: grid;
-  width: clamp(1.3rem, 1.45cqw, 2rem);
-  height: clamp(1.3rem, 1.45cqw, 2rem);
-  place-items: center;
-  border: 1px solid var(--color-shell-gold);
-  border-radius: 0.16rem;
-  color: var(--color-shell-gold);
-  font-size: clamp(0.74rem, 0.78cqw, 1.05rem);
-  font-weight: 700;
-}
-
 .u5-advice__divider {
   width: min(100%, 8rem);
   height: 1px;
@@ -276,11 +263,6 @@
   cursor: not-allowed;
   filter: grayscale(0.5);
   opacity: 0.62;
-}
-
-.u5-advice__button:disabled .u5-advice__slot {
-  border-color: #6b5c42;
-  color: #8b7a5c;
 }
 
 /* 왜 못 고르는지. 잠긴 이유를 모르면 잠긴 것과 없는 것이 같다. */
