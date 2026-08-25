@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
+import { PORTRAIT_VARIANTS } from "./character-labels";
 import {
   createU5BattlePreviewEntries,
   U5_BATTLE_PREVIEW_ENTRIES,
@@ -54,7 +55,11 @@ describe("U5 battle preview data", () => {
       const party = entry.replay.participants.filter((participant) => participant.side === "party");
       expect(party).toHaveLength(3);
       for (const participant of party) {
-        expect(participant.imageSrc).toMatch(/^\/assets\/characters\/live\/(warrior|archer|cleric|mage|rogue)\/\1_[ab]\.png$/);
+        /* 변형 목록에서 가져온다. 글자로 박으면 초상을 더할 때마다 어긋난다. */
+        const variants = PORTRAIT_VARIANTS.join("");
+        expect(participant.imageSrc).toMatch(
+          new RegExp(`^/assets/characters/live/(warrior|archer|cleric|mage|rogue)/\\1_[${variants}]\\.png$`),
+        );
       }
     }
   });
