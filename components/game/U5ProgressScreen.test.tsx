@@ -292,10 +292,25 @@ describe("U5ProgressScreen", () => {
     expect(mode).not.toMatch(/align-(?:content|items)\s*:\s*(?:center|end)/);
   });
 
-  it("선택 뒤에는 결과를 보존하면서 긴 현재 상황의 최소 높이를 확보한다", () => {
-    const sheet = readFileSync("app/u5-progress.css", "utf8");
-    const selectedMode = cssRule(sheet, ".u5-advice-mode:has(.u5-outcome)");
+  it("상황 모드는 선택 전후 결과 상태를 호환 가능한 data attribute로 표시한다", () => {
+    const before = render();
+    const after = render({
+      outcome: {
+        reactions: [{ memberName: "코르빈", reaction: "suspected", note: "눈을 가늘게 뜬다" }],
+        resultText: "벽을 두드리자 진동이 굴을 타고 퍼진다.",
+        changes: [{ label: "신뢰", detail: "코르빈 40 → 34" }],
+      },
+    });
 
+    expect(before).toContain('class="u5-advice-mode" data-has-outcome="false"');
+    expect(after).toContain('class="u5-advice-mode" data-has-outcome="true"');
+  });
+
+  it("선택 뒤에는 호환 가능한 상태 선택자로 긴 현재 상황의 최소 높이를 확보한다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const selectedMode = cssRule(sheet, '.u5-advice-mode[data-has-outcome="true"]');
+
+    expect(sheet).not.toContain(":has(");
     expect(selectedMode).toMatch(/grid-template-rows:\s*minmax\(min-content,\s*1fr\)\s+auto/);
   });
 
@@ -305,7 +320,7 @@ describe("U5ProgressScreen", () => {
     const title = cssRule(sheet, ".u5-situation-panel__title");
     const body = cssRule(sheet, ".u5-situation");
 
-    expect(tabs).toMatch(/padding:\s*clamp\(0\.16rem,\s*0\.2cqw,\s*0\.3rem\)\s+clamp\(0\.5rem,\s*0\.7cqw,\s*1rem\)/);
+    expect(tabs).toMatch(/padding:\s*clamp\(0\.16rem,\s*0\.15cqw,\s*0\.3rem\)\s+clamp\(0\.5rem,\s*0\.7cqw,\s*1rem\)/);
     expect(tabs).toMatch(/font-size:\s*clamp\(0\.88rem,\s*0\.96cqw,\s*1\.3(?:0)?rem\)/);
     expect(title).toMatch(/font-size:\s*clamp\(0\.9(?:0)?rem,\s*1(?:\.00)?cqw,\s*1\.25rem\)/);
     expect(body).toMatch(/font-size:\s*clamp\(1(?:\.00)?rem,\s*1\.12cqw,\s*1\.5(?:0)?rem\)/);

@@ -66,7 +66,7 @@ async function expectSituationAndOutcomeFitConsole(page: Page, hasOutcome: boole
     expect(element.right).toBeLessThanOrEqual(metrics.consoleRight + 1);
     expect(element.top).toBeGreaterThanOrEqual(metrics.consoleTop - 1);
     expect(element.bottom).toBeLessThanOrEqual(metrics.consoleBottom + 1);
-    expect(element.scrollHeight).toBeLessThanOrEqual(element.clientHeight + 1);
+    expect(element.scrollHeight).toBeLessThanOrEqual(element.clientHeight);
   };
 
   expectContained(metrics.panel);
@@ -278,6 +278,7 @@ test("현재 상황 패널은 FHD에서 카드 바로 위까지 늘어나고 글
       panelPaddingTop: parseFloat(panelStyle.paddingTop),
       panelPaddingLeft: parseFloat(panelStyle.paddingLeft),
       freeSpaceBelowBody: panelBox.bottom - bodyBox.bottom,
+      hasOutcome: mode.dataset.hasOutcome,
     };
   });
 
@@ -285,6 +286,7 @@ test("현재 상황 패널은 FHD에서 카드 바로 위까지 늘어나고 글
   expect(Math.abs(metrics.titleTopInset - metrics.panelPaddingTop)).toBeLessThanOrEqual(3);
   expect(Math.abs(metrics.titleLeftInset - metrics.panelPaddingLeft)).toBeLessThanOrEqual(3);
   expect(metrics.freeSpaceBelowBody).toBeGreaterThan(16);
+  expect(metrics.hasOutcome).toBe("false");
 
   await page.getByRole("button", { name: "일반 사건 · 선택 후", exact: true }).click();
   const outcomeGap = await page.getByTestId("u5-console").evaluate((console) => {
@@ -297,8 +299,10 @@ test("현재 상황 패널은 FHD에서 카드 바로 위까지 늘어나고 글
     return {
       expected: parseFloat(getComputedStyle(mode).rowGap),
       actual: outcome.getBoundingClientRect().top - panel.getBoundingClientRect().bottom,
+      hasOutcome: mode.dataset.hasOutcome,
     };
   });
   expect(Math.abs(outcomeGap.actual - outcomeGap.expected)).toBeLessThanOrEqual(1.5);
+  expect(outcomeGap.hasOutcome).toBe("true");
   expectNoBrowserErrors(failures, "U5 현재 상황 패널 확장");
 });

@@ -63,6 +63,11 @@ PR #180에는 위 구조와 분리된 selector가 이미 구현되어 있다. �
 - 패널과 뒤따르는 카드·결과 사이에는 기존 `.u5-advice-mode` 행 간격만 남긴다.
 - `현재 상황` 제목과 본문은 늘어난 패널의 좌측 상단에 유지한다.
 - 모드 탭, 현재 상황 제목과 본문 글자를 한 단계 더 키운다.
+- 선택 뒤 최장 공식 문구와 세 결과 구역이 모두 잘리면, `.u5-advice-mode`에
+  `data-has-outcome="true"`를 두고 호환 가능한 attribute selector로만 첫 행의
+  최소 크기를 보장한다. `:has()` 또는 결과 내부 규칙을 조정 수단으로 쓰지 않는다.
+- 최종 탭 padding은 `clamp(0.16rem, 0.15cqw, 0.3rem) clamp(0.5rem, 0.7cqw, 1rem)`이며,
+  두 탭의 FHD 높이는 같고 `30px` 이상이어야 한다.
 
 이 조정도 DOM, 데이터 흐름, 카드와 결과 영역의 조형을 바꾸지 않는 U5 전용 CSS
 변경으로 한정한다.
@@ -208,6 +213,9 @@ PR #180에는 위 구조와 분리된 selector가 이미 구현되어 있다. �
 - 기존 `data-testid="u5-situation"`은 본문에 유지한다.
 - 상황 패널은 조언 목록 또는 결과 영역보다 먼저 렌더링한다.
 - 선택 전뿐 아니라 선택 뒤 결과를 보는 동안에도 현재 상황 패널을 유지한다.
+- `.u5-advice-mode`는 `progress.outcome === null`에서 `data-has-outcome="false"`, 결과가
+  있으면 `data-has-outcome="true"`를 가진다. 이는 새 public prop이나 callback 없이
+  기존 outcome 데이터에서 파생하는 레이아웃 전용 상태다.
 - 선택 뒤 결과의 `Outcome` 마크업과 `.u5-outcome*` 조형 규칙은 변경하지 않는다.
   새 패널 때문에 공식 콘텐츠의 결과가 잘리면 구현을 계속 밀어 넣지 않고 설계
   범위를 다시 확인한다.
@@ -243,9 +251,12 @@ PR #180에는 위 구조와 분리된 selector가 이미 구현되어 있다. �
 
 패널은 `box-sizing: border-box`, `min-width: 0`을 사용해 긴 한국어 문장이 콘솔 폭을 밀어내지 않게 한다.
 제목은 `margin: 0`을 명시하고, 기존 `.u5-situation`의 `margin: 0`을 유지한다.
-`.u5-advice-mode`는 `minmax(0, 1fr) auto` 두 행으로 구성한다. 첫 행의 상황 패널이
-남은 높이를 채우고, 두 번째 행의 조언 목록 또는 결과 영역은 현재 콘텐츠 높이를
-유지한다. 패널은 고정·최대 높이와 자체 세로 스크롤을 갖지 않는다.
+`.u5-advice-mode`는 기본적으로 `minmax(0, 1fr) auto` 두 행으로 구성한다. 첫 행의
+상황 패널이 남은 높이를 채우고, 두 번째 행의 조언 목록 또는 결과 영역은 현재 콘텐츠
+높이를 유지한다. `data-has-outcome="true"`일 때만
+`minmax(min-content, 1fr) auto`를 적용해 최장 공식 문구의 최소 높이를 보장한다.
+이 호환 가능한 attribute selector는 `:has()`를 쓰지 않으며 `.u5-outcome*` 내부 규칙을
+바꾸지 않는다. 패널은 고정·최대 높이와 자체 세로 스크롤을 갖지 않는다.
 패널의 사선 모서리, 이중 inset 테두리와 갈색 gradient는 CSS로 그린다. 새 bitmap,
 SVG 또는 공용 컴포넌트를 만들지 않고, 리벳도 추가하지 않는다.
 
@@ -306,7 +317,11 @@ SVG 또는 공용 컴포넌트를 만들지 않고, 리벳도 추가하지 않�
 8. `.u5-outcome*` 규칙은 이번 변경에서 수정하지 않는다.
 9. `.u5-advice-mode`는 상황 패널이 남은 공간을 차지하고 조언 목록 또는 결과가 내용
    높이를 유지하는 `minmax(0, 1fr) auto` 행 계약을 사용한다.
-10. 모드 탭, 상황 제목과 본문은 각각 승인된 새 `clamp()` 값을 사용한다.
+10. 선택 뒤에는 `.u5-advice-mode[data-has-outcome="true"]`만
+    `minmax(min-content, 1fr) auto`를 사용하며 CSS에 `:has()`가 없다.
+11. 모드 탭은 최종 padding
+    `clamp(0.16rem, 0.15cqw, 0.3rem) clamp(0.5rem, 0.7cqw, 1rem)`과, 상황 제목·본문은
+    각각 승인된 새 `clamp()` 값을 사용한다.
 
 ### 브라우저 상호작용·containment 테스트
 
@@ -332,10 +347,13 @@ SVG 또는 공용 컴포넌트를 만들지 않고, 리벳도 추가하지 않�
    padding만큼의 작은 간격을 유지하는지 bounding box로 확인한다. 카드는 중앙에 남아
    있거나 콘솔 바닥에 맞닿아서는 안 된다.
 7. 탭과 상황 패널의 computed style에서 사선 clip-path, gradient와 이중 inset shadow가
-   적용됐는지 확인하고, 확대된 탭·제목·본문 font-size도 확인한다.
+   적용됐는지 확인하고, 확대된 탭·제목·본문 font-size와 동일한 `30px` 이상 탭 높이도
+   확인한다.
 8. 선택 전 FHD에서 상황 패널의 아래쪽과 조언 카드 위쪽 사이가
    `.u5-advice-mode`의 계산된 행 간격과 일치하는지 확인한다. 패널은 내용 높이에
    머물거나 카드와 맞닿아서는 안 된다.
+9. 선택 전과 선택 후 `.u5-advice-mode`의 `data-has-outcome` 값이 각각 `false`와 `true`로
+   전환되는지 확인한다.
 
 ### 실제 화면 검증
 

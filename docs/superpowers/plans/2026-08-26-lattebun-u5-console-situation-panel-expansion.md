@@ -4,7 +4,7 @@
 
 **Goal:** U5 현재 상황 패널이 조언 카드 또는 선택 후 결과 바로 위까지 남는 높이를 채우게 하고, 좌측 상단 정렬을 유지한 채 모드 탭·상황 제목·본문 글자를 한 단계 더 키운다.
 
-**Architecture:** 기존 `U5ProgressScreen` DOM과 데이터 흐름은 유지하고 `app/u5-progress.css`의 U5 전용 grid와 typography 선언만 바꾼다. source-level CSS 계약으로 정확한 행 구조와 `clamp()` 값을 잠그고, Playwright의 FHD bounding box·computed style 검사로 패널 확장, 작은 행 간격, 좌측 상단 배치와 최장 공식 문구 containment를 검증한다.
+**Architecture:** 기존 `U5ProgressScreen` DOM과 데이터 흐름은 유지하고 `progress.outcome`에서 파생한 중립 `data-has-outcome` attribute와 U5 전용 grid·typography 선언만 바꾼다. source-level CSS 계약으로 정확한 행 구조와 `clamp()` 값을 잠그고, Playwright의 FHD bounding box·computed style 검사로 패널 확장, 작은 행 간격, 좌측 상단 배치와 엄격한 최장 공식 문구 containment를 검증한다.
 
 **Tech Stack:** Next.js 16.3.0, React 19, TypeScript, CSS Grid, Vitest 4, Playwright 1.58
 
@@ -17,11 +17,11 @@
 ## Global Constraints
 
 - 구현 전에 `docs/README.md`, `docs/GAME_PRINCIPLES.md`, `docs/experience/SCREEN_LAYOUT.md`, Spec과 `node_modules/next/dist/docs/01-app/01-getting-started/11-css.md`를 읽는다.
-- `U5ProgressScreen`의 DOM, props, `progress.situation`, 선택 callback, 모드 전환과 `aria-pressed` 계약은 바꾸지 않는다.
-- `.u5-advice-mode`는 `minmax(0, 1fr) auto` 두 행을 사용한다. 첫 행의 상황 패널이 남는 높이를 채우고 두 번째 행의 조언 목록 또는 결과는 내용 높이를 유지한다.
+- `U5ProgressScreen`의 props, `progress.situation`, 선택 callback, 모드 전환과 `aria-pressed` 계약은 바꾸지 않는다. `.u5-advice-mode`에는 기존 outcome에서 파생한 `data-has-outcome="true|false"`만 추가한다.
+- `.u5-advice-mode`는 기본 `minmax(0, 1fr) auto` 두 행을 사용한다. 선택 후 `[data-has-outcome="true"]`만 `minmax(min-content, 1fr) auto`를 사용해 결과 내부를 건드리지 않고 긴 상황 문구를 수용한다. `:has()`는 사용하지 않는다.
 - 패널과 조언·결과 사이에는 기존 `.u5-advice-mode`의 `gap`만 남기며 별도 spacer, 큰 margin 또는 padding을 추가하지 않는다.
 - `현재 상황` 제목과 본문은 늘어난 패널의 좌측 상단에 유지한다.
-- 모드 탭은 `clamp(0.88rem, 0.96cqw, 1.30rem)`, 상황 제목은 `clamp(0.90rem, 1.00cqw, 1.25rem)`, 본문은 `clamp(1.00rem, 1.12cqw, 1.50rem)`과 `line-height: 1.45`를 사용한다.
+- 모드 탭은 `clamp(0.88rem, 0.96cqw, 1.30rem)`, 최종 padding `clamp(0.16rem, 0.15cqw, 0.3rem) clamp(0.5rem, 0.7cqw, 1rem)`, 상황 제목은 `clamp(0.90rem, 1.00cqw, 1.25rem)`, 본문은 `clamp(1.00rem, 1.12cqw, 1.50rem)`과 `line-height: 1.45`를 사용한다.
 - `.u5-advice__button` 이하 카드 내부, `.u5-outcome*`, `.u5-log__filters`, 고정 1920×1080 캔버스와 GameShell 60:40 계약은 수정하지 않는다.
 - 상황 패널과 본문에 고정·최대 높이, 말줄임, `overflow: hidden` 또는 내부 세로 스크롤을 추가하지 않는다.
 - 새 컴포넌트, 이미지, SVG, 아이콘, 의존성 또는 반응형 분기를 추가하지 않는다.
@@ -194,7 +194,8 @@ node /Users/danny/MakeBun/Dungeon_Schemer/node_modules/@playwright/test/cli.js t
 
 ```css
 .u5-console__tabs button {
-  /* 기존 border, clip-path, background, shadow, color, padding은 유지 */
+  /* 기존 border, clip-path, background, shadow, color는 유지 */
+  padding: clamp(0.16rem, 0.15cqw, 0.3rem) clamp(0.5rem, 0.7cqw, 1rem);
   font-size: clamp(0.88rem, 0.96cqw, 1.3rem);
 }
 
@@ -203,6 +204,10 @@ node /Users/danny/MakeBun/Dungeon_Schemer/node_modules/@playwright/test/cli.js t
   grid-template-rows: minmax(0, 1fr) auto;
   gap: clamp(0.4rem, 0.55cqw, 0.85rem);
   min-height: 0;
+}
+
+.u5-advice-mode[data-has-outcome="true"] {
+  grid-template-rows: minmax(min-content, 1fr) auto;
 }
 
 .u5-situation-panel__title {
