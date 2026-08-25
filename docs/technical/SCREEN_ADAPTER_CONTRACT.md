@@ -115,11 +115,12 @@ createU6SettlementView(
 `wipedExpeditions`·`totalDeaths`·`totalGoldEarned`·`highestDungeonCleared`의
 정산 누계를 제공한다.
 
-`survivedCount`·`diedCount`·`zeroTrustCount`는 최종 `CampaignState.pool`에서
-읽는 현재 상태이고, C8-A가 다시 세지 않는다. `adviceTotal`·`turningPoint`·
-`chronicleSummary`는 `SettlementResult`만으로 만들 수 없으므로 C8-B와 I2 연결
-전에는 fixture로 남긴다. `reasons`가 배열인 이유는 화면이 세 줄로 그리기
-때문이며, `turningPoint`는 없을 수 있어 `null`을 받는다.
+`survivedCount`와 `zeroTrustCount`는 최종 `CampaignState.pool`에서, `diedCount`는
+C8-A의 `statistics.totalDeaths`에서 읽는다. `adviceTotal`은
+`campaign.history.events`의 `ADVICE_RESOLVED`만 세고, `turningPoint`는 C8-B가
+기록한 `history.turningPoints`를 `selectHighlightedTurningPoint`로 골라 옮기며
+없으면 `null`이다. `chronicleSummary`만 엔딩 종류별 화면 산문인 `PROSE`가
+소유하고, `reasons`는 C6 판정 근거 한 줄과 화면 산문 두 줄을 담는다.
 
 ## 어긋났을 때
 
