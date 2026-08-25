@@ -31,7 +31,7 @@ export interface U5BattlePreviewEntry {
   readonly feedback: U5CombatFeedbackView;
 }
 
-const campaign = initializeCampaign("u5-dungeon-progress-preview");
+const campaign = initializeCampaign("u5-dungeon-progress-preview-fixed-roster");
 const members: readonly Character[] = Object.values(campaign.pool.byId)
   .filter((member): member is Character => member !== undefined && member.alive)
   .slice(0, 3);
