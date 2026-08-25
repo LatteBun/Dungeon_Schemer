@@ -39,6 +39,17 @@ function shuffledRiskGroups(
   return levels.flatMap((level) => rng.shuffle(groups.get(level) ?? []));
 }
 
+/**
+ * 게시판에 걸 던전을 고른다.
+ *
+ * 갈 수 있는 것 중에서는 **무엇이 걸릴지 정하지 않는다.** 예전에는 위험도가 높은
+ * 쪽부터 채웠는데, 등급 C 에서 갈 수 있는 일곱 중 ★2 가 넷이라 그 넷이 언제나
+ * 먼저 차고 남은 한 칸만 ★1 셋이 돌아가며 채웠다 — 시드 예순 판을 재 보니 서로
+ * 다른 조합이 세 가지뿐이었다. 어느 캠페인을 시작해도 같은 게시판을 본다.
+ *
+ * 잠긴 것은 그대로 가까운 위험도부터 둔다. 그것은 고를 수 없는 자리이고, 무엇이
+ * 곧 열리는지 알려 주는 것이 뜻이므로 섞으면 그 뜻이 사라진다.
+ */
 function selectDungeons(state: CampaignState, limit: number, rng: Rng): CampaignDungeon[] {
   const remaining = state.dungeons.filter((dungeon) => dungeon.status !== "cleared");
   const riskLimit = RANK_RISK_LIMIT[state.rank];
@@ -46,7 +57,7 @@ function selectDungeons(state: CampaignState, limit: number, rng: Rng): Campaign
   const locked = remaining.filter((dungeon) => dungeon.riskLevel > riskLimit);
 
   return [
-    ...shuffledRiskGroups(accessible, true, rng),
+    ...rng.shuffle(accessible),
     ...shuffledRiskGroups(locked, false, rng),
   ].slice(0, limit);
 }
