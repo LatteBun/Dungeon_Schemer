@@ -1,0 +1,67 @@
+/*
+ * 세로로 들었을 때 판을 가리는 안내.
+ *
+ * 캔버스 바깥에 선다. 캔버스는 16:9 로 고정이라 세로에서는 화면 한가운데
+ * 작은 띠로 줄어드는데, 안내까지 그 안에 두면 같이 작아져 읽을 수 없다.
+ * 그래서 여기서만 판이 아니라 창을 기준으로 잰다.
+ */
+.screen-fit {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 6vmin;
+  background: #080604;
+  color: var(--color-parchment);
+  text-align: center;
+}
+
+.screen-fit__card {
+  display: grid;
+  gap: 3vmin;
+  justify-items: center;
+  max-width: 78vmin;
+}
+
+/* 돌아가는 사각형 하나. 그림 파일을 더하지 않는다. */
+.screen-fit__mark {
+  width: 16vmin;
+  height: 24vmin;
+  border: 0.8vmin solid var(--color-shell-gold);
+  border-radius: 2vmin;
+  animation: screen-fit-turn 2.6s ease-in-out infinite;
+}
+
+@keyframes screen-fit-turn {
+  0%, 30% { transform: rotate(0deg); }
+  55%, 85% { transform: rotate(-90deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-fit__mark {
+    animation: none;
+    transform: rotate(-90deg);
+  }
+}
+
+.screen-fit__title {
+  margin: 0;
+  color: #e5c77f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 6vmin;
+  letter-spacing: 0.03em;
+}
+
+.screen-fit__body {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 3.6vmin;
+}
+
+.screen-fit__cta {
+  min-height: 11vmin;
+  padding: 0 5vmin;
+  font-size: 3.8vmin;
+}
