@@ -166,8 +166,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--color-shell-metal) 30%, transparent);
 }
 
-.u6-risk-change > span,
-.u6-next-reward {
+.u6-risk-change > span {
   color: var(--color-muted);
   font-size: clamp(0.8rem, 0.8cqw, 1.15rem);
 }
@@ -204,16 +203,6 @@
   color: var(--color-parchment);
   font-size: clamp(1rem, 1cqw, 1.45rem);
   font-weight: 700;
-}
-
-.u6-next-reward {
-  display: flex;
-  gap: 0.6rem;
-  margin: 0;
-}
-
-.u6-next-reward strong {
-  color: var(--color-shell-gold);
 }
 
 /* ── /u6-test 프리뷰 전환 ──

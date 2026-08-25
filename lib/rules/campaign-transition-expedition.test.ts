@@ -610,9 +610,15 @@ describe("전투 뒤 파티 명단", () => {
     })).toThrow("아직 확인하지 않은 결과가 있다");
 
     const acknowledged = transitionCampaign(wiped.campaign, wiped.context, { type: "ACKNOWLEDGE_OUTCOME" });
+    const snapshot = createSettlementSnapshotFor(
+      acknowledged.campaign,
+      acknowledged.context.activeExpedition!,
+    );
+    expect(snapshot.contractReward).toEqual(acknowledged.context.activeExpedition!.offer.reward);
+    expect(snapshot.contractReward).not.toBe(acknowledged.context.activeExpedition!.offer.reward);
     expect(() => transitionCampaign(acknowledged.campaign, acknowledged.context, {
       type: "COMPLETE_EXPEDITION",
-      snapshot: createSettlementSnapshotFor(acknowledged.campaign, acknowledged.context.activeExpedition!),
+      snapshot,
     })).not.toThrow();
   });
 });

@@ -3,6 +3,7 @@ import type { CharacterPool, ExpeditionParty } from "./pool";
 import type { CharacterId, DungeonId, OfferId } from "./ids";
 import type { CampaignStatistics } from "./statistics";
 import type { CampaignHistory } from "./history";
+import type { ContractReward } from "./contract-reward";
 
 /**
  * 길잡이 등급이다. 어느 위험도까지 들어갈 수 있는지만 정한다.
@@ -118,6 +119,7 @@ export interface BoardOffer {
   dungeonId: DungeonId;
   /** 계약 시점의 위험도. 정산의 명성 손실도 이 값을 쓴다. */
   riskLevel: RiskLevel;
+  reward: ContractReward;
   /** 계약 화면에서 본 위험이 정산에서 달라지지 않도록 공고에 고정한다. */
   party: ExpeditionParty;
   lockReason: OfferLockReason | null;

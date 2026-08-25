@@ -2,7 +2,6 @@ import { classLabel, portraitSrcForCharacter } from "./character-labels";
 import type {
   GuideRank,
   RiskLevel,
-  Reward,
   SettlementResult,
   ThemeId,
 } from "@/lib/domain";
@@ -40,7 +39,6 @@ export interface U6SettlementView {
   goldDelta: number;
   /** 전멸에서만 회수한다. 그 외에는 0. */
   relicGold: number;
-  nextReward: Reward | null;
   /*
    * 이 원정을 다녀온 사람들.
    *
@@ -101,7 +99,6 @@ export function createU6SettlementView(
     reputationDelta: settlement.reputationDelta,
     goldDelta: settlement.goldDelta,
     relicGold: settlement.relicGold,
-    nextReward: settlement.nextReward,
     members: settlement.memberChanges.map(({ before, after }) => ({
       id: String(after.id),
       name: after.name,

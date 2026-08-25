@@ -686,8 +686,10 @@ function aggregateCombination(id: CombinationId, runs: readonly CampaignRunMetri
       totalExpeditions: sum((run) => run.totalExpeditions), totalDeaths: sum((run) => run.totalDeaths),
       aliveCount: sum((run) => run.aliveCount), deployableCount: sum((run) => run.deployableCount),
       zeroTrustCount: sum((run) => run.zeroTrustCount), gravelyWoundedCount: sum((run) => run.gravelyWoundedCount),
-      relicGold: sum((run) => run.relicGold),
-      cumulativeGold: sum((run) => run.cumulativeGold), betrayalAttempts: sum((run) => run.betrayalAttempts),
+      finalReputation: sum((run) => run.finalReputation), finalGold: sum((run) => run.finalGold),
+      contractGold: sum((run) => run.contractGold), relicGold: sum((run) => run.relicGold),
+      cumulativeGold: sum((run) => run.cumulativeGold), reputationPromotions: sum((run) => run.reputationPromotions),
+      goldPromotions: sum((run) => run.goldPromotions), betrayalAttempts: sum((run) => run.betrayalAttempts),
     },
     runs: [...runs],
   };
