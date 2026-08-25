@@ -320,6 +320,31 @@ describe("엔딩이 실제 캠페인으로 그려진다", () => {
 });
 
 describe("결과 화면이 실제 판정으로 그려진다", () => {
+  it("실제 일반전 결과는 완료 전까지 우측 하단에서 전투만 건너뛴다", () => {
+    const run = contracted("party-roster-1");
+    for (let step = 0; step < 10; step += 1) {
+      const active = run.state().context.activeExpedition!;
+      if (active.pendingEvent !== null) break;
+      const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
+      run.act({ type: "VISIT_NODE", nodeId: here.nextNodeIds[0]! });
+    }
+    const event = run.state().context.activeExpedition!.pendingEvent!;
+    if (event.kind !== "monster") throw new Error("monster 사건 fixture가 아니다");
+    run.act({ type: "CHOOSE_ADVICE", adviceId: event.advice[1]!.id });
+
+    const outcome = run.state().context.activeExpedition!.pendingOutcome!;
+    expect(outcome.battle).not.toBeNull();
+
+    const store = { ...run.store, getInitialState: () => run.store.getState() };
+    const markup = renderToStaticMarkup(createElement(CampaignStoreProvider as never, {
+      seed: "render-monster-outcome",
+      store,
+    }, createElement(CampaignScreen)));
+
+    expect(markup).toContain("전투 건너뛰기");
+    expect(markup).not.toContain("지도로 돌아간다");
+  });
+
   it("전투 전멸 뒤에도 정산보다 결과를 먼저 그린다", () => {
     const run = contracted("party-roster-1");
     for (let step = 0; step < 10; step += 1) {
@@ -533,25 +558,21 @@ describe("보스전도 같은 화면에서 본다", () => {
 
   it("상단 상태와 파티가 함께 선다", () => {
     const run = afterBoss();
-    const { campaign, context } = run.state();
+    const { context } = run.state();
     const active = context.activeExpedition!;
-
-    const markup = renderToStaticMarkup(createElement(U5ProgressScreen, {
-      status: statusFor(campaign, active),
-      progress: expeditionEndViewFor(campaign, active),
-      log: logFor(campaign, active),
-      ecology: ecologyViewFor(campaign, active),
-      battleReplay: bossReplayFor(campaign, active) ?? undefined,
-      onAcknowledge: noop,
-      acknowledgeLabel: "정산으로",
-    }));
+    const store = { ...run.store, getInitialState: () => run.store.getState() };
+    const markup = renderToStaticMarkup(createElement(CampaignStoreProvider as never, {
+      seed: "render-boss-outcome",
+      store,
+    }, createElement(CampaignScreen)));
 
     assertClean(markup, "보스전 화면");
     /* 전에는 전투 장면만 덩그러니 떴다. 셸이 함께 서야 같은 화면이다. */
     expect(markup).toContain("u5-party");
     expect(markup).toContain("u5-console");
     expect(markup).toContain("u5-battle-scene");
-    expect(markup).toContain("정산으로");
+    expect(markup).toContain("전투 건너뛰기");
+    expect(markup).not.toContain("정산으로");
     for (const member of active.partyMembers) expect(markup).toContain(member.name);
   });
 
