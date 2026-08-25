@@ -22,7 +22,7 @@ import type {
   DungeonId,
   SituationEvent,
 } from "@/lib/domain";
-import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacter } from "./character-labels";
+import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacterId } from "./character-labels";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import {
@@ -43,7 +43,7 @@ import {
  * 플레이어의 경로 선택이 그 일을 하고, 그 연결이 `I2` 의 몫이다.
  */
 
-const PREVIEW_SEED = "u5-dungeon-progress-preview";
+const PREVIEW_SEED = "u5-dungeon-progress-preview-fixed-roster";
 /* 캠페인에 실제로 있는 던전이다. 전에는 어디에도 없는 "spider-1" 을 시드
  * 문자열로만 쓰고 있어서, 던전을 조회하는 순간 드러났다. */
 const PREVIEW_DUNGEON = "dungeon-spider-03" as DungeonId;
@@ -239,11 +239,7 @@ function partyViews() {
     trust: member.trust,
     gold: member.gold,
     alive: member.alive,
-    portraitSrc: portraitSrcForCharacter({
-      id: member.id,
-      classId: member.classId,
-      alive: member.alive,
-    }),
+    portraitSrc: portraitSrcForCharacterId(member.id),
   }));
 }
 

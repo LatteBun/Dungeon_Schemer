@@ -1,52 +1,30 @@
 import { describe, expect, it } from "vitest";
 import type { CharacterId } from "@/lib/domain";
-import { rewardForSurvivors } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createBoardOffers } from "@/lib/rules/board";
 import {
-  contractOutcomesForRisk,
+  contractOutcomesForReward,
   createU3BoardView,
 } from "./u3-board-model";
 
 describe("U3 board model", () => {
-  it("위험도 3의 생존 인원별 계약 결과를 공식 보상표로 계산한다", () => {
-    expect(contractOutcomesForRisk(3)).toEqual([
-      {
-        survivors: 3,
-        label: "전원 생존 시",
-        reputation: 15,
-        gold: 32,
-        reputationLoss: 0,
-      },
-      {
-        survivors: 2,
-        label: "2명 생존 시",
-        reputation: 9,
-        gold: 19,
-        reputationLoss: 0,
-      },
-      {
-        survivors: 1,
-        label: "1명 생존 시",
-        reputation: 4,
-        gold: 9,
-        reputationLoss: 0,
-      },
-      {
-        survivors: 0,
-        label: "전원 사망 시",
-        reputation: 0,
-        gold: 0,
-        reputationLoss: 15,
-      },
+  it("확정 보상으로 생존 인원별 계약 결과를 계산한다", () => {
+    expect(contractOutcomesForReward({ reputation: 16, gold: 35 })).toEqual([
+      { survivors: 3, label: "전원 생존 시", reputation: 16, gold: 35, reputationLoss: 0 },
+      { survivors: 2, label: "2명 생존 시", reputation: 9, gold: 21, reputationLoss: 0 },
+      { survivors: 1, label: "1명 생존 시", reputation: 4, gold: 10, reputationLoss: 0 },
+      { survivors: 0, label: "전원 사망 시", reputation: 0, gold: 0, reputationLoss: 16 },
     ]);
   });
 
-  it("게시판 보상은 도메인 정산 보상과 같은 값을 사용한다", () => {
-    for (const survivors of [3, 2, 1] as const) {
-      const view = contractOutcomesForRisk(3).find((outcome) => outcome.survivors === survivors);
-      expect(view).toMatchObject(rewardForSurvivors(3, survivors));
-    }
+  it("게시판 카드와 상세가 공고의 확정 보상을 그대로 쓴다", () => {
+    const campaign = initializeCampaign("u3-confirmed-reward");
+    const source = createBoardOffers(campaign)[0]!;
+    const offer = { ...source, reward: { reputation: 11, gold: 23 } };
+    const board = createU3BoardView(campaign, [offer]);
+
+    expect(board.notices[0]).toMatchObject({ reputationReward: 11, goldReward: 23 });
+    expect(board.detailsByOfferId[offer.id]?.contractOutcomes[0]).toMatchObject({ reputation: 11, gold: 23 });
   });
 
   it("C2 공고 모델은 공개 환경 특성을 투영하지 않는다", () => {
@@ -93,17 +71,14 @@ describe("U3 board model", () => {
     expect(firstMemberId).toBeDefined();
     if (firstMemberId === undefined) return;
 
-    const portraitSrc = `/assets/characters/${firstMemberId}.webp`;
-    const board = createU3BoardView(campaign, offers, {
-      [firstMemberId]: portraitSrc,
-    });
+    const board = createU3BoardView(campaign, offers);
     const firstDetail = offers[0] === undefined
       ? undefined
       : board.detailsByOfferId[offers[0].id];
 
     /* 앉는 자리는 섞이므로 자리가 아니라 사람으로 찾는다. */
     const member = firstDetail?.party.find((one) => String(one.id) === String(firstMemberId));
-    expect(member?.portraitSrc).toBe(portraitSrc);
+    expect(member?.portraitSrc).toMatch(/^\/assets\/characters\/live\//);
   });
 });
 

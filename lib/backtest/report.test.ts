@@ -157,6 +157,11 @@ describe("백테스트 gate와 보고서", () => {
     expect(first).toContain("평균 중상");
     expect(first).toContain("## 승급 도달과 평균 최초 도달 원정");
     expect(first).toContain("## 종료 시 평균 잔여 던전 위험도");
+    expect(first).toContain("## 자원과 승급 방식");
+    expect(first).toContain("평균 최종 명성");
+    expect(first).toContain("평균 계약 골드");
+    expect(first).toContain("평균 명성 승급");
+    expect(first).toContain("평균 골드 승급");
     expect(first).toMatch(/\| survival \| 0\.7 \|/);
     expect(first).toContain("## opportunist@0.7 초기 위험도·테마별 첫 시도 손실");
     expect(first).toContain("| opportunist | 0.7 |");

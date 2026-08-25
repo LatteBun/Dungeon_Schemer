@@ -194,7 +194,7 @@
   margin: 0;
   color: #e7d7ae;
   font-size: clamp(1rem, 1.12cqw, 1.5rem);
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 .u5-feedback-beat { display: grid; place-items: center; min-height: 0; padding: clamp(0.8rem, 1.2cqw, 1.6rem); border: 1px solid color-mix(in srgb, var(--color-shell-gold) 45%, var(--color-edge)); color: #fff0c9; font-size: clamp(1rem, 1.2cqw, 1.55rem); line-height: 1.5; text-align: center; }

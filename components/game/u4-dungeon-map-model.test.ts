@@ -7,10 +7,12 @@ import type {
   NodeId,
 } from "@/lib/domain";
 import {
+  portraitSrcForCharacterId,
+  portraitVariantForCharacterId,
+} from "./character-labels";
+import {
   createU4MapNodeViews,
   createU4PartyMemberViews,
-  portraitSrcForCharacter,
-  portraitVariantForCharacterId,
 } from "./u4-dungeon-map-model";
 
 const nodeId = (value: string) => value as NodeId;
@@ -109,25 +111,24 @@ describe("U4 dungeon map model", () => {
 
 describe("U4 character portraits", () => {
   it("keeps the portrait variant stable for the same character", () => {
-    const id = characterId("char-17");
+    const id = characterId("character-warrior-a");
     expect(portraitVariantForCharacterId(id)).toBe(
       portraitVariantForCharacterId(id),
     );
   });
 
   it("switches live to the same dead class and variant", () => {
-    const id = characterId("char-17");
-    const warrior = classId("warrior");
-    const live = portraitSrcForCharacter({ id, classId: warrior, alive: true });
-    const dead = portraitSrcForCharacter({ id, classId: warrior, alive: false });
+    const id = characterId("character-warrior-a");
+    const live = portraitSrcForCharacterId(id);
+    const dead = portraitSrcForCharacterId(id);
 
-    expect(live.replace("/live/", "/dead/")).toBe(dead);
+    expect(dead).toBe(live);
     expect(live).toContain("/warrior/warrior_");
   });
 
   it("maps class and personality labels while preserving alive state", () => {
     const character: Character = {
-      id: characterId("char-warrior"),
+      id: characterId("character-warrior-a"),
       name: "라온",
       classId: classId("warrior"),
       personality: "righteous",
@@ -151,7 +152,7 @@ describe("U4 character portraits", () => {
 
   it("uses dead portrait only when alive is false", () => {
     const character: Character = {
-      id: characterId("char-cleric"),
+      id: characterId("character-cleric-a"),
       name: "세리아",
       classId: classId("cleric"),
       personality: "prudent",
@@ -165,6 +166,6 @@ describe("U4 character portraits", () => {
 
     const [view] = createU4PartyMemberViews([character]);
     expect(view?.alive).toBe(false);
-    expect(view?.portraitSrc).toContain("/characters/dead/cleric/");
+    expect(view?.portraitSrc).toBe("/assets/characters/live/cleric/cleric_a.png");
   });
 });

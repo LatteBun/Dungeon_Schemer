@@ -1,6 +1,11 @@
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/link", () => ({
+  default: ({ prefetch, href, className, children }: { prefetch?: boolean; href: string; className?: string; children: ReactNode }) =>
+    createElement("a", { href, className, "data-prefetch": String(prefetch) }, children),
+}));
 import { MainMenuScreen } from "./MainMenuScreen";
 
 describe("메인 메뉴 화면", () => {
@@ -10,6 +15,7 @@ describe("메인 메뉴 화면", () => {
     );
 
     expect(html).toContain('href="/campaign"');
+    expect(html).toContain('data-prefetch="false"');
     expect(html).toContain("캠페인 시작");
     expect(html).toContain('href="/achievements"');
     expect(html).toContain("3 / 12");

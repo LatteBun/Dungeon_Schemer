@@ -8,7 +8,7 @@ import { resolveBossBattle } from "@/lib/rules/boss-battle-adapter";
 import { presentShuffledAdvice, resolveBossInfoAdvice } from "@/lib/rules/advice-evaluation";
 import { resolveMonsterEventBattle } from "@/lib/rules/expedition-events";
 import type { TopStatusView } from "./TopStatusBar";
-import { portraitSrcForCharacter } from "./u4-dungeon-map-model";
+import { portraitSrcForCharacterId } from "./character-labels";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
@@ -31,7 +31,7 @@ export interface U5BattlePreviewEntry {
   readonly feedback: U5CombatFeedbackView;
 }
 
-const campaign = initializeCampaign("u5-dungeon-progress-preview");
+const campaign = initializeCampaign("u5-dungeon-progress-preview-fixed-roster");
 const members: readonly Character[] = Object.values(campaign.pool.byId)
   .filter((member): member is Character => member !== undefined && member.alive)
   .slice(0, 3);
@@ -118,7 +118,7 @@ function partyPresentations() {
   return members.map((member) => ({
     id: member.id,
     name: member.name,
-    imageSrc: portraitSrcForCharacter(member),
+    imageSrc: portraitSrcForCharacterId(member.id),
   }));
 }
 
