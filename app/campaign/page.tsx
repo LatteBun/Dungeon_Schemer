@@ -1,3 +1,4 @@
+import { createSeed } from "@/lib/rng";
 import { CampaignScreen } from "@/components/game/CampaignScreen";
 import { CampaignStoreProvider } from "@/components/game/CampaignStoreProvider";
 
@@ -12,9 +13,16 @@ import { CampaignStoreProvider } from "@/components/game/CampaignStoreProvider";
  */
 type CampaignSearchParams = Promise<{ seed?: string | string[] }>;
 
+export function resolveCampaignSeed(
+  seed: string | string[] | undefined,
+  generateSeed: () => string = createSeed,
+): string {
+  return typeof seed === "string" && seed.length > 0 ? seed : generateSeed();
+}
+
 async function CampaignPage({ searchParams }: { searchParams: CampaignSearchParams }) {
   const { seed } = await searchParams;
-  const value = typeof seed === "string" && seed.length > 0 ? seed : "dungeon-schemer";
+  const value = resolveCampaignSeed(seed);
 
   return (
     <CampaignStoreProvider seed={value}>
