@@ -101,7 +101,9 @@ describe("U3 board model", () => {
       ? undefined
       : board.detailsByOfferId[offers[0].id];
 
-    expect(firstDetail?.party[0]?.portraitSrc).toBe(portraitSrc);
+    /* 앉는 자리는 섞이므로 자리가 아니라 사람으로 찾는다. */
+    const member = firstDetail?.party.find((one) => String(one.id) === String(firstMemberId));
+    expect(member?.portraitSrc).toBe(portraitSrc);
   });
 });
 

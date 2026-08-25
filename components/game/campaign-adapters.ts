@@ -15,6 +15,7 @@ import { presentShuffledAdvice } from "@/lib/rules/advice-evaluation";
 import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacter } from "./character-labels";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
+import { inSeatOrder } from "./party-seat-order";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
@@ -68,8 +69,8 @@ function themeOf(campaign: CampaignState, active: ActiveExpeditionContext): Them
   return theme;
 }
 
-export function partyViewsFor(members: readonly Character[]) {
-  return members.map((member) => ({
+export function partyViewsFor(seed: string, members: readonly Character[]) {
+  return inSeatOrder(seed, members, (member) => String(member.id)).map((member) => ({
     id: String(member.id),
     name: member.name,
     classLabel: classLabel(member.classId),
@@ -163,7 +164,7 @@ export function progressViewFor(
     situation: event.description,
     advice: toAdviceViews(presented, unavailableAdviceSlots(campaign, active, presented)),
     outcome: outcomeViewFor(active),
-    party: partyViewsFor(active.partyMembers),
+    party: partyViewsFor(campaign.seed, active.partyMembers),
   };
 }
 
@@ -411,7 +412,7 @@ export function expeditionEndViewFor(
      * 회색이면 재생이 시작하기도 전에 결말이 서 있는 셈이고, 화면이 깨진 것처럼
      * 보인다. 무슨 일이 있었는지는 아래 결과가 말한다.
      */
-    party: partyViewsFor(rewound(active)),
+    party: partyViewsFor(campaign.seed, rewound(active)),
   };
 }
 

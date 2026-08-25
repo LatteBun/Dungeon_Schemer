@@ -27,6 +27,7 @@ import {
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
 import { createU4MapNodeViews, createU4PartyMemberViews } from "./u4-dungeon-map-model";
+import { inSeatOrder } from "./party-seat-order";
 import { createU4DungeonMapLayout } from "./u4-dungeon-map-layout";
 import { createU6SettlementView } from "./u6-settlement-model";
 import { createU6EndingView } from "./u6-ending-adapter";
@@ -269,7 +270,7 @@ function ExpeditionScreens() {
         publicKindByNodeId: publicKindByNodeId(active),
       })}
       layout={createU4DungeonMapLayout(active.expedition.map)}
-      party={createU4PartyMemberViews(active.partyMembers)}
+      party={createU4PartyMemberViews(inSeatOrder(campaign.seed, active.partyMembers, (member) => String(member.id)))}
       survey={surveyViewFor(campaign, active)}
       changesByMemberId={changesByMemberId(active)}
       selectedNextNodeId={selected}

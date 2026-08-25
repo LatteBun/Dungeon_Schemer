@@ -1,5 +1,6 @@
 import { CLASSES } from "@/lib/content/classes";
 import { createRng } from "@/lib/rng";
+import { inSeatOrder } from "./party-seat-order";
 import { RANK_RISK_LIMIT, rewardForSurvivors } from "@/lib/domain";
 import { PERSONALITY_LABEL, portraitSrcForCharacter } from "./character-labels";
 import type {
@@ -163,7 +164,7 @@ export function createU3BoardView(
       lockReasonLabel: lockReasonLabel(campaign, offer),
     };
 
-    const party = offer.party.memberIds.map((memberId) => {
+    const party = inSeatOrder(campaign.seed, offer.party.memberIds, String).map((memberId) => {
       const character = campaign.pool.byId[memberId];
       if (character === undefined) {
         throw new Error(`U3 파티원을 찾을 수 없습니다: ${memberId}`);
