@@ -3,6 +3,7 @@ import type { Character } from "./character";
 import type { CharacterId, DungeonId } from "./ids";
 import type { ExpeditionParty } from "./pool";
 import type { ExpeditionStatus } from "./expedition";
+import type { ContractReward } from "./contract-reward";
 
 export interface Reward {
   readonly reputation: number;
@@ -47,6 +48,7 @@ export interface SettlementSnapshot {
   readonly expeditionId: string;
   readonly dungeonId: DungeonId;
   readonly contractRisk: RiskLevel;
+  readonly contractReward: ContractReward;
   readonly party: ExpeditionParty;
   readonly finalMembers: readonly Character[];
   readonly status: ExpeditionStatus;

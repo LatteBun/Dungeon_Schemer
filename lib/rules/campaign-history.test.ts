@@ -414,6 +414,7 @@ describe("C7·C8-A·C8-B composition boundary", () => {
       expeditionId: active.expeditionId,
       dungeonId: active.expedition.dungeonId,
       contractRisk: active.expedition.riskLevel,
+      contractReward: { ...active.offer.reward },
       party: active.expedition.party,
       finalMembers: membersFor(active.offer, campaign),
       status: "cleared",

@@ -49,6 +49,7 @@ function snapshotFor(
     expeditionId,
     dungeonId: active.expedition.dungeonId,
     contractRisk: active.expedition.riskLevel,
+    contractReward: { ...active.offer.reward },
     party: active.expedition.party,
     finalMembers: membersFor(active.offer, campaign),
     status: "cleared",
@@ -172,6 +173,8 @@ describe("C7 캠페인 전이", () => {
     expect(expedition.campaign.phase).toBe("expedition");
     expect(expedition.context.selectedOffer).toBeNull();
     expect(expedition.context.activeExpedition?.offer.id).toBe(offer!.id);
+    expect(expedition.context.activeExpedition?.offer.reward).toEqual(offer!.reward);
+    expect(expedition.context.activeExpedition?.offer.reward).not.toBe(offer!.reward);
   });
 
   it("정산은 C4를 한 번 적용하고 C8 통계에는 기록하지 않는다", () => {
@@ -195,6 +198,22 @@ describe("C7 캠페인 전이", () => {
     expect(result.campaign.settledExpeditionIds).toEqual(["exp-c7-01"]);
     expect(result.campaign.statistics).toEqual(createCampaignStatistics());
     expect(result.settlement?.expeditionId).toBe("exp-c7-01");
+  });
+
+  it("활성 공고와 다른 계약 보상 snapshot을 거부한다", () => {
+    const expedition = expeditionFlow("c7-reward-mismatch").expedition;
+    const snapshot = snapshotFor(expedition.campaign, expedition.context);
+
+    expect(() => transitionCampaign(expedition.campaign, expedition.context, {
+      type: "COMPLETE_EXPEDITION",
+      snapshot: {
+        ...snapshot,
+        contractReward: {
+          ...snapshot.contractReward,
+          reputation: snapshot.contractReward.reputation + 1,
+        },
+      },
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
   });
 
   it("잠긴 공고·없는 공고와 계약 밖 원정은 INVALID_TRANSITION이다", () => {
