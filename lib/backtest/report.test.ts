@@ -54,8 +54,11 @@ describe("백테스트 gate와 보고서", () => {
       },
     };
 
-    expect(evaluateFixedGates(withoutCampaignCompletion).find((gate) => gate.id === "betrayal-can-complete"))
-      .toMatchObject({ passed: false, evidence: expect.stringContaining("캠페인 정상 완주 0건") });
+    const riskGates = evaluateFixedGates(withoutCampaignCompletion, "risk-curve");
+    expect(riskGates.find((gate) => gate.id === "no-run-errors")).toMatchObject({ enforced: true });
+    expect(riskGates.find((gate) => gate.id === "not-all-rank-s")).toMatchObject({ enforced: true });
+    expect(riskGates.find((gate) => gate.id === "betrayal-can-complete"))
+      .toMatchObject({ passed: false, enforced: false, evidence: expect.stringContaining("캠페인 정상 완주 0건") });
   });
 
   it("paired 완주 효과가 0.05이고 95% CI가 0을 제외할 때 accuracy gate를 통과시킨다", () => {
@@ -84,10 +87,11 @@ describe("백테스트 gate와 보고서", () => {
 
   it("같은 집계는 실행 순서와 무관하게 같은 Markdown을 만든다", () => {
     const aggregate = aggregateFixture();
-    const gates = evaluateFixedGates(aggregate);
+    const gates = evaluateFixedGates(aggregate, "risk-curve");
     const input = {
       mode: "calibration" as const,
-      namespace: "b1b-calibration-v1" as const,
+      focus: "risk-curve" as const,
+      namespace: "b1-risk-curve-v2-calibration" as const,
       seedsPerCombination: 2 as const,
       sourceRevision: "test-revision",
       aggregate,
@@ -132,6 +136,7 @@ describe("백테스트 gate와 보고서", () => {
     const second = renderBacktestReport({ ...input, aggregate: aggregateRuns([...aggregate.runs].reverse()) });
     expect(second).toBe(first);
     expect(first).toContain("## 고정 무결성 gate");
+    expect(first).toContain("- focus: risk-curve");
     expect(first).toContain("## 설정 revision과 현재 수치");
     expect(first).toContain("## calibration 선택과 단계별 근거");
     expect(first).toContain("선택 축: bossBaseStatMultiplierByInitialRisk");
@@ -163,6 +168,7 @@ describe("백테스트 gate와 보고서", () => {
     expect(first).toContain("보스 실패");
     expect(first).toContain("Wilson 95%");
     expect(first).toContain("OBSERVE");
+    expect(first).toContain("| betrayal-can-complete | OBSERVE |");
     expect(first).toContain("## 엔딩·최종 등급 분포");
     expect(first).toContain("## paired 정확도 비교");
     expect(first).not.toContain("조정 가능한 기준");
