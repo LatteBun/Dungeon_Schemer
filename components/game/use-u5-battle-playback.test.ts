@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   nextU5BattleFrameIndex,
   nextU5BattleFrameIndexForLength,
+  nextU5BattlePlaybackRate,
   u5BattleFrameDurationMs,
   u5BattlePlaybackForSignature,
   u5ReplaySignature,
@@ -20,17 +21,24 @@ describe("u5 battle playback", () => {
     expect(u5BattleFrameDurationMs(phase, 2)).toBe(atTwo);
   });
 
-  it("새 replay signature는 frame과 속도를 초기화한다", () => {
+  it("새 replay signature는 frame만 처음으로 돌린다", () => {
     expect(u5BattlePlaybackForSignature(
-      { signature: "before", frameIndex: 4, playbackRate: 2 },
+      { signature: "before", frameIndex: 4 },
       "after",
-    )).toEqual({ signature: "after", frameIndex: 0, playbackRate: 1 });
+    )).toEqual({ signature: "after", frameIndex: 0 });
   });
 
-  it("같은 replay signature는 선택한 속도를 유지한다", () => {
-    const playback = { signature: "same", frameIndex: 0, playbackRate: 2 } as const;
+  it("같은 replay signature는 현재 frame을 유지한다", () => {
+    const playback = { signature: "same", frameIndex: 0 } as const;
 
     expect(u5BattlePlaybackForSignature(playback, "same")).toBe(playback);
+  });
+
+  it.each([
+    [1, 2],
+    [2, 1],
+  ] as const)("전투 속도 %d를 누르면 %d가 된다", (current, expected) => {
+    expect(nextU5BattlePlaybackRate(current)).toBe(expected);
   });
 
   it("다음 frame 계산은 replay 객체가 아니라 frame 수만 사용한다", () => {
