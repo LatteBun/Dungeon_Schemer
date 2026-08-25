@@ -77,6 +77,8 @@ const render = (over: Partial<U5ProgressView> = {}, props: Record<string, unknow
       progress: { ...base, ...over },
       log,
       ecology,
+      playbackRate: 1,
+      onTogglePlaybackRate: () => undefined,
       ...props,
     }),
   );
@@ -117,6 +119,17 @@ describe("U5ProgressScreen", () => {
 
     expect(html).toContain('aria-label="전투 재생 속도"');
     expect(html).toContain('data-playback-rate="1"');
+  });
+
+  it("부모가 준 ×2를 전투 장면에 그대로 전달한다", () => {
+    const html = render({}, {
+      battleReplay,
+      playbackRate: 2,
+      onTogglePlaybackRate: () => undefined,
+    });
+
+    expect(html).toContain('data-playback-rate="2"');
+    expect(html).toContain('aria-pressed="true"');
   });
 
   it("비전투 장면에는 파티를, 전투 장면에는 battle scene만 둔다", () => {

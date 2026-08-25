@@ -26,6 +26,7 @@
 - components/game/U5ProgressScreen.test.tsx: supplied ×2 render contract.
 - components/game/CampaignScreen.tsx: 활성 원정 mount 범위의 rate control.
 - components/game/U5BattlePreview.tsx: E3/E4 selector가 공유하는 rate control.
+- components/game/U5Preview.tsx: 독립 진행 프리뷰 mount 범위의 rate control.
 - e2e/u5-battle-preview.spec.ts: E3→E4 ×2 유지 Chromium regression.
 - docs/experience/SCREEN_LAYOUT.md, docs/experience/UI_IMPLEMENTATION_GUIDE.md: new expedition reset wording.
 
@@ -105,11 +106,12 @@ git commit -m "수정: 전투 속도 상태를 재생 기록에서 분리한다"
 - Modify: components/game/U5ProgressScreen.test.tsx:1-320
 - Modify: components/game/CampaignScreen.tsx:190-285
 - Modify: components/game/U5BattlePreview.tsx:1-48
+- Modify: components/game/U5Preview.tsx:1-48
 
 **Interfaces:**
 - Consumes: useU5BattlePlaybackRate and U5BattlePlaybackRateControl from Task 1.
 - Changes: U5ProgressScreenProps has mandatory playbackRate and onTogglePlaybackRate.
-- Produces: one rate-control instance per ExpeditionScreens mount and one per U5BattlePreview mount.
+- Produces: one rate-control instance per ExpeditionScreens, U5BattlePreview, and U5Preview mount.
 
 - [ ] **Step 1: Write failing U5ProgressScreen forwarding test**
 
@@ -166,7 +168,7 @@ export function U5BattlePreview() {
 }
 ~~~
 
-Call the hook before component conditional returns. Do not put it in CampaignScreen or Zustand: both scopes survive an active expedition and would violate new-expedition reset.
+Apply the same local control to U5Preview, which also calls U5ProgressScreen directly. Call every hook before component conditional returns. Do not put it in CampaignScreen or Zustand: both scopes survive an active expedition and would violate new-expedition reset.
 
 - [ ] **Step 5: Run focused UI suites and typecheck**
 
@@ -177,7 +179,7 @@ Expected: PASS; supplied ×2 markup is correct and all callers meet the controll
 - [ ] **Step 6: Commit**
 
 ~~~bash
-git add components/game/U5ProgressScreen.tsx components/game/U5ProgressScreen.test.tsx components/game/CampaignScreen.tsx components/game/U5BattlePreview.tsx
+git add components/game/U5ProgressScreen.tsx components/game/U5ProgressScreen.test.tsx components/game/CampaignScreen.tsx components/game/U5BattlePreview.tsx components/game/U5Preview.tsx
 git commit -m "기능: 원정 사이 전투 속도를 유지한다" -m "일반전과 보스전이 같은 원정 재생 속도를 공유한다."
 ~~~
 
@@ -235,4 +237,3 @@ git add e2e/u5-battle-preview.spec.ts docs/experience/SCREEN_LAYOUT.md docs/expe
 git commit -m "문서: 원정 단위 전투 속도 유지 계약을 기록한다" -m "다음 전투 유지와 새 원정 초기화를 검증에 반영한다."
 git status --short
 ~~~
-
