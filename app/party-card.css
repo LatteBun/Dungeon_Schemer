@@ -176,7 +176,6 @@
 .party-card__effect--hp { color: #ef9a83; }
 .party-card__effect--trust { color: #b5da83; }
 @keyframes party-card-effect { from { opacity: 0; transform: translateY(0.28rem); } to { opacity: 1; transform: translateY(0); } }
-@media (prefers-reduced-motion: reduce) { .party-card__effect { animation: none; } }
 
 /* 라벨 문구 없이 아이콘과 금액을 붙인다. */
 .party-card__gold {
