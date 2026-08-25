@@ -59,9 +59,35 @@ export async function enterLandscapeFullscreen(
   }
 }
 
+/**
+ * 돌려 달라고 말할 자리인가.
+ *
+ * 두 가지가 함께 맞아야 한다 — 지금 세로이고, 돌릴 수 있는 기기여야 한다.
+ * 세로인 것만 보면 PC 에서 창을 위아래로 길게 늘린 사람에게도 안내가 떠서,
+ * 돌릴 물건이 없는 사람에게 돌리라고 하게 된다.
+ */
+export function shouldAskToTurn(input: {
+  readonly portrait: boolean;
+  readonly coarsePointer: boolean;
+}): boolean {
+  return input.portrait && input.coarsePointer;
+}
+
 function isPortrait(): boolean {
   if (typeof window === "undefined") return false;
   return window.innerHeight > window.innerWidth;
+}
+
+/**
+ * 손가락으로 쓰는 기기인가.
+ *
+ * 기기 이름(userAgent)으로 가르지 않는다. 아이패드는 스스로를 맥이라고 말하고,
+ * 새 기기가 나올 때마다 목록이 낡는다. 필요한 것은 이름이 아니라 「손가락으로
+ * 쓰는 기기인가」 하나뿐이므로 그것만 묻는다.
+ */
+function hasCoarsePointer(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(pointer: coarse)").matches;
 }
 
 /**
@@ -71,11 +97,11 @@ function isPortrait(): boolean {
  * 두는 것보다 한 줄로 부탁하는 편이 낫다.
  */
 export function ScreenFit() {
-  const [portrait, setPortrait] = useState(false);
+  const [needsTurn, setNeedsTurn] = useState(false);
   const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
 
   useEffect(() => {
-    const sync = () => setPortrait(isPortrait());
+    const sync = () => setNeedsTurn(shouldAskToTurn({ portrait: isPortrait(), coarsePointer: hasCoarsePointer() }));
     sync();
     setFullscreenAvailable(canGoFullscreen(document.documentElement) && document.fullscreenElement === null);
 
@@ -87,7 +113,7 @@ export function ScreenFit() {
     };
   }, []);
 
-  if (!portrait) return null;
+  if (!needsTurn) return null;
 
   return (
     <div className="screen-fit" role="alert">

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { canGoFullscreen, enterLandscapeFullscreen } from "./ScreenFit";
+import { canGoFullscreen, enterLandscapeFullscreen, shouldAskToTurn } from "./ScreenFit";
 
 /**
  * 휴대폰에서 주소창을 감추는 길은 두 갈래뿐이다.
@@ -75,5 +75,43 @@ describe("전체 화면 들어가기", () => {
     await enterLandscapeFullscreen(element, orientation);
 
     expect(locked).toBe(false);
+  });
+});
+
+/*
+ * 돌려 달라는 말은 돌릴 수 있는 사람에게만 한다.
+ *
+ * 처음에는 세로인 것만 보고 띄웠는데, PC 에서 창을 위아래로 길게 늘리면
+ * 900×1200 짜리 창에도 「가로로 돌려 주세요」 가 떴다. 돌릴 물건이 없는
+ * 사람에게 돌리라고 하는 셈이었다.
+ */
+describe("가로로 돌려 달라고 말할 자리", () => {
+  it("손가락 기기가 세로일 때만 말한다", () => {
+    expect(shouldAskToTurn({ portrait: true, coarsePointer: true })).toBe(true);
+  });
+
+  it("PC 창이 세로로 길어도 말하지 않는다", () => {
+    expect(shouldAskToTurn({ portrait: true, coarsePointer: false })).toBe(false);
+  });
+
+  it("가로로 들었으면 말하지 않는다", () => {
+    expect(shouldAskToTurn({ portrait: false, coarsePointer: true })).toBe(false);
+    expect(shouldAskToTurn({ portrait: false, coarsePointer: false })).toBe(false);
+  });
+
+  it("기기 이름으로 가르지 않는다", () => {
+    /*
+     * 아이패드는 스스로를 맥이라고 말한다. 이름 목록은 새 기기마다 낡는다.
+     *
+     * 주석은 걷어내고 본다 — 「이름으로 가르지 않는다」 고 설명하는 주석까지
+     * 걸리면, 왜 그렇게 했는지 적어 둘 수가 없다.
+     */
+    const source = readFileSync(join(process.cwd(), "components", "game", "ScreenFit.tsx"), "utf8");
+    const code = source
+      .replaceAll(/\/\*[\s\S]*?\*\//g, "")
+      .replaceAll(/\/\/[^\n]*/g, "");
+
+    expect(code).not.toMatch(/userAgent|iPhone|iPad|Android|Macintosh/);
+    expect(code).toContain("(pointer: coarse)");
   });
 });
