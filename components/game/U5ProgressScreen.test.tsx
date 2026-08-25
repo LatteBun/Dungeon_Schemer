@@ -400,6 +400,47 @@ describe("U5ProgressScreen", () => {
     expect(html).toContain('data-testid="u5-log"');
   });
 
+  it("진행 기록 목록은 키보드로 초점을 받고 콘솔 안에서만 세로 스크롤한다", () => {
+    const html = render({}, { initialMode: "log" });
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const scrollArea = sheet.match(/\.u5-log__entries,\s*\.u5-ecology\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(html).toContain('class="u5-log__entries" tabindex="0" aria-label="진행 기록 목록"');
+    expect(scrollArea).toMatch(/overflow-y:\s*auto/);
+    expect(scrollArea).toMatch(/overscroll-behavior:\s*contain/);
+    expect(scrollArea).toMatch(/scrollbar-width:\s*thin/);
+    expect(scrollArea).toMatch(/scrollbar-color:\s*transparent transparent/);
+    expect(cssRule(sheet, ".u5-log__entries")).not.toMatch(/overflow:\s*hidden/);
+  });
+
+  it("생태 영역은 같은 내부 스크롤과 키보드 접근성을 가진다", () => {
+    const html = render({}, { initialMode: "log", initialFilter: "ecology" });
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const scrollArea = sheet.match(/\.u5-log__entries,\s*\.u5-ecology\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(html).toContain('class="u5-ecology" data-testid="u5-ecology" tabindex="0" aria-label="확인된 생태와 관찰 단서"');
+    expect(scrollArea).toMatch(/overflow-y:\s*auto/);
+    expect(scrollArea).toMatch(/overscroll-behavior:\s*contain/);
+    expect(scrollArea).toMatch(/scrollbar-width:\s*thin/);
+    expect(scrollArea).toMatch(/scrollbar-color:\s*transparent transparent/);
+  });
+
+  it("진행 기록 scrollbar는 평소 숨고 hover와 focus에서만 얇은 금속색으로 드러난다", () => {
+    const sheet = readFileSync("app/u5-progress.css", "utf8");
+    const contentSelectors = ".u5-log__entries,\n.u5-ecology";
+    const webkit = sheet.match(/\.u5-log__entries::-webkit-scrollbar,\s*\.u5-ecology::-webkit-scrollbar\s*\{[^}]*\}/)?.[0] ?? "";
+    const webkitThumb = sheet.match(/\.u5-log__entries::-webkit-scrollbar-thumb,\s*\.u5-ecology::-webkit-scrollbar-thumb\s*\{[^}]*\}/)?.[0] ?? "";
+    const visibleThumb = sheet.match(/\.u5-log__entries:hover::-webkit-scrollbar-thumb,[\s\S]*?\.u5-ecology:focus-visible::-webkit-scrollbar-thumb\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(sheet).toContain(contentSelectors);
+    expect(webkit).toMatch(/width:\s*0\.28rem/);
+    expect(webkitThumb).toMatch(/background:\s*transparent/);
+    expect(visibleThumb).toMatch(/background:\s*#5a4630/);
+    expect(sheet).toContain(".u5-ecology:hover::-webkit-scrollbar-thumb");
+    expect(sheet).toContain(".u5-ecology:focus-visible::-webkit-scrollbar-thumb");
+    expect(sheet).toContain(".u5-log__entries:hover,\n.u5-log__entries:focus-visible,");
+  });
+
   it("생태 탭은 확인된 생태와 관찰 단서를 구역으로 나눈다", () => {
     const html = render({}, { initialMode: "log", initialFilter: "ecology" });
 
