@@ -16,6 +16,7 @@
  */
 
 import { useState } from "react";
+import { useReducedMotion } from "framer-motion";
 
 export interface PartyMemberCardView {
   id: string;
@@ -40,6 +41,11 @@ export interface PartyMemberChangeEntry {
   readonly trust?: { readonly before: number; readonly after: number };
 }
 
+export interface PartyMemberSettledResult {
+  readonly hpDelta?: number;
+  readonly trustDelta?: number;
+}
+
 export interface PartyMemberCardProps {
   member: PartyMemberCardView;
   /** 화면별 접두사. U3 는 순번을 함께 보여준다. */
@@ -53,6 +59,8 @@ export interface PartyMemberCardProps {
    */
   changes?: readonly PartyMemberChangeEntry[];
   effect?: { readonly kind: "hp" | "trust"; readonly delta: number; readonly token: string };
+  /** 현재 결과에서 확인을 마친 변화량. 다음 화면으로 이동할 때까지 앞면에 남긴다. */
+  settledResult?: PartyMemberSettledResult;
 }
 
 const GOLD_ICON = "/assets/u2/status-gold.svg";
@@ -102,10 +110,17 @@ function percent(value: number, max: number): number {
   return Math.max(0, Math.min(100, (value / max) * 100));
 }
 
-export function PartyMemberCard({ member, index, testId, changes, effect }: PartyMemberCardProps) {
+function signedDelta(delta: number): string {
+  return delta > 0 ? `+${delta}` : `−${Math.abs(delta)}`;
+}
+
+export function PartyMemberCard({ member, index, testId, changes, effect, settledResult }: PartyMemberCardProps) {
   const alive = member.alive ?? true;
+  const reducedMotion = useReducedMotion() ?? false;
   const [flipped, setFlipped] = useState(false);
   const canFlip = changes !== undefined;
+  const settledHp = settledResult?.hpDelta === 0 ? undefined : settledResult?.hpDelta;
+  const settledTrust = settledResult?.trustDelta === 0 ? undefined : settledResult?.trustDelta;
 
   /*
    * 뒤집을 수 있는 카드만 누를 수 있게 한다.
@@ -149,7 +164,7 @@ export function PartyMemberCard({ member, index, testId, changes, effect }: Part
             <span className="party-meter" aria-hidden="true">
               <i style={{ width: `${alive ? percent(member.hp, member.maxHp) : 0}%` }} />
             </span>
-            {effect?.kind === "hp" ? <output className="party-card__effect party-card__effect--hp" aria-live="polite">HP {effect.delta > 0 ? `+${effect.delta}` : `−${Math.abs(effect.delta)}`}</output> : null}
+            {effect?.kind === "hp" ? <output className="party-card__effect party-card__effect--hp" data-reduced-motion={reducedMotion} aria-live="polite">HP {effect.delta > 0 ? `+${effect.delta}` : `−${Math.abs(effect.delta)}`}</output> : null}
           </div>
 
           <div className="party-card__stat">
@@ -158,7 +173,7 @@ export function PartyMemberCard({ member, index, testId, changes, effect }: Part
             <span className="party-meter party-meter--trust" aria-hidden="true">
               <i style={{ width: `${percent(member.trust, 100)}%` }} />
             </span>
-            {effect?.kind === "trust" ? <output className="party-card__effect party-card__effect--trust" aria-live="polite">신뢰 {effect.delta > 0 ? `+${effect.delta}` : `−${Math.abs(effect.delta)}`}</output> : null}
+            {effect?.kind === "trust" ? <output className="party-card__effect party-card__effect--trust" data-reduced-motion={reducedMotion} aria-live="polite">신뢰 {effect.delta > 0 ? `+${effect.delta}` : `−${Math.abs(effect.delta)}`}</output> : null}
           </div>
 
           {/* 라벨 문구를 두지 않는다. 아이콘과 금액이 붙어 있으면 읽힌다. */}
@@ -169,6 +184,13 @@ export function PartyMemberCard({ member, index, testId, changes, effect }: Part
             <dd>{member.gold}</dd>
           </div>
         </dl>
+
+        {settledHp === undefined && settledTrust === undefined ? null : (
+          <div className="party-card__settled-results" data-reduced-motion={reducedMotion} aria-live="polite">
+            {settledHp === undefined ? null : <output className="party-card__settled-result party-card__settled-result--hp">HP {signedDelta(settledHp)}</output>}
+            {settledTrust === undefined ? null : <output className="party-card__settled-result party-card__settled-result--trust">신뢰 {signedDelta(settledTrust)}</output>}
+          </div>
+        )}
       </div>
 
       {canFlip && (

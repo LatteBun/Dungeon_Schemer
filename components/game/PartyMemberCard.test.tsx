@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -21,12 +23,41 @@ const member: PartyMemberCardView = {
   gold: 31,
 };
 
+const partyCardCss = readFileSync(join(process.cwd(), "app", "party-card.css"), "utf8");
+
 const render = (over: Partial<PartyMemberCardView> = {}, props = {}) =>
   renderToStaticMarkup(
     createElement(PartyMemberCard, { member: { ...member, ...over }, ...props }),
   );
 
 describe("PartyMemberCard", () => {
+  it("확인한 HP와 신뢰 변화량을 카드 앞면에 함께 남긴다", () => {
+    const html = render({}, { settledResult: { hpDelta: -3, trustDelta: -2 } });
+
+    expect(html).toContain("party-card__settled-results");
+    expect(html).toContain("HP −3");
+    expect(html).toContain("신뢰 −2");
+  });
+
+  it("확인한 양수 변화량에는 더하기 부호를 붙인다", () => {
+    const html = render({}, { settledResult: { hpDelta: 4, trustDelta: 2 } });
+
+    expect(html).toContain("HP +4");
+    expect(html).toContain("신뢰 +2");
+  });
+
+  it("0인 완료 변화량은 카드 앞면에 남기지 않는다", () => {
+    const html = render({}, { settledResult: { hpDelta: 0, trustDelta: 0 } });
+
+    expect(html).not.toContain("party-card__settled-results");
+  });
+
+  it("동작 줄이기 상태는 미디어 쿼리 없이 완료 변화량의 진입 모션만 제거한다", () => {
+    expect(partyCardCss).toMatch(
+      /\.party-card__settled-results\[data-reduced-motion="true"\]\s*\{[^}]*animation:\s*none/,
+    );
+  });
+
   it("전투 수치 증감을 카드 안의 접근 가능한 output으로 표시한다", () => {
     const html = render({}, { effect: { kind: "hp", delta: -3, token: "private-token" } });
     expect(html).toContain("HP −3");

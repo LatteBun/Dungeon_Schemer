@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { GameShell } from "./GameShell";
-import { PartyMemberCard, type PartyMemberChangeEntry } from "./PartyMemberCard";
+import {
+  PartyMemberCard,
+  type PartyMemberChangeEntry,
+  type PartyMemberSettledResult,
+} from "./PartyMemberCard";
 import type { TopStatusView } from "./TopStatusBar";
 import {
   U5_LOG_FILTERS,
@@ -15,10 +19,17 @@ import {
 import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
 import { U5BattleScene } from "./U5BattleScene";
 import { U5NonBattlePartyScene } from "./U5NonBattlePartyScene";
-import type { U5BattleReplay } from "./u5-battle-replay";
+import type { U5BattleReplay, U5BattleReplayParticipant } from "./u5-battle-replay";
 import { type U5BattlePlaybackRate, useU5BattlePlayback } from "./use-u5-battle-playback";
 import { useU5CombatFeedback } from "./use-u5-combat-feedback";
-import { u5FeedbackIsComplete, u5VisibleTrust, type U5CombatFeedbackView } from "./u5-combat-feedback";
+import {
+  u5FeedbackIsComplete,
+  u5SettledTrustDelta,
+  u5VisibleHp,
+  u5VisibleTrust,
+  type U5CombatFeedbackPhase,
+  type U5CombatFeedbackView,
+} from "./u5-combat-feedback";
 
 export type U5ConsoleMode = "advice" | "log";
 export type U5BattleExitPolicy = "after-playback";
@@ -50,6 +61,22 @@ export interface U5ProgressScreenProps {
   /** 독립 전투 프리뷰에서만 재생 중 건너뛰기 조작을 보여준다. */
   readonly previewPlaybackControls?: boolean;
   readonly combatFeedback?: U5CombatFeedbackView;
+}
+
+export function u5SettledPartyResult(
+  view: U5CombatFeedbackView,
+  phase: U5CombatFeedbackPhase,
+  participant: U5BattleReplayParticipant | undefined,
+  memberId: string,
+): PartyMemberSettledResult | undefined {
+  if (phase !== "postBattleTrust" && phase !== "complete") return undefined;
+  const hpDelta = participant === undefined ? undefined : participant.finalHp - participant.initialHp;
+  const trustDelta = u5SettledTrustDelta(view, memberId);
+  const result = {
+    ...(hpDelta === undefined || hpDelta === 0 ? {} : { hpDelta }),
+    ...(trustDelta === undefined || trustDelta === 0 ? {} : { trustDelta }),
+  };
+  return Object.keys(result).length === 0 ? undefined : result;
 }
 
 const REACTION_LABEL = {
@@ -235,17 +262,16 @@ export function U5ProgressScreen({
     if (feedback.phase === "battle" && battlePlayback.isComplete) feedback.battleCompleted();
   }, [battlePlayback.isComplete, feedback]);
   const feedbackComplete = combatFeedback === undefined || u5FeedbackIsComplete(feedback.phase);
-  const showingBattleFrames = feedback.phase === "battle" || battlePlayback.isReplaying;
-  const shownParty = combatFeedback === undefined ? progress.party : progress.party.map((member) => ({
-    ...member,
-    hp: showingBattleFrames
-      ? battlePlayback.frame?.hpByParticipantId[member.id] ?? member.hp
-      : member.hp,
-    alive: showingBattleFrames
-      ? (battlePlayback.frame?.hpByParticipantId[member.id] ?? member.hp) > 0
-      : member.alive,
-    trust: u5VisibleTrust(combatFeedback, feedback.phase, member.id, member.trust),
-  }));
+  const showingBattleFrames = feedback.phase === "battle";
+  const shownParty = combatFeedback === undefined ? progress.party : progress.party.map((member) => {
+    const hp = u5VisibleHp(feedback.phase, battlePlayback.frame?.hpByParticipantId[member.id], member.hp);
+    return {
+      ...member,
+      hp,
+      alive: showingBattleFrames ? hp > 0 : member.alive,
+      trust: u5VisibleTrust(combatFeedback, feedback.phase, member.id, member.trust),
+    };
+  });
   const hasGatedReplay = battleExitPolicy === "after-playback" && battleReplay !== undefined;
   const replayingBattle = hasGatedReplay
     && (combatFeedback === undefined || feedback.phase === "battle" || battlePlayback.isReplaying)
@@ -356,15 +382,15 @@ export function U5ProgressScreen({
                       index={index}
                       testId="u5-party-member"
                       changes={feedbackComplete ? changesByMemberId?.[member.id] : undefined}
+                      settledResult={combatFeedback === undefined ? undefined : u5SettledPartyResult(
+                        combatFeedback,
+                        feedback.phase,
+                        battleReplay?.participants.find((participant) => participant.id === member.id),
+                        member.id,
+                      )}
                       effect={showingBattleFrames && battlePlayback.frame?.targetId === member.id && battlePlayback.frame.damage !== null
                         ? { kind: "hp", delta: -battlePlayback.frame.damage, token: `${battlePlayback.frameIndex}:${member.id}:hp` }
-                        : feedback.phase === "postBattleTrust"
-                          ? (() => {
-                              const change = combatFeedback?.postBattleTrustChanges.find((one) => one.memberId === member.id)
-                                ?? combatFeedback?.immediateTrustChanges.find((one) => one.memberId === member.id);
-                              return change === undefined ? undefined : { kind: "trust" as const, delta: change.after - change.before, token: `${combatFeedback?.signature ?? "feedback"}:${member.id}:trust` };
-                            })()
-                          : undefined}
+                        : undefined}
                     />
                   </li>
                 ))}

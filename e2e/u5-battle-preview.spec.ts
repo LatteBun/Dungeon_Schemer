@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { expectNoBrowserErrors, watchBrowserErrors } from "./browser-errors";
 
-async function expectPlaybackControls(entryName: string, page: Page): Promise<void> {
+async function expectPlaybackControls(entryName: string, page: Page, expectsHpResult: boolean): Promise<void> {
   const failures = watchBrowserErrors(page);
   await page.goto("/u5-2-test");
 
@@ -14,30 +14,55 @@ async function expectPlaybackControls(entryName: string, page: Page): Promise<vo
   await expect(skip).toBeEnabled();
 
   await skip.click();
+  const reaction = page.getByRole("button", { name: "반응 확인" });
+  await expect(reaction).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(".party-card__settled-results")).toHaveCount(0);
+  await reaction.click();
+
   const replay = page.getByRole("button", { name: "다시 보기" });
-  await expect(replay).toBeEnabled();
+  await expect(replay).toBeEnabled({ timeout: 10_000 });
+  const settledCard = page.locator(".party-card:has(.party-card__settled-result--trust)");
+  await expect(settledCard).toHaveCount(1);
+  await expect(settledCard.locator(".party-card__settled-result--trust")).toHaveText("신뢰 −2");
+  if (expectsHpResult) {
+    await expect(settledCard.locator(".party-card__settled-result--hp")).toHaveText(/HP −\d+/);
+  } else {
+    await expect(page.locator(".party-card__settled-result--hp")).toHaveCount(0);
+  }
+  const finalHp = await settledCard.locator(".party-card__stat").filter({ hasText: "HP" }).locator("dd").innerText();
+  const finalTrust = await settledCard.locator(".party-card__stat").filter({ hasText: "신뢰" }).locator("dd").innerText();
+  const settledResults = await settledCard.locator(".party-card__settled-result").allTextContents();
 
   await replay.click();
   await expect(skip).toBeEnabled();
   await expect(speed).toHaveText("×2");
+  await expect(settledCard.locator(".party-card__stat").filter({ hasText: "HP" }).locator("dd")).toHaveText(finalHp);
+  await expect(settledCard.locator(".party-card__stat").filter({ hasText: "신뢰" }).locator("dd")).toHaveText(finalTrust);
+  await expect(settledCard.locator(".party-card__settled-result")).toHaveText(settledResults);
+  await expect(reaction).toHaveCount(0);
 
   await expect(replay).toBeVisible({ timeout: 60_000 });
+  await expect(settledCard.locator(".party-card__settled-result")).toHaveText(settledResults);
   expectNoBrowserErrors(failures, `U5-2 ${entryName}`);
 }
 
 test.describe("U5-2 전투 프리뷰", () => {
   test("실제 일반전은 건너뛰기와 다시 보기를 전환한다", async ({ page }) => {
-    await expectPlaybackControls("E3 실제 일반전", page);
+    await expectPlaybackControls("E3 실제 일반전", page, false);
   });
 
   test("실제 보스전은 건너뛰기와 다시 보기를 전환한다", async ({ page }) => {
-    await expectPlaybackControls("E4 실제 보스전", page);
+    await expectPlaybackControls("E4 실제 보스전", page, true);
   });
 
   test("자연 재생 완료 뒤에는 다시 보기를 표시한다", async ({ page }) => {
     await page.goto("/u5-2-test");
 
-    await expect(page.getByRole("button", { name: "다시 보기" })).toBeVisible({ timeout: 60_000 });
+    const reaction = page.getByRole("button", { name: "반응 확인" });
+    await expect(reaction).toBeVisible({ timeout: 60_000 });
+    await reaction.click();
+    await expect(page.getByRole("button", { name: "다시 보기" })).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".party-card__settled-result--trust")).toHaveText("신뢰 −2");
     await expect(page.getByRole("button", { name: "전투 건너뛰기" })).toHaveCount(0);
   });
 });

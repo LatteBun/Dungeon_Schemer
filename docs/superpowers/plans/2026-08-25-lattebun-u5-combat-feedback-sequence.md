@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 일반전과 보스전에서 선택의 반응·사건 결과·전투·HP·사후 대사·신뢰 변화를 인과 순서대로 공개하고, 전투 프레임과 우측 파티 카드의 HP를 동시에 갱신한다.
+**Goal:** 일반전과 보스전에서 결과를 인과 순서대로 공개하고, 확인한 HP·신뢰 변화량을 우측 파티 카드에 유지하며 다시보기는 중앙 전투 장면만 재생한다.
 
-**Architecture:** 규칙 결과를 바꾸지 않는 순수 `U5CombatFeedbackView` adapter와 표시 전용 phase reducer를 추가한다. `U5ProgressScreen`이 feedback phase와 기존 battle playback을 조합하고, 같은 replay frame을 전투 장면과 우측 카드 HP에 투영한다. 신뢰는 확인 전까지 이전 값을 유지한 뒤 사후 대사 확인 후에만 최종값으로 전환하며, 로그·카드 뒷면·다음 CTA도 같은 공개 phase를 따른다.
+**Architecture:** 규칙 결과를 바꾸지 않는 순수 `U5CombatFeedbackView` adapter와 표시 전용 phase reducer를 사용한다. `U5ProgressScreen`은 최초 전투 중에만 같은 replay frame을 장면과 우측 카드 HP에 투영하고, 완료 뒤 다시보기에서는 장면만 frame을 소비하게 한다. `PartyMemberCard`는 사후 확인 뒤 이번 결과의 0이 아닌 HP·신뢰 변화량을 동시에 받아 다음 화면 전까지 지속 표시한다.
 
 **Tech Stack:** Next.js 16.3 App Router, React 19, TypeScript, Framer Motion 13, Zustand 5, Vitest 4, Playwright
 
@@ -18,14 +18,14 @@
 - 공개 순서는 `카드 선택 → 핵심 반응 → 사건 결과 → 전투 → HP 정리 → 사후 대사 → 신뢰 변화 → 다음 단계`다. 노출된 거짓말만 전투 전 즉시 신뢰 단계를 허용한다.
 - 전투 건너뛰기는 battle frame만 complete로 이동시킨다. `postBattleHp`, `postBattleDialogue`, `postBattleTrust`는 생략하지 않는다.
 - 자동 beat 시간은 핵심 반응 1100ms, 사건 결과 1100ms, 즉시/사후 신뢰 강조 650ms, 사후 HP 강조 500ms다. 사후 대사는 `반응 확인` 클릭 전까지 유지한다.
-- battle playback의 현재 frame 하나를 전투 장면과 우측 파티 카드가 함께 소비한다. HP가 0이 되는 frame에서 카드의 전투 불능 표시도 동시에 바뀐다.
+- 최초 battle playback의 현재 frame 하나를 전투 장면과 우측 파티 카드가 함께 소비한다. HP가 0이 되는 frame에서 카드의 전투 불능 표시도 동시에 바뀐다. 완료 뒤 다시보기에서는 우측 카드가 frame을 소비하지 않는다.
 - 사후 대사 확인 전에는 우측 카드 신뢰가 이전 값이다. 확인 뒤 trust phase에서만 최종값과 증감 effect를 표시한다.
 - 좌측 하단은 현재 beat 하나만 표시한다. 전체 반응·결과·수치 세 묶음을 동시에 노출하지 않는다.
 - HP·신뢰 수치 변화 effect는 우측 카드에 둔다. 전체 이력은 해당 phase가 지난 뒤 로그와 카드 뒷면에서만 공개한다.
 - 핵심 인물은 spec의 stable seat order와 절댓값 tie-break 규칙으로 정한다. 내부 kind/key 값은 DOM text, accessible name, `data-*`에 출력하지 않는다.
 - `accepted`, `suspected`, `exposed`, `adviceHelped`, `adviceHarmed`, `suspicionWasCorrect`, `suspicionWasCostly` 문구는 spec에 승인된 고정 한국어 문구를 그대로 사용한다. 성격별 문구나 새 에셋을 추가하지 않는다.
-- replay control은 전체 feedback sequence가 complete일 때만 보인다. 다시 보기는 battle HP만 되감고 대사·신뢰 phase는 반복하지 않으며, 신뢰는 최종값을 유지한다.
-- 현재 checkout에는 전투 배속 구현이 없으므로 이 작업에서 playback rate를 추가하지 않는다. 나중에 배속 코드가 합쳐져도 feedback beat timer는 battle rate와 연결하지 않는다.
+- replay control은 전체 feedback sequence가 complete일 때만 보인다. 다시 보기는 중앙 장면만 되감고 우측 카드의 최종 HP·신뢰·변화량을 유지하며 대사·신뢰 phase를 반복하지 않는다.
+- 전투 `×1 / ×2`는 frame과 장면 motion에만 적용하고 feedback beat timer 및 우측 카드의 완료 결과에는 연결하지 않는다.
 - BattleEngine, E2/E3/E4 판정, RNG 소비, damage·trust 계산, Store·저장 데이터 형식은 변경하지 않는다.
 - 기존 비전투 `Outcome` 표시는 유지한다. 인접한 `U5 콘솔 상황 가독성` spec이 먼저 구현되면 `data-testid="u5-situation"`와 `.u5-situation-panel` 구조를 보존한다.
 - 1920×1080 고정 캔버스, 60:40 화면 분할, 좌측 40:60 내부 분할, `rem/cqw/cqh` 단위를 유지한다. 새 `vw`, `vh`, 미디어 쿼리를 추가하지 않는다.
@@ -534,7 +534,7 @@ Keep exactly one visible beat. Do not render future strings with CSS hiding.
 
 Add `showReplayControl` to `U5BattleScene`. Render `다시 보기` only when the replay frame is complete and `showReplayControl` is true. Remove the eager complete-frame verification list from the battle scene; the selected verification appears in the post-battle ribbon and all verification history appears in the phase-filtered log.
 
-When replay is clicked after sequence completion, reset only `frameIndex`; keep feedback phase `complete`, final trust, next CTA, and logs. The scene may replay while those final controls remain present. `전투 건너뛰기` is not shown during this replay because the feedback sequence is already complete.
+When replay is clicked after sequence completion, reset only `frameIndex`; keep feedback phase `complete`, right-card final HP/trust/result deltas, and logs. The central scene may replay while the right cards remain settled. Do not feed replay frames back into the right-card projection after sequence completion.
 
 - [ ] **Step 5: Add fixed-canvas styling and reduced-motion behavior**
 
@@ -613,7 +613,7 @@ Add these browser cases:
 - natural general playback: a right-card HP value changes no later than the matching battle scene HP frame.
 - skipped general playback: post HP → confirmation → trust → final CTA remains ordered.
 - boss playback: uses the same confirmation gate and ends with `정산으로`.
-- replay after complete: HP rewinds, final trust and next CTA stay unchanged, dialogue does not reappear.
+- replay after complete: only the central scene HP rewinds; right-card final HP, final trust, persistent deltas, and dialogue phase stay unchanged.
 - reduced motion (`page.emulateMedia({ reducedMotion: "reduce" })`): sequence still waits/asks confirmation and reaches complete.
 - all cases call `watchBrowserErrors` / `expectNoBrowserErrors`.
 
@@ -636,14 +636,113 @@ git add components/game/CampaignScreen.tsx components/game/campaign-render.test.
 git commit -m "기능: 캠페인 전투 피드백을 연결한다" -m "실제 일반전과 보스전에서 같은 결과 공개 순서와 카드 HP 동기화를 사용한다."
 ~~~
 
-### Task 7: 전체 회귀와 고정 캔버스 화면을 검증한다
+### Task 7: 완료 결과를 카드에 남기고 다시보기 projection을 분리한다
+
+**Files:**
+- Modify: `components/game/PartyMemberCard.tsx`
+- Modify: `components/game/PartyMemberCard.test.tsx`
+- Modify: `components/game/U5ProgressScreen.tsx`
+- Modify: `components/game/U5ProgressScreen.test.tsx`
+- Modify: `components/game/u5-combat-feedback.ts`
+- Modify: `components/game/u5-combat-feedback.test.ts`
+- Modify: `app/party-card.css`
+- Modify: `e2e/u5-battle-preview.spec.ts`
+
+**Interfaces:**
+- Produces: `PartyMemberSettledResult` with optional signed `hpDelta` and `trustDelta`.
+- Produces: `u5SettledTrustDelta(view, memberId)` using the first before and last after across immediate and post-battle trust changes.
+- Consumes: replay participant `initialHp`/`finalHp`, feedback phase, and manual replay state.
+
+- [ ] **Step 1: Write failing settled-result card tests**
+
+~~~tsx
+const html = render({}, {
+  settledResult: { hpDelta: -3, trustDelta: -2 },
+});
+expect(html).toContain("HP −3");
+expect(html).toContain("신뢰 −2");
+expect(html).toContain("party-card__settled-results");
+~~~
+
+Add cases for positive signs, one changed stat, and `{ hpDelta: 0, trustDelta: 0 }` producing no settled-result container. The persistent result must not include the transient effect token.
+
+- [ ] **Step 2: Run the card test and verify RED**
+
+Run: `pnpm vitest run components/game/PartyMemberCard.test.tsx`
+
+Expected: FAIL because `settledResult` and persistent result markup do not exist.
+
+- [ ] **Step 3: Add the card result contract and persistent markup**
+
+~~~ts
+export interface PartyMemberSettledResult {
+  readonly hpDelta?: number;
+  readonly trustDelta?: number;
+}
+~~~
+
+Render both non-zero values on the card front. Use `output` elements with `HP ±N` and `신뢰 ±N`; wrap them in `.party-card__settled-results`. Keep the result mounted without an exit timer. The existing transient battle-hit effect remains separate.
+
+- [ ] **Step 4: Write failing projection tests**
+
+Add pure tests proving the trust chain uses the first `before` and last `after` across immediate and post-battle changes. Add U5 render/source contract tests proving:
+
+~~~ts
+expect(source).toMatch(/feedback\.phase === "battle"/);
+expect(source).not.toMatch(/feedback\.phase === "battle" \|\| battlePlayback\.isReplaying/);
+expect(source).toContain("settledResult=");
+~~~
+
+Also assert persistent results are gated to `postBattleTrust` and `complete`, and a member with no HP/trust delta receives no result.
+
+- [ ] **Step 5: Run focused projection tests and verify RED**
+
+Run: `pnpm vitest run components/game/u5-combat-feedback.test.ts components/game/U5ProgressScreen.test.tsx`
+
+Expected: FAIL because trust aggregation and settled result projection do not exist, and manual replay still drives right-card HP.
+
+- [ ] **Step 6: Implement final-card projection**
+
+In `U5ProgressScreen`, use replay frame HP for the right cards only when `feedback.phase === "battle"`. During manual replay, keep `progress.party` final HP/alive/trust. Build `settledResult` only in `postBattleTrust` or `complete`:
+
+~~~tsx
+const hpDelta = participant.finalHp - participant.initialHp;
+const trustDelta = u5SettledTrustDelta(combatFeedback, member.id);
+
+<PartyMemberCard
+  settledResult={showSettledResults ? { hpDelta, trustDelta } : undefined}
+/>
+~~~
+
+Return `undefined` when both values are zero. Do not derive values from animation state, DOM, or card history. Remove the duplicate transient trust output in `postBattleTrust`; the persistent result entry animation is the one trust-change feedback.
+
+- [ ] **Step 7: Style the persistent pair**
+
+Lay out settled HP/trust results inside the existing card grid using `rem/cqw/cqh`. Both values must fit simultaneously, remain visible during replay, and retain text labels and signs. Under reduced motion, remove entry movement but not the output text.
+
+- [ ] **Step 8: Strengthen browser replay coverage**
+
+After `반응 확인`, capture the right-card HP, trust, `HP ±N`, and `신뢰 ±N`. Click `다시 보기`, wait until a non-complete central battle frame is visible, and assert all four right-card values remain unchanged. Wait for replay completion and assert the persistent results still exist and the post-battle dialogue did not reappear.
+
+Run: `pnpm test:e2e -- e2e/u5-battle-preview.spec.ts`
+
+Expected: PASS for ordinary and boss previews with no browser errors.
+
+- [ ] **Step 9: Commit**
+
+~~~bash
+git add components/game/PartyMemberCard.tsx components/game/PartyMemberCard.test.tsx components/game/U5ProgressScreen.tsx components/game/U5ProgressScreen.test.tsx components/game/u5-combat-feedback.ts components/game/u5-combat-feedback.test.ts app/party-card.css e2e/u5-battle-preview.spec.ts
+git commit -m "수정: 전투 결과를 파티 카드에 유지한다" -m "반응 확인 뒤 HP와 신뢰 변화량을 남기고 다시보기 중 우측 파티 상태는 최종 결과를 유지한다."
+~~~
+
+### Task 8: 전체 회귀와 고정 캔버스 화면을 검증한다
 
 **Files:**
 - Modify if required by verified behavior only: `docs/experience/SCREEN_LAYOUT.md`
 - Modify if required by verified behavior only: `docs/experience/ONBOARDING_AND_INTERFACE.md`
 - Modify if required by verified behavior only: `docs/experience/UI_IMPLEMENTATION_GUIDE.md`
 - Verify: `docs/README.md`
-- Verify: all files changed in Tasks 1–6
+- Verify: all files changed in Tasks 1–7
 
 **Interfaces:**
 - Consumes: all feedback, replay, campaign, CSS, and E2E contracts above.
@@ -696,7 +795,7 @@ Use the existing `/u5-2-test` preview and inspect general and boss flows at 1920
 - right-card HP changes during battle and death state appears on the lethal frame;
 - trust stays old before confirmation and changes afterward;
 - skip and natural playback reach the same final values;
-- replay rewinds HP only;
+- replay rewinds the central scene only while right-card final HP, trust, and deltas stay fixed;
 - reduced motion removes movement but not content or gate timing.
 
 Capture screenshots only for review evidence; do not add generated screenshots to the repository.
@@ -709,7 +808,7 @@ Compare the implemented UI against `SCREEN_LAYOUT.md`, `ONBOARDING_AND_INTERFACE
 
 Run: `git status --short`
 
-Expected: only Task 1–7 files plus the pre-existing user-owned `.pnpm-store/` and `public/assets/u6/**/{ASSET_MANIFEST.json,README.txt}` entries. Never stage those unrelated paths.
+Expected: only Task 1–8 files plus the pre-existing user-owned `.pnpm-store/` and `public/assets/u6/**/{ASSET_MANIFEST.json,README.txt}` entries. Never stage those unrelated paths.
 
 Run: `git diff --stat HEAD`
 

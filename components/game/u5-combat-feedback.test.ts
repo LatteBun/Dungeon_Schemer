@@ -4,6 +4,8 @@ import {
   reduceU5CombatFeedbackPhase,
   u5FeedbackCanAcknowledge,
   u5FeedbackPhaseDurationMs,
+  u5SettledTrustDelta,
+  u5VisibleHp,
   u5VisibleTrust,
   type U5CombatFeedbackView,
 } from "./u5-combat-feedback";
@@ -66,6 +68,23 @@ describe("u5 combat feedback", () => {
     expect(u5VisibleTrust(ordinary, "postBattleDialogue", "brigston", 2)).toBe(4);
     expect(u5VisibleTrust(ordinary, "postBattleTrust", "brigston", 2)).toBe(2);
     expect(u5VisibleTrust(ordinary, "complete", "brigston", 2)).toBe(2);
+  });
+
+  it("완료 신뢰 변화량은 즉시·사후 변화의 처음과 끝을 합친다", () => {
+    const chained: U5CombatFeedbackView = {
+      ...ordinary,
+      immediateTrustChanges: [{ memberId: "brigston", before: 6, after: 4 }],
+      postBattleTrustChanges: [{ memberId: "brigston", before: 4, after: 1 }],
+    };
+
+    expect(u5SettledTrustDelta(chained, "brigston")).toBe(-5);
+    expect(u5SettledTrustDelta(chained, "unrelated")).toBeUndefined();
+  });
+
+  it("완료 뒤 다시보기 frame은 우측 카드의 최종 HP를 되감지 않는다", () => {
+    expect(u5VisibleHp("battle", 7, 4)).toBe(7);
+    expect(u5VisibleHp("complete", 7, 4)).toBe(4);
+    expect(u5VisibleHp("postBattleTrust", 7, 4)).toBe(4);
   });
 
   it("노출된 거짓말의 즉시 신뢰는 전투 전에 반영한다", () => {

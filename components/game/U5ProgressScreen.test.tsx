@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { U5ProgressScreen } from "./U5ProgressScreen";
+import { U5ProgressScreen, u5SettledPartyResult } from "./U5ProgressScreen";
 import { createU5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import type { U5ProgressView } from "./u5-progress-model";
@@ -84,6 +84,26 @@ const render = (over: Partial<U5ProgressView> = {}, props: Record<string, unknow
   );
 
 describe("U5ProgressScreen", () => {
+  it("반응 확인 전에는 완료 변화량을 숨기고 확인 뒤에는 0이 아닌 값만 남긴다", () => {
+    const feedback = {
+      signature: "result-1",
+      kind: "event" as const,
+      consequenceText: null,
+      preBattleReaction: null,
+      immediateTrustChanges: [],
+      postBattleReaction: { memberId: "party-1", memberName: "코르빈", text: "확인했다." },
+      postBattleTrustChanges: [{ memberId: "party-1", before: 42, after: 40 }],
+    };
+    const found = battleReplay.participants.find((one) => one.id === "party-1");
+    const participant = found === undefined ? undefined : { ...found, initialHp: 32, finalHp: 29 };
+
+    expect(u5SettledPartyResult(feedback, "postBattleDialogue", participant, "party-1")).toBeUndefined();
+    expect(u5SettledPartyResult(feedback, "postBattleTrust", participant, "party-1"))
+      .toEqual({ hpDelta: -3, trustDelta: -2 });
+    expect(u5SettledPartyResult(feedback, "complete", participant, "party-1"))
+      .toEqual({ hpDelta: -3, trustDelta: -2 });
+  });
+
   it("전투 replay가 없으면 기존 장면 슬롯과 배경을 장식 이미지로 유지한다", () => {
     const html = render();
 

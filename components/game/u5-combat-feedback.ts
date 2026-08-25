@@ -105,6 +105,25 @@ export function u5VisibleTrust(
   return finalTrust;
 }
 
+export function u5VisibleHp(
+  phase: U5CombatFeedbackPhase,
+  frameHp: number | undefined,
+  finalHp: number,
+): number {
+  return phase === "battle" ? frameHp ?? finalHp : finalHp;
+}
+
+export function u5SettledTrustDelta(
+  view: U5CombatFeedbackView,
+  memberId: string,
+): number | undefined {
+  const changes = [...view.immediateTrustChanges, ...view.postBattleTrustChanges]
+    .filter((change) => change.memberId === memberId);
+  const first = changes[0];
+  const last = changes.at(-1);
+  return first === undefined || last === undefined ? undefined : last.after - first.before;
+}
+
 export function u5FeedbackIsComplete(phase: U5CombatFeedbackPhase): boolean {
   return phase === "complete";
 }

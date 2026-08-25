@@ -158,6 +158,28 @@ function basePreview() {
   return entry;
 }
 
+function previewPostBattleFeedback(
+  signature: string,
+  kind: U5CombatFeedbackView["kind"],
+  replay: U5BattleReplay,
+): Pick<U5CombatFeedbackView, "signature" | "kind" | "postBattleReaction" | "postBattleTrustChanges"> {
+  const participant = replay.participants.find(
+    (candidate) => candidate.side === "party" && candidate.finalHp !== candidate.initialHp,
+  ) ?? replay.participants.find((candidate) => candidate.side === "party");
+  const member = members.find((candidate) => candidate.id === participant?.id) ?? members[0]!;
+  const after = Math.max(0, member.trust - 2);
+  return {
+    signature,
+    kind,
+    postBattleReaction: {
+      memberId: member.id,
+      memberName: member.name,
+      text: "네 말을 믿은 게 실수였군.",
+    },
+    postBattleTrustChanges: [{ memberId: member.id, before: member.trust, after }],
+  };
+}
+
 export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] {
   const base = basePreview();
   const e3Resolution = createE3Resolution();
@@ -205,7 +227,12 @@ export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] 
       ecology: base.ecology,
       resolution: e3Resolution,
       replay: e3Replay,
-      feedback: { signature: "preview:e3", kind: "event", consequenceText: "거미가 추가로 등장한다.", preBattleReaction: { memberId: members[0]!.id, memberName: members[0]!.name, text: "알겠어. 네 말대로 하지." }, immediateTrustChanges: [], postBattleReaction: null, postBattleTrustChanges: [] },
+      feedback: {
+        ...previewPostBattleFeedback("preview:e3", "event", e3Replay),
+        consequenceText: "거미가 추가로 등장한다.",
+        preBattleReaction: { memberId: members[0]!.id, memberName: members[0]!.name, text: "알겠어. 네 말대로 하지." },
+        immediateTrustChanges: [],
+      },
     },
     {
       id: "e4-boss",
@@ -222,7 +249,12 @@ export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] 
       ecology: base.ecology,
       resolution: bossResolution,
       replay: bossReplay,
-      feedback: { signature: "preview:e4", kind: "boss", consequenceText: null, preBattleReaction: null, immediateTrustChanges: [], postBattleReaction: null, postBattleTrustChanges: [] },
+      feedback: {
+        ...previewPostBattleFeedback("preview:e4", "boss", bossReplay),
+        consequenceText: null,
+        preBattleReaction: null,
+        immediateTrustChanges: [],
+      },
     },
   ];
 }
