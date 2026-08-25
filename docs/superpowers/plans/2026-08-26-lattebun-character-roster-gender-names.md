@@ -355,7 +355,7 @@ pnpm.cmd build
 git diff --check
 ```
 
-Expected: 모든 명령 exit 0. 전체 Vitest suite에 실패가 없고 production build가 완료되며 whitespace 오류가 없다.
+Expected: 집중 회귀 Vitest, typecheck, lint, production build, `git diff --check`는 모두 exit 0이어야 한다. `pnpm.cmd test`도 반드시 실행하되, 변경 파일 범위 밖의 실패는 정확한 실패 테스트 파일과 함께 문서화하고 본 Task 범위에서 수정하지 않는다. 전체 Vitest suite에 실패가 없어야 한다는 조건은 변경 파일 범위 밖의 baseline 실패에는 적용하지 않으며, production build가 완료되고 whitespace 오류가 없어야 한다.
 
 - [ ] **Step 7: 문서와 자산 회귀를 커밋한다**
 
