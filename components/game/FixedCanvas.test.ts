@@ -15,9 +15,21 @@ function css(name: string): string {
   return readFileSync(join(process.cwd(), "app", name), "utf8");
 }
 
+/*
+ * 캔버스 안에 사는 스타일시트.
+ *
+ * `screen-fit.css` 하나만 뺀다. 그 화면은 캔버스 **바깥**에 서기 때문이다 —
+ * 휴대폰을 세로로 들면 16:9 판이 화면 한가운데 작은 띠로 줄어드는데, 돌려
+ * 달라는 안내까지 그 안에 두면 같이 작아져 읽을 수 없다. 그래서 그 파일만
+ * 판이 아니라 창을 기준으로 재고, 동작 줄이기 설정도 읽는다.
+ *
+ * 예외는 이 한 줄로 끝난다. 다른 파일이 창을 따라가려 하면 아래 검사가 잡는다.
+ */
+const OUTSIDE_CANVAS = new Set(["screen-fit.css"]);
+
 function styleSheets(): string[] {
   return readdirSync(join(process.cwd(), "app")).filter((name) =>
-    name.endsWith(".css"),
+    name.endsWith(".css") && !OUTSIDE_CANVAS.has(name),
   );
 }
 
@@ -40,7 +52,16 @@ function uiSources(): Array<{ name: string; source: string }> {
 
 describe("16:9 고정 캔버스", () => {
   it("루트 글꼴 크기가 창에 맞춘 축척을 만든다", () => {
-    expect(css("globals.css")).toContain("min(100vw / 120, 100vh / 67.5)");
+    const sheet = css("globals.css");
+
+    /*
+     * 두 줄이다. 앞은 `dvh` 를 모르는 브라우저가 읽는 대비이고, 뒤는 지금 보이는
+     * 높이와 가려지지 않는 폭으로 재는 본 줄이다. 앞 줄이 빠지면 뒤 줄을 모르는
+     * 브라우저에서 글자 크기가 기본값으로 돌아가 판이 화면 밖으로 부푼다.
+     */
+    expect(sheet).toContain("min(100vw / 120, 100vh / 67.5)");
+    expect(sheet).toContain("100dvw - env(safe-area-inset-left");
+    expect(sheet).toContain("100dvh - env(safe-area-inset-top");
   });
 
   it("캔버스는 1920x1080 비율의 크기 컨테이너다", () => {
@@ -77,14 +98,40 @@ describe("16:9 고정 캔버스", () => {
     );
   });
 
-  it("현재 승인된 intrinsic 화면 예외는 없다", () => {
-    const offenders = uiSources()
-      .filter(({ source }) =>
-        source.includes('data-canvas-layout="intrinsic"'),
-      )
+  /*
+   * 예외는 목록으로만 늘어난다.
+   *
+   * `.game-canvas` 의 자식은 기본으로 판을 꽉 채운다. 화면 루트는 그래야 하지만,
+   * 판 위에 얹는 쪽지는 아니다 — 거부 알림이 그 규칙에 걸려 1152 x 1080 으로
+   * 판을 통째로 덮고 있었다.
+   *
+   * 예외를 열어 두되 조용히 늘지 않게 한다. 새로 쓰려면 이 목록에 이름을 적고
+   * 왜 화면 루트가 아닌지를 여기 남겨야 한다.
+   */
+  const INTRINSIC_ALLOWED = new Map([
+    [
+      join("components", "game", "CampaignScreen.tsx"),
+      "거부 알림. 판을 쓰는 화면이 아니라 화면 위에 잠깐 얹었다 사라지는 쪽지다.",
+    ],
+  ]);
+
+  it("intrinsic 예외는 승인된 것뿐이다", () => {
+    const users = uiSources()
+      .filter(({ source }) => source.includes('data-canvas-layout="intrinsic"'))
       .map(({ name }) => name);
 
-    expect(offenders).toEqual([]);
+    expect(users.sort()).toEqual([...INTRINSIC_ALLOWED.keys()].sort());
+  });
+
+  it("예외마다 왜 화면 루트가 아닌지 적혀 있다", () => {
+    for (const [name, reason] of INTRINSIC_ALLOWED) {
+      expect(reason.length, name).toBeGreaterThan(20);
+    }
+  });
+
+  it("예외를 쓰는 곳은 판 안에 머문다", () => {
+    /* 절대 배치라 기준이 필요하다. 판이 기준이 아니면 레터박스 밖으로 나간다. */
+    expect(css("globals.css")).toMatch(/\.game-canvas \{[^}]*position:\s*relative/);
   });
 
   it("캔버스 내부 화면은 브라우저 높이를 요구하지 않는다", () => {
@@ -111,9 +158,10 @@ describe("16:9 고정 캔버스", () => {
   });
 
   it("크기 계산은 창이 아니라 캔버스를 기준으로 한다", () => {
-    const scale = "min(100vw / 120, 100vh / 67.5)";
+    /* 축척을 정하는 줄만 창을 본다. 그 줄을 걷어낸 나머지에 창 단위가 없어야 한다. */
+    const fallbackScale = "min(100vw / 120, 100vh / 67.5)";
     const offenders = styleSheets().filter((name) =>
-      /\d(vw|vh)\b/.test(css(name).replaceAll(scale, "")),
+      /\d(vw|vh)\b/.test(css(name).replaceAll(fallbackScale, "")),
     );
 
     expect(offenders).toEqual([]);
@@ -135,5 +183,26 @@ describe("16:9 고정 캔버스", () => {
     );
 
     expect(offenders).toEqual([]);
+  });
+});
+
+/*
+ * 캔버스 바깥에 서는 화면은 하나뿐이다.
+ *
+ * 예외를 두었으니 그 예외가 자라지 않는지 지킨다. 그리고 그 파일이 정말로
+ * 캔버스 바깥에서만 쓰이는지 — 캔버스 안 요소를 건드리지 않는지 — 도 본다.
+ */
+describe("캔버스 바깥 화면", () => {
+  it("예외는 세로 안내 하나뿐이다", () => {
+    expect([...OUTSIDE_CANVAS]).toEqual(["screen-fit.css"]);
+  });
+
+  it("세로 안내는 캔버스 안의 것을 건드리지 않는다", () => {
+    const sheet = css("screen-fit.css");
+
+    expect(sheet).not.toContain(".game-canvas");
+    expect(sheet).not.toContain(".game-shell");
+    /* 판을 기준으로 재면 세로에서 같이 작아진다. 창을 기준으로 재야 한다. */
+    expect(sheet).not.toMatch(/\d(cqw|cqh)\b/);
   });
 });

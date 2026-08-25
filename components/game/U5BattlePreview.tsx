@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { U5ProgressScreen } from "./U5ProgressScreen";
+import { useU5BattlePlaybackRate } from "./use-u5-battle-playback";
 import {
   U5_BATTLE_PREVIEW_ENTRIES,
   type U5BattlePreviewId,
@@ -9,6 +10,7 @@ import {
 
 export function U5BattlePreview() {
   const [selectedId, setSelectedId] = useState<U5BattlePreviewId>("e3-monster");
+  const playbackRateControl = useU5BattlePlaybackRate();
   const entry = U5_BATTLE_PREVIEW_ENTRIES.find((candidate) => candidate.id === selectedId)
     ?? U5_BATTLE_PREVIEW_ENTRIES[0];
 
@@ -36,6 +38,9 @@ export function U5BattlePreview() {
         log={entry.log}
         ecology={entry.ecology}
         battleReplay={entry.replay}
+        playbackRate={playbackRateControl.playbackRate}
+        onTogglePlaybackRate={playbackRateControl.togglePlaybackRate}
+        combatFeedback={entry.feedback}
         previewPlaybackControls
       />
     </div>

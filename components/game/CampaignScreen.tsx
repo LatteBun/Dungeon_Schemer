@@ -9,6 +9,7 @@ import { IntroScreen } from "./IntroScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
+import { useU5BattlePlaybackRate } from "./use-u5-battle-playback";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import {
@@ -24,6 +25,7 @@ import {
   publicKindByNodeId,
   statusFor,
 } from "./campaign-adapters";
+import { bossCombatFeedbackFor, eventCombatFeedbackFor } from "./u5-combat-feedback-adapter";
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
 import { createU4MapNodeViews, createU4PartyMemberViews } from "./u4-dungeon-map-model";
@@ -193,6 +195,7 @@ function ExpeditionScreens() {
   const context = useCampaignStore((state) => state.context);
   const dispatch = useCampaignStore((state) => state.dispatch);
   const [selected, setSelected] = useState<NodeId | null>(null);
+  const playbackRateControl = useU5BattlePlaybackRate();
 
   const active = context.activeExpedition!;
   const status = statusFor(campaign, active);
@@ -222,7 +225,10 @@ function ExpeditionScreens() {
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={bossReplay ?? undefined}
+        playbackRate={playbackRateControl.playbackRate}
+        onTogglePlaybackRate={playbackRateControl.togglePlaybackRate}
         battleExitPolicy={bossReplay === null ? undefined : "after-playback"}
+        combatFeedback={bossCombatFeedbackFor(campaign, active)}
         changesByMemberId={changesByMemberId(active)}
         onAcknowledge={() => dispatch({ type: "COMPLETE_EXPEDITION", snapshot: createSettlementSnapshotFor(campaign, active) })}
         acknowledgeLabel="정산으로"
@@ -248,7 +254,10 @@ function ExpeditionScreens() {
         log={logFor(campaign, active)}
         ecology={ecologyViewFor(campaign, active)}
         battleReplay={replay ?? undefined}
+        playbackRate={playbackRateControl.playbackRate}
+        onTogglePlaybackRate={playbackRateControl.togglePlaybackRate}
         battleExitPolicy={gateBattle ? "after-playback" : undefined}
+        combatFeedback={seeing ? eventCombatFeedbackFor(campaign, active) : undefined}
         changesByMemberId={changesByMemberId(active)}
         onSelectAdvice={seeing ? undefined : (slot) => {
           dispatch({ type: "CHOOSE_ADVICE", adviceId: adviceIdForSlotIn(campaign, active, slot) });
@@ -318,7 +327,20 @@ export function RejectionNotice({
   readonly onDismiss: () => void;
 }) {
   return (
-    <div className="campaign-rejection" role="alert" data-testid="campaign-rejection">
+    /*
+      * 판 전체를 쓰는 화면이 아니라 그 위에 얹는 쪽지다.
+      *
+      * `.game-canvas` 의 자식은 기본으로 100% x 100% 가 된다 — 화면 루트가 판을
+      * 꽉 채우게 하려는 규칙이다. 이 쪽지는 화면 루트가 아닌데 같은 자리에 붙어,
+      * 작아야 할 알림이 판을 통째로 덮었다(1152 x 1080 으로 재졌다). 그 규칙이
+      * 마련해 둔 예외 장치를 쓴다.
+      */
+    <div
+      className="campaign-rejection"
+      role="alert"
+      data-testid="campaign-rejection"
+      data-canvas-layout="intrinsic"
+    >
       <p className="campaign-rejection__reason">{reason}</p>
       <button type="button" onClick={onDismiss}>확인</button>
     </div>
