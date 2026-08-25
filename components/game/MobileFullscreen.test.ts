@@ -115,3 +115,28 @@ describe("가로로 돌려 달라고 말할 자리", () => {
     expect(code).toContain("(pointer: coarse)");
   });
 });
+
+/*
+ * 안내 안의 것들은 가운데 선다.
+ *
+ * 공용 CTA 는 화면 구석에 놓이는 버튼이라 `justify-self: start` 로 왼쪽에 붙는다.
+ * 그 값이 안내 카드 안까지 따라와 단추만 왼쪽으로 쏠려 있었다. 메인 메뉴에서도
+ * 같은 일이 있었으므로, 이 살결을 빌려 쓰는 자리는 자리 잡기를 스스로 정해야
+ * 한다는 것을 여기서 고정한다.
+ */
+describe("세로 안내의 자리 잡기", () => {
+  const sheet = readFileSync(join(process.cwd(), "app", "screen-fit.css"), "utf8");
+
+  const rule = (selector: string): string => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return sheet.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`))?.[1] ?? "";
+  };
+
+  it("단추가 공용 CTA 의 왼쪽 붙임을 되돌린다", () => {
+    expect(rule(".screen-fit__cta")).toMatch(/justify-self:\s*center/);
+  });
+
+  it("카드 안의 것들이 가운데 정렬이다", () => {
+    expect(rule(".screen-fit__card")).toMatch(/justify-items:\s*center/);
+  });
+});

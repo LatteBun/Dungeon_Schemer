@@ -60,7 +60,12 @@
   font-size: 3.6vmin;
 }
 
+/*
+ * 공용 CTA 는 화면 구석에 놓이는 버튼이라 `justify-self: start` 로 왼쪽에 붙는다.
+ * 여기서는 안내 한가운데 서야 하므로 되돌린다.
+ */
 .screen-fit__cta {
+  justify-self: center;
   min-height: 11vmin;
   padding: 0 5vmin;
   font-size: 3.8vmin;
