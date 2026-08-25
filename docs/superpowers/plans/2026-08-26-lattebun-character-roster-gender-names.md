@@ -140,7 +140,7 @@ it("성별은 로스터 메타데이터에만 두고 런타임 캐릭터 상태�
 Run:
 
 ```powershell
-pnpm.cmd test -- lib/content/character-roster.test.ts lib/content/character-pool.test.ts
+pnpm.cmd exec vitest run lib/content/character-roster.test.ts lib/content/character-pool.test.ts
 ```
 
 Expected: FAIL. `CHARACTER_GENDERS` export 또는 `entry.gender`가 없고 기존 이름이 새 튜플과 일치하지 않는다.
@@ -231,7 +231,7 @@ for (const entry of CHARACTER_ROSTER) {
 Run:
 
 ```powershell
-pnpm.cmd test -- lib/content/character-roster.test.ts lib/content/character-pool.test.ts
+pnpm.cmd exec vitest run lib/content/character-roster.test.ts lib/content/character-pool.test.ts
 ```
 
 Expected: 두 테스트 파일 전체 PASS.
@@ -290,7 +290,7 @@ it("keeps official character portraits live-only", () => {
 Run:
 
 ```powershell
-pnpm.cmd test -- components/game/U4Assets.test.ts components/game/character-labels.test.ts
+pnpm.cmd exec vitest run components/game/U4Assets.test.ts components/game/character-labels.test.ts
 ```
 
 Expected: PASS. 30개 공식 ID가 기존 live 경로를 사용하고 `dead/` 디렉터리는 없다.
@@ -347,7 +347,7 @@ Expected: 출력 없음. 성별이 도메인·UI로 전파되지 않았고 에�
 Run:
 
 ```powershell
-pnpm.cmd test -- lib/content/character-roster.test.ts lib/content/character-pool.test.ts components/game/character-labels.test.ts components/game/U4Assets.test.ts components/game/campaign-render.test.tsx
+pnpm.cmd exec vitest run lib/content/character-roster.test.ts lib/content/character-pool.test.ts components/game/character-labels.test.ts components/game/U4Assets.test.ts components/game/campaign-render.test.tsx
 pnpm.cmd typecheck
 pnpm.cmd lint
 pnpm.cmd test
