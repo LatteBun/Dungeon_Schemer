@@ -24,7 +24,7 @@ export function MainMenuScreen({ unlockedCount, loading }: MainMenuScreenProps) 
           캠페인 시작
         </Link>
         <Link className="shell-cta main-menu-screen__achievements" href="/achievements">
-          <span>업적 기록</span>
+          <span>업적</span>
           <small>
             {loading
               ? `달성 — / ${TOTAL_ACHIEVEMENTS}`
