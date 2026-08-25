@@ -31,3 +31,45 @@ describe("U5 battle enemy assets", () => {
     expect(() => enemyBattleAssetSrc("not-an-official-monster")).toThrowError(/U5 전투 이미지가 없는 콘텐츠다/);
   });
 });
+
+/*
+ * 전투에서 둘은 서로를 본다.
+ *
+ * 그림에 규약이 있다 — 파티 초상은 오른쪽을 보고 그려졌고, 몹 그림은 왼쪽을
+ * 보고 그려졌다. 파티는 왼쪽에 서고 몹은 오른쪽에 서므로, 그대로 두면 마주 본다.
+ *
+ * 한동안 몹만 `scaleX(-1)` 로 뒤집고 있었다. 그러면 몹이 파티에게 등을 돌리고
+ * 파티와 같은 쪽을 보게 된다 — 거미의 턱도, 좀비의 얼굴도, 전갈의 집게도 모두
+ * 바깥을 향했다. 세 테마의 몹과 보스 여섯 장을 확인했고 전부 왼쪽을 보고 있다.
+ */
+describe("전투 스프라이트가 보는 쪽", () => {
+  const battleCss = readFileSync(join(process.cwd(), "app", "u5-battle.css"), "utf8");
+
+  function orientationRule(side: "party" | "enemy"): string {
+    const found = battleCss.match(
+      new RegExp(`\\.u5-battle-orientation\\.is-${side}\\s*\\{([^}]*)\\}`),
+    );
+    return found?.[1] ?? "";
+  }
+
+  it("어느 쪽도 좌우로 뒤집지 않는다", () => {
+    for (const side of ["party", "enemy"] as const) {
+      expect(orientationRule(side), side).not.toMatch(/scaleX\(\s*-1\s*\)/);
+    }
+    /* 공통 규칙에도 뒤집기가 숨어 있으면 안 된다. */
+    const shared = battleCss.match(/\.u5-battle-orientation\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(shared).not.toMatch(/scaleX\(\s*-1\s*\)/);
+  });
+
+  it("달려드는 쪽은 진영마다 반대다", () => {
+    /*
+     * 보는 쪽과 달려드는 쪽은 다른 값이다. 뒤집기를 없앤다고 달려드는 쪽까지
+     * 같아지면 둘이 나란히 같은 데로 뛴다.
+     */
+    const scene = readFileSync(join(process.cwd(), "components", "game", "U5BattleScene.tsx"), "utf8");
+    const lunge = scene.match(/--u5-battle-lunge-x[^,\n]*:\s*([^,\n]*)/)?.[1] ?? "";
+
+    expect(lunge).toContain("16%");
+    expect(lunge).toContain("-16%");
+  });
+});
