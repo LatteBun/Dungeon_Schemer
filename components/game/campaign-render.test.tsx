@@ -274,7 +274,7 @@ describe("진행 화면이 실제 사건으로 그려진다", () => {
 });
 
 describe("정산이 실제 결과로 그려진다", () => {
-  it("원인 사슬 네 칸이 다 찍힌다", () => {
+  it("선택과 판단, 인물별 결과가 다 찍힌다", () => {
     const run = settled();
     const { campaign, last } = run.state();
     const settlement = last!.settlement!;
@@ -291,7 +291,16 @@ describe("정산이 실제 결과로 그려진다", () => {
     expect(view.trustPressure?.afterCount ?? 0).toBe(countLivingZeroTrust(campaign));
     expect(markup).toContain(settlement.causeChain.choice);
     expect(markup).toContain(settlement.causeChain.reactions);
-    expect(markup).toContain(settlement.causeChain.damage);
+    const changedMember = settlement.memberChanges.find((change) =>
+      change.before.hp !== change.after.hp || change.before.alive !== change.after.alive,
+    );
+    if (changedMember === undefined) throw new Error("피해 또는 사망한 원정대원이 없다");
+    expect(markup).toContain(changedMember.after.name);
+    expect(markup).toContain(
+      changedMember.before.alive && !changedMember.after.alive
+        ? `사망 · HP ${changedMember.before.hp} → ${changedMember.after.hp}`
+        : `HP ${changedMember.before.hp} → ${changedMember.after.hp} / ${changedMember.after.maxHp}`,
+    );
   });
 });
 

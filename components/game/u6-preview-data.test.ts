@@ -25,11 +25,14 @@ describe("U6 프리뷰 데이터", () => {
   it("전멸 정산이 계약 보상 없음·유품·위험도 상승을 함께 담는다", () => {
     const wipe = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-wipe")?.settlement;
 
-    expect(wipe?.survivors).toBe(0);
+    expect(wipe?.outcome.kind).toBe("wiped");
     expect(wipe?.goldDelta).toBe(0);
     expect(wipe?.relicGold).toBeGreaterThan(0);
     expect(wipe?.reputationDelta).toBeLessThan(0);
-    expect(wipe?.riskAfter).toBe((wipe?.riskBefore ?? 0) + 1);
+    expect(wipe?.dungeonOutcome.kind).toBe("riskIncreased");
+    if (wipe?.dungeonOutcome.kind === "riskIncreased") {
+      expect(wipe.dungeonOutcome.after).toBe(wipe.dungeonOutcome.before + 1);
+    }
     expect(wipe?.nextReward).toEqual({ reputation: 15, gold: 32 });
   });
 
@@ -44,9 +47,8 @@ describe("U6 프리뷰 데이터", () => {
   it("★5 전멸이 아니면 위험도 상한 표시를 하지 않는다", () => {
     const capped = U6_PREVIEW_ENTRIES.find((entry) => entry.id === "settlement-promotion")?.settlement;
 
-    expect(capped?.riskBefore).toBe(5);
-    expect(capped?.riskAfter).toBe(5);
-    expect(capped?.riskCapped).toBe(false);
+    expect(capped?.outcome.kind).toBe("cleared");
+    expect(capped?.dungeonOutcome).toEqual({ kind: "cleared" });
   });
 
   it("엔딩마다 이유 세 줄과 보고서·결말 항목 넷을 갖춘다", () => {
@@ -63,31 +65,5 @@ describe("U6 프리뷰 데이터", () => {
     const again = await import("./u6-preview-data");
 
     expect(again.U6_PREVIEW_ENTRIES).toEqual(U6_PREVIEW_ENTRIES);
-  });
-});
-
-describe("프리뷰의 피해 줄", () => {
-  /*
-   * 한 번 만들어 모든 변형에 돌려 쓰고 있었다.
-   *
-   * 그러면 전멸 정산에도 "피해 없이 지나갔다" 가 실린다 - 셋이 다 죽었는데.
-   * 프리뷰가 거짓을 말하면 프리뷰를 보고 고친 화면도 거짓을 담는다.
-   */
-  it("전멸 정산이 피해 없다고 말하지 않는다", () => {
-    const wiped = U6_PREVIEW_ENTRIES.find((entry) => entry.settlement?.survivors === 0);
-    if (wiped?.settlement === undefined) throw new Error("전멸 정산 프리뷰가 없다");
-
-    const damage = wiped.settlement.causeChain.find((step) => step.label === "피해")?.detail ?? "";
-
-    expect(damage).not.toBe("피해 없이 지나갔다");
-    expect(damage).toContain("→ 0");
-  });
-
-  it("생존 정산과 전멸 정산의 피해 줄이 다르다", () => {
-    const lines = U6_PREVIEW_ENTRIES
-      .filter((entry) => entry.settlement !== undefined)
-      .map((entry) => entry.settlement!.causeChain.find((step) => step.label === "피해")?.detail);
-
-    expect(new Set(lines).size).toBeGreaterThan(1);
   });
 });

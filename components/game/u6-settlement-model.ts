@@ -19,27 +19,9 @@ import { countLivingZeroTrust, getCampaignTrustModifier } from "@/lib/rules/endi
  * 않는다.
  */
 
-/** 선택 → 개인 반응 → 피해 → 보상·손실 → 캠페인 변화. */
-export const CAUSE_ORDER = [1, 2, 3, 4, 5] as const;
-
-export type U6CauseOrder = (typeof CAUSE_ORDER)[number];
-
-export interface U6CauseStep {
-  order: U6CauseOrder;
-  label: string;
-  detail: string;
-}
-
 export interface U6SettlementView {
   dungeonName: string;
   themeId: ThemeId;
-  /** 0 이면 전멸이다. */
-  survivors: 0 | 1 | 2 | 3;
-  causeChain: readonly U6CauseStep[];
-  riskBefore: RiskLevel;
-  riskAfter: RiskLevel;
-  /** ★5 전멸이라 위험도가 더 오르지 않았다. */
-  riskCapped: boolean;
   reputationDelta: number;
   goldDelta: number;
   /** 전멸에서만 회수한다. 그 외에는 0. */
@@ -109,14 +91,6 @@ export function rankCrestSrc(rank: GuideRank): string {
   return `${RANK_CREST_ROOT}/rank_${rank.toLowerCase()}.png`;
 }
 
-/*
- * 무엇에 대한 칸인지가 이름에 있어야 한다.
- *
- * 「선택」 아래에 "다른 길을 찾아보라고 하세요" 만 놓여 있으면 그것이 누가 한
- * 말인지, 무엇을 고른 것인지가 떠 있다. 길잡이가 마지막으로 건넨 조언이다.
- */
-const CAUSE_LABELS = ["마지막 조언", "파티의 반응", "피해", "보상·손실", "캠페인 변화"] as const;
-
 function countLivingZeroTrustBefore(
   campaignAfterSettlement: CampaignState,
   settlement: SettlementResult,
@@ -162,13 +136,6 @@ export function createU6SettlementView(
   dungeonName: string,
   themeId: ThemeId,
 ): U6SettlementView {
-  const details = [
-    settlement.causeChain.choice,
-    settlement.causeChain.reactions,
-    settlement.causeChain.damage,
-    settlement.causeChain.economy,
-    settlement.causeChain.campaignChange,
-  ] as const;
   const members = settlement.memberChanges.map(({ before, after }) => ({
     id: String(after.id),
     name: after.name,
@@ -206,15 +173,6 @@ export function createU6SettlementView(
   return {
     dungeonName,
     themeId,
-    survivors: settlement.survivorCount,
-    causeChain: CAUSE_ORDER.map((order, index) => ({
-      order,
-      label: CAUSE_LABELS[index],
-      detail: details[index],
-    })),
-    riskBefore: settlement.riskBefore,
-    riskAfter: settlement.riskAfter,
-    riskCapped: settlement.riskCapped,
     reputationDelta: settlement.reputationDelta,
     goldDelta: settlement.goldDelta,
     relicGold: settlement.relicGold,
