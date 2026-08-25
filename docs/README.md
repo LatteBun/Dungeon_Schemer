@@ -103,6 +103,8 @@
 
 - [ScreenFit 전체 화면 외부 상태 구독 설계](superpowers/specs/2026-08-26-lattebun-screen-fit-external-store-design.md): 모바일 세로 안내의 전체 화면 가능 여부를 브라우저 외부 상태로 구독해 Effect 동기 상태 갱신과 ESLint 오류를 제거하는 기술 계약
 - [ScreenFit 전체 화면 외부 상태 구독 구현 계획](superpowers/plans/2026-08-26-lattebun-screen-fit-external-store.md): fullscreenchange 구독, SSR snapshot, React Hooks lint 회귀를 테스트 우선으로 구현·검증하는 순서
+- [U5 전투 피드백 시퀀스 설계](superpowers/specs/2026-08-25-lattebun-u5-combat-feedback-sequence-design.md): 조언 선택부터 일반전·보스전, 우측 카드 HP 동기화, 사후 대사와 신뢰 변화까지 결과를 인과 순서로 공개하는 UI 계약
+- [U5 전투 피드백 시퀀스 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-combat-feedback-sequence.md): 표시 상태 머신, 전투 프레임과 우측 카드 HP 동기화, 사후 대사 확인과 신뢰 공개를 테스트 우선으로 연결하는 구현 순서
 - [U5 행동/조언 헤더와 현재 상황 패널 가독성 개선 설계](superpowers/specs/2026-08-25-lattebun-u5-console-situation-readability-design.md): 행동·조언 탭과 현재 상황 패널을 금속 명패 계열로 맞추고, 패널의 잔여 높이 확장·좌측 상단 정렬·글자 확대와 조언 카드 하단 정렬을 정의하는 UI 경계
 - [U5 행동/조언 헤더와 현재 상황 패널 가독성 개선 구현 계획](superpowers/plans/2026-08-25-lattebun-u5-console-situation-readability.md): JSX·CSS 계약, FHD 브라우저 containment, 문서 색인을 테스트 우선으로 구현·검증하는 순서
 - [U5 콘솔 금속 명패 통일과 조언 카드 하단 정렬 구현 계획](superpowers/plans/2026-08-26-lattebun-u5-console-situation-readability-refinement.md): PR #180 이후 카드 하단 정렬, 상황 글자 확대와 탭·패널 금속 표면을 검증하는 후속 TDD 순서

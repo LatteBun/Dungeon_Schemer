@@ -4,13 +4,13 @@ import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { type CSSProperties } from "react";
 import { withObjectParticle, withSubjectParticle } from "./korean-particle";
-import type { U5BattlePlaybackRate } from "./use-u5-battle-playback";
 import type {
   U5BattleCueView,
   U5BattleReplay,
   U5BattleReplayFrame,
   U5BattleReplayParticipant,
 } from "./u5-battle-replay";
+import type { U5BattlePlaybackRate } from "./use-u5-battle-playback";
 
 export interface U5BattleSceneProps {
   readonly replay: U5BattleReplay;
@@ -18,6 +18,7 @@ export interface U5BattleSceneProps {
   readonly playbackRate: U5BattlePlaybackRate;
   readonly onReplayFromStart: () => void;
   readonly onTogglePlaybackRate: () => void;
+  readonly showReplayControl?: boolean;
 }
 
 export function u5BattleMotionDuration(seconds: number, playbackRate: U5BattlePlaybackRate): number {
@@ -134,7 +135,11 @@ function motionForParticipant(
   if (frame.phase === "attack" && frame.actorId === participant.id) {
     return {
       animate: { x: reducedMotion ? 0 : "var(--u5-battle-lunge-x)", y: 0, opacity: 1 },
-      transition: { duration: u5BattleMotionDuration(0.18, playbackRate), repeat: 1, repeatType: "reverse" as const },
+      transition: {
+        duration: u5BattleMotionDuration(0.18, playbackRate),
+        repeat: 1,
+        repeatType: "reverse" as const,
+      },
     };
   }
   if (frame.phase === "impact" && frame.targetId === participant.id) {
@@ -268,6 +273,7 @@ export function U5BattleScene({
   playbackRate,
   onReplayFromStart,
   onTogglePlaybackRate,
+  showReplayControl = true,
 }: U5BattleSceneProps) {
   const reducedMotion = useReducedMotion() ?? false;
 
@@ -313,7 +319,7 @@ export function U5BattleScene({
       <p className="u5-battle-live" data-empty={caption(replay, frame) === "" ? "true" : "false"}>
         {caption(replay, frame)}
       </p>
-      {!complete || replay.verifications.length === 0 ? null : (
+      {!complete || !showReplayControl || replay.verifications.length === 0 ? null : (
         <ul className="u5-battle-verifications" data-testid="u5-battle-verifications">
           {replay.verifications.map((one) => (
             <li key={`${one.characterId}-${one.action}`}>
@@ -332,7 +338,9 @@ export function U5BattleScene({
         >
           ×{playbackRate}
         </button>
-        {complete ? <button type="button" onClick={onReplayFromStart}>다시 보기</button> : null}
+        {complete && showReplayControl
+          ? <button type="button" onClick={onReplayFromStart}>다시 보기</button>
+          : null}
       </div>
     </section>
   );
