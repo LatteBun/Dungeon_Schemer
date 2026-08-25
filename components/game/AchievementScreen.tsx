@@ -188,23 +188,35 @@ export function AchievementScreen({
   onClear,
 }: AchievementScreenProps) {
   return (
-    <main className="achievement-screen">
+    /*
+      * 캠페인 화면과 같은 뼈대를 쓴다.
+      *
+      * 이 화면은 캠페인 바깥이라 상단 상태 바가 없다. 그래서 셸을 통째로 쓸 수는
+      * 없지만, 바탕과 제목과 덩어리는 같은 어휘를 쓴다 — 그러지 않으면 게임에서
+      * 나갔다가 다른 앱에 들어온 것처럼 보인다.
+      */
+    <main className="game-shell achievement-screen">
       <header className="achievement-screen__header">
         <div>
           <p>길드 기록 보관소</p>
           <h1>길잡이 업적 기록</h1>
           <span role="status">{statusNotice(status, message)}</span>
         </div>
-        <p className="achievement-screen__count">달성 <strong>{unlockedCount}</strong> / {cards.length}</p>
+        <p className="game-shell__status-chip achievement-screen__count">
+          달성 <strong>{unlockedCount}</strong> / {cards.length}
+        </p>
       </header>
 
-      <section className="achievement-screen__gallery" aria-label="업적 카드 목록">
+      <section
+        className="panel-section game-shell__surface achievement-screen__gallery"
+        aria-label="업적 카드 목록"
+      >
         {cards.map((card) => <AchievementCard key={card.id} card={card} />)}
       </section>
 
       <footer className="achievement-screen__actions">
-        <Link href="/">메인 메뉴로</Link>
-        <button type="button" onClick={onRequestClear}>업적 기록 초기화</button>
+        <Link className="shell-cta" href="/">메인 메뉴로</Link>
+        <button className="shell-cta" type="button" onClick={onRequestClear}>업적 기록 초기화</button>
       </footer>
 
       {confirming ? <ResetConfirmationDialog onCancelClear={onCancelClear} onClear={onClear} /> : null}

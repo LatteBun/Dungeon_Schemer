@@ -590,10 +590,14 @@ body {
  * 정산 뒤의 월드턴과 보스전 뒤의 정산이 같은 모양을 쓴다. 화면마다 따로
  * 만들면 같은 뜻의 버튼이 화면마다 달라 보인다 — 화면을 통일하며 고쳐 온
  * 것이 그것이다.
+ *
+ * 메인 메뉴와 업적 기록도 여기 합류한다. 그 둘은 캠페인 바깥이라 따로 만들어
+ * 두었는데, 밝은 금색 판과 회색 판이라 게임 안의 어느 버튼과도 닮지 않았다.
  */
 .u6-settlement-continue,
 .u5-outcome-continue,
-.u5-battle-settle {
+.u5-battle-settle,
+.shell-cta {
   justify-self: start;
   min-height: clamp(2.6rem, 5cqh, 3.2rem);
   padding: 0 clamp(1.1rem, 1.6cqw, 1.9rem);
@@ -613,11 +617,35 @@ body {
 .u5-outcome-continue:hover,
 .u5-outcome-continue:focus-visible,
 .u5-battle-settle:hover,
-.u5-battle-settle:focus-visible {
+.u5-battle-settle:focus-visible,
+.shell-cta:hover,
+.shell-cta:focus-visible {
   outline: 2px solid #d9c37c;
   outline-offset: 2px;
   border-color: #e1bd68;
   filter: brightness(1.12);
+}
+
+/*
+ * 캠페인 바깥 화면의 버튼. 링크로 쓰이므로 글자 자리를 직접 잡는다.
+ *
+ * 으뜸 버튼은 같은 살결 위에서 테두리와 안쪽 빛만 올린다. 다른 판을 쓰면
+ * 그 화면만 다른 게임처럼 보인다.
+ */
+.shell-cta {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  text-decoration: none;
+}
+
+.shell-cta--primary {
+  border-color: #e0bb66;
+  box-shadow:
+    inset 0 0 0 2px #0e0906,
+    inset 0 0 0 3px rgb(224 187 102 / 78%),
+    0 0 1.4rem rgb(216 170 67 / 22%);
+  color: #f4e3b6;
 }
 
 /* 보스전 위에 얹는다. 장면이 절대 배치라 흐름 안에 자리가 없다. */
