@@ -20,41 +20,43 @@ async function reachesBossReplay(page: Page, seed: string): Promise<boolean> {
   await startExpedition(page, seed);
 
   for (let step = 0; step < 40; step += 1) {
-    if (await page.getByRole("heading", { level: 1, name: /보스방/ }).isVisible()) return true;
-    if (await page.getByRole("button", { name: "정산으로" }).isVisible()) return false;
-
+    const bossHeading = page.getByRole("heading", { level: 1, name: /보스방/ });
+    const settlement = page.getByRole("button", { name: "정산으로" });
     const adviceList = page.getByTestId("u5-advice-list");
-    if (await adviceList.isVisible()) {
-      await adviceList.locator("button:not(:disabled)").first().click();
-      continue;
-    }
-
     const skip = page.getByRole("button", { name: "전투 건너뛰기" });
-    if (await skip.isVisible()) {
-      await skip.click();
-      continue;
-    }
-
+    const reaction = page.getByRole("button", { name: "반응 확인" });
     const returnToMap = page.getByRole("button", { name: "지도로 돌아간다" });
-    if (await returnToMap.isVisible()) {
-      await returnToMap.click();
-      continue;
-    }
-
     const map = page.getByRole("region", { name: "던전 지도" });
-    if (await map.isVisible()) {
+    await expect.poll(async () => {
+      if (await bossHeading.isVisible()) return "boss";
+      if (await settlement.isVisible()) return "settlement";
+      if (await adviceList.isVisible()) return "advice";
+      if (await skip.isVisible()) return "skip";
+      if (await reaction.isVisible()) return "reaction";
+      if (await returnToMap.isVisible()) return "return";
+      if (await map.isVisible()) return "map";
+      return null;
+    }, {
+      message: `보스방으로 가는 다음 화면을 기다립니다: ${seed}, step ${step}`,
+      timeout: 15_000,
+    }).not.toBeNull();
+
+    if (await bossHeading.isVisible()) return true;
+    if (await settlement.isVisible()) return false;
+    if (await adviceList.isVisible()) await adviceList.locator("button:not(:disabled)").first().click();
+    else if (await skip.isVisible()) await skip.click();
+    else if (await reaction.isVisible()) await reaction.click();
+    else if (await returnToMap.isVisible()) await returnToMap.click();
+    else if (await map.isVisible()) {
       await map.getByTestId("u4-selectable-room").first().click();
       await page.getByRole("button", { name: "이 지점으로 이동" }).click();
-      continue;
     }
-
-    throw new Error(`보스방으로 가는 화면을 찾지 못했습니다: ${seed}, step ${step}`);
   }
 
   return false;
 }
 
-test("캠페인이 인트로에서 첫 사건 결과까지 진행된다", async ({ page }, testInfo) => {
+test("캠페인이 인트로에서 첫 전투 결과 확인까지 진행된다", async ({ page }, testInfo) => {
   const failures = watchBrowserErrors(page);
   await page.goto("/campaign?seed=dungeon-schemer");
 
@@ -107,11 +109,20 @@ test("캠페인이 인트로에서 첫 사건 결과까지 진행된다", async 
   await attachSelection(testInfo, "selected-advice", (await advice.innerText()).trim());
   await advice.click();
 
-  const outcome = page.getByTestId("u5-outcome");
-  await expect(outcome).toBeVisible();
-  await expect(outcome.getByRole("heading", { name: "사건 결과" })).toBeVisible();
-  await expect(outcome.getByRole("heading", { name: "수치·신뢰 변화" })).toBeVisible();
+  const skip = page.getByRole("button", { name: "전투 건너뛰기" });
+  await expect(skip).toBeEnabled({ timeout: 15_000 });
+  await skip.click();
+
+  const reaction = page.getByRole("button", { name: "반응 확인" });
   const returnToMap = page.getByRole("button", { name: "지도로 돌아간다" });
+  await expect.poll(async () => await reaction.isVisible() || await returnToMap.isVisible(), {
+    message: "전투 뒤 반응 확인 또는 지도 복귀를 기다립니다",
+    timeout: 15_000,
+  }).toBe(true);
+  if (await reaction.isVisible()) {
+    await expect(returnToMap).toHaveCount(0);
+    await reaction.click();
+  }
   await expect(returnToMap).toBeEnabled();
   await returnToMap.click();
   await expect(map).toBeVisible();
@@ -137,7 +148,13 @@ test("보스전은 재생이 끝난 뒤에만 정산으로 이동한다", async 
   await expect(settlement).toHaveCount(0);
 
   await skip.click();
-  await expect(settlement).toBeEnabled();
+  const reaction = page.getByRole("button", { name: "반응 확인" });
+  await expect.poll(async () => await reaction.isVisible() || await settlement.isVisible(), {
+    message: "보스전 뒤 반응 확인 또는 정산 진입을 기다립니다",
+    timeout: 15_000,
+  }).toBe(true);
+  if (await reaction.isVisible()) await reaction.click();
+  await expect(settlement).toBeEnabled({ timeout: 15_000 });
 
   await page.getByRole("button", { name: "다시 보기" }).click();
   await expect(skip).toBeEnabled();

@@ -86,6 +86,14 @@ body {
 }
 
 .game-canvas {
+  /*
+   * 판 위에 얹는 것들의 기준이다.
+   *
+   * 이 줄이 없으면 화면 위에 절대 배치로 얹는 알림이 판을 빠져나가 `body` 를
+   * 기준으로 삼는다. `body` 는 격자라 그 알림이 칸 하나로 늘어나, 작아야 할
+   * 쪽지가 판을 통째로 덮었다 — 1152 x 1080 으로 재졌다.
+   */
+  position: relative;
   width: 120rem;
   height: 67.5rem;
   overflow: hidden;

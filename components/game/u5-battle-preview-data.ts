@@ -14,6 +14,7 @@ import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import { U5_PREVIEW_ENTRIES } from "./u5-preview-data";
 import type { U5ProgressView } from "./u5-progress-model";
+import type { U5CombatFeedbackView } from "./u5-combat-feedback";
 
 export type U5BattlePreviewId = "e3-monster" | "e4-boss";
 
@@ -27,6 +28,7 @@ export interface U5BattlePreviewEntry {
   readonly ecology: U5EcologyView;
   readonly resolution: BattleResolution;
   readonly replay: U5BattleReplay;
+  readonly feedback: U5CombatFeedbackView;
 }
 
 const campaign = initializeCampaign("u5-dungeon-progress-preview");
@@ -156,6 +158,28 @@ function basePreview() {
   return entry;
 }
 
+function previewPostBattleFeedback(
+  signature: string,
+  kind: U5CombatFeedbackView["kind"],
+  replay: U5BattleReplay,
+): Pick<U5CombatFeedbackView, "signature" | "kind" | "postBattleReaction" | "postBattleTrustChanges"> {
+  const participant = replay.participants.find(
+    (candidate) => candidate.side === "party" && candidate.finalHp !== candidate.initialHp,
+  ) ?? replay.participants.find((candidate) => candidate.side === "party");
+  const member = members.find((candidate) => candidate.id === participant?.id) ?? members[0]!;
+  const after = Math.max(0, member.trust - 2);
+  return {
+    signature,
+    kind,
+    postBattleReaction: {
+      memberId: member.id,
+      memberName: member.name,
+      text: "네 말을 믿은 게 실수였군.",
+    },
+    postBattleTrustChanges: [{ memberId: member.id, before: member.trust, after }],
+  };
+}
+
 export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] {
   const base = basePreview();
   const e3Resolution = createE3Resolution();
@@ -203,6 +227,12 @@ export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] 
       ecology: base.ecology,
       resolution: e3Resolution,
       replay: e3Replay,
+      feedback: {
+        ...previewPostBattleFeedback("preview:e3", "event", e3Replay),
+        consequenceText: "거미가 추가로 등장한다.",
+        preBattleReaction: { memberId: members[0]!.id, memberName: members[0]!.name, text: "알겠어. 네 말대로 하지." },
+        immediateTrustChanges: [],
+      },
     },
     {
       id: "e4-boss",
@@ -219,6 +249,12 @@ export function createU5BattlePreviewEntries(): readonly U5BattlePreviewEntry[] 
       ecology: base.ecology,
       resolution: bossResolution,
       replay: bossReplay,
+      feedback: {
+        ...previewPostBattleFeedback("preview:e4", "boss", bossReplay),
+        consequenceText: null,
+        preBattleReaction: null,
+        immediateTrustChanges: [],
+      },
     },
   ];
 }

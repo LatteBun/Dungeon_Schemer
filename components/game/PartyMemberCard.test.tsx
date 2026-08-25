@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -21,12 +23,77 @@ const member: PartyMemberCardView = {
   gold: 31,
 };
 
+const partyCardCss = readFileSync(join(process.cwd(), "app", "party-card.css"), "utf8");
+
 const render = (over: Partial<PartyMemberCardView> = {}, props = {}) =>
   renderToStaticMarkup(
     createElement(PartyMemberCard, { member: { ...member, ...over }, ...props }),
   );
 
 describe("PartyMemberCard", () => {
+  it("확인한 HP와 신뢰 변화량을 카드 앞면에 함께 남긴다", () => {
+    const html = render({}, { settledResult: { hpDelta: -3, trustDelta: -2 } });
+
+    expect(html).toContain("party-card__settled-results");
+    expect(html).toContain("HP −3");
+    expect(html).toContain("신뢰 −2");
+  });
+
+  it("확인한 양수 변화량에는 더하기 부호를 붙인다", () => {
+    const html = render({}, { settledResult: { hpDelta: 4, trustDelta: 2 } });
+
+    expect(html).toContain("HP +4");
+    expect(html).toContain("신뢰 +2");
+  });
+
+  it("변화가 없어도 기본 결과 슬롯은 남기고 수치 output만 만들지 않는다", () => {
+    const html = render({}, {
+      reserveSettledResultSpace: true,
+      settledResult: { hpDelta: 0, trustDelta: 0 },
+    });
+
+    expect(html).toContain('class="party-card__settled-results"');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).not.toContain("party-card__settled-result--hp");
+    expect(html).not.toContain("party-card__settled-result--trust");
+  });
+
+  it("결과 슬롯을 쓰지 않는 기존 화면에는 빈 영역을 추가하지 않는다", () => {
+    expect(render()).not.toContain("party-card__settled-results");
+  });
+
+  it("모든 카드의 결과 슬롯은 badge 한 줄 높이를 기본 확보한다", () => {
+    expect(partyCardCss).toMatch(
+      /\.party-card__settled-results\s*\{[^}]*min-height:\s*clamp\(/,
+    );
+  });
+
+  it("동작 줄이기 상태는 미디어 쿼리 없이 완료 변화량의 진입 모션만 제거한다", () => {
+    expect(partyCardCss).toMatch(
+      /\.party-card__settled-results\[data-reduced-motion="true"\]\s*\{[^}]*animation:\s*none/,
+    );
+  });
+
+  it("전투 수치 증감을 카드 안의 접근 가능한 output으로 표시한다", () => {
+    const html = render({}, { effect: { kind: "hp", delta: -3, token: "private-token" } });
+    expect(html).toContain("HP −3");
+    expect(html).toContain("party-card__effect--hp");
+    expect(html).not.toContain("private-token");
+  });
+
+  it("U5 피격 effect는 통계 행이 아니라 예약된 결과 슬롯 안에 표시한다", () => {
+    const html = render({}, {
+      reserveSettledResultSpace: true,
+      effect: { kind: "hp", delta: -3, token: "impact-1" },
+    });
+    const stats = html.match(/<dl class="party-card__stats">[\s\S]*?<\/dl>/)?.[0] ?? "";
+    const results = html.match(/<div class="party-card__settled-results"[\s\S]*?<\/div>/)?.[0] ?? "";
+
+    expect(stats).not.toContain("party-card__effect--hp");
+    expect(results).toContain("party-card__effect--hp");
+    expect(results).toContain("HP −3");
+  });
+
   it("이름·직업·성격을 함께 보여준다", () => {
     const html = render();
 
