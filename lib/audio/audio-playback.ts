@@ -22,7 +22,7 @@ interface AudioElements {
 }
 
 const BGM_VOLUME = 0.25;
-const UI_VOLUME = 0.45;
+const UI_VOLUME = 0.28;
 const BGM_SRC = "/assets/audio/dungeon-schemer-guild-loop.wav";
 const SELECT_SRC = "/assets/audio/ui-select.wav";
 const MENU_SRC = "/assets/audio/ui-menu.wav";

@@ -33,8 +33,8 @@ describe("오디오 재생 controller", () => {
 
     expect(bgm.loop).toBe(true);
     expect(bgm.volume).toBe(0.25);
-    expect(select.volume).toBe(0.45);
-    expect(menu.volume).toBe(0.45);
+    expect(select.volume).toBe(0.28);
+    expect(menu.volume).toBe(0.28);
 
     await controller.playBgm();
     expect(bgm.playCalls).toBe(1);

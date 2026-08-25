@@ -65,7 +65,7 @@ describe("로컬 오디오 자산", () => {
 
     expect(wav.audioFormat).toBe(1);
     expect(wav.channels).toBe(channels);
-    expect(wav.sampleRate).toBe(22_050);
+    expect(wav.sampleRate).toBe(44_100);
     expect(wav.bitsPerSample).toBe(16);
     expect(Math.abs(wav.duration - seconds)).toBeLessThanOrEqual(tolerance);
     expect(wav.peak).toBeGreaterThan(Math.round(32_767 * 0.25));

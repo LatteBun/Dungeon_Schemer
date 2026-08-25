@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SAMPLE_RATE = 22_050;
+const SAMPLE_RATE = 44_100;
 const PCM_MAX = 32_767;
 const PEAK = 10 ** (-1 / 20);
 const BGM_SECONDS = 64;
@@ -98,36 +98,107 @@ function writePcm16Wav(path, channels) {
   writeFileSync(path, buffer);
 }
 
-function addPluck(left, right, startSeconds, frequency, pan) {
-  const frameCount = Math.round(1.25 * SAMPLE_RATE);
-  const startFrame = Math.round(startSeconds * SAMPLE_RATE);
-  const leftGain = 0.105 * (1 - pan * 0.45);
-  const rightGain = 0.105 * (1 + pan * 0.45);
+function panGains(pan) {
+  const angle = (pan + 1) * Math.PI / 4;
+  return [Math.cos(angle), Math.sin(angle)];
+}
 
-  for (let frame = 0; frame < frameCount && startFrame + frame < left.length; frame += 1) {
+function triangle(phase) {
+  return 2 * Math.asin(Math.sin(phase)) / Math.PI;
+}
+
+function addWrapped(left, right, startFrame, frame, sample, leftGain, rightGain) {
+  const target = (startFrame + frame) % left.length;
+  left[target] += sample * leftGain;
+  right[target] += sample * rightGain;
+}
+
+function addLute(left, right, startSeconds, frequency, amplitude, pan, seed) {
+  const frameCount = Math.round(2.45 * SAMPLE_RATE);
+  const startFrame = Math.round(startSeconds * SAMPLE_RATE);
+  const delayLength = Math.max(2, Math.round(SAMPLE_RATE / frequency));
+  const string = new Float64Array(delayLength);
+  const random = xorshift32(seed);
+  const [leftGain, rightGain] = panGains(pan);
+  let body = 0;
+  let cursor = 0;
+
+  for (let index = 0; index < string.length; index += 1) {
+    string[index] = (random() * 2 - 1) * Math.sin(Math.PI * index / string.length);
+  }
+
+  for (let frame = 0; frame < frameCount; frame += 1) {
     const age = frame / SAMPLE_RATE;
-    const envelope = Math.exp(-4.8 * age);
-    const sample = envelope * (
-      Math.sin(2 * Math.PI * frequency * age)
-      + 0.32 * Math.sin(4 * Math.PI * frequency * age)
-    );
-    left[startFrame + frame] += sample * leftGain;
-    right[startFrame + frame] += sample * rightGain;
+    const nextIndex = (cursor + 1) % delayLength;
+    const next = 0.9962 * (0.505 * string[cursor] + 0.495 * string[nextIndex]);
+    string[cursor] = next;
+    body = body * 0.91 + next * 0.09;
+    const finger = frame < SAMPLE_RATE * 0.012
+      ? (random() * 2 - 1) * Math.exp(-180 * age) * 0.13
+      : 0;
+    const envelope = Math.min(1, age / 0.008) * Math.exp(-0.2 * age);
+    const sample = (next * 0.76 + body * 0.34 + finger) * amplitude * envelope;
+    addWrapped(left, right, startFrame, frame, sample, leftGain, rightGain);
+    cursor = nextIndex;
   }
 }
 
-function addFrameDrum(left, right, startSeconds, random) {
-  const frameCount = Math.round(0.22 * SAMPLE_RATE);
+function addDulcimer(left, right, startSeconds, frequency, amplitude, pan, seed) {
+  const frameCount = Math.round(3 * SAMPLE_RATE);
   const startFrame = Math.round(startSeconds * SAMPLE_RATE);
+  const [leftGain, rightGain] = panGains(pan);
+  const random = xorshift32(seed);
 
-  for (let frame = 0; frame < frameCount && startFrame + frame < left.length; frame += 1) {
+  for (let frame = 0; frame < frameCount; frame += 1) {
     const age = frame / SAMPLE_RATE;
-    const envelope = Math.exp(-18 * age);
-    const noise = random() * 2 - 1;
-    const body = Math.sin(2 * Math.PI * 58 * age);
-    const sample = envelope * (noise * 0.09 + body * 0.11);
-    left[startFrame + frame] += sample * 0.92;
-    right[startFrame + frame] += sample;
+    const strike = Math.exp(-95 * age);
+    const decay = Math.exp(-1.45 * age);
+    const shimmer = Math.sin(2 * Math.PI * frequency * age)
+      + 0.54 * Math.sin(2 * Math.PI * frequency * 2.006 * age + 0.2)
+      + 0.24 * Math.sin(2 * Math.PI * frequency * 3.998 * age + 0.7)
+      + 0.1 * Math.sin(2 * Math.PI * frequency * 6.03 * age + 1.1);
+    const hammer = (random() * 2 - 1) * strike * 0.22;
+    addWrapped(left, right, startFrame, frame, (shimmer * decay + hammer) * amplitude, leftGain, rightGain);
+  }
+}
+
+function addFrameDrum(left, right, startSeconds, amplitude, seed) {
+  const frameCount = Math.round(0.75 * SAMPLE_RATE);
+  const startFrame = Math.round(startSeconds * SAMPLE_RATE);
+  const random = xorshift32(seed);
+  let noiseBody = 0;
+
+  for (let frame = 0; frame < frameCount; frame += 1) {
+    const age = frame / SAMPLE_RATE;
+    noiseBody = noiseBody * 0.86 + (random() * 2 - 1) * 0.14;
+    const pitch = 62 - 24 * Math.min(1, age / 0.28);
+    const skin = Math.sin(2 * Math.PI * pitch * age) * Math.exp(-7.6 * age);
+    const brush = noiseBody * Math.exp(-16 * age) * 0.22;
+    addWrapped(left, right, startFrame, frame, (skin + brush) * amplitude, 0.94, 1);
+  }
+}
+
+function addBreathyPipe(left, right, startSeconds, duration, frequency, amplitude, pan, seed) {
+  const frameCount = Math.round(duration * SAMPLE_RATE);
+  const startFrame = Math.round(startSeconds * SAMPLE_RATE);
+  const [leftGain, rightGain] = panGains(pan);
+  const random = xorshift32(seed);
+  let air = 0;
+
+  for (let frame = 0; frame < frameCount; frame += 1) {
+    const age = frame / SAMPLE_RATE;
+    const release = Math.max(0, duration - age);
+    const envelope = Math.min(1, age / 0.35, release / 0.55);
+    air = air * 0.975 + (random() * 2 - 1) * 0.025;
+    const vibrato = 1 + 0.0026 * Math.sin(2 * Math.PI * 4.7 * age);
+    const phase = 2 * Math.PI * frequency * vibrato * age;
+    const sample = (
+      0.72 * Math.sin(phase)
+      + 0.17 * Math.sin(phase * 2)
+      + 0.07 * Math.sin(phase * 3)
+      + 0.055 * air
+    ) * amplitude * envelope;
+    addWrapped(left, right, startFrame, frame, sample, leftGain, rightGain);
   }
 }
 
@@ -153,44 +224,64 @@ function createGuildLoop() {
   const random = xorshift32(SEED);
   const lowDrone = quantizedHz(73.42, BGM_SECONDS);
   const highDrone = quantizedHz(110, BGM_SECONDS);
-  const pulseFrequency = quantizedHz(55, BGM_SECONDS);
+  const upperDrone = quantizedHz(146.83, BGM_SECONDS);
+  const lowHarmonic = quantizedHz(73.42 * 2.002, BGM_SECONDS);
+  const highHarmonic = quantizedHz(110 * 2.003, BGM_SECONDS);
 
   for (let frame = 0; frame < frameCount; frame += 1) {
     const time = frame / SAMPLE_RATE;
     const seam = Math.sin(Math.PI * time / BGM_SECONDS) ** 2;
-    const airPulse = 0.65 + 0.35 * Math.sin(2 * Math.PI * time / 16);
-    const leftAir = (random() * 2 - 1) * 0.018 * airPulse * seam;
-    const rightAir = (random() * 2 - 1) * 0.018 * airPulse * seam;
-    const pulse = 0.025 * Math.sin(2 * Math.PI * pulseFrequency * time)
-      * (0.5 - 0.5 * Math.cos(2 * Math.PI * time / 4));
+    const slowPhase = 0.012 * Math.sin(2 * Math.PI * time / 16);
+    const lowPhase = 2 * Math.PI * lowDrone * time + slowPhase;
+    const highPhase = 2 * Math.PI * highDrone * time - slowPhase * 0.7;
+    const upperPhase = 2 * Math.PI * upperDrone * time + slowPhase * 0.4;
+    const lowHarmonicPhase = 2 * Math.PI * lowHarmonic * time + slowPhase * 1.3;
+    const highHarmonicPhase = 2 * Math.PI * highHarmonic * time - slowPhase * 1.1;
+    const swell = 0.7 + 0.18 * Math.sin(2 * Math.PI * time / 32 + 0.3);
+    const air = (random() * 2 - 1) * 0.0065 * seam;
+    const lowBow = 0.11 * triangle(lowPhase) + 0.032 * Math.sin(lowHarmonicPhase);
+    const highBow = 0.042 * triangle(highPhase) + 0.016 * Math.sin(highHarmonicPhase);
+    const upperBow = 0.013 * triangle(upperPhase);
 
-    left[frame] = 0.20 * Math.sin(2 * Math.PI * lowDrone * time)
-      + 0.10 * Math.sin(2 * Math.PI * highDrone * time + 0.35)
-      + leftAir
-      + pulse;
-    right[frame] = 0.20 * Math.sin(2 * Math.PI * lowDrone * time + 0.05)
-      + 0.10 * Math.sin(2 * Math.PI * highDrone * time - 0.35)
-      + rightAir
-      + pulse * 0.93;
+    left[frame] = (lowBow + highBow + upperBow) * swell + air;
+    right[frame] = (lowBow * 0.93 + highBow * 1.04 + upperBow * 0.88) * swell - air * 0.7;
   }
 
-  const notes = [146.83, 174.61, 220, 261.63, 220, 174.61, 196, 146.83];
+  const notes = [
+    146.83, 174.61, 220, 196,
+    233.08, 220, 196, 174.61,
+    146.83, 174.61, 233.08, 220,
+    196, 174.61, 164.81, 146.83,
+  ];
+  const chordRoots = [73.42, 58.27, 65.41, 73.42];
   for (let bar = 0; bar < 16; bar += 1) {
     const barStart = bar * 4;
-    const note = notes[bar % notes.length];
-    const pan = ((bar % 5) - 2) / 2;
-    addPluck(left, right, barStart + 2, note, pan);
-    if (bar !== 15) addPluck(left, right, barStart + 3.5, note * 1.5, -pan);
+    const note = notes[bar];
+    const pan = bar % 2 === 0 ? -0.34 : 0.34;
+    const chordRoot = chordRoots[Math.floor(bar / 4)];
 
-    if (bar !== 0) addFrameDrum(left, right, barStart, random);
-    if (bar !== 15) addFrameDrum(left, right, barStart + 2.75, random);
+    addLute(left, right, barStart + 0.28, chordRoot, 0.085, -0.3, SEED ^ (0x1100 + bar));
+    addLute(left, right, barStart + 0.33, chordRoot * 1.5, 0.05, 0.28, SEED ^ (0x2100 + bar));
+    addDulcimer(left, right, barStart + 1.25, note, bar % 4 === 0 ? 0.03 : 0.024, pan, SEED ^ (0x3100 + bar));
+    if (bar % 4 === 2) {
+      addLute(left, right, barStart + 2.72, note / 2, 0.041, 0.1, SEED ^ (0x4100 + bar));
+    }
+
+    addFrameDrum(left, right, barStart + 0.12, bar % 4 === 0 ? 0.035 : 0.024, SEED ^ (0x5100 + bar));
+    if (bar % 2 === 0) {
+      addFrameDrum(left, right, barStart + 2.88, 0.018, SEED ^ (0x6100 + bar));
+    }
   }
 
-  const delays = [[0.19, 0.13], [0.31, 0.09], [0.47, 0.06]];
-  return normalizeChannels([
-    circularDelay(left, delays),
-    circularDelay(right, delays),
-  ]);
+  addBreathyPipe(left, right, 8.2, 2.65, 293.66, 0.0115, 0.46, SEED ^ 0x7101);
+  addBreathyPipe(left, right, 24.35, 2.75, 261.63, 0.011, -0.42, SEED ^ 0x7102);
+  addBreathyPipe(left, right, 40.4, 2.5, 220, 0.0105, 0.36, SEED ^ 0x7103);
+  addBreathyPipe(left, right, 53.1, 2.25, 196, 0.01, -0.32, SEED ^ 0x7104);
+
+  const delays = [[0.071, 0.1], [0.127, 0.078], [0.211, 0.058], [0.347, 0.041], [0.563, 0.027]];
+  const delayedLeft = circularDelay(left, delays);
+  const delayedRight = circularDelay(right, delays);
+  return normalizeChannels([delayedLeft, delayedRight]);
 }
 
 function applyFadeOut(samples, frameCount = 1_024) {
