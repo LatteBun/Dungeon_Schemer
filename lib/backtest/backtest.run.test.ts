@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertBacktestPasses, buildCalibrationEvidence, campaignSeed, optionsFromEnvironment, runBacktestSuite, shouldFailBacktest } from "./backtest.run";
+import { assertBacktestPasses, buildCalibrationEvidence, campaignSeed, optionsFromEnvironment, runBacktestSuite, shouldFailBacktest, validateBacktestSuiteOptions } from "./backtest.run";
 
 describe("B1 backtest seed 계약", () => {
   it("B1-B calibration namespace와 번호를 고정 폭으로 조합한다", () => {
@@ -27,6 +27,14 @@ describe("B1-B backtest runner 옵션", () => {
       focus: "risk-curve",
       namespace: "b1-risk-curve-v2-calibration",
     });
+  });
+
+  it.each([
+    { mode: "calibration" as const, focus: "risk-curve" as const, namespace: "b1b-calibration-v1" as const },
+    { mode: "calibration" as const, focus: "full-campaign" as const, namespace: "b1-risk-curve-v2-calibration" as const },
+    { mode: "holdout" as const, focus: "risk-curve" as const, namespace: "b1b-holdout-v1" as const },
+  ])("직접 runner 호출도 mode/focus와 namespace 불일치를 거부한다", (options) => {
+    expect(() => validateBacktestSuiteOptions({ ...options, seedsPerCombination: 2 })).toThrow();
   });
 
   it("calibration 기본 표본은 조합당 200시드다", () => {

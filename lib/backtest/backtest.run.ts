@@ -30,7 +30,23 @@ function nondeterministic(metrics: CampaignRunMetrics): CampaignRunMetrics {
   return { ...metrics, ending: "run-error", termination: "run-error", completed: false, errorKind: "nondeterminism" };
 }
 
+function expectedNamespace(mode: BacktestSuiteOptions["mode"], focus: BacktestFocus): BacktestNamespace {
+  if (mode === "holdout") return "b1b-holdout-v1";
+  return focus === "risk-curve" ? "b1-risk-curve-v2-calibration" : "b1b-calibration-v1";
+}
+
+export function validateBacktestSuiteOptions(options: BacktestSuiteOptions): void {
+  const expected = expectedNamespace(options.mode, options.focus);
+  if (options.mode === "holdout" && options.focus === "risk-curve") {
+    throw new Error("risk-curve focus는 holdout을 실행할 수 없다");
+  }
+  if (options.namespace !== expected) {
+    throw new Error(`B1_BACKTEST_NAMESPACE가 mode/focus와 일치하지 않는다: ${options.namespace}`);
+  }
+}
+
 export function runBacktestSuite(options: BacktestSuiteOptions): BacktestAggregate {
+  validateBacktestSuiteOptions(options);
   const runs: CampaignRunMetrics[] = [];
   const accuracies: readonly Accuracy[] = [0.4, 0.7];
   for (let index = 0; index < options.seedsPerCombination; index += 1) {
@@ -122,11 +138,6 @@ export function buildCalibrationEvidence(
 }
 
 type BacktestEnvironment = Partial<Pick<NodeJS.ProcessEnv, "B1_BACKTEST_MODE" | "B1_BACKTEST_FOCUS" | "B1_BACKTEST_NAMESPACE" | "B1_BACKTEST_SEEDS" | "NODE_ENV">>;
-
-function expectedNamespace(mode: BacktestSuiteOptions["mode"], focus: BacktestFocus): BacktestNamespace {
-  if (mode === "holdout") return "b1b-holdout-v1";
-  return focus === "risk-curve" ? "b1-risk-curve-v2-calibration" : "b1b-calibration-v1";
-}
 
 export function optionsFromEnvironment(env?: NodeJS.ProcessEnv): BacktestSuiteOptions;
 export function optionsFromEnvironment(env?: BacktestEnvironment): BacktestSuiteOptions;

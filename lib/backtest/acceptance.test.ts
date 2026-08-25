@@ -216,5 +216,21 @@ describe("B1-B 승인 gate", () => {
       },
     }, { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" });
     expect(hpFailure.find((gate) => gate.id === "boss-axis-guard:opportunist@0.7:risk-2")).toMatchObject({ passed: false, enforced: true });
+
+    const inclusiveRiskOne = aggregate.combinations["opportunist@0.7"]!.firstAttemptByInitialRisk[1];
+    const inclusiveBoundary = evaluateB1BAcceptance({
+      ...aggregate,
+      combinations: {
+        ...aggregate.combinations,
+        "opportunist@0.7": {
+          ...aggregate.combinations["opportunist@0.7"]!,
+          firstAttemptByInitialRisk: {
+            ...aggregate.combinations["opportunist@0.7"]!.firstAttemptByInitialRisk,
+            1: { ...inclusiveRiskOne, preBossFailures: 10, bossFailures: 10, meanBossEntryHpRatio: 0.70 },
+          },
+        },
+      },
+    }, { mode: "calibration", seedsPerCombination: 200, focus: "risk-curve" });
+    expect(inclusiveBoundary.find((gate) => gate.id === "boss-axis-guard:opportunist@0.7:risk-1")).toMatchObject({ passed: true, enforced: true });
   });
 });
