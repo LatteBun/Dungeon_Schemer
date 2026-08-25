@@ -1,7 +1,7 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { B1C_CALIBRATION_SELECTION } from "@/lib/balance/campaign-balance";
+import { B1_RISK_CURVE_V2_CALIBRATION_SELECTION } from "@/lib/balance/campaign-balance";
 import { B1B_HOLDOUT_APPROVED, evaluateB1BAcceptance, type B1BAcceptanceGate, type BacktestFocus } from "./acceptance";
 import { runCampaign } from "./campaign-driver";
 import { aggregateRuns, metricsForRun, type BacktestAggregate, type CampaignRunMetrics } from "./metrics";
@@ -104,14 +104,14 @@ export function buildCalibrationEvidence(
   aggregate: BacktestAggregate,
 ): CalibrationEvidence {
   return {
-    selectedAxis: B1C_CALIBRATION_SELECTION.selectedAxis,
+    selectedAxis: B1_RISK_CURVE_V2_CALIBRATION_SELECTION.selectedAxis,
     before: {
-      ...B1C_CALIBRATION_SELECTION.before,
-      bossBaseStatMultiplierByInitialRisk: { ...B1C_CALIBRATION_SELECTION.before.bossBaseStatMultiplierByInitialRisk },
+      ...B1_RISK_CURVE_V2_CALIBRATION_SELECTION.before,
+      bossBaseStatMultiplierByInitialRisk: { ...B1_RISK_CURVE_V2_CALIBRATION_SELECTION.before.bossBaseStatMultiplierByInitialRisk },
     },
     after: {
-      ...B1C_CALIBRATION_SELECTION.after,
-      bossBaseStatMultiplierByInitialRisk: { ...B1C_CALIBRATION_SELECTION.after.bossBaseStatMultiplierByInitialRisk },
+      ...B1_RISK_CURVE_V2_CALIBRATION_SELECTION.after,
+      bossBaseStatMultiplierByInitialRisk: { ...B1_RISK_CURVE_V2_CALIBRATION_SELECTION.after.bossBaseStatMultiplierByInitialRisk },
     },
     stages: ([50, 100, 200] as const).map((seedsPerCombination) =>
       options.mode === "calibration"

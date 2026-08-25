@@ -99,16 +99,16 @@ describe("백테스트 gate와 보고서", () => {
       calibrationEvidence: {
         selectedAxis: "bossBaseStatMultiplierByInitialRisk" as const,
         before: {
-          revision: "b1b-risk-curve-v1",
-          generalMonsterBaseStatMultiplier: 1,
-          restRecoveryRatio: 0.20,
-          bossBaseStatMultiplierByInitialRisk: { 1: 1.125, 2: 0.85, 3: 0.675, 4: 0.575, 5: 0.625 },
-        },
-        after: {
           revision: "b1c-boss-depletion-v1",
           generalMonsterBaseStatMultiplier: 1,
           restRecoveryRatio: 0.20,
           bossBaseStatMultiplierByInitialRisk: { 1: 1.10, 2: 0.825, 3: 0.65, 4: 0.55, 5: 0.60 },
+        },
+        after: {
+          revision: "b1-risk-curve-v2",
+          generalMonsterBaseStatMultiplier: 1,
+          restRecoveryRatio: 0.20,
+          bossBaseStatMultiplierByInitialRisk: { 1: 1.05, 2: 0.80, 3: 0.60, 4: 0.475, 5: 0.45 },
         },
         stages: [
           {
@@ -140,12 +140,12 @@ describe("백테스트 gate와 보고서", () => {
     expect(first).toContain("## 설정 revision과 현재 수치");
     expect(first).toContain("## calibration 선택과 단계별 근거");
     expect(first).toContain("선택 축: bossBaseStatMultiplierByInitialRisk");
-    expect(first).toContain("| 이전 | b1b-risk-curve-v1 | 1.000 | 0.200 | ★1: 1.125, ★2: 0.850, ★3: 0.675, ★4: 0.575, ★5: 0.625 |");
-    expect(first).toContain("| 이후 | b1c-boss-depletion-v1 | 1.000 | 0.200 | ★1: 1.100, ★2: 0.825, ★3: 0.650, ★4: 0.550, ★5: 0.600 |");
+    expect(first).toContain("| 이전 | b1c-boss-depletion-v1 | 1.000 | 0.200 | ★1: 1.100, ★2: 0.825, ★3: 0.650, ★4: 0.550, ★5: 0.600 |");
+    expect(first).toContain("| 이후 | b1-risk-curve-v2 | 1.000 | 0.200 | ★1: 1.050, ★2: 0.800, ★3: 0.600, ★4: 0.475, ★5: 0.450 |");
     expect(first).toContain("| 50 | dominant (expedition-boss): 사망 99.8% | FAIL | accuracy-has-effect |");
     expect(first).toContain("| 100 | dominant (expedition-boss): 사망 99.9% | FAIL | completion-rate:opportunist@0.7 |");
     expect(first).toContain("| 200 | dominant (expedition-boss): 사망 99.9% | PASS | 없음 |");
-    expect(first).toContain("초기 위험도별 보스 배율: ★1: 1.10, ★2: 0.825, ★3: 0.65, ★4: 0.55, ★5: 0.60");
+    expect(first).toContain("초기 위험도별 보스 배율: ★1: 1.05, ★2: 0.80, ★3: 0.60, ★4: 0.475, ★5: 0.45");
     expect(first).toContain("## B1-B 완주율·완주 전멸 gate");
     expect(first).toContain("## 조합별 완주율·완주 전멸 평균·5+ 비율·압력·보스 진입 HP");
     expect(first).toContain("## 캠페인 손실 원인 판정");

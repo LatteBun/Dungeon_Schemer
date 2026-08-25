@@ -64,8 +64,8 @@ describe("B1-C calibration 근거 모델", () => {
 
     expect(evidence).toMatchObject({
       selectedAxis: "bossBaseStatMultiplierByInitialRisk",
-      before: { revision: "b1b-risk-curve-v1" },
-      after: { revision: "b1c-boss-depletion-v1" },
+      before: { revision: "b1c-boss-depletion-v1" },
+      after: { revision: "b1-risk-curve-v2" },
     });
     expect(evidence.stages).toEqual([
       { seedsPerCombination: 50, depletionVerdict: null, gateStatus: "NOT_RUN", failureIds: [] },
