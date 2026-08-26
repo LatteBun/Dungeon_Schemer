@@ -96,7 +96,7 @@ function StatusInfoItem({ label, value, iconSrc, testId, children }: StatusInfoI
     const onPointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Node)) return;
       if (triggerRef.current?.contains(event.target) || popoverRef.current?.contains(event.target)) return;
-      setOpen(false);
+      close();
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
