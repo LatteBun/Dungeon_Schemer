@@ -197,9 +197,8 @@ function sameAbilityDefinition(
     && expected !== undefined
     && actual.kind === expected.kind
     && actual.name === expected.name
-    && actual.healAmount === expected.healAmount
+    && actual.healTargetMaxHpPercent === expected.healTargetMaxHpPercent
     && actual.usesPerExpedition === expected.usesPerExpedition
-    && actual.maxUsesPerBattle === expected.maxUsesPerBattle
     && actual.triggerAtOrBelowHpPercent === expected.triggerAtOrBelowHpPercent;
 }
 

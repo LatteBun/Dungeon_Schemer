@@ -429,7 +429,7 @@ describe("E3 원정 사건 준비와 물질화", () => {
       gravelyWounded: false,
     };
     const invalidClasses = CLASSES.map((classDef) => classDef.id === "cleric"
-      ? { ...classDef, battleAbility: { ...classDef.battleAbility!, healAmount: 0 } }
+      ? { ...classDef, battleAbility: { ...classDef.battleAbility!, healTargetMaxHpPercent: 0 } }
       : classDef);
 
     expect(() => resolveMonsterEventBattle({

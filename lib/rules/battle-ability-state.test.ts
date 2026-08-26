@@ -32,9 +32,8 @@ const classDefs: readonly ClassDef[] = [
     battleAbility: {
       kind: "emergencyHeal",
       name: "치유 기도",
-      healAmount: 5,
+      healTargetMaxHpPercent: 25,
       usesPerExpedition: 2,
-      maxUsesPerBattle: 1,
       triggerAtOrBelowHpPercent: 50,
     },
   },

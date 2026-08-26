@@ -27,9 +27,8 @@ describe("CLASSES", () => {
     expect(cleric?.battleAbility).toEqual({
       kind: "emergencyHeal",
       name: "치유 기도",
-      healAmount: 5,
+      healTargetMaxHpPercent: 25,
       usesPerExpedition: 2,
-      maxUsesPerBattle: 1,
       triggerAtOrBelowHpPercent: 50,
     });
     expect(CLASSES.filter((classDef) => classDef.id !== "cleric")).toEqual(

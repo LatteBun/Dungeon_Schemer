@@ -45,16 +45,19 @@ function validateBattleAbility(ability: unknown, classId: string): asserts abili
     });
   }
 
-  requirePositiveSafeInteger(candidate.healAmount, "healAmount", classId);
+  requirePositiveSafeInteger(
+    candidate.healTargetMaxHpPercent,
+    "healTargetMaxHpPercent",
+    classId,
+  );
   requirePositiveSafeInteger(candidate.usesPerExpedition, "usesPerExpedition", classId);
-  requirePositiveSafeInteger(candidate.maxUsesPerBattle, "maxUsesPerBattle", classId);
 
-  if ((candidate.maxUsesPerBattle as number) > (candidate.usesPerExpedition as number)) {
-    invalid(`직업 능력의 전투당 사용 횟수가 원정당 사용 횟수를 초과한다: ${classId}`, {
+  if ((candidate.healTargetMaxHpPercent as number) > 100) {
+    invalid("직업 능력의 대상 최대 HP 회복 백분율이 100을 초과한다", {
       contentType: "classBattleAbility",
       classId,
-      maxUsesPerBattle: candidate.maxUsesPerBattle,
-      usesPerExpedition: candidate.usesPerExpedition,
+      field: "healTargetMaxHpPercent",
+      value: candidate.healTargetMaxHpPercent,
     });
   }
 

@@ -27,9 +27,8 @@ export const TRUST_MAX = 100;
 export interface EmergencyHealAbilityDef {
   readonly kind: "emergencyHeal";
   readonly name: string;
-  readonly healAmount: number;
+  readonly healTargetMaxHpPercent: number;
   readonly usesPerExpedition: number;
-  readonly maxUsesPerBattle: number;
   readonly triggerAtOrBelowHpPercent: number;
 }
 

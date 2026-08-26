@@ -18,9 +18,8 @@ function emergencyHeal(overrides: Partial<NonNullable<ClassDef["battleAbility"]>
   return {
     kind: "emergencyHeal" as const,
     name: "치유 기도",
-    healAmount: 5,
+    healTargetMaxHpPercent: 25,
     usesPerExpedition: 2,
-    maxUsesPerBattle: 1,
     triggerAtOrBelowHpPercent: 50,
     ...overrides,
   };
@@ -46,16 +45,32 @@ describe("validateClasses", () => {
 
   it.each([
     ["빈 이름", emergencyHeal({ name: "  " })],
-    ["안전하지 않은 회복량", emergencyHeal({ healAmount: Number.MAX_SAFE_INTEGER + 1 })],
-    ["0 회복량", emergencyHeal({ healAmount: 0 })],
+    ["안전하지 않은 대상 최대 HP 회복 백분율", emergencyHeal({ healTargetMaxHpPercent: Number.MAX_SAFE_INTEGER + 1 })],
+    ["0 대상 최대 HP 회복 백분율", emergencyHeal({ healTargetMaxHpPercent: 0 })],
+    ["음수 대상 최대 HP 회복 백분율", emergencyHeal({ healTargetMaxHpPercent: -1 })],
+    ["비정수 대상 최대 HP 회복 백분율", emergencyHeal({ healTargetMaxHpPercent: 25.5 })],
+    ["100 초과 대상 최대 HP 회복 백분율", emergencyHeal({ healTargetMaxHpPercent: 101 })],
     ["0 원정 횟수", emergencyHeal({ usesPerExpedition: 0 })],
-    ["0 전투 횟수", emergencyHeal({ maxUsesPerBattle: 0 })],
-    ["전투 횟수가 원정 횟수 초과", emergencyHeal({ maxUsesPerBattle: 3 })],
     ["0 발동 백분율", emergencyHeal({ triggerAtOrBelowHpPercent: 0 })],
     ["100 초과 발동 백분율", emergencyHeal({ triggerAtOrBelowHpPercent: 101 })],
   ])("%s 능력을 INVALID_GENERATION으로 거부한다", (_caseName, battleAbility) => {
     expectInvalidGeneration(() => validateClasses([
       classDef("cleric", { battleAbility }),
+    ]));
+  });
+
+  it("제거된 고정 회복량과 전투당 횟수만으로는 유효한 정의가 되지 않는다", () => {
+    expectInvalidGeneration(() => validateClasses([
+      classDef("cleric", {
+        battleAbility: {
+          kind: "emergencyHeal",
+          name: "치유 기도",
+          healAmount: 5,
+          usesPerExpedition: 2,
+          maxUsesPerBattle: 1,
+          triggerAtOrBelowHpPercent: 50,
+        } as never,
+      }),
     ]));
   });
 
