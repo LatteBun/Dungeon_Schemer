@@ -11,6 +11,17 @@ const VIEWPORTS = [
 const ROUTES = ["/", "/achievements", "/campaign", "/u5-test", "/u6-test"] as const;
 const tolerance = 1.5;
 
+interface Box {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+function overlaps(a: Box, b: Box): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
 for (const viewport of VIEWPORTS) {
   for (const route of ROUTES) {
     test(`${route} ${viewport.name} 고정 캔버스 계약을 지킨다`, async ({ page }) => {
@@ -96,4 +107,59 @@ for (const viewport of VIEWPORTS) {
       expectNoBrowserErrors(failures, `${route} ${viewport.name}`);
     });
   }
+}
+
+const STATUS_VIEWPORTS = [
+  { name: "FHD", width: 1920, height: 1080 },
+  { name: "HD", width: 1280, height: 720 },
+  { name: "5:4", width: 1280, height: 1024 },
+] as const;
+
+for (const viewport of STATUS_VIEWPORTS) {
+  test(`상태 칩 7개 ${viewport.name} 한 줄·퀵 메뉴 비겹침`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    const failures = watchBrowserErrors(page);
+    await page.goto("/u1-test?screen=board");
+
+    const list = page.locator(".game-shell__status-list");
+    const chips = page.locator(".game-shell__status-chip");
+    await expect(chips).toHaveCount(7);
+    await expect(page.getByText("7 / 5", { exact: true })).toBeVisible();
+
+    const metrics = await list.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+
+    const boxes = await chips.evaluateAll((elements) => elements.map((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+      };
+    }));
+    expect(new Set(boxes.map((box) => Math.round(box.top))).size).toBe(1);
+    expect(boxes.every((box) => box.scrollWidth <= box.clientWidth + 1)).toBe(true);
+
+    const trigger = page.getByRole("button", { name: "빠른 메뉴 열기" });
+    const triggerBox = await trigger.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+    });
+    expect(boxes.some((box) => overlaps(box, triggerBox))).toBe(false);
+
+    await trigger.click();
+    const panel = page.getByRole("region", { name: "빠른 메뉴" });
+    const panelBox = await panel.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+    });
+    expect(boxes.some((box) => overlaps(box, panelBox))).toBe(false);
+    expectNoBrowserErrors(failures, `상태 칩 7개 ${viewport.name}`);
+  });
 }

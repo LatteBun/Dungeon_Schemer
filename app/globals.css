@@ -126,7 +126,7 @@ body {
 :root {
   --status-bar-padding-block: clamp(0.65rem, 0.6cqw, 1rem);
   --status-bar-padding-inline: clamp(0.8rem, 2cqw, 1.5rem);
-  --status-list-gap: clamp(0.45rem, 1.1cqw, 0.8rem);
+  --status-list-gap: clamp(0.45rem, 1.1cqw, 0.75rem);
   --status-chip-min-width: clamp(8.7rem, 14cqw, 11.3rem);
   --status-chip-min-height: clamp(3rem, 3cqw, 4.35rem);
   --status-chip-gap: clamp(0.5rem, 0.5cqw, 0.8rem);
