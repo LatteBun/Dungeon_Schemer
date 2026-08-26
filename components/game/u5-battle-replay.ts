@@ -179,9 +179,6 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
       invalid(`최종 전투 능력 잔여 횟수가 범위를 벗어난다: ${member.id}`);
     }
     const healActionCount = healActionCountByActorId.get(member.id) ?? 0;
-    if (healActionCount > ability.maxUsesPerBattle) {
-      invalid(`전투당 치유 횟수가 능력 한도를 넘는다: ${member.id}`);
-    }
     const initialUses = ability.remainingUses + healActionCount;
     if (initialUses > ability.usesPerExpedition) {
       invalid(`시작 전투 능력 잔여 횟수가 범위를 벗어난다: ${member.id}`);
@@ -252,8 +249,11 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
       }
       if (!Number.isSafeInteger(action.healing) || action.healing <= 0) invalid(`치유량이 유효하지 않다: ${action.targetId}`);
       const actorAbility = "battleAbility" in actor ? actor.battleAbility : undefined;
-      if (actorAbility === undefined || action.healing > actorAbility.healAmount) {
-        invalid(`치유 능력보다 실제 회복량이 크다: ${action.actorId}`);
+      const maximumHealing = actorAbility === undefined
+        ? null
+        : Math.round(target.maxHp * actorAbility.healTargetMaxHpPercent / 100);
+      if (maximumHealing === null || action.healing > maximumHealing) {
+        invalid(`치유량이 능력 범위를 벗어난다: ${action.actorId}`);
       }
       const expectedAfter = Math.min(target.maxHp, action.targetHpBefore + action.healing);
       if (action.targetHpAfter !== expectedAfter || action.healing !== expectedAfter - action.targetHpBefore) {

@@ -26,9 +26,8 @@ const presentations = [
 const emergencyHeal = {
   kind: "emergencyHeal",
   name: "치유 기도",
-  healAmount: 5,
+  healTargetMaxHpPercent: 25,
   usesPerExpedition: 2,
-  maxUsesPerBattle: 1,
   triggerAtOrBelowHpPercent: 50,
 } as const;
 
@@ -37,13 +36,13 @@ const healingResolution: BattleResolution = {
   termination: "defeatedEnemies",
   rounds: 2,
   actions: [
-    { kind: "heal", round: 1, actorSide: "party", actorId: "cleric", targetId: "ally", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 2, targetHpAfter: 7 },
-    { kind: "attack", round: 1, actorSide: "enemy", actorId: "enemy-1", targetId: "ally", damage: 3, targetHpBefore: 7, targetHpAfter: 4, defeated: false },
+    { kind: "heal", round: 1, actorSide: "party", actorId: "cleric", targetId: "ally", abilityKind: "emergencyHeal", healing: 11, targetHpBefore: 2, targetHpAfter: 13 },
+    { kind: "attack", round: 1, actorSide: "enemy", actorId: "enemy-1", targetId: "ally", damage: 3, targetHpBefore: 13, targetHpAfter: 10, defeated: false },
     { kind: "attack", round: 2, actorSide: "party", actorId: "cleric", targetId: "enemy-1", damage: 10, targetHpBefore: 10, targetHpAfter: 0, defeated: true },
   ],
   party: [
     { id: "cleric", classId: "cleric", hp: 5, maxHp: 10, attack: 3, hitWeight: 1, battleAbility: { ...emergencyHeal, remainingUses: 0 } },
-    { id: "ally", classId: "warrior", hp: 4, maxHp: 10, attack: 5, hitWeight: 3 },
+    { id: "ally", classId: "warrior", hp: 10, maxHp: 45, attack: 5, hitWeight: 3 },
   ],
   enemies: [{ id: "enemy-1", monsterId: "spider-hatchling", hp: 0, maxHp: 10, baseDamage: 3 }],
 };
@@ -98,9 +97,9 @@ describe("createU5BattleReplay", () => {
     const [attack, impact, settle] = replay.frames.slice(1, 4);
 
     expect([attack?.actionKind, impact?.actionKind, settle?.actionKind]).toEqual(["heal", "heal", "heal"]);
-    expect([attack?.healing, impact?.healing, settle?.healing]).toEqual([null, 5, null]);
+    expect([attack?.healing, impact?.healing, settle?.healing]).toEqual([null, 11, null]);
     expect([attack?.damage, impact?.damage, settle?.damage]).toEqual([null, null, null]);
-    expect([attack?.hpByParticipantId.ally, impact?.hpByParticipantId.ally, settle?.hpByParticipantId.ally]).toEqual([2, 2, 7]);
+    expect([attack?.hpByParticipantId.ally, impact?.hpByParticipantId.ally, settle?.hpByParticipantId.ally]).toEqual([2, 2, 13]);
     expect([
       attack?.battleAbilityUsesRemainingByParticipantId.cleric,
       impact?.battleAbilityUsesRemainingByParticipantId.cleric,
@@ -108,51 +107,55 @@ describe("createU5BattleReplay", () => {
     ]).toEqual([1, 1, 0]);
   });
 
-  it("기록된 실제 회복량이 actor의 런타임 능력 healAmount를 넘으면 거부한다", () => {
-    const actorAbilityIsOne: BattleResolution = {
+  it.each([
+    [45, 11, false],
+    [45, 12, true],
+    [30, 8, false],
+    [30, 9, true],
+  ] as const)("target 최대 HP %i와 치유 %i의 상한을 검증한다", (targetMaxHp, healing, shouldReject) => {
+    const resolution = {
       ...healingResolution,
+      actions: [
+        { ...healingResolution.actions[0]!, healing, targetHpAfter: 2 + healing },
+        { ...healingResolution.actions[1]!, targetHpBefore: 2 + healing, targetHpAfter: healing - 1 },
+        healingResolution.actions[2]!,
+      ],
       party: [
-        {
-          ...healingResolution.party[0],
-          battleAbility: { ...emergencyHeal, healAmount: 1, remainingUses: 0 },
-        },
-        healingResolution.party[1]!,
+        healingResolution.party[0]!,
+        { ...healingResolution.party[1]!, hp: healing - 1, maxHp: targetMaxHp },
       ],
     };
 
-    expect(() => createU5BattleReplay({
-      resolution: actorAbilityIsOne,
-      presentations: healingPresentations,
-    })).toThrowError(/능력.*회복량/);
+    const replay = () => createU5BattleReplay({ resolution, presentations: healingPresentations });
+    if (shouldReject) {
+      expect(replay).toThrowError(/치유량이 능력 범위를 벗어난다/);
+    } else {
+      expect(replay).not.toThrow();
+    }
   });
 
-  it("최종 잔여 횟수와 치유 action 수로 시작값을 복원하고 heal settle마다 한 번 감소시킨다", () => {
-    const secondCleric = { ...healingResolution.party[0], id: "cleric-2", battleAbility: { ...emergencyHeal, remainingUses: 1 } };
+  it("같은 actor의 두 치유도 시작 횟수를 복원하고 heal settle마다 한 번 감소시킨다", () => {
     const replay = createU5BattleReplay({
       resolution: {
         ...healingResolution,
         actions: [
           healingResolution.actions[0]!,
-          { ...healingResolution.actions[0]!, actorId: "cleric-2", targetId: "cleric", targetHpBefore: 5, targetHpAfter: 10 },
-          { kind: "attack", round: 1, actorSide: "party", actorId: "ally", targetId: "enemy-1", damage: 10, targetHpBefore: 10, targetHpAfter: 0, defeated: true },
+          { kind: "attack", round: 1, actorSide: "enemy", actorId: "enemy-1", targetId: "ally", damage: 11, targetHpBefore: 13, targetHpAfter: 2, defeated: false },
+          { ...healingResolution.actions[0]!, round: 2, targetHpBefore: 2, targetHpAfter: 13 },
+          { kind: "attack", round: 2, actorSide: "party", actorId: "ally", targetId: "enemy-1", damage: 10, targetHpBefore: 10, targetHpAfter: 0, defeated: true },
         ],
         party: [
-          { ...healingResolution.party[0], hp: 10 },
-          secondCleric,
-          { ...healingResolution.party[1], hp: 7 },
+          healingResolution.party[0]!,
+          { ...healingResolution.party[1]!, hp: 13 },
         ],
       },
-      presentations: [
-        ...healingPresentations.slice(0, 1),
-        { id: "cleric-2", name: "엘리온", imageSrc: "/assets/characters/live/cleric/cleric_b.png" },
-        ...healingPresentations.slice(1),
-      ],
+      presentations: healingPresentations,
     });
 
-    expect(replay.frames[0]?.battleAbilityUsesRemainingByParticipantId).toEqual({ cleric: 1, "cleric-2": 2 });
-    expect(replay.frames[3]?.battleAbilityUsesRemainingByParticipantId).toEqual({ cleric: 0, "cleric-2": 2 });
-    expect(replay.frames[6]?.battleAbilityUsesRemainingByParticipantId).toEqual({ cleric: 0, "cleric-2": 1 });
-    expect(replay.frames.at(-1)?.battleAbilityUsesRemainingByParticipantId).toEqual({ cleric: 0, "cleric-2": 1 });
+    expect(replay.frames[0]?.battleAbilityUsesRemainingByParticipantId).toEqual({ cleric: 2 });
+    expect(replay.frames[3]?.battleAbilityUsesRemainingByParticipantId).toEqual({ cleric: 1 });
+    expect(replay.frames[9]?.battleAbilityUsesRemainingByParticipantId).toEqual({ cleric: 0 });
+    expect(replay.frames.at(-1)?.battleAbilityUsesRemainingByParticipantId).toEqual({ cleric: 0 });
   });
 
   it("complete는 resolution의 최종 HP를 보인다", () => {

@@ -23,9 +23,8 @@ export const U5_TEST_BATTLE_REPLAY = createU5BattleReplay({
 const emergencyHeal = {
   kind: "emergencyHeal",
   name: "치유 기도",
-  healAmount: 5,
+  healTargetMaxHpPercent: 25,
   usesPerExpedition: 2,
-  maxUsesPerBattle: 1,
   triggerAtOrBelowHpPercent: 50,
 } as const;
 
@@ -36,12 +35,12 @@ export const U5_TEST_HEALING_BATTLE_REPLAY = createU5BattleReplay({
     termination: "defeatedEnemies",
     rounds: 1,
     actions: [
-      { kind: "heal", round: 1, actorSide: "party", actorId: "cleric", targetId: "ally", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 2, targetHpAfter: 7 },
+      { kind: "heal", round: 1, actorSide: "party", actorId: "cleric", targetId: "ally", abilityKind: "emergencyHeal", healing: 11, targetHpBefore: 2, targetHpAfter: 13 },
       { kind: "attack", round: 1, actorSide: "party", actorId: "ally", targetId: "enemy-1", damage: 7, targetHpBefore: 7, targetHpAfter: 0, defeated: true },
     ],
     party: [
       { id: "cleric", classId: "cleric", hp: 10, maxHp: 10, attack: 3, hitWeight: 1, battleAbility: { ...emergencyHeal, remainingUses: 1 } },
-      { id: "ally", classId: "warrior", hp: 7, maxHp: 10, attack: 7, hitWeight: 3 },
+      { id: "ally", classId: "warrior", hp: 13, maxHp: 45, attack: 7, hitWeight: 3 },
     ],
     enemies: [{ id: "enemy-1", monsterId: "spider-hatchling", hp: 0, maxHp: 7, baseDamage: 3 }],
   },

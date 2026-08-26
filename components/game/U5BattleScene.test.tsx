@@ -126,8 +126,8 @@ describe("U5BattleScene", () => {
     expect(html).toContain("치유 기도");
     expect(html).toContain("세라핀");
     expect(html).toContain("코르빈");
-    expect(html).toContain("+5");
-    expect(html).toContain('aria-label="5 회복"');
+    expect(html).toContain("+11");
+    expect(html).toContain('aria-label="11 회복"');
     expect(html).toContain("남은 횟수 2");
     expect(html).not.toContain("피해");
     expect(html).not.toContain("u5-battle-damage");
@@ -140,9 +140,9 @@ describe("U5BattleScene", () => {
     if (settle === undefined) throw new Error("fixture에 heal settle frame이 없다.");
     const html = render(settle, healingReplay);
 
-    expect(participantMarkup(html, "ally")).toContain(">7 / 10<");
+    expect(participantMarkup(html, "ally")).toContain(">13 / 45<");
     expect(html).toContain("남은 횟수 1");
-    expect(html).not.toContain("+5");
+    expect(html).not.toContain("+11");
   });
 
   it("치유자는 돌진하지 않고 대상은 피격 대신 회복 강조만 받는다", () => {
@@ -318,8 +318,8 @@ describe("U5BattleScene 화면 자막", () => {
     const html = render(impact, healingReplay);
     const settleHtml = render(settle, healingReplay);
 
-    expect(html).toContain("세라핀이 코르빈을 5 회복했습니다.");
-    expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true">세라핀이 코르빈을 5 회복했습니다.<\/p>/);
+    expect(html).toContain("세라핀이 코르빈을 11 회복했습니다.");
+    expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true">세라핀이 코르빈을 11 회복했습니다.<\/p>/);
     expect(settleHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true"><\/p>/);
     expect(html).not.toContain("피해를 받습니다");
   });
@@ -331,7 +331,7 @@ describe("U5BattleScene 화면 자막", () => {
     if (impact === undefined) throw new Error("fixture에 heal impact frame이 없다.");
     const html = render(impact, healingReplay);
     const healingMarkup = html.match(
-      /<([a-z]+) class="u5-battle-healing"[^>]*aria-label="5 회복"[^>]*><span aria-hidden="true">\+5<\/span><\/\1>/,
+      /<([a-z]+) class="u5-battle-healing"[^>]*aria-label="11 회복"[^>]*><span aria-hidden="true">\+11<\/span><\/\1>/,
     );
 
     expect(healingMarkup?.[1]).toBe("span");
