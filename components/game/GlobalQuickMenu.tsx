@@ -4,6 +4,13 @@ import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import type { U5BattlePlaybackRate } from "./use-u5-battle-playback";
 
+export function setGlobalQuickMenuRestoreOrigin(
+  buttonRef: { readonly current: HTMLButtonElement | null },
+  restoreFocusRef: { current: HTMLElement | null },
+) {
+  restoreFocusRef.current = buttonRef.current;
+}
+
 export interface GlobalQuickMenuProps {
   readonly open: boolean;
   readonly bgmEnabled: boolean;
@@ -38,6 +45,10 @@ export function GlobalQuickMenu({
   onOpenAchievements,
 }: GlobalQuickMenuProps) {
   const panelRef = useRef<HTMLElement>(null);
+  const handleTriggerClick = () => {
+    if (triggerVisible) setGlobalQuickMenuRestoreOrigin(buttonRef, restoreFocusRef);
+    onToggleOpen();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -76,7 +87,7 @@ export function GlobalQuickMenu({
         aria-controls="global-quick-menu-panel"
         tabIndex={triggerVisible ? undefined : -1}
         data-ui-sound="none"
-        onClick={onToggleOpen}
+        onClick={handleTriggerClick}
       >
         <span className="global-quick-menu__dots" aria-hidden="true">
           <span className="global-quick-menu__dot" />
