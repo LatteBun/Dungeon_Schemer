@@ -26,6 +26,12 @@ function assertUsesMap(
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     invalid(errorCode, "전투 능력 잔여 횟수 맵이 객체가 아니다", { value });
   }
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) {
+    invalid(errorCode, "전투 능력 잔여 횟수 맵이 record 객체가 아니다", {
+      objectType: Object.prototype.toString.call(value),
+    });
+  }
 }
 
 function classDefinitionsById(
@@ -172,10 +178,10 @@ export function validateBattleAbilityUses(input: {
     );
   }
 
-  for (const characterId of Object.keys(input.usesRemaining)) {
-    if (!expectedIds.has(characterId)) {
+  for (const characterId of Reflect.ownKeys(input.usesRemaining)) {
+    if (typeof characterId !== "string" || !expectedIds.has(characterId)) {
       invalid(input.errorCode, "현재 파티의 능력 보유자가 아닌 잔여 횟수 키가 있다", {
-        characterId,
+        characterId: typeof characterId === "symbol" ? characterId.toString() : characterId,
       });
     }
   }

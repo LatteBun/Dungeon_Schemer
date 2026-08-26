@@ -165,6 +165,36 @@ describe("원정 전투 능력 횟수", () => {
     })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
   });
 
+  it("문자열 캐릭터 ID가 아닌 Symbol own key를 INVALID_GENERATION으로 거부한다", () => {
+    const extraKey = Symbol("숨은 능력 키");
+    const usesRemaining = {
+      [cleric.id]: 2,
+      [deadCleric.id]: 2,
+      [extraKey]: 0,
+    };
+
+    expect(() => validateBattleAbilityUses({
+      members,
+      classDefs,
+      usesRemaining,
+      phase: "active",
+      errorCode: "INVALID_GENERATION",
+    })).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
+  });
+
+  it.each([
+    ["Map", new Map([["unknown", 1]])],
+    ["Date", new Date(0)],
+  ])("%s처럼 record가 아닌 객체를 INVALID_GENERATION으로 거부한다", (_caseName, usesRemaining) => {
+    expect(() => validateBattleAbilityUses({
+      members: [warrior],
+      classDefs,
+      usesRemaining: usesRemaining as never,
+      phase: "active",
+      errorCode: "INVALID_GENERATION",
+    })).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
+  });
+
   it("전투 참가자의 최종 횟수만 덮고 사망한 능력 보유자의 잔여 키는 보존한다", () => {
     const before = { [cleric.id]: 2, [deadCleric.id]: 1 };
 

@@ -427,6 +427,48 @@ describe("공고에서 원정 상태를 만든다", () => {
     })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
   });
 
+  it("START_EXPEDITION은 Symbol own key가 추가된 맵을 INVALID_TRANSITION으로 거부한다", () => {
+    const { campaign, context } = boardedCampaign("ability-symbol-key");
+    const offer = campaign.offers.find((one) => one.lockReason === null)!;
+    const selected = transitionCampaign(campaign, context, { type: "SELECT_CONTRACT", offerId: offer.id });
+    const built = createExpeditionForOffer(selected.campaign, offer);
+    const extraKey = Symbol("숨은 능력 키");
+
+    expect(() => transitionCampaign(selected.campaign, selected.context, {
+      type: "START_EXPEDITION",
+      expeditionId: "exp-symbol-ability-map",
+      ...built,
+      expedition: {
+        ...built.expedition,
+        battleAbilityUsesRemainingByCharacterId: {
+          ...built.expedition.battleAbilityUsesRemainingByCharacterId,
+          [extraKey]: 0,
+        } as never,
+      },
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
+  });
+
+  it("START_EXPEDITION은 own 값이 맞아도 Date 객체인 맵을 INVALID_TRANSITION으로 거부한다", () => {
+    const { campaign, context } = boardedCampaign("ability-date-map");
+    const offer = campaign.offers.find((one) => one.lockReason === null)!;
+    const selected = transitionCampaign(campaign, context, { type: "SELECT_CONTRACT", offerId: offer.id });
+    const built = createExpeditionForOffer(selected.campaign, offer);
+    const dateMap = Object.assign(
+      new Date(0),
+      built.expedition.battleAbilityUsesRemainingByCharacterId,
+    );
+
+    expect(() => transitionCampaign(selected.campaign, selected.context, {
+      type: "START_EXPEDITION",
+      expeditionId: "exp-date-ability-map",
+      ...built,
+      expedition: {
+        ...built.expedition,
+        battleAbilityUsesRemainingByCharacterId: dateMap as never,
+      },
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
+  });
+
   it("만든 원정이 그대로 START_EXPEDITION 을 통과한다", () => {
     const { campaign, context } = boardedCampaign();
     const offer = campaign.offers.find((one) => one.lockReason === null)!;
