@@ -2,6 +2,7 @@ import type { DungeonId, DungeonLayer, DungeonNode, GeneratedMap, NodeId, RiskLe
 import { RISK_LEVELS } from "@/lib/domain";
 import { RuleError } from "@/lib/domain/errors";
 import { createRng } from "@/lib/rng";
+import { createLayeredOrderSolver, type LayeredEdge } from "./layered-map-crossing";
 
 export interface MapTemplate {
   readonly id: string;
@@ -288,6 +289,20 @@ export function validateGeneratedMap(map: GeneratedMap, initialRiskLevel: RiskLe
   if (lengths.size !== 1 || !lengths.has(map.layers.length + 1)) {
     invalidGeneration("Entry에서 Boss까지의 모든 경로가 같은 일반 Depth 수를 지나지 않는다.");
   }
+
+  const solver = createLayeredOrderSolver(map.layers.map((layer) => layer.nodeIds));
+  const normalEdges: LayeredEdge[] = [];
+  for (const node of map.nodes) {
+    if (node.kind === "normal") {
+      for (const nextNodeId of node.nextNodeIds) {
+        if (layerByNode.has(nextNodeId)) normalEdges.push({ from: node.id, to: nextNodeId });
+      }
+    }
+  }
+  const crossingCount = solver.solve(normalEdges).crossingCount;
+  if (crossingCount !== 0) {
+    invalidGeneration(`생성 지도에 교차를 제거할 수 없는 간선이 있다. (minimumCrossingCount: ${crossingCount})`, { minimumCrossingCount: crossingCount });
+  }
 }
 
 export interface GenerateDungeonMapInput {
@@ -302,7 +317,20 @@ function addEdge(edges: Map<NodeId, NodeId[]>, from: NodeId, to: NodeId): void {
   if (!targets.includes(to)) targets.push(to);
 }
 
-export function generateDungeonMap(input: GenerateDungeonMapInput): GeneratedMap {
+export interface DungeonMapGenerationDiagnostics {
+  readonly baseEdgeCount: number;
+  readonly evaluatedOptionalCandidateCount: number;
+  readonly acceptedOptionalEdgeCount: number;
+  readonly rejectedForCrossingCount: number;
+  readonly maximumRowCandidateCount: number;
+}
+
+export interface DungeonMapGenerationResult {
+  readonly map: GeneratedMap;
+  readonly diagnostics: DungeonMapGenerationDiagnostics;
+}
+
+export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput): DungeonMapGenerationResult {
   const { campaignSeed, dungeonId, initialRiskLevel, attempt } = input;
   if (
     !campaignSeed ||
@@ -328,35 +356,107 @@ export function generateDungeonMap(input: GenerateDungeonMapInput): GeneratedMap
   }));
   const allNormalNodeIds = layers.flatMap((layer) => layer.nodeIds);
   const edges = new Map<NodeId, NodeId[]>();
+  const incoming = new Map<NodeId, number>();
+  let evaluatedOptionalCandidateCount = 0;
+  let acceptedOptionalEdgeCount = 0;
+  let rejectedForCrossingCount = 0;
+  let maximumRowCandidateCount = 0;
+  const acceptedOptionalEdges: Array<readonly [NodeId, NodeId]> = [];
   for (const nodeId of [entryNodeId, ...allNormalNodeIds, bossNodeId]) edges.set(nodeId, []);
   addEdge(edges, entryNodeId, layers[0].nodeIds[0]);
-  if (layers[0].nodeIds.length === 2) addEdge(edges, entryNodeId, layers[0].nodeIds[1]);
+  incoming.set(layers[0].nodeIds[0], 1);
+  if (layers[0].nodeIds.length === 2) {
+    addEdge(edges, entryNodeId, layers[0].nodeIds[1]);
+    incoming.set(layers[0].nodeIds[1], 1);
+  }
 
   const shuffledLayers = layers.map((layer) => mapRng.shuffle(layer.nodeIds));
   for (let layerIndex = 0; layerIndex < shuffledLayers.length - 1; layerIndex += 1) {
-    const current = shuffledLayers[layerIndex];
-    const next = shuffledLayers[layerIndex + 1];
+    const current = layers[layerIndex]!.nodeIds;
+    const next = layers[layerIndex + 1]!.nodeIds;
     if (current.length <= next.length) {
-      for (let index = 0; index < next.length; index += 1) addEdge(edges, current[Math.floor((index * current.length) / next.length)], next[index]);
+      for (let index = 0; index < next.length; index += 1) {
+        const from = current[Math.floor((index * current.length) / next.length)]!;
+        addEdge(edges, from, next[index]!);
+        incoming.set(next[index]!, (incoming.get(next[index]!) ?? 0) + 1);
+      }
     } else {
-      for (let index = 0; index < current.length; index += 1) addEdge(edges, current[index], next[Math.floor((index * next.length) / current.length)]);
+      for (let index = 0; index < current.length; index += 1) {
+        const from = current[index]!;
+        const to = next[Math.floor((index * next.length) / current.length)]!;
+        addEdge(edges, from, to);
+        incoming.set(to, (incoming.get(to) ?? 0) + 1);
+      }
     }
     const candidates = mapRng.shuffle(current.flatMap((from) => next.map((to) => [from, to] as const)));
+    maximumRowCandidateCount = Math.max(maximumRowCandidateCount, candidates.length);
     for (const [from, to] of candidates) {
-      const targetIncoming = [...edges.values()].reduce((count, targets) => count + (targets.includes(to) ? 1 : 0), 0);
-      if (edges.get(from)!.length < 2 && targetIncoming < 2 && !edges.get(from)!.includes(to) && mapRng.int(0, 3) === 0) {
-        addEdge(edges, from, to);
+      const targetIncoming = incoming.get(to) ?? 0;
+      if (edges.get(from)!.length >= 2 || targetIncoming >= 2 || edges.get(from)!.includes(to) || mapRng.int(0, 3) !== 0) continue;
+      evaluatedOptionalCandidateCount += 1;
+      const trialEdges: LayeredEdge[] = [];
+      for (let row = 0; row < layers.length - 1; row += 1) {
+        for (const source of layers[row]!.nodeIds) {
+          for (const target of edges.get(source)!) {
+            if (layers[row + 1]!.nodeIds.includes(target)) trialEdges.push({ from: source, to: target });
+          }
+        }
       }
+      trialEdges.push({ from, to });
+      const solver = createLayeredOrderSolver(layers.map((layer) => layer.nodeIds));
+      if (solver.solve(trialEdges).crossingCount !== 0) {
+        rejectedForCrossingCount += 1;
+        continue;
+      }
+      addEdge(edges, from, to);
+      incoming.set(to, targetIncoming + 1);
+      acceptedOptionalEdges.push([from, to]);
+      acceptedOptionalEdgeCount += 1;
     }
   }
   for (const nodeId of layers.at(-1)!.nodeIds) addEdge(edges, nodeId, bossNodeId);
 
+  let baseEdgeCount = [...edges.values()].reduce((sum, targets) => sum + targets.length, 0) - acceptedOptionalEdgeCount;
+  const finalSolver = createLayeredOrderSolver(layers.map((layer) => layer.nodeIds));
+  const finalEdges: LayeredEdge[] = [];
+  for (let row = 0; row < layers.length - 1; row += 1) {
+    for (const source of layers[row]!.nodeIds) {
+      for (const target of edges.get(source)!) {
+        if (layers[row + 1]!.nodeIds.includes(target)) finalEdges.push({ from: source, to: target });
+      }
+    }
+  }
+  let finalSolution = finalSolver.solve(finalEdges);
+  if (finalSolution.crossingCount !== 0 && acceptedOptionalEdges.length > 0) {
+    for (const [from, to] of acceptedOptionalEdges) {
+      const targets = edges.get(from)!;
+      targets.splice(targets.indexOf(to), 1);
+    }
+    acceptedOptionalEdgeCount = 0;
+    baseEdgeCount = [...edges.values()].reduce((sum, targets) => sum + targets.length, 0);
+    finalEdges.length = 0;
+    for (let row = 0; row < layers.length - 1; row += 1) {
+      for (const source of layers[row]!.nodeIds) {
+        for (const target of edges.get(source)!) {
+          if (layers[row + 1]!.nodeIds.includes(target)) finalEdges.push({ from: source, to: target });
+        }
+      }
+    }
+    finalSolution = finalSolver.solve(finalEdges);
+  }
+  const solvedRows = finalSolution.rows;
+  const orderedLayers = layers.map((layer, index) => ({ ...layer, nodeIds: solvedRows[index]! }));
+
   const nodes: DungeonNode[] = [
     { id: entryNodeId, kind: "entry", nextNodeIds: edges.get(entryNodeId)! },
-    ...layers.flatMap((layer) => layer.nodeIds.map((id) => ({ id, kind: "normal" as const, nextNodeIds: edges.get(id)! }))),
+    ...orderedLayers.flatMap((layer) => layer.nodeIds.map((id) => ({ id, kind: "normal" as const, nextNodeIds: edges.get(id)! }))),
     { id: bossNodeId, kind: "boss", nextNodeIds: [] },
   ];
-  const map: GeneratedMap = { entryNodeId, bossNodeId, layers, nodes };
+  const map: GeneratedMap = { entryNodeId, bossNodeId, layers: orderedLayers, nodes };
   validateGeneratedMap(map, initialRiskLevel);
-  return map;
+  return { map, diagnostics: { baseEdgeCount: baseEdgeCount - acceptedOptionalEdgeCount, evaluatedOptionalCandidateCount, acceptedOptionalEdgeCount, rejectedForCrossingCount, maximumRowCandidateCount } };
+}
+
+export function generateDungeonMap(input: GenerateDungeonMapInput): GeneratedMap {
+  return generateDungeonMapWithDiagnostics(input).map;
 }

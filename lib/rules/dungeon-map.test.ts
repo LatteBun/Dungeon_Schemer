@@ -4,6 +4,7 @@ import { RuleError } from "@/lib/domain/errors";
 import {
   MAP_TEMPLATES,
   generateDungeonMap,
+  generateDungeonMapWithDiagnostics,
   validateGeneratedMap,
   validateMapTemplate,
   validateMapTemplates,
@@ -38,6 +39,41 @@ describe("위험도별 지도 템플릿 계약", () => {
 });
 
 describe("생성 지도 구조 검증", () => {
+  it("인접 행의 불가피한 교차를 INVALID_GENERATION으로 거부한다", () => {
+    const layers = Array.from({ length: 6 }, (_, index) => ({
+      depth: index + 1,
+      nodeIds: [0, 1].map((nodeIndex) => `normal-${index}-${nodeIndex}` as NodeId),
+    }));
+    const nodes: GeneratedMap["nodes"] = [
+      { id: "entry" as NodeId, kind: "entry", nextNodeIds: layers[0]!.nodeIds },
+      ...layers.flatMap((layer, index) => layer.nodeIds.map((id) => ({
+        id,
+        kind: "normal" as const,
+        nextNodeIds: index === 0
+          ? layers[1]!.nodeIds
+          : index === layers.length - 1 ? ["boss" as NodeId] : layers[index + 1]!.nodeIds,
+      }))),
+      { id: "boss" as NodeId, kind: "boss", nextNodeIds: [] },
+    ];
+    expect(() => validateGeneratedMap({
+      entryNodeId: "entry" as NodeId,
+      bossNodeId: "boss" as NodeId,
+      layers,
+      nodes,
+    }, 1)).toThrow(/minimumCrossingCount/);
+  });
+
+  it("진단 생성기는 지도와 선택 간선 산식을 함께 반환한다", () => {
+    const input = { campaignSeed: "diagnostics", dungeonId: "dungeon-map-test" as never, initialRiskLevel: 3 as const, attempt: 0 };
+    const result = generateDungeonMapWithDiagnostics(input);
+    expect(result.map).toEqual(generateDungeonMap(input));
+    expect(result.diagnostics.acceptedOptionalEdgeCount).toBeGreaterThanOrEqual(0);
+    expect(result.diagnostics.baseEdgeCount).toBe(
+      result.map.nodes.reduce((sum, node) => sum + node.nextNodeIds.length, 0)
+        - result.diagnostics.acceptedOptionalEdgeCount,
+    );
+  });
+
   it("유령 NodeId를 참조하는 그래프를 거부한다", () => {
     const map: GeneratedMap = {
       entryNodeId: "entry" as NodeId,
