@@ -274,19 +274,12 @@ describe("선택한 다음 지점", () => {
   });
 });
 
-/*
- * 지도 배경은 던전마다 달라야 한다.
- *
- * 한동안 map_background_base.png 한 장이 모든 던전에 깔렸다. 거미굴에 들어가든
- * 묘지에 들어가든 눈에 보이는 돌바닥이 똑같으니, 어디에 와 있는지가 화면 위쪽
- * 이름표에만 남았다.
- */
 describe("U4DungeonMapScreen 배경", () => {
-  it("모든 ThemeId를 의도한 U4 배경으로 닫아 매핑한다", () => {
+  it("모든 ThemeId를 공용 양피지 배경으로 닫아 매핑한다", () => {
     const expectedBackgroundByTheme: Readonly<Record<ThemeId, string>> = {
       spider: "/assets/u4/map/map_background_spider_parchment.png",
-      desert: "/assets/u5/dungeon-progress-scenes/desert/entry.png",
-      graveyard: "/assets/u5/dungeon-progress-scenes/graveyard/entry.png",
+      desert: "/assets/u4/map/map_background_spider_parchment.png",
+      graveyard: "/assets/u4/map/map_background_spider_parchment.png",
     };
 
     expect(Object.keys(expectedBackgroundByTheme).sort()).toEqual([...THEME_IDS].sort());
@@ -297,27 +290,23 @@ describe("U4DungeonMapScreen 배경", () => {
     }
   });
 
-  it("거미굴 양피지는 장면 필터나 폐허 atmosphere를 겹치지 않는다", () => {
-    const html = render(MONSTER, "spider");
-
-    expect(html).toContain(
-      'class="u4-map-surface__background is-parchment"',
-    );
-    expect(html).not.toContain(
-      'class="u4-map-surface__background is-themed"',
-    );
-    expect(html).not.toContain("map_atmosphere_ruins_props.png");
-  });
-
-  it("사막·묘지와 기본 배경은 기존 atmosphere 계약을 유지한다", () => {
-    for (const themeId of [undefined, "desert", "graveyard"] as const) {
-      expect(render(MONSTER, themeId)).toContain("map_atmosphere_ruins_props.png");
+  it("모든 테마의 양피지는 장면 필터나 폐허 atmosphere를 겹치지 않는다", () => {
+    for (const themeId of THEME_IDS) {
+      const html = render(MONSTER, themeId);
+      expect(html).toContain(
+        'class="u4-map-surface__background is-parchment"',
+      );
+      expect(html).not.toContain(
+        'class="u4-map-surface__background is-themed"',
+      );
+      expect(html).not.toContain("map_atmosphere_ruins_props.png");
     }
   });
 
-  it("테마를 주지 않으면 예전 돌바닥을 그대로 쓴다", () => {
+  it("테마를 주지 않으면 예전 돌바닥과 atmosphere를 그대로 쓴다", () => {
     // 프리뷰에는 던전이 없다. 테마 없이도 화면이 서야 한다.
     const html = render(MONSTER, undefined);
     expect(html).toContain("/assets/u4/map/map_background_base.png");
+    expect(html).toContain("map_atmosphere_ruins_props.png");
   });
 });
