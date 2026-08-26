@@ -74,6 +74,40 @@ describe("u5 battle playback", () => {
     expect(u5ReplaySignature(changed)).not.toBe(u5ReplaySignature(U5_TEST_BATTLE_REPLAY));
   });
 
+  it.each([
+    ["행동 종류", { actionKind: "heal" as const }],
+    ["치유량", { healing: 5 }],
+    ["잔여 횟수", { battleAbilityUsesRemainingByParticipantId: { cleric: 1 } }],
+  ] as const)("frame의 %s이 바뀌면 새 replay로 식별한다", (_case, change) => {
+    const changed = {
+      ...U5_TEST_BATTLE_REPLAY,
+      frames: U5_TEST_BATTLE_REPLAY.frames.map((frame, index) => index === 1
+        ? { ...frame, ...change }
+        : frame),
+    };
+
+    expect(u5ReplaySignature(changed)).not.toBe(u5ReplaySignature(U5_TEST_BATTLE_REPLAY));
+  });
+
+  it("잔여 횟수 map의 키 순서만 다르면 같은 replay로 식별한다", () => {
+    const left = {
+      ...U5_TEST_BATTLE_REPLAY,
+      frames: U5_TEST_BATTLE_REPLAY.frames.map((frame) => ({
+        ...frame,
+        battleAbilityUsesRemainingByParticipantId: { "cleric-b": 0, "cleric-a": 1 },
+      })),
+    };
+    const right = {
+      ...U5_TEST_BATTLE_REPLAY,
+      frames: U5_TEST_BATTLE_REPLAY.frames.map((frame) => ({
+        ...frame,
+        battleAbilityUsesRemainingByParticipantId: { "cleric-a": 1, "cleric-b": 0 },
+      })),
+    };
+
+    expect(u5ReplaySignature(left)).toBe(u5ReplaySignature(right));
+  });
+
   it("frame cue가 바뀌면 새 replay로 식별한다", () => {
     const changed = {
       ...U5_TEST_BATTLE_REPLAY,

@@ -69,7 +69,11 @@ function themeOf(campaign: CampaignState, active: ActiveExpeditionContext): Them
   return theme;
 }
 
-export function partyViewsFor(seed: string, members: readonly Character[]) {
+export function partyViewsFor(
+  seed: string,
+  members: readonly Character[],
+  battleAbilityUsesRemainingByCharacterId: Readonly<Partial<Record<Character["id"], number>>> = {},
+) {
   return inSeatOrder(seed, members, (member) => String(member.id)).map((member) => ({
     id: String(member.id),
     name: member.name,
@@ -81,6 +85,9 @@ export function partyViewsFor(seed: string, members: readonly Character[]) {
     gold: member.gold,
     alive: member.alive,
     portraitSrc: portraitSrcForCharacterId(member.id),
+    ...(battleAbilityUsesRemainingByCharacterId[member.id] === undefined
+      ? {}
+      : { battleAbilityUsesRemaining: battleAbilityUsesRemainingByCharacterId[member.id] }),
   }));
 }
 
@@ -164,7 +171,11 @@ export function progressViewFor(
     situation: event.description,
     advice: toAdviceViews(presented, unavailableAdviceSlots(campaign, active, presented)),
     outcome: outcomeViewFor(active),
-    party: partyViewsFor(campaign.seed, active.partyMembers),
+    party: partyViewsFor(
+      campaign.seed,
+      active.partyMembers,
+      active.expedition.battleAbilityUsesRemainingByCharacterId,
+    ),
   };
 }
 
@@ -412,7 +423,11 @@ export function expeditionEndViewFor(
      * 회색이면 재생이 시작하기도 전에 결말이 서 있는 셈이고, 화면이 깨진 것처럼
      * 보인다. 무슨 일이 있었는지는 아래 결과가 말한다.
      */
-    party: partyViewsFor(campaign.seed, rewound(active)),
+    party: partyViewsFor(
+      campaign.seed,
+      rewound(active),
+      active.expedition.battleAbilityUsesRemainingByCharacterId,
+    ),
   };
 }
 

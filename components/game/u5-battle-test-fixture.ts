@@ -6,7 +6,7 @@ const resolution: BattleResolution = {
   termination: "defeatedEnemies",
   rounds: 1,
   actions: [
-    { round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 7, targetHpBefore: 7, targetHpAfter: 0, defeated: true },
+    { kind: "attack", round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 7, targetHpBefore: 7, targetHpAfter: 0, defeated: true },
   ],
   party: [{ id: "party-1", classId: "warrior", hp: 10, maxHp: 10, attack: 7, hitWeight: 3 }],
   enemies: [{ id: "enemy-1", monsterId: "spider-hatchling", hp: 0, maxHp: 7, baseDamage: 3 }],

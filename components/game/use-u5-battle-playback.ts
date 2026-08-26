@@ -80,8 +80,12 @@ export function u5ReplaySignature(replay: U5BattleReplay | undefined): string {
       actionIndex: one.actionIndex,
       actorId: one.actorId,
       targetId: one.targetId,
+      actionKind: one.actionKind,
       damage: one.damage,
+      healing: one.healing,
       hpByParticipantId: Object.entries(one.hpByParticipantId).sort(([left], [right]) => left.localeCompare(right)),
+      battleAbilityUsesRemainingByParticipantId: Object.entries(one.battleAbilityUsesRemainingByParticipantId)
+        .sort(([left], [right]) => left.localeCompare(right)),
       defeatedParticipantIds: [...one.defeatedParticipantIds].sort(),
       cues: one.cues.map((cue) => ({
         characterId: cue.characterId,
