@@ -23,4 +23,16 @@ describe("U4TestPage", () => {
     expect(html).toContain("/assets/characters/live/");
     expect(html).toContain("사망");
   });
+
+  it("theme=spider renders the deterministic parchment-map preview", async () => {
+    const page = await U4TestPage({
+      searchParams: Promise.resolve({ theme: "spider" }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain(
+      "/assets/u4/map/map_background_spider_parchment.png",
+    );
+    expect(html).not.toContain("map_atmosphere_ruins_props.png");
+  });
 });

@@ -1,9 +1,10 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { CHARACTER_ROSTER } from "@/lib/content/character-roster";
 
 const U4_ASSETS = [
   "public/assets/u4/map/map_background_base.png",
+  "public/assets/u4/map/map_background_spider_parchment.png",
   "public/assets/u4/map/map_background_vignette.png",
   "public/assets/u4/map/map_atmosphere_ruins_props.png",
   "public/assets/u4/map/map_main_panel_frame.png",
@@ -64,5 +65,21 @@ describe("U4 assets", () => {
         ),
       ).toBe(true);
     }
+  });
+
+  it("keeps the spider parchment background compatible with the U4 map slot", () => {
+    const parchment = readFileSync(
+      "public/assets/u4/map/map_background_spider_parchment.png",
+    );
+    const width = parchment.readUInt32BE(16);
+    const height = parchment.readUInt32BE(20);
+
+    expect(parchment.subarray(0, 8)).toEqual(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+    expect(width).toBeGreaterThanOrEqual(1500);
+    expect(height).toBeGreaterThanOrEqual(1220);
+    expect(width / height).toBeGreaterThanOrEqual(1.22);
+    expect(width / height).toBeLessThanOrEqual(1.24);
   });
 });
