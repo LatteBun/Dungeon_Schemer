@@ -53,6 +53,48 @@ async function expectAnchoredPopover(
   await expect(trigger).toBeFocused();
 }
 
+async function expectPopoverAboveMapHeader(
+  page: Page,
+  triggerTestId: string,
+  dialogName: string,
+) {
+  await page.getByTestId(triggerTestId).click();
+  const dialog = page.getByRole("dialog", { name: dialogName });
+  await expect(dialog).toBeVisible();
+
+  const paintOrder = await dialog.evaluate((element) => {
+    const mapHeader = document.querySelector(".u4-map-panel__header");
+    if (!(mapHeader instanceof HTMLElement)) {
+      return { overlaps: false, dialogIsTopmost: false, topmost: "missing map header" };
+    }
+
+    const dialogBox = element.getBoundingClientRect();
+    const headerBox = mapHeader.getBoundingClientRect();
+    const left = Math.max(dialogBox.left, headerBox.left);
+    const right = Math.min(dialogBox.right, headerBox.right);
+    const top = Math.max(dialogBox.top, headerBox.top);
+    const bottom = Math.min(dialogBox.bottom, headerBox.bottom);
+    if (left >= right || top >= bottom) {
+      return { overlaps: false, dialogIsTopmost: false, topmost: "no overlap" };
+    }
+
+    const topmost = document.elementFromPoint((left + right) / 2, (top + bottom) / 2);
+    return {
+      overlaps: true,
+      dialogIsTopmost: topmost !== null && element.contains(topmost),
+      topmost: topmost?.className || topmost?.tagName || "none",
+    };
+  });
+
+  expect(paintOrder.overlaps, `${dialogName} 팝오버와 U4 지도 헤더가 겹쳐야 한다`).toBe(true);
+  expect(
+    paintOrder.dialogIsTopmost,
+    `${dialogName} 겹침 지점 최상단 요소: ${paintOrder.topmost}`,
+  ).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+}
+
 for (const viewport of VIEWPORTS) {
   for (const route of ROUTES) {
     test(`${route} ${viewport.name} 고정 캔버스 계약을 지킨다`, async ({ page }) => {
@@ -145,6 +187,14 @@ const STATUS_VIEWPORTS = [
   { name: "HD", width: 1280, height: 720 },
   { name: "5:4", width: 1280, height: 1024 },
 ] as const;
+
+test("U4 상태 정보 팝오버가 지도 헤더 위에 표시된다", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/u4-test");
+
+  await expectPopoverAboveMapHeader(page, "zero-trust-info-trigger", "의심 인원");
+  await expectPopoverAboveMapHeader(page, "remaining-adventurers-info-trigger", "남은 용사");
+});
 
 for (const viewport of STATUS_VIEWPORTS) {
   test(`상태 칩 8개 ${viewport.name} 한 줄·퀵 메뉴 비겹침`, async ({ page }) => {
