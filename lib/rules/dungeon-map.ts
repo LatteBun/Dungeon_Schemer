@@ -379,6 +379,7 @@ export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput
     addEdge(edges, entryNodeId, layers[0].nodeIds[1]);
     incoming.set(layers[0].nodeIds[1], 1);
   }
+  for (const nodeId of layers.at(-1)!.nodeIds) addEdge(edges, nodeId, bossNodeId);
 
   const shuffledLayers = layers.map((layer) => mapRng.shuffle(layer.nodeIds));
   const solver = createLayeredOrderSolver(shuffledLayers);
@@ -425,8 +426,6 @@ export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput
       acceptedOptionalEdgeCount += 1;
     }
   }
-  for (const nodeId of layers.at(-1)!.nodeIds) addEdge(edges, nodeId, bossNodeId);
-
   let baseEdgeCount = [...edges.values()].reduce((sum, targets) => sum + targets.length, 0) - acceptedOptionalEdgeCount;
   const finalEdges: LayeredEdge[] = [];
   for (let row = 0; row < layers.length - 1; row += 1) {
