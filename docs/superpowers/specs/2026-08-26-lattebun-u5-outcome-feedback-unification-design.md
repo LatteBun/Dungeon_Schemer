@@ -5,10 +5,11 @@
 - 작성자: LatteBun
 - 작성 도구: ChatGPT · Superpowers Brainstorming
 - 작성일: 2026-08-26
-- 기준 브랜치: `main` (`98d65c091cebcc72fe27977f38828685e081ff01`)
-- 관련 변경: PR #182, PR #189
+- 기준 브랜치: `main` (`226085835516fe5487e6dce681db76e9c6dbb06d`)
+- 관련 변경: PR #182, PR #189, PR #203
+- 구현 Plan: [U5 전투·비전투 결과 피드백 통합 Implementation Plan](../plans/2026-08-26-lattebun-u5-outcome-feedback-unification.md)
 - 대상: U5 사건 결과 공개 순서, U4·U5 파티 상태, 상단 골드와 개인 보스 정보·상인 예약 효과
-- 상태: 사용자 승인 완료, 구현 전
+- 상태: 사용자 승인·코드베이스 사전 조사·계약 정정 완료, 구현 전
 
 ## 1. 배경
 
@@ -65,7 +66,7 @@ PR #182와 이를 최신 `main`에 통합한 PR #189는 일반전·보스전의 
 - 파티원 세 명의 반응을 현재 장면에 순차 또는 동시 전시
 - 보스 정보 성공·실패를 나타내는 세 번째 아이콘 상태
 - 커스텀 결과 모달 또는 새 우측 패널
-- 이번 Spec PR에서 최종 아이콘 PNG 제작
+- 이번 PR에 포함된 승인 아이콘 2종 외의 신규 아이콘 제작·재생성
 - U6 정산 이후 보스 정보·상인 효과 유지
 
 ## 4. 승인된 사용자 흐름
@@ -246,15 +247,17 @@ stateApply?          예약 상인 효과 발동 강조
 1. 즉시 신뢰 변화가 있는 `exposed` 인물 중 절댓값 변화가 가장 큰 인물
 2. 그 외 `accepted` 인물 중 첫 번째
 3. 아무도 수용하지 않았으면 `suspected` 인물 중 첫 번째
-4. 동률은 결정적인 파티 자리 순서
+4. 동률은 최신 `main`의 `inFormationOrder()`가 정한 직업 기반 파티 대열 순서
 
 ### 6.2 사후 반응
 
 1. 아직 공개하지 않은 사후 신뢰 변화의 절댓값이 가장 큰 인물
-2. 동률은 파티 자리 순서
+2. 동률은 최신 `main`의 `inFormationOrder()`가 정한 직업 기반 파티 대열 순서
 3. 사후 신뢰 변화가 없으면 사후 대사와 `반응 확인`을 만들지 않는다
 
 현재 PR #182/#189의 고정 대사 계약은 유지하고, 이번 범위에서 성격별 말투를 추가하지 않는다.
+
+PR #203에서 시드 기반 `party-seat-order`는 제거되고 직업의 `hitWeight`·`maxHp`·콘텐츠 순서를 사용하는 `party-formation-order`로 통합되었다. 대표 인물 선택을 위해 별도 정렬을 만들거나 제거된 helper를 되살리지 않는다. U3·U4·U5 카드, 비전투 장면, 전투 대열과 같은 `inFormationOrder()` 결과를 사용한다.
 
 ## 7. 결과 표시 스냅샷
 
@@ -273,7 +276,7 @@ event.kind만 보고 상인 효과가 소비됐다고 추측
 
 ### 7.2 공통 presentation 타입
 
-`ExpeditionOutcome`과 보스 결과가 다음 표시 스냅샷을 공유한다.
+`ExpeditionOutcome`과 보스 결과가 `lib/domain/outcome.ts`의 다음 표시 스냅샷을 공유한다. `campaign-transition.ts`와 `expedition.ts`가 서로의 타입을 역방향 import하지 않는다.
 
 ```ts
 interface OutcomePresentationSnapshot {
@@ -343,12 +346,28 @@ preBattleHpChanges.after
 
 ### 7.4 신뢰 분할
 
-`trustChanges`의 인물별 연속 chain은 그대로 보존한다.
+기존 결과·원정 기록의 인물별 총 `before / after`만으로는 `adviceHarmed → deceptionExposed`처럼 한 인물에게 연속 적용된 신뢰 변화의 중간 사유를 복원할 수 없다. `ExpeditionOutcome`과 `ExpeditionRecord`는 다음 공통 step을 시간 순으로 보존한다.
+
+```ts
+interface OutcomeTrustChangeStep {
+  readonly characterId: CharacterId;
+  readonly before: number;
+  readonly after: number;
+  readonly reason: string;
+  readonly revealPhase: "immediateTrust" | "postTrust";
+}
+```
+
+- `before / after`는 각 개별 `TrustChange` 적용 전후이며 같은 인물의 다음 step과 연속해야 한다.
+- `reason`은 rules가 만든 기존 `TrustChange.reason`을 그대로 옮기며 UI가 새 사유를 만들지 않는다.
+- `revealPhase`는 규칙 결과를 계산할 때 정하고 화면이 반응 종류나 사유 문구로 추측하지 않는다.
+- `ExpeditionOutcome.trustChanges`와 `ExpeditionRecord.trustChanges`는 이 step 배열을 공유한다.
+- 카드의 완료 총합과 대표 인물 선택은 phase 묶음별 첫 `before`와 마지막 `after`를 사용한다.
 
 - `exposed` 인물의 전투 전 변화는 `immediateTrust`
 - 그 외 즉시 사건 검증 변화는 `postTrust`
 - 보스 정보 `accepted`·`suspected`는 이번 사건에서 사후 신뢰를 만들지 않고 보스전 뒤 검증
-- 같은 인물에게 여러 변화가 있으면 각 묶음의 첫 `before`와 마지막 `after`를 사용하되 중간 사유는 기록에 유지
+- 같은 인물에게 여러 변화가 있으면 중간 step과 사유를 진행 기록에 유지하고 공개 phase 전에는 DOM에 만들지 않는다.
 
 ## 8. 범용 피드백 모델
 
@@ -421,6 +440,8 @@ stateApply 이후  goldChange.after
 
 `stateApply`에서 값과 함께 `골드 ±N`을 짧게 강조한다. 골드 변화가 없으면 effect와 빈 슬롯을 만들지 않는다.
 
+최신 `TopStatusView`의 등급·명성·승급·의심 인원(`zeroTrust`)·남은 던전·현재 던전 필드는 그대로 유지하고, U5 로컬 projection은 `gold`만 phase에 맞춰 교체한다. 오래된 status shape를 복제하거나 `zeroTrust`를 누락하지 않는다.
+
 ### 9.2 파티 HP
 
 - `stateApply` 전에는 사건 시작 HP
@@ -453,7 +474,7 @@ stateApply 이후  goldChange.after
 
 ```text
 accepted  채워진 아이콘
-suspected 외곽선 아이콘
+suspected 같은 실루엣의 회색 `?` 아이콘
 exposed   표시 없음
 neutral   기록 없음, 표시 없음
 ```
@@ -483,6 +504,17 @@ stateApply 이후  최종 infoRecords
 
 사건 종류가 `monster`라는 이유만으로 예약 효과를 소비하지 않는다. 실제 전투가 생성되고 규칙이 효과를 소비했을 때만 제거한다.
 
+`NextBattleMerchantEffect`는 이로운 효과뿐 아니라 방해 조언으로 생긴 해로운 효과도 가진다. 배지 문구는 multiplier의 축과 `1` 대비 방향을 함께 해석한다.
+
+| 필드 | 값 | 문구 |
+| --- | ---: | --- |
+| `incomingDamageMultiplier` | `< 1` | `받는 피해 감소` |
+| `incomingDamageMultiplier` | `> 1` | `받는 피해 증가` |
+| `partyDamageMultiplier` | `> 1` | `주는 피해 증가` |
+| `partyDamageMultiplier` | `< 1` | `주는 피해 감소` |
+
+multiplier `1`은 예약할 실제 효과가 없는 no-op이므로 이번 구현에서 rules 검증을 강화해 거부한다. 표시 계층이 이를 중립 문구로 조용히 바꾸지 않는다. 양쪽 필드가 동시에 존재하는 값도 `NextBattleMerchantEffect` 유니온 위반으로 거부한다.
+
 ## 10. 우측 파티 상태 UI
 
 ### 10.1 공통 파티 상태 헤더
@@ -499,10 +531,18 @@ U4와 U5가 각각 직접 그리는 `파티 상태` 제목을 공용 헤더로 �
 파티 상태                         [검] 주는 피해 증가
 ```
 
+해로운 예약 효과도 같은 구조에서 실제 방향을 숨기지 않는다.
+
+```text
+파티 상태                       [방패] 받는 피해 증가
+파티 상태                         [검] 주는 피해 감소
+```
+
 - 제목은 왼쪽 정렬
 - 예약 효과는 같은 줄 오른쪽 정렬
 - 아이콘과 실제 효과를 사람이 읽는 짧은 문구로 함께 표시
-- 예약 상태는 `다음 전투 · 받는 피해 감소` 또는 `다음 전투 · 주는 피해 증가`
+- 받는 피해 축은 같은 방패 아이콘, 주는 피해 축은 같은 검 아이콘을 사용하고 증가·감소 의미는 반드시 문구로 전달
+- 예약 상태는 `다음 전투 · 받는 피해 감소`, `다음 전투 · 받는 피해 증가`, `다음 전투 · 주는 피해 증가`, `다음 전투 · 주는 피해 감소` 중 실제 multiplier에 맞는 문구
 - 발동 강조는 `효과 발동 · ...`
 - 내부 배율 숫자는 노출하지 않음
 - 효과 유무와 관계없이 제목 행 높이는 고정
@@ -543,7 +583,7 @@ DOM에는 `eventId`, `adviceId`, `bossRuleId`, 도움·방해 내부 판정을 �
 
 ### 10.3 아이콘 에셋 계약
 
-이번 Spec PR에는 PNG를 추가하지 않는다. 후속 에셋 작업에서 다음 경로를 채운다.
+사용자 승인에 따라 이번 Spec PR에 다음 최종 PNG 2종을 포함했다.
 
 ```text
 public/assets/shared/party-status/boss-info-accepted.png
@@ -554,15 +594,15 @@ public/assets/shared/party-status/boss-info-suspected.png
 
 - 투명 배경 정사각형 PNG
 - 같은 실루엣, 같은 비율, 같은 아트 스타일
-- `accepted`는 내부가 채워진 상태
-- `suspected`는 같은 형태의 외곽선 또는 비어 있는 상태
+- `accepted`는 따뜻한 양피지·붉은 리본·금색 인장·`i`가 있는 채워진 상태
+- `suspected`는 같은 양피지 실루엣을 회색 처리하고 붉은 리본·은색 인장·`?`를 사용한 의심 스타일 1
 - 텍스트와 독립 배경 없음
 - 작은 HUD 렌더 크기에서도 구분 가능
 - 원본 권장 크기 128×128px
 - 실제 카드 렌더 크기 16~18 CSS px
 - 접근성 의미는 이미지별 `alt` 반복이 아니라 카드 단위 수량 문구가 담당
 
-최종 아이콘 에셋이 들어오기 전에는 구현 완료로 판정하지 않는다. 품질이 맞지 않았던 대화 중 임시 생성 이미지는 저장하거나 사용하지 않는다.
+두 파일은 투명 배경 128×128 PNG이며 구현은 이 경로와 상태 의미를 그대로 사용한다. 품질이 맞지 않았던 대화 중 임시 생성 이미지나 새 대체 이미지를 저장하거나 사용하지 않는다.
 
 ### 10.4 접근성
 
@@ -622,6 +662,42 @@ Store에 현재 사건의 전체 기록이 이미 있어도 현재 phase보다 �
 - 필터를 바꿔도 공개 경계를 우회할 수 없음
 - `complete` 뒤에는 기존 전체 원정 기록을 다시 제공
 
+현재 `logFor()`가 만든 평면 배열을 항목의 한국어 label로 다시 해석해서 자르지 않는다. 어댑터는 이전 기록과 현재 결과의 단계별 항목을 명시적으로 분리한다.
+
+```ts
+type U5OutcomeLogRevealPhase =
+  | "selection"
+  | "preReaction"
+  | "immediateTrust"
+  | "consequence"
+  | "stateApply"
+  | "battle"
+  | "postBattleHp"
+  | "postDialogue"
+  | "postTrust"
+  | "complete";
+
+interface U5OutcomeLogEntry {
+  readonly recordIdentity: string;
+  readonly revealPhase: U5OutcomeLogRevealPhase;
+  readonly battleFrameIndex: number | null;
+  readonly entry: U5LogEntry;
+}
+
+interface U5OutcomeLogProjection {
+  readonly previousEntries: readonly U5LogEntry[];
+  readonly currentEntries: readonly U5OutcomeLogEntry[];
+}
+```
+
+- `recordIdentity`는 결과 signature와 연결되는 내부 View 식별자이며 DOM에 출력하지 않는다.
+- `selection` 항목은 결과 첫 phase가 무엇이든 선택 직후부터 보인다.
+- `battle` 항목은 `battleFrameIndex`가 현재 replay frame 이하일 때만 보인다.
+- 현재 전투의 최종 승패·전체 피해 요약은 `postBattleHp` 전에는 만들지 않는다.
+- `visibleOutcomeLogEntries(projection, phase, frameIndex)` 같은 순수 helper가 `previousEntries`와 현재 공개 가능한 항목만 합친다.
+- `U5ProgressScreen`은 로컬 feedback phase와 replay frame index를 이 helper에 전달한다. adapter가 hook 상태를 소유하거나 Store에 phase를 저장하지 않는다.
+- 로그 필터는 먼저 공개 경계를 적용한 결과에만 작동한다. 필터 변경으로 숨은 항목을 다시 얻을 수 없다.
+
 현재 결과가 `complete`가 되기 전에는 U5 파티 카드 뒤집기 버튼을 DOM에서 제거한다. disabled 복제본을 두지 않는다. U4 지도에서는 현재 진행 중인 결과가 없으므로 기존 카드 뒤집기 동작을 유지한다.
 
 ## 13. CTA, 건너뛰기와 다시 보기
@@ -636,11 +712,13 @@ Store에 현재 사건의 전체 기록이 이미 있어도 현재 phase보다 �
 | `battle` 재생 중 | `전투 건너뛰기` |
 | `postDialogue` | `반응 확인` |
 | `complete` 일반 사건 | `지도로 돌아간다` |
-| `complete` 전멸 사건 | 원정 종료 흐름에 맞는 CTA |
+| `complete` 전멸 사건 | `원정 결과로` |
 | `complete` 보스전 | `정산으로` |
 | 완료 전투 다시 보기 | 재생 중 `전투 건너뛰기`, 종료 후 원래 CTA |
 
 CTA 문구로 규칙 상태를 추측하지 않는다. 호출부가 다음 정책을 명시한다.
+
+`원정 결과로`는 기존 `ACKNOWLEDGE_OUTCOME`만 dispatch해 `pendingOutcome`을 닫는다. 그 뒤 기존 원정 종료 화면이 나타나며 그 화면의 `정산으로`가 `COMPLETE_EXPEDITION`을 dispatch한다. 피드백 CTA가 두 전이를 한 번에 실행하거나 새 복합 transition을 만들지 않는다.
 
 ### 13.2 건너뛰기
 
@@ -684,6 +762,17 @@ CTA 문구로 규칙 상태를 추측하지 않는다. 호출부가 다음 정�
 
 전멸 결과에서 `지도로 돌아간다`를 눌러 다음 노드를 선택할 수 있게 만들지 않는다. 화면은 `wiped` 여부를 CTA 문구로 역추론하지 않고 호출부 정책을 따른다.
 
+전멸의 확정 전이는 다음 두 단계다.
+
+```text
+피드백 complete
+→ `원정 결과로` / ACKNOWLEDGE_OUTCOME
+→ 기존 원정 종료 화면
+→ `정산으로` / COMPLETE_EXPEDITION
+```
+
+첫 CTA 뒤 지도 선택 화면이 한 frame이라도 나타나면 오류다.
+
 ## 15. 오류와 경계 조건
 
 다음 상황은 조용한 fallback으로 숨기지 않는다.
@@ -691,16 +780,18 @@ CTA 문구로 규칙 상태를 추측하지 않는다. 호출부가 다음 정�
 - `pendingOutcome`이 있는데 범용 피드백 View를 만들 수 없음
 - presentation snapshot 누락
 - HP chain 불일치
-- 신뢰 변화 chain 불일치
+- 신뢰 변화 step의 `before / after` chain, `reason`, `revealPhase` 누락 또는 불일치
 - `goldChange.after`와 조언 적용 후 캠페인 골드 불일치
 - `infoRecordCountBefore`가 최종 기록 길이보다 큼
 - `bossInfoAdded`와 실제 추가된 지연 기록 불일치
 - 같은 `eventId + adviceId + characterId`의 중복 보스 정보 기록
 - `exposed` 또는 `neutral`이 개인 보스 정보 아이콘 상태로 들어옴
 - 상인 효과 before/after와 실제 소비 여부 불일치
+- multiplier `1`, 양쪽 multiplier 동시 존재 또는 축·방향과 badge 문구 불일치
 - `battle` phase인데 replay 없음
 - 비전투 흐름에서 `BATTLE_COMPLETE` 수신
 - replay 참가자와 현재 파티원 연결 불일치
+- 현재 결과 log 항목의 `recordIdentity`, `revealPhase`, battle frame 경계 누락 또는 불일치
 - 새 결과 signature 뒤 이전 타이머가 phase를 진행시킴
 
 오류가 있으면 기존 3단 `Outcome`, 최종 Store 값 또는 지어낸 문구를 대신 표시하지 않는다.
@@ -711,13 +802,17 @@ CTA 문구로 규칙 상태를 추측하지 않는다. 호출부가 다음 정�
 campaign-transition.ts
   ├─ 규칙 결과 계산
   ├─ ExpeditionOutcome / BossResult
-  └─ OutcomePresentationSnapshot 기록과 연속성 검증
+  ├─ OutcomePresentationSnapshot 기록과 연속성 검증
+  └─ OutcomeTrustChangeStep chain과 공개 phase 보존
+
+domain/outcome.ts
+  └─ 일반 사건과 보스 결과가 공유하는 presentation·trust step 계약
 
 campaign-adapters.ts
   ├─ U4·U5 파티 View
   ├─ 개인 infoRecords → bossInfoStates
   ├─ 상인 효과 → 짧은 헤더 배지
-  └─ phase별 log projection
+  └─ 이전 기록과 현재 결과를 나눈 U5OutcomeLogProjection
 
 u5-outcome-feedback-adapter.ts
   ├─ 일반 사건·보스 결과 → U5OutcomeFeedbackView
@@ -727,7 +822,8 @@ u5-outcome-feedback-adapter.ts
 u5-outcome-feedback.ts
   ├─ 필요한 phase 배열
   ├─ 순수 reducer
-  └─ phase별 visible value helper
+  ├─ phase별 visible value helper
+  └─ visibleOutcomeLogEntries의 phase·frame gate
 
 use-u5-outcome-feedback.ts
   ├─ 자동 타이머
@@ -748,9 +844,14 @@ ExpeditionPartyHeader
 
 PartyMemberCard
   └─ 골드 footer + 개인 보스 정보 아이콘 + 기존 결과 변화량
+
+party-formation-order.ts
+  └─ 대표 인물 동률, U4·U5 카드, 비전투 장면과 전투 대열의 공통 표시 순서
 ```
 
 Campaign Store에는 frame index, feedback phase, 대사 확인 여부를 저장하지 않는다. 이 값은 결과 signature에 묶인 UI 로컬 상태다.
+
+`campaign-adapters.ts`와 `u4-dungeon-map-model.ts`가 개인 보스 정보나 상인 효과를 각각 해석하지 않는다. `InfoRecord → BossInfoIconState[]`와 `PendingMerchantEffect → ExpeditionMerchantBadgeView`는 하나의 공용 순수 mapper가 소유하고 U4·U5 adapter가 재사용한다.
 
 ## 17. U3·U4·U5·U6 호환성
 
@@ -792,16 +893,20 @@ Campaign Store에는 frame index, feedback phase, 대사 확인 여부를 저장
 - accepted/suspected만 `bossInfoAdded`에 포함
 - exposed/neutral은 포함하지 않음
 - 전멸 결과에서도 presentation snapshot 보존
+- 동일 인물의 연속 신뢰 step이 `before → after` chain, 원래 `reason`, 명시적 `revealPhase`를 보존
+- `exposed harm`의 `adviceHarmed → deceptionExposed` 두 사유가 모두 `immediateTrust` 묶음에 남음
+- multiplier `1`과 양쪽 축을 함께 가진 다음 전투 상인 효과를 rules에서 거부
 
 ### 18.3 어댑터
 
-- 대표 인물 선택이 변화량과 파티 자리 순서를 따름
+- 대표 인물 선택이 변화량과 `inFormationOrder()` 순서를 따름
 - 내부 `eventId`, `adviceId`, `bossRuleId`, 도움·방해 key가 presentation DOM에 없음
 - U4 최종 카드에 개인별 accepted/suspected 아이콘 상태가 정확히 배치
 - U5 `stateApply` 전에는 새 보스 정보가 숨고 이후에만 나타남
-- 상인 효과 badge가 구매·유지·발동·소비 상태에 맞게 변환
+- 상인 효과 badge가 구매·유지·발동·소비 상태와 네 방향 문구에 맞게 변환
 - 일반 단서는 개인 보스 정보 아이콘으로 변환하지 않음
-- phase별 log projection이 미래 항목 제거
+- phase별 log projection이 명시적 `recordIdentity`·`revealPhase`·`battleFrameIndex`로 미래 항목 제거
+- log label 문구나 filter 종류를 보고 공개 phase를 역추론하지 않음
 
 ### 18.4 렌더와 접근성
 
@@ -831,12 +936,14 @@ Campaign Store에는 frame index, feedback phase, 대사 확인 여부를 저장
 7. exposed 인물에는 아이콘이 추가되지 않음
 8. 전투를 회피하면 상인 효과가 유지
 9. 실제 일반전·보스전 시작 시 효과 발동 강조 후 배지가 제거
-10. 일반전의 frame HP와 우측 카드 HP가 동기화
-11. 건너뛰기가 사후 대사·신뢰 단계를 건너뛰지 않음
-12. 다시 보기에서 중앙 전투만 되감기고 카드·골드·아이콘·상인 효과 최종 상태는 유지
-13. 전멸 결과가 피드백 완료 뒤 지도 선택으로 돌아가지 않음
-14. 1920×1080, 2560×1440, 1440×900, 1280×1024에서 카드 footer·헤더 배지·CTA가 겹치거나 잘리지 않음
-15. 네 viewport에서 스크롤, 카드 높이 이동, 이미지 왜곡과 콘솔 오류가 없음
+10. 이로운·해로운 상인 예약 효과 네 방향이 실제 multiplier와 일치하는 문구로 표시
+11. 일반전의 frame HP와 우측 카드 HP가 동기화
+12. 진행 기록 필터를 바꿔도 현재 phase·frame 뒤의 반응·결과·전투·신뢰가 나타나지 않음
+13. 건너뛰기가 사후 대사·신뢰 단계를 건너뛰지 않음
+14. 다시 보기에서 중앙 전투만 되감기고 카드·골드·아이콘·상인 효과 최종 상태는 유지
+15. 전멸 결과가 `원정 결과로 → 정산으로`를 거치며 지도 선택으로 돌아가지 않음
+16. 1920×1080, 2560×1440, 1440×900, 1280×1024에서 카드 footer·헤더 배지·CTA가 겹치거나 잘리지 않음
+17. 네 viewport에서 스크롤, 카드 높이 이동, 이미지 왜곡과 콘솔 오류가 없음
 
 ### 18.6 전체 검증
 
@@ -857,8 +964,10 @@ git diff --check
 
 ### Domain·rules
 
-- `lib/domain/campaign-transition.ts`
+- `lib/domain/outcome.ts`
   - `OutcomePresentationSnapshot`
+  - `OutcomeTrustChangeStep`
+- `lib/domain/campaign-transition.ts`
   - `ExpeditionOutcome.presentation`
 - `lib/domain/expedition.ts`
   - 보스 결과의 presentation 또는 공통 결과 snapshot 연결
@@ -866,6 +975,8 @@ git diff --check
   - 골드·전투 전 HP·보스 정보·상인 효과 전후 기록
   - 일반 사건과 보스전 snapshot 생성
   - 연속성 검증
+- `lib/rules/merchant.ts`
+  - multiplier `1` no-op과 양쪽 축 동시 존재 거부
 - 관련 rules tests와 backtest fixtures
 
 ### U5 상태와 어댑터
@@ -878,7 +989,13 @@ git diff --check
 
 - `components/game/campaign-adapters.ts`
   - 파티 개인 보스 정보와 상인 효과 View
-  - phase별 진행 기록 projection
+  - 이전 기록과 현재 결과를 분리한 진행 기록 projection
+- `components/game/expedition-party-status.ts`
+  - U4·U5 공용 개인 보스 정보와 상인 효과 badge mapper
+- `components/game/u5-log.ts`
+  - 명시적 reveal phase와 battle frame 기반 공개 helper
+- `components/game/party-formation-order.ts`
+  - 최신 main의 공용 대열 순서를 대표 인물 동률 판정에 재사용하며 새 정렬은 추가하지 않음
 - `components/game/CampaignScreen.tsx`
   - 모든 pending outcome에 범용 View 전달
   - U4·U5 공용 원정 상태 전달
@@ -912,7 +1029,7 @@ git diff --check
 - `docs/experience/UI_IMPLEMENTATION_GUIDE.md`
 - `docs/README.md`
 
-후속 에셋 작업:
+이번 Spec PR에 포함되어 구현에서 그대로 사용하는 승인 에셋:
 
 - `public/assets/shared/party-status/boss-info-accepted.png`
 - `public/assets/shared/party-status/boss-info-suspected.png`
@@ -926,9 +1043,11 @@ git diff --check
 5. 구형 `Outcome` fallback을 제거한다.
 6. 골드·HP·신뢰 projection을 연결한다.
 7. U4·U5 개인 보스 정보와 상인 효과 헤더를 연결한다.
-8. 아이콘 최종 에셋을 별도 작업에서 추가한다.
-9. E2E와 전체 회귀를 검증한다.
-10. 공식 문서를 갱신한다.
+8. 포함된 승인 아이콘 2종을 U4·U5에 연결한다.
+9. 진행 기록의 phase·frame 공개 경계를 연결한다.
+10. 전멸의 `원정 결과로 → 정산으로` 전이를 연결한다.
+11. E2E와 전체 회귀를 검증한다.
+12. 공식 문서를 갱신한다.
 
 기존 전투 흐름을 먼저 삭제하고 새 흐름을 한꺼번에 만드는 방식은 금지한다. 전투 계약을 범용 모델로 옮기는 동안 관련 테스트가 계속 통과하도록 작은 단계로 이전한다.
 
@@ -942,19 +1061,22 @@ git diff --check
 - 개인 보스 정보는 accepted/suspected 인물 카드에만 표시되고 U4·U5에서 attempt 종료까지 유지된다.
 - 일반 단서는 우측 카드에 표시되지 않는다.
 - 상인 예약 효과는 `파티 상태` 제목 오른쪽에 실제 효과와 함께 표시되고 실제 전투에서만 소비된다.
+- 이로운·해로운 상인 예약 효과가 네 방향의 실제 효과 문구로 표시되며 multiplier `1` no-op은 rules에서 거부된다.
 - 전투 HP 동기화, 건너뛰기, 다시 보기와 완료 변화량 계약이 유지된다.
 - 결과 완료 전 진행 기록·카드 뒤집기로 미래 정보를 우회할 수 없다.
-- 전멸 결과가 지도 선택으로 돌아가지 않는다.
+- 진행 기록은 명시적 record·phase·battle frame 메타데이터로 공개되며 label 문구로 시점을 추측하지 않는다.
+- 신뢰 변화의 개별 step·사유·공개 phase가 결과와 원정 기록에 보존된다.
+- 전멸 결과가 `원정 결과로 → 정산으로`를 거치며 지도 선택으로 돌아가지 않는다.
 - U3·U6에 원정 전용 HUD가 새지 않는다.
 - accepted/suspected 최종 에셋 2종이 같은 아트 세트로 연결된다.
 - 관련 unit, render, E2E, typecheck, lint, build, backtest와 `git diff --check`가 통과한다.
 
 ## 22. Spec PR 범위
 
-이 PR은 설계 문서만 추가한다.
+이 PR은 설계 문서, 사용자 승인 아이콘 2종과 구현 Plan만 추가한다.
 
 - React·TypeScript·CSS·rules 코드를 수정하지 않는다.
-- 테스트·Plan·공식 시스템 문서를 수정하지 않는다.
-- 임시 생성 아이콘 PNG를 추가하지 않는다.
-- Spec 승인 뒤 Superpowers Writing Plans로 별도 구현 Plan을 작성한다.
+- 테스트·공식 시스템 문서를 수정하지 않는다.
+- 승인된 두 경로 외의 임시 생성 아이콘 PNG를 추가하지 않는다.
+- 코드베이스 사전 조사와 본 정정 계약을 반영한 Superpowers 구현 Plan을 함께 작성한다.
 - 구현은 Spec과 Plan 검토가 끝난 뒤 별도 단계에서 진행한다.
