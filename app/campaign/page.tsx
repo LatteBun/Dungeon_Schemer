@@ -18,7 +18,7 @@ async function CampaignPage({ searchParams }: { searchParams: CampaignSearchPara
   const value = resolveCampaignSeed(seed);
 
   return (
-    <CampaignStoreProvider seed={value}>
+    <CampaignStoreProvider seed={value} explicitSeed={typeof seed === "string" && seed.length > 0}>
       <CampaignScreen />
     </CampaignStoreProvider>
   );
