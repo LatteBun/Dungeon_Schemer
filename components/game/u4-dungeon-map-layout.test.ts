@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GeneratedMap, NodeId } from "@/lib/domain";
-import { countU4GeometricCrossings, createU4DungeonMapLayout, roomVariationFor } from "./u4-dungeon-map-layout";
+import { countU4GeometricCrossings, createU4DungeonMapLayout, resolveU4MapLayoutCandidatesForTest, roomVariationFor, U4MapLayoutError } from "./u4-dungeon-map-layout";
 import {
   countU4LayerCrossings,
   createU4OptimizedLayerOrder,
@@ -79,6 +79,23 @@ const MAP: GeneratedMap = {
 };
 
 describe("U4 dungeon map layout", () => {
+  const crossingLayout = (crossing: boolean): import("./u4-dungeon-map-layout").U4MapLayout => ({
+    nodePositions: {},
+    corridors: crossing
+      ? [{ from: id("a"), to: id("b"), start: { x: 0, y: 0 }, end: { x: 1, y: 1 }, length: 1, angleDeg: 45 }, { from: id("c"), to: id("d"), start: { x: 0, y: 1 }, end: { x: 1, y: 0 }, length: 1, angleDeg: -45 }]
+      : [],
+  });
+
+  it("falls back to flat depths when wobbled geometry crosses", () => {
+    const flat = crossingLayout(false);
+    expect(resolveU4MapLayoutCandidatesForTest(crossingLayout(true), flat)).toBe(flat);
+  });
+
+  it("throws the geometric crossing count when both candidates cross", () => {
+    expect(() => resolveU4MapLayoutCandidatesForTest(crossingLayout(true), crossingLayout(true)))
+      .toThrowError(expect.objectContaining({ geometricCrossingCount: 1 } satisfies Partial<U4MapLayoutError>));
+  });
+
   it("uses the global minimum-crossing row order for room coordinates", () => {
     const originalRows = [
       [CROSS_ENTRY],

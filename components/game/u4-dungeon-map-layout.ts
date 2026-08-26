@@ -255,8 +255,15 @@ export function countU4GeometricCrossings(
 export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
   const optimized = createU4OptimizedLayerOrder(map);
   const wobbled = buildLayout(map, optimized.rows, true);
-  if (countU4GeometricCrossings(wobbled.corridors) === 0) return wobbled;
   const flatDepths = buildLayout(map, optimized.rows, false);
+  return resolveU4MapLayoutCandidatesForTest(wobbled, flatDepths);
+}
+
+export function resolveU4MapLayoutCandidatesForTest(
+  wobbled: U4MapLayout,
+  flatDepths: U4MapLayout,
+): U4MapLayout {
+  if (countU4GeometricCrossings(wobbled.corridors) === 0) return wobbled;
   const geometricCrossingCount = countU4GeometricCrossings(flatDepths.corridors);
   if (geometricCrossingCount !== 0) throw new U4MapLayoutError(geometricCrossingCount);
   return flatDepths;

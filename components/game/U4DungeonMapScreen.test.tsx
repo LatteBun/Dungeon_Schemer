@@ -7,6 +7,7 @@ import type { U4MapLayout } from "./u4-dungeon-map-layout";
 import type { U4MapNodeView, U4PartyMemberView } from "./u4-dungeon-map-model";
 import {
   U4DungeonMapScreen,
+  corridorDisplayGeometry,
   nextSelectableNodeId,
 } from "./U4DungeonMapScreen";
 
@@ -130,6 +131,14 @@ function render(
 }
 
 describe("U4DungeonMapScreen", () => {
+  it("keeps corridor display endpoints aligned on a 1280x720 surface", () => {
+    const geometry = corridorDisplayGeometry(layout.corridors[0]!, 1280, 720);
+    const dx = (layout.corridors[0]!.end.x - layout.corridors[0]!.start.x) * 1280;
+    const dy = (layout.corridors[0]!.end.y - layout.corridors[0]!.start.y) * 720;
+    expect(geometry.widthPercent).toBeCloseTo(Math.hypot(dx, dy) / 1280 * 100);
+    expect(geometry.angleDeg).toBeCloseTo(Math.atan2(dy, dx) * 180 / Math.PI);
+  });
+
   it("reuses GameShell and renders the spatial map without decorative map-frame or legend chrome", () => {
     const html = render();
     expect(html).toContain('data-testid="game-shell"');

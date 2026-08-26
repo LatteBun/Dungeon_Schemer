@@ -96,5 +96,9 @@ describe("U4 geometric corridor crossings", () => {
       corridor("a", "d", [0, 0], [0, 1]),
       corridor("a", "e", [0, 0], [-1, 0]),
     ])).toBe(0);
+    expect(countU4GeometricCrossings([
+      corridor("a", "c", [0, 0], [1, 1]),
+      corridor("b", "c", [0, 1], [1, 0]),
+    ])).toBe(0);
   });
 });
