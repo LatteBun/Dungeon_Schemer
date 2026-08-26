@@ -190,6 +190,12 @@ describe("결정적 지도 생성", () => {
       expect(adjacency.has(`${safe1[0]}:${safe1[1]}`)).toBe(true);
       expect(adjacency.has(`${rejected[0]}:${rejected[1]}`)).toBe(false);
       expect(adjacency.has(`${laterSafe[0]}:${laterSafe[1]}`)).toBe(true);
+      expect(result.map.nodes.find((node) => node.id === left[1])!.nextNodeIds).toEqual([right[1]]);
+      const rightZeroIncomingParents = result.map.nodes
+        .filter((node) => node.nextNodeIds.includes(right[0]!))
+        .map((node) => node.id);
+      expect(rightZeroIncomingParents).toEqual([left[0]]);
+      expect(rightZeroIncomingParents).toHaveLength(1);
       expect(result.map.nodes.find((node) => node.id === right[0])!.nextNodeIds).toEqual([next[0], next[1]]);
     } finally { __setDungeonMapGenerationTestSeam(undefined); }
   });
