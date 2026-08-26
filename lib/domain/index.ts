@@ -164,6 +164,7 @@ export type {
   BossInfoTiming,
   BossInfoVerification,
   BossInfoVerificationAction,
+  BattleAbilityUsesRemaining,
   ExpeditionResult,
   ExpeditionState,
   ExpeditionStatus,
@@ -180,6 +181,7 @@ export type {
   BattleActionRecord,
   BattleEnemyInput,
   BattlePartyMember,
+  BattlePartyMemberAbilityState,
   BattleResolution,
 } from "./battle";
 

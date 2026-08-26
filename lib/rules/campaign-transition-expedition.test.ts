@@ -11,7 +11,9 @@ import type {
   NodeId,
 } from "@/lib/domain";
 import { eventsForTheme } from "@/lib/content/event-registry";
+import { CLASSES } from "@/lib/content/classes";
 import { initializeCampaign } from "./campaign-init";
+import { createBattleAbilityUsesForParty } from "./battle-ability-state";
 import { generateDungeonMap } from "./dungeon-map";
 import { createExpeditionForOffer, createSettlementSnapshotFor, transitionCampaign } from "./campaign-transition";
 
@@ -63,6 +65,10 @@ function startedWith(seed: string): CampaignTransitionResult {
     currentNodeId: map.entryNodeId,
     visitedNodeIds: [map.entryNodeId],
     advicePressure: 0,
+    battleAbilityUsesRemainingByCharacterId: createBattleAbilityUsesForParty({
+      members: partyMembers,
+      classDefs: CLASSES,
+    }),
     infoRecords: [],
     pendingMerchantEffect: null,
     bossResult: null,
@@ -335,6 +341,90 @@ describe("공고에서 원정 상태를 만든다", () => {
 
     expect(JSON.stringify(createExpeditionForOffer(selected.campaign, offer)))
       .toBe(JSON.stringify(createExpeditionForOffer(selected.campaign, offer)));
+  });
+
+  it("새 원정과 재도전은 현재 파티의 능력 보유자만 2회로 다시 초기화한다", () => {
+    let found: ReturnType<typeof boardedCampaign> | undefined;
+    let offer: CampaignState["offers"][number] | undefined;
+    for (let index = 0; index < 30 && offer === undefined; index += 1) {
+      const candidate = boardedCampaign(`ability-expedition-${index}`);
+      const candidateOffer = candidate.campaign.offers.find((one) =>
+        one.lockReason === null
+        && one.party.memberIds.some((id) => candidate.campaign.pool.byId[id]?.classId === "cleric"));
+      if (candidateOffer !== undefined) {
+        found = candidate;
+        offer = candidateOffer;
+      }
+    }
+    if (found === undefined || offer === undefined) throw new Error("성직자가 든 계약 fixture를 찾지 못했다");
+
+    const initial = createExpeditionForOffer(found.campaign, offer);
+    const retriedCampaign = {
+      ...found.campaign,
+      dungeons: found.campaign.dungeons.map((dungeon) => dungeon.id === offer!.dungeonId
+        ? { ...dungeon, attempts: dungeon.attempts + 1 }
+        : dungeon),
+    };
+    const retried = createExpeditionForOffer(retriedCampaign, offer);
+    const expected = Object.fromEntries(
+      initial.partyMembers
+        .filter((member) => member.classId === "cleric")
+        .map((member) => [member.id, 2]),
+    );
+
+    expect(initial.expedition.battleAbilityUsesRemainingByCharacterId).toEqual(expected);
+    expect(retried.expedition.battleAbilityUsesRemainingByCharacterId).toEqual(expected);
+    expect(retried.expedition.battleAbilityUsesRemainingByCharacterId)
+      .not.toBe(initial.expedition.battleAbilityUsesRemainingByCharacterId);
+  });
+
+  it("START_EXPEDITION은 능력 보유자의 감소된 초기 횟수를 거부한다", () => {
+    let selected: CampaignTransitionResult | undefined;
+    let built: ReturnType<typeof createExpeditionForOffer> | undefined;
+    for (let index = 0; index < 30 && built === undefined; index += 1) {
+      const candidate = boardedCampaign(`ability-start-${index}`);
+      const offer = candidate.campaign.offers.find((one) =>
+        one.lockReason === null
+        && one.party.memberIds.some((id) => candidate.campaign.pool.byId[id]?.classId === "cleric"));
+      if (offer === undefined) continue;
+      selected = transitionCampaign(candidate.campaign, candidate.context, {
+        type: "SELECT_CONTRACT",
+        offerId: offer.id,
+      });
+      built = createExpeditionForOffer(selected.campaign, offer);
+    }
+    if (selected === undefined || built === undefined) throw new Error("성직자가 든 계약 fixture를 찾지 못했다");
+    const clericId = built.partyMembers.find((member) => member.classId === "cleric")!.id;
+
+    expect(() => transitionCampaign(selected.campaign, selected.context, {
+      type: "START_EXPEDITION",
+      expeditionId: "exp-reduced-ability",
+      ...built,
+      expedition: {
+        ...built.expedition,
+        battleAbilityUsesRemainingByCharacterId: {
+          ...built.expedition.battleAbilityUsesRemainingByCharacterId,
+          [clericId]: 1,
+        },
+      },
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
+  });
+
+  it("START_EXPEDITION에 잔여 횟수 맵이 없으면 INVALID_TRANSITION이다", () => {
+    const { campaign, context } = boardedCampaign("ability-map-missing");
+    const offer = campaign.offers.find((one) => one.lockReason === null)!;
+    const selected = transitionCampaign(campaign, context, { type: "SELECT_CONTRACT", offerId: offer.id });
+    const built = createExpeditionForOffer(selected.campaign, offer);
+
+    expect(() => transitionCampaign(selected.campaign, selected.context, {
+      type: "START_EXPEDITION",
+      expeditionId: "exp-missing-ability-map",
+      ...built,
+      expedition: {
+        ...built.expedition,
+        battleAbilityUsesRemainingByCharacterId: undefined as never,
+      },
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
   });
 
   it("만든 원정이 그대로 START_EXPEDITION 을 통과한다", () => {

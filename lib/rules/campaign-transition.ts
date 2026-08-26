@@ -56,6 +56,10 @@ import { settleExpedition } from "./settlement";
 import { runWorldTurn } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
 import { advanceAdvicePressure, assertAdvicePressure } from "./advice-pressure";
+import {
+  createBattleAbilityUsesForParty,
+  validateBattleAbilityUses,
+} from "./battle-ability-state";
 
 /**
  * 끝난 캠페인이 남기는 기록.
@@ -231,6 +235,13 @@ function validateExpedition(
     invalidTransition("원정 파티가 공고와 다르다");
   }
   validatePartyMembers(campaign, offer, partyMembers);
+  validateBattleAbilityUses({
+    members: partyMembers,
+    classDefs: CLASSES,
+    usesRemaining: expedition.battleAbilityUsesRemainingByCharacterId,
+    phase: "start",
+    errorCode: "INVALID_TRANSITION",
+  });
 }
 
 function validateSnapshot(
@@ -824,6 +835,10 @@ export function createExpeditionForOffer(
       currentNodeId: map.entryNodeId,
       visitedNodeIds: [map.entryNodeId],
       advicePressure: 0,
+      battleAbilityUsesRemainingByCharacterId: createBattleAbilityUsesForParty({
+        members: partyMembers,
+        classDefs: CLASSES,
+      }),
       infoRecords: [],
       pendingMerchantEffect: null,
       bossResult: null,
@@ -854,6 +869,9 @@ function copyActiveExpedition(
     expedition: {
       ...action.expedition,
       party: { memberIds: [...action.expedition.party.memberIds] },
+      battleAbilityUsesRemainingByCharacterId: {
+        ...action.expedition.battleAbilityUsesRemainingByCharacterId,
+      },
     },
     partyMembers: action.partyMembers.map((member) => ({ ...member })),
     /*
@@ -969,6 +987,13 @@ export function transitionCampaign(
   if (campaign.phase === "expedition") {
     requirePhase(campaign, "expedition");
     const active = activeExpedition(context);
+    validateBattleAbilityUses({
+      members: active.partyMembers,
+      classDefs: CLASSES,
+      usesRemaining: active.expedition.battleAbilityUsesRemainingByCharacterId,
+      phase: "active",
+      errorCode: "INVALID_TRANSITION",
+    });
     if (action.type === "APPLY_TRUST_BATCH") {
       validateTrustBatch(campaign, active, action.partyMembers);
       const nextById = { ...campaign.pool.byId };

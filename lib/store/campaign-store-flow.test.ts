@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { Character, ExpeditionState, NodeId } from "@/lib/domain";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
+import { CLASSES } from "@/lib/content/classes";
+import { createBattleAbilityUsesForParty } from "@/lib/rules/battle-ability-state";
 import { createCampaignStore, screenForPhase } from "./campaign-store";
 
 /**
@@ -51,6 +53,10 @@ describe("스토어로 걷는 흐름", () => {
       currentNodeId: map.entryNodeId,
       visitedNodeIds: [map.entryNodeId],
       advicePressure: 0,
+      battleAbilityUsesRemainingByCharacterId: createBattleAbilityUsesForParty({
+        members: partyMembers,
+        classDefs: CLASSES,
+      }),
       infoRecords: [],
       pendingMerchantEffect: null,
       bossResult: null,

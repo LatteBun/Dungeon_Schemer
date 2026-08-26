@@ -95,6 +95,16 @@ function expeditionFlow(seed = "c7-transition") {
   return { board, contract, expedition, offer };
 }
 
+function abilityExpeditionFlow() {
+  for (let index = 0; index < 30; index += 1) {
+    const flow = expeditionFlow(`c7-ability-${index}`);
+    if (flow.expedition.context.activeExpedition!.partyMembers.some((member) => member.classId === "cleric")) {
+      return flow;
+    }
+  }
+  throw new Error("능력 보유자가 든 원정 fixture를 찾지 못했다");
+}
+
 describe("C7 캠페인 전이", () => {
   it("intro에서 board로 가며 C2 공고를 만들고 입력을 보존한다", () => {
     const campaign = initializeCampaign("c7-open-board");
@@ -169,10 +179,11 @@ describe("C7 캠페인 전이", () => {
       offerId: offer!.id,
     });
 
+    const action = startAction(contract.campaign, contract.context);
     const expedition = transitionCampaign(
       contract.campaign,
       contract.context,
-      startAction(contract.campaign, contract.context),
+      action,
     );
 
     expect(expedition.campaign.phase).toBe("expedition");
@@ -180,6 +191,49 @@ describe("C7 캠페인 전이", () => {
     expect(expedition.context.activeExpedition?.offer.id).toBe(offer!.id);
     expect(expedition.context.activeExpedition?.offer.reward).toEqual(offer!.reward);
     expect(expedition.context.activeExpedition?.offer.reward).not.toBe(offer!.reward);
+    expect(expedition.context.activeExpedition?.expedition.battleAbilityUsesRemainingByCharacterId)
+      .not.toBe((action as Extract<CampaignTransition, { type: "START_EXPEDITION" }>).expedition.battleAbilityUsesRemainingByCharacterId);
+  });
+
+  it("활성 원정 전이는 감소한 횟수는 허용하고 범위를 넘은 횟수는 거부한다", () => {
+    const flow = abilityExpeditionFlow();
+    const active = flow.expedition.context.activeExpedition!;
+    const abilityId = Object.keys(active.expedition.battleAbilityUsesRemainingByCharacterId)[0];
+    if (abilityId === undefined) throw new Error("능력 보유자 fixture가 없다");
+    const reducedContext = {
+      ...flow.expedition.context,
+      activeExpedition: {
+        ...active,
+        expedition: {
+          ...active.expedition,
+          battleAbilityUsesRemainingByCharacterId: {
+            ...active.expedition.battleAbilityUsesRemainingByCharacterId,
+            [abilityId]: 0,
+          },
+        },
+      },
+    };
+
+    expect(() => transitionCampaign(flow.expedition.campaign, reducedContext, {
+      type: "APPLY_TRUST_BATCH",
+      partyMembers: active.partyMembers,
+    })).not.toThrow();
+    expect(() => transitionCampaign(flow.expedition.campaign, {
+      ...reducedContext,
+      activeExpedition: {
+        ...reducedContext.activeExpedition!,
+        expedition: {
+          ...reducedContext.activeExpedition!.expedition,
+          battleAbilityUsesRemainingByCharacterId: {
+            ...reducedContext.activeExpedition!.expedition.battleAbilityUsesRemainingByCharacterId,
+            [abilityId]: 3,
+          },
+        },
+      },
+    }, {
+      type: "APPLY_TRUST_BATCH",
+      partyMembers: active.partyMembers,
+    })).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
   });
 
   it("정산은 C4를 한 번 적용하고 C8 통계에는 기록하지 않는다", () => {
