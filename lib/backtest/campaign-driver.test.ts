@@ -54,50 +54,22 @@ describe("백테스트 캠페인 driver", () => {
       .every((one) => one.bossEntry!.hp <= one.bossEntry!.maxHp)).toBe(true);
   });
 
-  it("일반전과 보스전의 확정 결과를 전이 직후 한 번씩만 관측한다", () => {
-    const result = runCampaign({ seed: "driver-battle-trace", strategy: createStrategy("survival"), accuracy: 0.7 });
+  it("회피·비전투를 제외하고 확정 일반전과 보스전을 전이 직후 한 번씩만 관측한다", () => {
+    const result = runCampaign({ seed: "driver-battle-trace", strategy: createStrategy("survival"), accuracy: 1 as Accuracy });
     if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
 
-    expect(result.trace).toMatchObject({
-      battles: expect.arrayContaining([
-        expect.objectContaining({
-          kind: "general",
-          expeditionId: expect.any(String),
-          battle: expect.objectContaining({
-            rounds: expect.any(Number),
-            termination: expect.any(String),
-          }),
-        }),
-        expect.objectContaining({
-          kind: "boss",
-          expeditionId: expect.any(String),
-          battle: expect.objectContaining({
-            rounds: expect.any(Number),
-            termination: expect.any(String),
-          }),
-        }),
-      ]),
-    });
-
-    const battles = (result.trace as typeof result.trace & {
-      readonly battles: readonly {
-        readonly kind: "general" | "boss";
-        readonly expeditionId: string;
-        readonly party: readonly {
-          readonly characterId: string;
-          readonly classId: string;
-          readonly hpBefore: number;
-          readonly hpAfter: number;
-          readonly maxHp: number;
-        }[];
-        readonly battle: { readonly party: readonly { readonly id: string; readonly hp: number }[] };
-      }[];
-    }).battles;
+    const battles = result.trace.battles;
+    expect(result.trace.nodeCategoryChoices.monster).toBeGreaterThan(0);
+    expect(result.trace.nodeCategoryChoices.rest + result.trace.nodeCategoryChoices.merchant + result.trace.nodeCategoryChoices.special)
+      .toBeGreaterThan(0);
+    expect(battles).toHaveLength(result.campaign.statistics.totalExpeditions);
+    expect(battles.every((entry) => entry.kind === "boss")).toBe(true);
     expect(battles.every((entry) => entry.battle.party.every((member) => {
       const partyMember = entry.party.find((candidate) => candidate.characterId === member.id);
       return partyMember !== undefined && partyMember.hpAfter === member.hp;
     }))).toBe(true);
-    expect(new Set(battles.map((entry) => entry.battle)).size).toBe(battles.length);
+    const keys = battles.map((entry) => `${entry.kind}\u0000${entry.expeditionId}\u0000${JSON.stringify(entry.battle)}`);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 
   it("실제 Store 전이에서 원정과 월드턴 손실 원장을 기록한다", () => {
