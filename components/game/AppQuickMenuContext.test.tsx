@@ -27,10 +27,8 @@ describe("AppQuickMenuContext", () => {
     const openQuickMenu = vi.fn();
     const html = renderToStaticMarkup(createElement(
       AppQuickMenuProvider,
-      {
-        value: { openQuickMenu },
-        children: createElement(CallbackCheck, { expected: openQuickMenu }),
-      },
+      { value: { openQuickMenu } },
+      createElement(CallbackCheck, { expected: openQuickMenu }),
     ));
 
     expect(html).toContain("same callback");

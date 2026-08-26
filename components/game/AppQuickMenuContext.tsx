@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, type PropsWithChildren } from "react";
 
 export interface AppQuickMenuValue {
   readonly openQuickMenu: (trigger: HTMLElement) => void;
@@ -8,10 +8,9 @@ export interface AppQuickMenuValue {
 
 const AppQuickMenuContext = createContext<AppQuickMenuValue | null>(null);
 
-export function AppQuickMenuProvider({ value, children }: {
+export function AppQuickMenuProvider({ value, children }: PropsWithChildren<{
   readonly value: AppQuickMenuValue;
-  readonly children: ReactNode;
-}) {
+}>) {
   return <AppQuickMenuContext value={value}>{children}</AppQuickMenuContext>;
 }
 
