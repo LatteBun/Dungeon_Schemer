@@ -133,6 +133,11 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
           available={status.canPromote}
         />
         <StatusItem
+          label="신뢰 0"
+          value={`${status.zeroTrust.livingCount} / ${status.zeroTrust.threshold}`}
+          iconSrc="/assets/u2/status-trust.svg"
+        />
+        <StatusItem
           label="남은 던전"
           value={status.remainingDungeons}
           iconSrc="/assets/u3/extracted/status-dungeon.png"
