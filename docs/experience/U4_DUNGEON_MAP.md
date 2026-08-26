@@ -123,16 +123,17 @@ U4의 배경 선택은 화면 표현 계층이 소유한다. 캠페인 Store의 
 | --- | --- | --- |
 | 없음 | `/assets/u4/map/map_background_base.png` | 기존 유적 atmosphere 유지 |
 | `spider` | `/assets/u4/map/map_background_spider_parchment.png` | `.is-parchment`, ruins atmosphere 미렌더링 |
-| `desert` | `/assets/u5/dungeon-progress-scenes/desert/entry.png` | 기존 `.is-themed` 유지 |
-| `graveyard` | `/assets/u5/dungeon-progress-scenes/graveyard/entry.png` | 기존 `.is-themed` 유지 |
+| `desert` | `/assets/u4/map/map_background_spider_parchment.png` | `.is-parchment`, ruins atmosphere 미렌더링 |
+| `graveyard` | `/assets/u4/map/map_background_spider_parchment.png` | `.is-parchment`, ruins atmosphere 미렌더링 |
 
-거미굴 PNG는 약 1.23:1(허용 1.22~1.24), 최소 1500×1220이며 지도 면에서
+공용 양피지 PNG는 약 1.23:1(허용 1.22~1.24), 최소 1500×1220이며 지도 면에서
 `object-fit: cover; object-position: 50% 50%`로 표시한다. 이 PNG의 양피지, 촛불,
 석벽, 거미줄은 장식일 뿐 실제 경로·노드·상태·제목·수치·CTA를 포함하지 않는다.
 그 게임 정보는 기존 DOM 레이어가 계속 소유한다.
 
-검토용 결정적 fixture는 `/u4-test?theme=spider`다. query가 없거나 다른 값이면
-기본 U4 배경을 유지한다.
+검토용 결정적 fixture는 `/u4-test?theme=spider|desert|graveyard`다. 세 query는
+각 테마 값을 전달하면서 같은 공용 양피지 배경을 표시한다. query가 없거나 알 수
+없는 값이거나 배열이면 기본 U4 배경과 기존 유적 atmosphere를 유지한다.
 
 ## 9. 기존 재사용 에셋
 

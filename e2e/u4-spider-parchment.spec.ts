@@ -54,6 +54,26 @@ for (const viewport of VIEWPORTS) {
   });
 }
 
+for (const themeId of ["spider", "desert", "graveyard"] as const) {
+  test(`${themeId} preview는 공용 양피지 배경 계약을 지킨다`, async ({ page }) => {
+    const failures = watchBrowserErrors(page);
+    await page.goto(`/u4-test?theme=${themeId}`);
+
+    const map = page.getByTestId("u4-map-surface");
+    await expect(
+      map.locator(".u4-map-surface__background.is-parchment"),
+    ).toHaveAttribute(
+      "src",
+      "/assets/u4/map/map_background_spider_parchment.png",
+    );
+    await expect(
+      map.locator(".u4-map-surface__background.is-themed"),
+    ).toHaveCount(0);
+    await expect(map.locator(".u4-map-surface__atmosphere")).toHaveCount(0);
+    expectNoBrowserErrors(failures, `U4 ${themeId} shared parchment`);
+  });
+}
+
 test("거미굴 preview는 mouse·Tab·Enter·Space·방향키 선택을 유지한다", async ({ page }) => {
   const failures = watchBrowserErrors(page);
   await page.goto("/u4-test?theme=spider");
