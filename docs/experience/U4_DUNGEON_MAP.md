@@ -99,6 +99,27 @@ U4는 E1의 NodeId와 `nextNodeIds`를 바꾸지 않고, 각 Depth의 좌우 순
 비네팅은 배경과 atmosphere 위, corridor와 room 아래에서만 합성한다.
 따라서 가장자리 암부는 유지하되 길과 방의 상태 표현을 덮지 않는다.
 
+### 테마별 지도 배경
+
+U4의 배경 선택은 화면 표현 계층이 소유한다. 캠페인 Store의 `dungeon.theme`이
+`CampaignScreen`을 거쳐 `U4DungeonMapScreen.themeId`로 전달되며, 지도 topology나
+원정 규칙은 이 선택에 관여하지 않는다.
+
+| `themeId` | 배경 source | 추가 처리 |
+| --- | --- | --- |
+| 없음 | `/assets/u4/map/map_background_base.png` | 기존 유적 atmosphere 유지 |
+| `spider` | `/assets/u4/map/map_background_spider_parchment.png` | `.is-parchment`, ruins atmosphere 미렌더링 |
+| `desert` | `/assets/u5/dungeon-progress-scenes/desert/entry.png` | 기존 `.is-themed` 유지 |
+| `graveyard` | `/assets/u5/dungeon-progress-scenes/graveyard/entry.png` | 기존 `.is-themed` 유지 |
+
+거미굴 PNG는 약 1.23:1(허용 1.22~1.24), 최소 1500×1220이며 지도 면에서
+`object-fit: cover; object-position: 50% 50%`로 표시한다. 이 PNG의 양피지, 촛불,
+석벽, 거미줄은 장식일 뿐 실제 경로·노드·상태·제목·수치·CTA를 포함하지 않는다.
+그 게임 정보는 기존 DOM 레이어가 계속 소유한다.
+
+검토용 결정적 fixture는 `/u4-test?theme=spider`다. query가 없거나 다른 값이면
+기본 U4 배경을 유지한다.
+
 ## 9. 기존 재사용 에셋
 
 - `/assets/u2/status-gold.svg`

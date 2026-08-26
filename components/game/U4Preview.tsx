@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { NodeId } from "@/lib/domain";
+import type { NodeId, ThemeId } from "@/lib/domain";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { createU4PreviewData } from "./u4-preview-data";
 
 export interface U4PreviewProps {
   deadPreview?: boolean;
+  themeId?: ThemeId;
 }
 
-export function U4Preview({ deadPreview = false }: U4PreviewProps) {
+export function U4Preview({ deadPreview = false, themeId }: U4PreviewProps) {
   const preview = useMemo(
     () => createU4PreviewData({ deadPreview }),
     [deadPreview],
@@ -28,6 +29,7 @@ export function U4Preview({ deadPreview = false }: U4PreviewProps) {
         nodes={preview.nodes}
         layout={preview.layout}
         party={preview.party}
+        themeId={themeId}
         selectedNextNodeId={selectedNextNodeId}
         onSelectNextNode={(nodeId) => {
           setSelectedNextNodeId(nodeId);

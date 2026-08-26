@@ -101,6 +101,9 @@
 
 ## 이번 개편 설계
 
+- [U4 거미굴 양피지 지도 배경 설계](superpowers/specs/2026-08-26-lattebun-u4-spider-parchment-map-background-design.md): 거미굴 U4의 전용 양피지 배경, 레이어와 슬롯 비율 계약
+- [U4 거미굴 양피지 지도 배경 구현 계획](superpowers/plans/2026-08-26-lattebun-u4-spider-parchment-map-background.md): 자산·테마 매핑·결정적 프리뷰·브라우저 검증의 테스트 우선 실행 순서
+
 - [상단 상태 바 신뢰 0 인원 표시 설계](superpowers/specs/2026-08-26-lattebun-top-status-zero-trust-count-design.md): 살아 있는 신뢰 0 인원과 누적 고발 기준을 C6 selector에서 공통 상태 바로 전달하는 화면 계약
 - [상단 상태 바 신뢰 0 인원 표시 구현 계획](superpowers/plans/2026-08-26-lattebun-top-status-zero-trust-count.md): 필수 View 계약, 프리뷰 원본 구분, 읽기 전용 칩과 최대 7개 레이아웃 검증의 테스트 우선 실행 순서
 - [의심 인원 상태 칩과 경고 팝업 설계](superpowers/specs/2026-08-26-lattebun-suspicion-status-dialog-design.md): 누적 고발 위험을 설명하는 상단 상태 바 팝업 계약
