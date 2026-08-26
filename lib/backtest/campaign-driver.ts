@@ -156,11 +156,22 @@ export interface CampaignRunFailure {
 
 export type CampaignRun = CampaignRunSuccess | CampaignRunFailure;
 
+/** 테스트가 전이 직후의 확정 결과와 backtest 관측값을 대조하는 데만 쓴다. */
+export interface CampaignTransitionObservation {
+  readonly actionType: CampaignTransition["type"];
+  readonly expeditionId: string | null;
+  readonly pendingOutcome: null | {
+    readonly eventKind: string;
+    readonly battle: BattleResolution | null;
+  };
+}
+
 export interface CampaignRunOptions {
   readonly seed: string;
   readonly strategy: StrategyPolicy;
   readonly accuracy: Accuracy;
   readonly stepLimit?: number;
+  readonly onTransition?: (transition: CampaignTransitionObservation) => void;
 }
 
 type MutableExpeditionBalanceTrace = {
@@ -577,6 +588,18 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
     trace.actionTypes.push(action.type);
     const after = store.getState();
     if (after.rejected !== null) fail("rejected-transition", `${after.rejected.type}: ${after.rejected.reason}`);
+    const afterActive = after.context.activeExpedition;
+    const pendingOutcome = afterActive?.pendingOutcome ?? null;
+    options.onTransition?.({
+      actionType: action.type,
+      expeditionId: afterActive?.expeditionId ?? null,
+      pendingOutcome: pendingOutcome === null
+        ? null
+        : {
+          eventKind: pendingOutcome.event.kind,
+          battle: pendingOutcome.battle,
+        },
+    });
     const merchantDelta = merchantTraceDeltaFor(action, before, after);
     trace.merchantGoldSpent += merchantDelta.goldSpent;
     trace.merchantEffectsConsumed += merchantDelta.effectsConsumed;

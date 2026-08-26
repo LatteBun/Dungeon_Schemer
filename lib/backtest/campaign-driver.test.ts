@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createStrategy } from "./strategies";
-import { merchantTraceDeltaFor, runCampaign } from "./campaign-driver";
+import { merchantTraceDeltaFor, runCampaign, type CampaignTransitionObservation } from "./campaign-driver";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import type { Accuracy } from "./public-state";
 
@@ -70,6 +70,39 @@ describe("백테스트 캠페인 driver", () => {
     }))).toBe(true);
     const keys = battles.map((entry) => `${entry.kind}\u0000${entry.expeditionId}\u0000${JSON.stringify(entry.battle)}`);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("조언 직후 일반전·회피·비전투 사실과 전투 trace를 직접 대조한다", () => {
+    const transitions: CampaignTransitionObservation[] = [];
+    const result = runCampaign({
+      seed: "driver-battle-trace",
+      strategy: createStrategy("survival"),
+      accuracy: 0.7,
+      onTransition: (transition) => transitions.push(transition),
+    });
+    if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
+
+    const adviceTransitions = transitions.filter((transition) => transition.actionType === "CHOOSE_ADVICE");
+    const foughtMonsterTransitions = adviceTransitions.filter((transition) =>
+      transition.pendingOutcome?.eventKind === "monster" && transition.pendingOutcome.battle !== null,
+    );
+    const avoidedMonsterTransitions = adviceTransitions.filter((transition) =>
+      transition.pendingOutcome?.eventKind === "monster" && transition.pendingOutcome.battle === null,
+    );
+    const nonCombatTransitions = adviceTransitions.filter((transition) =>
+      transition.pendingOutcome !== null && transition.pendingOutcome.eventKind !== "monster",
+    );
+
+    expect(foughtMonsterTransitions.length).toBeGreaterThan(0);
+    expect(avoidedMonsterTransitions.length).toBeGreaterThan(0);
+    expect(nonCombatTransitions.length).toBeGreaterThan(0);
+
+    const generalBattleKeys = result.trace.battles
+      .filter((entry) => entry.kind === "general")
+      .map((entry) => `${entry.expeditionId}\u0000${JSON.stringify(entry.battle)}`);
+    const foughtMonsterKeys = foughtMonsterTransitions
+      .map((transition) => `${transition.expeditionId}\u0000${JSON.stringify(transition.pendingOutcome!.battle)}`);
+    expect(generalBattleKeys).toEqual(foughtMonsterKeys);
   });
 
   it("실제 Store 전이에서 원정과 월드턴 손실 원장을 기록한다", () => {
