@@ -5,7 +5,7 @@
 - 작성자: LatteBun
 - 작성 도구: Codex + Superpowers Brainstorming
 - 작성일: 2026-08-26
-- 대상: PR #195 공통 상단 상태 바
+- 대상: PR #195 병합 후 공통 상단 상태 바를 확장하는 별도 PR
 
 ## 목표
 
