@@ -102,6 +102,8 @@
 
 ## 이번 개편 설계
 
+- [U2 게임 가이드 재설계](superpowers/specs/2026-08-26-lattebun-u2-game-guide-redesign-design.md)
+- [U2 게임 가이드 재설계 구현 계획](superpowers/plans/2026-08-26-lattebun-u2-game-guide-redesign.md)
 - [E1 지도 경로 교차 0 보장 설계](superpowers/specs/2026-08-26-lattebun-e1-zero-crossing-map-design.md): 선택 간선을 exact minimum crossing 0 조건으로 필터하고 U4 표시에서 기하 교차를 검증하는 생성·렌더링 계약
 - [E1 지도 경로 교차 0 보장 구현 계획](superpowers/plans/2026-08-26-lattebun-e1-zero-crossing-map.md): 공용 solver, E1 진단, U4 fallback과 20×5×3 회귀·통합 검증 순서
 - [U4 거미굴 양피지 지도 배경 설계](superpowers/specs/2026-08-26-lattebun-u4-spider-parchment-map-background-design.md): 거미굴 U4의 전용 양피지 배경, 레이어와 슬롯 비율 계약
