@@ -42,7 +42,8 @@
 
 .main-menu-screen__action {
   display: grid;
-  min-height: max(44px, 7.2cqh);
+  height: 7.2cqh;
+  min-height: 0;
   padding: 0.3rem 0.75rem;
   place-items: center;
   cursor: pointer;
