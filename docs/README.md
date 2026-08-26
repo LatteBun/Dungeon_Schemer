@@ -114,6 +114,7 @@
 - [의심 인원 상태 칩 팝업 구현 계획](superpowers/plans/2026-08-26-lattebun-suspicion-status-dialog.md): 상태 칩 상호작용과 접근성 회귀 구현 순서
 - [남은 용사 상태 칩 설계](superpowers/specs/2026-08-26-lattebun-remaining-adventurers-status-design.md): 응급 편성 가능 인원과 인력 소진 안내 팝오버 계약
 - [남은 용사 상태 칩 구현 계획](superpowers/plans/2026-08-26-lattebun-remaining-adventurers-status.md): selector, View, 공용 팝오버와 최대 8칩 회귀의 테스트 우선 실행 순서
+- [상단 상태 정보 팝오버 레이어 수정 설계](superpowers/specs/2026-08-26-lattebun-status-info-popover-layering-design.md): 의심 인원·남은 용사 팝오버를 화면 콘텐츠 위, 전역 퀵 메뉴 아래에 두는 공통 레이어 계약
 - [전역 오디오·퀵 메뉴 설계](superpowers/specs/2026-08-26-sbh3821-global-audio-menu-design.md): 기본 OFF인 공통 BGM·UI 효과음, 세션 전투 속도, 전역 퀵 메뉴와 캠페인을 보존하는 업적 오버레이의 앱 공통 계약
 - [전역 오디오·퀵 메뉴 구현 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu.md): 설정 저장·결정적 WAV 생성·전역 재생기·업적 오버레이·브라우저 회귀를 순차 구현하는 테스트 우선 계획
 - [전역 오디오·퀵 메뉴 후속 개선 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu-follow-up.md): 세션 전투 속도 공유, 세로 점 메뉴 재구성, 승인된 `어두운 길드의 밤 1B` BGM과 낮춘 조작음 믹스를 적용하는 테스트 우선 계획

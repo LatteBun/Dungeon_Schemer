@@ -56,7 +56,7 @@ interface TopStatusView {
 
 `statusFor`는 `remainingAdventurers`에 `countEmergencyEligibleAdventurers(campaign)` 결과를 넣는다. 이 selector는 중상자를 포함하고 사망자·신뢰 0을 제외한 표시 인원을 센다. 반면 `canCreateEmergencyParty(pool)`는 서로 다른 직업 3종의 응급 편성이 가능한지를 판단해 인력 소진 종료 판정에 쓴다. 두 규칙의 목적이 표시와 종료 판정으로 다르므로 UI는 어느 조건도 재구현하지 않는다.
 
-표시 레이블은 `의심 인원`, `남은 용사`, `남은 던전` 순서다. 두 정보 칩의 팝오버는 이 View 값을 다시 계산하지 않고 고정 설명만 제공하며, 공용 앵커의 비모달 `role="dialog"`로 열려 바깥 클릭·`Escape`·`닫기`로 닫힌다.
+표시 레이블은 `의심 인원`, `남은 용사`, `남은 던전` 순서다. 두 정보 칩의 팝오버는 이 View 값을 다시 계산하지 않고 고정 설명만 제공하며, 공용 앵커의 비모달 `role="dialog"`로 열려 바깥 클릭·`Escape`·`닫기`로 닫힌다. 공통 상태 바의 스태킹 컨텍스트가 화면 콘텐츠보다 위, 전역 퀵 메뉴보다 아래인 레이어를 소유하며 화면 어댑터는 팝오버 레이어를 재정의하지 않는다.
 
 ## U5 던전 진행 ← E3
 
