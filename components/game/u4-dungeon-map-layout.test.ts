@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GeneratedMap, NodeId } from "@/lib/domain";
-import { createU4DungeonMapLayout, roomVariationFor } from "./u4-dungeon-map-layout";
+import { countU4GeometricCrossings, createU4DungeonMapLayout, roomVariationFor } from "./u4-dungeon-map-layout";
 import {
   countU4LayerCrossings,
   createU4OptimizedLayerOrder,
@@ -152,6 +152,11 @@ describe("U4 dungeon map layout", () => {
 
     expect(actualEdges).toHaveLength(expectedEdges.length);
     expect([...actualEdges].sort()).toEqual([...expectedEdges].sort());
+  });
+
+  it("has no geometric corridor crossings", () => {
+    const layout = createU4DungeonMapLayout(MAP);
+    expect(countU4GeometricCrossings(layout.corridors)).toBe(0);
   });
 
   it("calculates finite corridor geometry in normalized coordinates", () => {

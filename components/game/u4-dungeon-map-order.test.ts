@@ -4,6 +4,8 @@ import {
   countU4LayerCrossings,
   createU4OptimizedLayerOrder,
 } from "./u4-dungeon-map-order";
+import type { U4CorridorLayout } from "./u4-dungeon-map-layout";
+import { countU4GeometricCrossings } from "./u4-dungeon-map-layout";
 
 const id = (value: string) => value as NodeId;
 const ENTRY = id("entry");
@@ -59,5 +61,40 @@ describe("U4 global layer ordering", () => {
       [C, D].sort(),
       [BOSS],
     ]);
+  });
+});
+
+const corridor = (from: string, to: string, start: [number, number], end: [number, number]): U4CorridorLayout => ({
+  from: id(from),
+  to: id(to),
+  start: { x: start[0], y: start[1] },
+  end: { x: end[0], y: end[1] },
+  length: 1,
+  angleDeg: 0,
+});
+
+describe("U4 geometric corridor crossings", () => {
+  it("counts proper intersections, endpoint touches, and collinear overlaps", () => {
+    expect(countU4GeometricCrossings([
+      corridor("a", "b", [0, 0], [1, 1]),
+      corridor("c", "d", [0, 1], [1, 0]),
+    ])).toBe(1);
+    expect(countU4GeometricCrossings([
+      corridor("a", "b", [0, 0], [1, 0]),
+      corridor("c", "d", [1, 0], [2, 1]),
+    ])).toBe(1);
+    expect(countU4GeometricCrossings([
+      corridor("a", "b", [0, 0], [2, 0]),
+      corridor("c", "d", [1, 0], [3, 0]),
+    ])).toBe(1);
+  });
+
+  it("skips corridors sharing an endpoint NodeId", () => {
+    expect(countU4GeometricCrossings([
+      corridor("a", "b", [0, 0], [1, 1]),
+      corridor("b", "c", [1, 1], [1, 0]),
+      corridor("a", "d", [0, 0], [0, 1]),
+      corridor("a", "e", [0, 0], [-1, 0]),
+    ])).toBe(0);
   });
 });

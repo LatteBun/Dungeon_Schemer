@@ -20,6 +20,16 @@ export interface U4MapLayout {
   corridors: readonly U4CorridorLayout[];
 }
 
+export class U4MapLayoutError extends Error {
+  readonly geometricCrossingCount: number;
+
+  constructor(geometricCrossingCount: number) {
+    super(`U4 지도 통로 교차를 제거하지 못했습니다: ${geometricCrossingCount}`);
+    this.name = "U4MapLayoutError";
+    this.geometricCrossingCount = geometricCrossingCount;
+  }
+}
+
 const HORIZONTAL_MIN = 0.1;
 const HORIZONTAL_MAX = 0.9;
 const MAP_TOP = 0.12;
@@ -140,17 +150,20 @@ function requirePosition(
   return point;
 }
 
-export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
+function buildLayout(
+  map: GeneratedMap,
+  rows: readonly (readonly NodeId[])[],
+  wobbled: boolean,
+): U4MapLayout {
   const positions: Partial<Record<NodeId, U4Point>> = {
     [map.entryNodeId]: ENTRY_POSITION,
     [map.bossNodeId]: BOSS_POSITION,
   };
-  const optimized = createU4OptimizedLayerOrder(map);
 
   map.layers.forEach((layer, layerIndex) => {
-    const orderedNodeIds = optimized.rows[layerIndex + 1]!;
+    const orderedNodeIds = rows[layerIndex + 1]!;
     /* 층마다 조금씩 옆으로 민다. 층과 층이 같은 자리에 서면 다시 격자가 된다. */
-    const shift = wobble(layer.nodeIds[0] ?? map.entryNodeId, 6) * 0.07;
+    const shift = wobbled ? wobble(layer.nodeIds[0] ?? map.entryNodeId, 6) * 0.07 : 0;
     const xs = xPositions(layer.nodeIds.length, spreadFor(layer.nodeIds.length), shift);
     const y = depthY(layerIndex, map.layers.length);
     const xGap = layer.nodeIds.length > 1
@@ -160,11 +173,11 @@ export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
 
     orderedNodeIds.forEach((nodeId, nodeIndex) => {
       const x = clampTo(
-        xs[nodeIndex]! + wobble(nodeId, 1) * xGap * X_WOBBLE,
+        xs[nodeIndex]! + (wobbled ? wobble(nodeId, 1) * xGap * X_WOBBLE : 0),
         HORIZONTAL_MIN,
         HORIZONTAL_MAX,
       );
-      positions[nodeId] = renderPoint(x, y + wobble(nodeId, 2) * yGap * Y_WOBBLE);
+      positions[nodeId] = renderPoint(x, y + (wobbled ? wobble(nodeId, 2) * yGap * Y_WOBBLE : 0));
     });
   });
 
@@ -190,4 +203,61 @@ export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
     nodePositions: positions,
     corridors,
   };
+}
+
+interface GeometryPoint { x: number; y: number }
+
+function orientation(a: GeometryPoint, b: GeometryPoint, c: GeometryPoint): number {
+  const value = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  return Math.sign(value);
+}
+
+function onSegment(a: GeometryPoint, b: GeometryPoint, p: GeometryPoint): boolean {
+  return p.x >= Math.min(a.x, b.x) && p.x <= Math.max(a.x, b.x) &&
+    p.y >= Math.min(a.y, b.y) && p.y <= Math.max(a.y, b.y);
+}
+
+function normalizePoint(point: U4Point): GeometryPoint {
+  return { x: Math.round(point.x * 10_000), y: Math.round(point.y * 10_000) };
+}
+
+function segmentsIntersect(a: U4CorridorLayout, b: U4CorridorLayout): boolean {
+  const p1 = normalizePoint(a.start);
+  const p2 = normalizePoint(a.end);
+  const p3 = normalizePoint(b.start);
+  const p4 = normalizePoint(b.end);
+  const o1 = orientation(p1, p2, p3);
+  const o2 = orientation(p1, p2, p4);
+  const o3 = orientation(p3, p4, p1);
+  const o4 = orientation(p3, p4, p2);
+  if (o1 !== o2 && o3 !== o4) return true;
+  return (o1 === 0 && onSegment(p1, p2, p3)) ||
+    (o2 === 0 && onSegment(p1, p2, p4)) ||
+    (o3 === 0 && onSegment(p3, p4, p1)) ||
+    (o4 === 0 && onSegment(p3, p4, p2));
+}
+
+export function countU4GeometricCrossings(
+  corridors: readonly U4CorridorLayout[],
+): number {
+  let count = 0;
+  for (let left = 0; left < corridors.length; left += 1) {
+    for (let right = left + 1; right < corridors.length; right += 1) {
+      const a = corridors[left]!;
+      const b = corridors[right]!;
+      if (a.from === b.from || a.from === b.to || a.to === b.from || a.to === b.to) continue;
+      if (segmentsIntersect(a, b)) count += 1;
+    }
+  }
+  return count;
+}
+
+export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
+  const optimized = createU4OptimizedLayerOrder(map);
+  const wobbled = buildLayout(map, optimized.rows, true);
+  if (countU4GeometricCrossings(wobbled.corridors) === 0) return wobbled;
+  const flatDepths = buildLayout(map, optimized.rows, false);
+  const geometricCrossingCount = countU4GeometricCrossings(flatDepths.corridors);
+  if (geometricCrossingCount !== 0) throw new U4MapLayoutError(geometricCrossingCount);
+  return flatDepths;
 }
