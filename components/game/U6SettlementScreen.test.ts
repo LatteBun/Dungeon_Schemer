@@ -114,7 +114,7 @@ describe("U6SettlementScreen", () => {
       trustPressure: {
         beforeCount: 1,
         afterCount: 1,
-        threshold: 5,
+        threshold: DENOUNCE_THRESHOLD,
         acceptModifier: 0,
         exposeModifier: 0,
         reachedThreshold: false,
@@ -124,7 +124,7 @@ describe("U6SettlementScreen", () => {
     expect(html).toContain("신뢰 0");
     expect(html).toContain("정체 발각");
     expect(html).toContain("원정 출전 불가");
-    expect(html).toContain("1 / 5");
+    expect(html).toContain(`1 / ${DENOUNCE_THRESHOLD}`);
   });
 
   it("신뢰 0 누적이 늘면 전후 인원을 함께 보여준다", () => {
@@ -132,14 +132,14 @@ describe("U6SettlementScreen", () => {
       trustPressure: {
         beforeCount: 1,
         afterCount: 2,
-        threshold: 5,
+        threshold: DENOUNCE_THRESHOLD,
         acceptModifier: -5,
         exposeModifier: 0,
         reachedThreshold: false,
       },
     });
 
-    expect(html).toContain("1 → 2 / 5");
+    expect(html).toContain(`1 → 2 / ${DENOUNCE_THRESHOLD}`);
     expect(html).toContain("조언 수용 -5");
   });
 
@@ -159,14 +159,14 @@ describe("U6SettlementScreen", () => {
       trustPressure: {
         beforeCount: 1,
         afterCount: 0,
-        threshold: 5,
+        threshold: DENOUNCE_THRESHOLD,
         acceptModifier: 0,
         exposeModifier: 0,
         reachedThreshold: false,
       },
     });
 
-    expect(html).toContain("1 → 0 / 5");
+    expect(html).toContain(`1 → 0 / ${DENOUNCE_THRESHOLD}`);
     expect(html).toContain("살아 있는 신뢰 0 인물이 없어 누적 불이익이 해제됐다");
   });
 
