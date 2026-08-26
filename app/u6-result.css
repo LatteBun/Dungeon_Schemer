@@ -774,6 +774,9 @@
   box-shadow: inset 0 0 0 2px rgb(0 0 0 / 45%), 0 0.3rem 0.9rem rgb(0 0 0 / 60%);
   color: #e7f0d8;
   cursor: pointer;
+
+  /* 이제 링크라서 밑줄이 기본으로 붙는다. 판 위의 글자에는 어울리지 않는다. */
+  text-decoration: none;
 }
 
 .u6-ending-cta strong {
