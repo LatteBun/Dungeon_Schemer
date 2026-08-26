@@ -6,6 +6,10 @@ export interface TopStatusView {
   gold: number;
   canPromote: boolean;
   remainingDungeons: number;
+  zeroTrust: {
+    livingCount: number;
+    threshold: number;
+  };
   nextPromotion?: {
     rank: string;
     reputationRequired: number;

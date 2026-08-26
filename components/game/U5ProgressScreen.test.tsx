@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { allSituationEvents } from "@/lib/content/event-registry";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { U5ProgressScreen, u5SettledPartyResult } from "./U5ProgressScreen";
 import { createU5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
@@ -20,6 +21,7 @@ const status: TopStatusView = {
   gold: 186,
   canPromote: false,
   remainingDungeons: 11,
+  zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
 };
 
 const log: readonly U5LogEntry[] = [

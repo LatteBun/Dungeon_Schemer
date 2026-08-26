@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { TopStatusBar } from "./TopStatusBar";
 
 const baseStatus = {
@@ -9,6 +10,7 @@ const baseStatus = {
   gold: 10,
   canPromote: false,
   remainingDungeons: 15,
+  zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
 };
 
 describe("TopStatusBar U2/U3", () => {

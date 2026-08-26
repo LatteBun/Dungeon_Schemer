@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import type { U6SettlementMember, U6SettlementView } from "./u6-settlement-model";
 import type { TopStatusView } from "./TopStatusBar";
@@ -11,6 +12,7 @@ const status: TopStatusView = {
   gold: 186,
   canPromote: true,
   remainingDungeons: 11,
+  zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
 };
 
 const FUTURE_WIPE_COPY = "이 던전을 다시 " + "맡으면";
