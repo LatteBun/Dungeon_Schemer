@@ -196,6 +196,36 @@ Vitest의 `*.test.ts(x)`는 Node 환경의 규칙·Store·문서 회귀를 소�
 현재 자동 범위는 Chromium 로컬 실행이다. GitHub Actions, Firefox·WebKit, 픽셀 골든
 스크린샷은 별도 승인 뒤 추가한다.
 
+Playwright는 하나의 Next 개발 서버와 오디오 재생 인스턴스를 공유하므로 워커를
+1개로 고정한다. route 컴파일/HMR이 겹쳐 문서가 통째로 reload되는 테스트 환경
+경합을 막고, route 전환에도 BGM 위치가 유지된다는 계약을 실제 앱 동작과 같은
+조건에서 검증하기 위해서다.
+
+## 오디오 자산 생성과 검증
+
+공통 BGM과 UI 효과음은 외부 CDN이 아니라 저장소의 PCM WAV를 사용한다.
+`pnpm audio:generate`는 고정 seed와 Node.js 표준 모듈만으로 아래 세 파일을
+결정적으로 다시 만든다.
+
+- `public/assets/audio/dungeon-schemer-guild-loop.wav`
+- `public/assets/audio/ui-select.wav`
+- `public/assets/audio/ui-menu.wav`
+
+생성 뒤 `pnpm exec vitest run lib/audio/audio-assets.test.ts`로 RIFF/WAVE header,
+길이, channel, sample rate, peak, DC offset, loop seam과 끝단 감쇠를 검증한다.
+브라우저 흐름은 `pnpm exec playwright test e2e/audio-menu.spec.ts`로 확인한다.
+런타임은 세 파일을 읽기만 하며 음원을 생성하거나 외부 네트워크에서 내려받지 않는다.
+
+BGM은 로컬 WAV를 최초 1회 fetch·decode한 뒤 `AudioBufferSourceNode.loop`로
+sample-accurate 반복한다. `HTMLAudioElement.loop`는 브라우저에 따라 경계에서 짧은
+재시작 공백이 생길 수 있으므로 BGM에는 사용하지 않는다. UI 효과음은 짧은 단발성
+재생이므로 기존 `HTMLAudioElement` 방식을 유지한다.
+
+세 파일은 44,100Hz signed PCM16으로 생성한다. BGM은 승인된 `어두운 길드의 밤
+1B`의 음색을 64초 seamless loop로 확장하고, UI 효과음의 애플리케이션 재생
+음량은 `0.28`로 고정한다. 미리듣기 파일은 최종 자산이 아니므로 `public`에 함께
+배포하지 않는다.
+
 ## 난수와 재현성
 
 같은 시드로 같은 판을 다시 만들 수 있어야 한다. 버그를 재현하고 밸런스를 비교하려면 이 성질이 필요하다.
@@ -265,11 +295,16 @@ Next.js App Router에서는 모듈 전역 singleton 스토어를 만들지 않�
 서버에 영속화하지 않는다. 캠페인 이어하기를 위한 `persist`, `localStorage`,
 Supabase 저장·복원은 별도 설계가 승인될 때 도입한다.
 
-허용된 브라우저 영속 상태는 캠페인과 분리된 V1 업적 프로필 하나뿐이다. 기본 키는
-`dungeon-schemer.player-progress.v1`이며, 엔딩에서 확정한 결과와 누적 업적만
-보관한다. 손상된 원문을 교체하기 전에는
+허용된 브라우저 영속 상태는 캠페인과 분리된 V1 업적 프로필과 V1 오디오 설정이다.
+업적 기본 키는 `dungeon-schemer.player-progress.v1`이며, 엔딩에서 확정한 결과와
+누적 업적만 보관한다. 손상된 원문을 교체하기 전에는
 `dungeon-schemer.player-progress.corrupt-backup`에 한 번 보조 백업할 수 있다.
-로그인·서버 동기화·캠페인 진행 복원에는 두 키를 사용하지 않는다.
+로그인·서버 동기화·캠페인 진행 복원에는 이 업적 키들을 사용하지 않는다.
+
+오디오 키 `dungeon-schemer.audio-settings.v1`은 BGM·효과음 ON/OFF만 저장한다.
+최초값은 모두 OFF이고, 업적 초기화와 서로 영향을 주지 않는다. 구조 오류는 OFF로
+복구하고 미래 버전은 덮어쓰지 않으며, 저장소 접근 실패는 탭 메모리 fallback으로
+처리한다.
 
 `/state-preview`는 Run/UI Store와 파티 생성을 확인하는 공개 기술 검증 라우트다. 홈과 실제 게임 흐름에는 연결하지 않지만 development 환경과 Vercel production에서 접근할 수 있다. seed를 입력하면 같은 파티를 재현할 수 있으며, 고정 던전 fixture만 함께 표시한다. 이 라우트는 사용자 데이터·비밀 값·인증·영속화를 사용하지 않고, 배포 환경에서도 `Development only` 안내를 유지한다.
 

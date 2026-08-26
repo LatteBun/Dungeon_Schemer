@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { CampaignTransition, Character, NodeId } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, type CampaignTransition, type Character, type NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { countLivingZeroTrust } from "@/lib/rules/ending";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
@@ -13,6 +13,7 @@ import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
+import { AppBattlePlaybackRateProvider } from "./AppBattlePlaybackRateProvider";
 import { CampaignScreen } from "./CampaignScreen";
 import { CampaignStoreProvider } from "./CampaignStoreProvider";
 import { PlayerProgressProvider } from "./PlayerProgressProvider";
@@ -292,13 +293,16 @@ describe("정산이 실제 결과로 그려진다", () => {
     const dungeon = campaign.dungeons.find((one) => one.id === settlement.dungeonId);
 
     const view = createU6SettlementView(campaign, settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider");
+    const status = statusFor(campaign, null);
     const markup = renderToStaticMarkup(createElement(U6SettlementScreen, {
-      status: statusFor(campaign, null),
+      status,
       settlement: view,
       onContinue: noop,
     }));
 
     assertClean(markup, "정산");
+    expect(status.zeroTrust.livingCount).toBe(countLivingZeroTrust(campaign));
+    expect(status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
     expect(view.trustPressure?.afterCount ?? 0).toBe(countLivingZeroTrust(campaign));
     expect(markup).toContain(settlement.causeInputs.choice);
     expect(markup).toContain(settlement.causeInputs.reactions);
@@ -390,10 +394,14 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
     const markup = renderToStaticMarkup(createElement(
       PlayerProgressProvider,
       null,
-      createElement(CampaignStoreProvider as never, {
-        seed: "render-monster-outcome",
-        store,
-      }, createElement(CampaignScreen)),
+      createElement(
+        AppBattlePlaybackRateProvider,
+        null,
+        createElement(CampaignStoreProvider as never, {
+          seed: "render-monster-outcome",
+          store,
+        }, createElement(CampaignScreen)),
+      ),
     ));
 
     expect(markup).toContain("u5-feedback-beat");
@@ -430,10 +438,14 @@ describe("결과 화면이 실제 판정으로 그려진다", () => {
     const markup = renderToStaticMarkup(createElement(
       PlayerProgressProvider,
       null,
-      createElement(CampaignStoreProvider as never, {
-        seed: "render-wipe-outcome",
-        store,
-      }, createElement(CampaignScreen)),
+      createElement(
+        AppBattlePlaybackRateProvider,
+        null,
+        createElement(CampaignStoreProvider as never, {
+          seed: "render-wipe-outcome",
+          store,
+        }, createElement(CampaignScreen)),
+      ),
     ));
 
     expect(markup).toContain("u5-feedback-beat");
@@ -621,10 +633,14 @@ describe("보스전도 같은 화면에서 본다", () => {
     const markup = renderToStaticMarkup(createElement(
       PlayerProgressProvider,
       null,
-      createElement(CampaignStoreProvider as never, {
-        seed: "render-boss-outcome",
-        store,
-      }, createElement(CampaignScreen)),
+      createElement(
+        AppBattlePlaybackRateProvider,
+        null,
+        createElement(CampaignStoreProvider as never, {
+          seed: "render-boss-outcome",
+          store,
+        }, createElement(CampaignScreen)),
+      ),
     ));
 
     assertClean(markup, "보스전 화면");

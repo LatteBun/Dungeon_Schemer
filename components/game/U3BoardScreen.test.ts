@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { CharacterId } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, type CharacterId } from "@/lib/domain";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U3BoardView, U3OfferDetailView } from "./u3-board-model";
 import type { U3PromotionView } from "./u3-promotion-model";
@@ -13,6 +13,7 @@ const status: TopStatusView = {
   gold: 10,
   canPromote: false,
   remainingDungeons: 15,
+  zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
   nextPromotion: { rank: "B", reputationRequired: 60 },
 };
 

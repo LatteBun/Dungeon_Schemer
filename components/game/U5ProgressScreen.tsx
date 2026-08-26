@@ -202,7 +202,12 @@ function LogPanel({ log, ecology, filter, onFilter }: {
       </nav>
 
       {filter === "ecology" ? (
-        <div className="u5-ecology" data-testid="u5-ecology">
+        <div
+          className="u5-ecology"
+          data-testid="u5-ecology"
+          tabIndex={0}
+          aria-label="확인된 생태와 관찰 단서"
+        >
           <section aria-labelledby="u5-ecology-rules">
             <h4 id="u5-ecology-rules">확인된 생태</h4>
             <ul>
@@ -217,7 +222,7 @@ function LogPanel({ log, ecology, filter, onFilter }: {
           </section>
         </div>
       ) : (
-        <ol className="u5-log__entries">
+        <ol className="u5-log__entries" tabIndex={0} aria-label="진행 기록 목록">
           {filterLog(log, filter).map((entry) => (
             <li key={entry.order}>
               <span className="u5-log__order">{entry.order}</span>

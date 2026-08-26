@@ -1,5 +1,5 @@
 import type { ActiveExpeditionContext, CampaignState, MemberReaction } from "@/lib/domain";
-import { inSeatOrder } from "./party-seat-order";
+import { inFormationOrder } from "./party-formation-order";
 import type { U5CombatFeedbackView, U5FeedbackLine, U5FeedbackValueChange } from "./u5-combat-feedback";
 
 type PreReaction = MemberReaction["reaction"];
@@ -45,8 +45,12 @@ export function selectU5FeedbackMember(
   })[0];
 }
 
+/*
+ * 같은 폭으로 변한 사람이 둘이면 화면에서 앞선 쪽을 고른다. 화면이 쓰는 차례와
+ * 같아야 「저 사람 얘기구나」가 맞는다.
+ */
 function seatOrder(campaign: CampaignState, active: ActiveExpeditionContext): readonly string[] {
-  return inSeatOrder(campaign.seed, active.partyMembers, (member) => String(member.id)).map((member) => String(member.id));
+  return inFormationOrder(active.partyMembers, (member) => String(member.classId)).map((member) => String(member.id));
 }
 
 function nameOf(active: ActiveExpeditionContext, memberId: string): string {

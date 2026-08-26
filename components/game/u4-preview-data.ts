@@ -1,4 +1,6 @@
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
+import { countLivingZeroTrust } from "@/lib/rules/ending";
 import { executeGuidePromotion, getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createBoardOffers } from "@/lib/rules/board";
 import { createBattleAbilityUsesForParty } from "@/lib/rules/battle-ability-state";
@@ -167,6 +169,10 @@ export function createU4PreviewData(input: {
     remainingDungeons: campaign.dungeons.filter(
       (candidate) => candidate.status !== "cleared",
     ).length,
+    zeroTrust: {
+      livingCount: countLivingZeroTrust(campaign),
+      threshold: DENOUNCE_THRESHOLD,
+    },
     /* 요구 명성은 `C5` 가 안다. 전에는 120 이 화면에 복사돼 있었다. */
     ...(eligibility === null ? {} : {
       nextPromotion: { rank: eligibility.toRank, reputationRequired: eligibility.reputationRequired },

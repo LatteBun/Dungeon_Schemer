@@ -11,6 +11,7 @@ import type {
   U5BattleReplayParticipant,
 } from "./u5-battle-replay";
 import type { U5BattlePlaybackRate } from "./use-u5-battle-playback";
+import { inFormationOrder } from "./party-formation-order";
 
 export interface U5BattleSceneProps {
   readonly replay: U5BattleReplay;
@@ -356,7 +357,17 @@ export function U5BattleScene({
 }: U5BattleSceneProps) {
   const reducedMotion = useReducedMotion() ?? false;
 
-  const party = replay.participants.filter((participant) => participant.side === "party");
+  /*
+   * 대열은 카드·입장 장면과 같은 차례로 세운다.
+   *
+   * `replay.participants` 는 규칙 배열 차례로 온다. 그것을 그대로 그리면 같은
+   * 파티가 입장할 때와 싸울 때 다르게 늘어선다. 여기서 바꾸는 것은 그리는
+   * 차례뿐이라 전투 결과와 무관하다 — 행동 차례와 표적은 규칙 쪽 배열이 정한다.
+   */
+  const party = inFormationOrder(
+    replay.participants.filter((participant) => participant.side === "party"),
+    (participant) => participant.classId ?? "",
+  );
   const enemies = replay.participants.filter((participant) => participant.side === "enemy");
   const complete = frame.phase === "complete";
   const healActor = frame.actionKind === "heal" ? participantById(replay, frame.actorId) : undefined;

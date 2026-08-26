@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ENDING_ORDER } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, ENDING_ORDER } from "@/lib/domain";
 import { U6_PREVIEW_ENTRIES, U6_PREVIEW_IDS, U6_PREVIEW_SOURCE } from "./u6-preview-data";
 
 const FUTURE_REWARD_PROPERTY = "next" + "Reward";
@@ -12,6 +12,14 @@ describe("U6 프리뷰 데이터", () => {
     expect(U6_PREVIEW_SOURCE.battleAbilityUsesRemainingByCharacterId).toEqual({
       [clerics[0]!.id]: 2,
     });
+  });
+
+  it("모든 상태가 도메인의 누적 고발 기준과 유효한 현재 인원을 가진다", () => {
+    for (const entry of U6_PREVIEW_ENTRIES) {
+      expect(entry.status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
+      expect(Number.isInteger(entry.status.zeroTrust.livingCount)).toBe(true);
+      expect(entry.status.zeroTrust.livingCount).toBeGreaterThanOrEqual(0);
+    }
   });
 
   it("정산 3종과 엔딩 5종을 모두 담는다", () => {

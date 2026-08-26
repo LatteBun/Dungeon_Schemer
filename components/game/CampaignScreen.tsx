@@ -9,7 +9,7 @@ import { IntroScreen } from "./IntroScreen";
 import { U3BoardScreen } from "./U3BoardScreen";
 import { U4DungeonMapScreen } from "./U4DungeonMapScreen";
 import { U5ProgressScreen } from "./U5ProgressScreen";
-import { useU5BattlePlaybackRate } from "./use-u5-battle-playback";
+import { useAppBattlePlaybackRate } from "./AppBattlePlaybackRateProvider";
 import { U6EndingScreen } from "./U6EndingScreen";
 import { U6SettlementScreen } from "./U6SettlementScreen";
 import {
@@ -29,7 +29,7 @@ import { bossCombatFeedbackFor, eventCombatFeedbackFor } from "./u5-combat-feedb
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
 import { createU4MapNodeViews, createU4PartyMemberViews } from "./u4-dungeon-map-model";
-import { inSeatOrder } from "./party-seat-order";
+import { inFormationOrder } from "./party-formation-order";
 import { createU4DungeonMapLayout } from "./u4-dungeon-map-layout";
 import { createU6SettlementView } from "./u6-settlement-model";
 import { createU6EndingView } from "./u6-ending-adapter";
@@ -195,7 +195,7 @@ function ExpeditionScreens() {
   const context = useCampaignStore((state) => state.context);
   const dispatch = useCampaignStore((state) => state.dispatch);
   const [selected, setSelected] = useState<NodeId | null>(null);
-  const playbackRateControl = useU5BattlePlaybackRate();
+  const playbackRateControl = useAppBattlePlaybackRate();
 
   const active = context.activeExpedition!;
   const status = statusFor(campaign, active);
@@ -281,7 +281,7 @@ function ExpeditionScreens() {
       })}
       layout={createU4DungeonMapLayout(active.expedition.map)}
       party={createU4PartyMemberViews(
-        inSeatOrder(campaign.seed, active.partyMembers, (member) => String(member.id)),
+        inFormationOrder(active.partyMembers, (member) => String(member.classId)),
         active.expedition.battleAbilityUsesRemainingByCharacterId,
       )}
       survey={surveyViewFor(campaign, active)}

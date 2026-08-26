@@ -1,8 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { CharacterId, ClassId, NodeId, ThemeId } from "@/lib/domain";
-import { THEME_IDS } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, THEME_IDS, type CharacterId, type ClassId, type NodeId, type ThemeId } from "@/lib/domain";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U4MapLayout } from "./u4-dungeon-map-layout";
 import type { U4MapNodeView, U4PartyMemberView } from "./u4-dungeon-map-model";
@@ -28,6 +27,7 @@ const status: TopStatusView = {
   gold: 120,
   canPromote: false,
   remainingDungeons: 14,
+  zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
   nextPromotion: { rank: "B", reputationRequired: 60 },
   currentDungeon: { name: "고대 유적", riskLevel: 3 },
 };

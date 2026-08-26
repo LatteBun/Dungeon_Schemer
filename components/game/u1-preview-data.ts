@@ -1,3 +1,5 @@
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
+
 export const U1_PREVIEW_SCREEN_IDS = [
   "intro",
   "board",
@@ -170,5 +172,6 @@ export const U1_PREVIEW_STATUS = {
   gold: 186,
   canPromote: true,
   remainingDungeons: 11,
-  currentDungeon: { name: "거미굴 3번", riskLevel: 2 },
+  zeroTrust: { livingCount: 7, threshold: DENOUNCE_THRESHOLD },
+  currentDungeon: { name: "자카르의 불탄 우물", riskLevel: 5 },
 } as const;

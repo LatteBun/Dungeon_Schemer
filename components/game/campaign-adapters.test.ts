@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ClassId } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, type CampaignState, type Character, type ClassId } from "@/lib/domain";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
 import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
@@ -23,6 +23,25 @@ import { u5PartyViewsForBattleFrame } from "./u5-progress-model";
 
 const SEED = "i2-adapters";
 
+function withZeroTrust(
+  campaign: CampaignState,
+  livingCount: number,
+  deadCount = 0,
+): CampaignState {
+  const byId = { ...campaign.pool.byId } as Record<string, Character>;
+  for (const id of campaign.pool.order.slice(0, livingCount)) {
+    const member = byId[id];
+    if (member === undefined) throw new Error(`missing character ${id}`);
+    byId[id] = { ...member, trust: 0, alive: true, hp: Math.max(1, member.hp) };
+  }
+  for (const id of campaign.pool.order.slice(livingCount, livingCount + deadCount)) {
+    const member = byId[id];
+    if (member === undefined) throw new Error(`missing character ${id}`);
+    byId[id] = { ...member, trust: 0, alive: false, hp: 0 };
+  }
+  return { ...campaign, pool: { ...campaign.pool, byId } };
+}
+
 function inExpedition() {
   const store = createCampaignStore(SEED);
   store.getState().dispatch({ type: "OPEN_BOARD" });
@@ -42,6 +61,28 @@ function atEvent() {
 }
 
 describe("상태 바", () => {
+  it("초기 캠페인은 살아 있는 신뢰 0 인원과 도메인 기준을 함께 낸다", () => {
+    const campaign = createCampaignStore(SEED).getState().campaign;
+
+    expect(statusFor(campaign, null).zeroTrust).toEqual({
+      livingCount: 0,
+      threshold: DENOUNCE_THRESHOLD,
+    });
+  });
+
+  it("살아 있는 신뢰 0만 세고 사망자는 제외한다", () => {
+    const initial = createCampaignStore(SEED).getState().campaign;
+    const campaign = withZeroTrust(initial, 2, 1);
+
+    expect(statusFor(campaign, null).zeroTrust.livingCount).toBe(2);
+  });
+
+  it("기준을 넘은 실제 인원을 제한하지 않는다", () => {
+    const initial = createCampaignStore(SEED).getState().campaign;
+
+    expect(statusFor(withZeroTrust(initial, 7), null).zeroTrust.livingCount).toBe(7);
+  });
+
   it("캠페인에서 만든다", () => {
     const store = createCampaignStore(SEED);
     const status = statusFor(store.getState().campaign, null);

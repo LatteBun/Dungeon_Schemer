@@ -33,6 +33,7 @@ import { executeGuidePromotion, getGuidePromotionEligibility } from "@/lib/rules
 import { recordSettlementStatistics } from "@/lib/rules/campaign-statistics";
 import { settleExpedition } from "@/lib/rules/settlement";
 import type { TopStatusView } from "./TopStatusBar";
+import { statusFor } from "./campaign-adapters";
 import type { U6EndingView } from "./u6-ending-model";
 import { createU6EndingView } from "./u6-ending-adapter";
 import { ENDING_TITLE } from "./u6-ending-model";
@@ -331,17 +332,7 @@ const settlementCapped = settlementFor({
  * 명성 1000" 이라고 하는 일이 있었다. 한 화면이 자기 자신과 어긋났다.
  */
 function statusOf(campaign: CampaignState): TopStatusView {
-  const eligibility = getGuidePromotionEligibility(campaign);
-  return {
-    rank: campaign.rank,
-    reputation: campaign.reputation,
-    gold: campaign.gold,
-    canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
-    remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
-    ...(eligibility === null ? {} : {
-      nextPromotion: { rank: eligibility.toRank, reputationRequired: eligibility.reputationRequired },
-    }),
-  };
+  return statusFor(campaign, null);
 }
 
 /*

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useAppBattlePlaybackRate } from "./AppBattlePlaybackRateProvider";
 import { U5ProgressScreen } from "./U5ProgressScreen";
-import { useU5BattlePlaybackRate } from "./use-u5-battle-playback";
 import {
   U5_BATTLE_PREVIEW_ENTRIES,
   type U5BattlePreviewId,
@@ -10,7 +10,7 @@ import {
 
 export function U5BattlePreview() {
   const [selectedId, setSelectedId] = useState<U5BattlePreviewId>("e3-monster");
-  const playbackRateControl = useU5BattlePlaybackRate();
+  const playbackRateControl = useAppBattlePlaybackRate();
   const entry = U5_BATTLE_PREVIEW_ENTRIES.find((candidate) => candidate.id === selectedId)
     ?? U5_BATTLE_PREVIEW_ENTRIES[0];
 

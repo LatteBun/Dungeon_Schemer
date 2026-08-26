@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { GameShell } from "./GameShell";
 
 const status = {
@@ -9,6 +10,7 @@ const status = {
   gold: 186,
   canPromote: true,
   remainingDungeons: 11,
+  zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
   currentDungeon: { name: "거미굴 3번", riskLevel: 2 },
 };
 

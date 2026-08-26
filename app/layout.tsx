@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { AppAudioProvider } from "@/components/game/AppAudioProvider";
+import { AppBattlePlaybackRateProvider } from "@/components/game/AppBattlePlaybackRateProvider";
+import { AppFrame } from "@/components/game/AppFrame";
 import { PlayerProgressProvider } from "@/components/game/PlayerProgressProvider";
 import { ScreenFit } from "@/components/game/ScreenFit";
 import "./globals.css";
@@ -18,6 +21,7 @@ import "./u6-result.css";
 import "./u4-dungeon-map.css";
 import "./u4-dungeon-map-fixes.css";
 import "./achievements.css";
+import "./app-frame.css";
 import "./screen-fit.css";
 
 export const metadata: Metadata = {
@@ -53,7 +57,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="ko">
       <body className="min-h-screen bg-ink font-sans text-parchment antialiased">
         <div className="game-canvas">
-          <PlayerProgressProvider>{children}</PlayerProgressProvider>
+          <PlayerProgressProvider>
+            <AppAudioProvider>
+              <AppBattlePlaybackRateProvider>
+                <AppFrame>{children}</AppFrame>
+              </AppBattlePlaybackRateProvider>
+            </AppAudioProvider>
+          </PlayerProgressProvider>
         </div>
         {/* 캔버스 바깥이다. 세로에서는 캔버스가 읽을 수 없을 만큼 작아진다. */}
         <ScreenFit />

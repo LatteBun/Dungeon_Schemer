@@ -1,8 +1,9 @@
 import { CLASSES } from "@/lib/content/classes";
 import { eventsForTheme } from "@/lib/content/event-registry";
 import { SPIDER_THEME } from "@/lib/content/themes";
-import type { Character, InfoRecord, SituationEvent } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, type Character, type InfoRecord, type SituationEvent } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
+import { countLivingZeroTrust } from "@/lib/rules/ending";
 import type { BattleResolution } from "@/lib/rules/battle-engine";
 import { resolveBossBattle } from "@/lib/rules/boss-battle-adapter";
 import { presentShuffledAdvice, resolveBossInfoAdvice } from "@/lib/rules/advice-evaluation";
@@ -162,6 +163,10 @@ function basePreview() {
       gold: campaign.gold,
       canPromote: false,
       remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
+      zeroTrust: {
+        livingCount: countLivingZeroTrust(campaign),
+        threshold: DENOUNCE_THRESHOLD,
+      },
       currentDungeon: { name: bossDungeon.name, riskLevel: bossDungeon.riskLevel },
     } satisfies TopStatusView,
     progress: {

@@ -1,5 +1,6 @@
 import { CLASSES } from "@/lib/content/classes";
 import { THEMES } from "@/lib/content/themes";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import type {
   ActiveExpeditionContext,
   CampaignState,
@@ -12,11 +13,12 @@ import type {
   ThemeContent,
 } from "@/lib/domain";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
+import { countLivingZeroTrust } from "@/lib/rules/ending";
 import { presentShuffledAdvice } from "@/lib/rules/advice-evaluation";
 import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacterId } from "./character-labels";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
-import { inSeatOrder } from "./party-seat-order";
+import { inFormationOrder } from "./party-formation-order";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
@@ -27,7 +29,7 @@ import { partyMemberBattleAbilityStatus } from "./party-member-ability-view";
  * 스토어 상태에서 화면 View 를 만든다.
  *
  * 화면은 View 만 안다. 규칙 타입도 스토어도 모른다. 그 경계를 여기서 지킨다.
- * 규칙 계산은 하지 않는다 — 이미 계산된 것을 옮기기만 한다.
+ * 규칙을 재구현하지 않고 selector 결과를 View 로 옮긴다.
  */
 
 export function statusFor(campaign: CampaignState, active: ActiveExpeditionContext | null): TopStatusView {
@@ -41,6 +43,10 @@ export function statusFor(campaign: CampaignState, active: ActiveExpeditionConte
     gold: campaign.gold,
     canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
     remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
+    zeroTrust: {
+      livingCount: countLivingZeroTrust(campaign),
+      threshold: DENOUNCE_THRESHOLD,
+    },
     ...(eligibility === null ? {} : {
       nextPromotion: { rank: eligibility.toRank, reputationRequired: eligibility.reputationRequired },
     }),
@@ -76,7 +82,8 @@ export function partyViewsFor(
   members: readonly Character[],
   battleAbilityUsesRemainingByCharacterId: Readonly<Partial<Record<Character["id"], number>>>,
 ) {
-  return inSeatOrder(seed, members, (member) => String(member.id)).map((member) => {
+  void seed;
+  return inFormationOrder(members, (member) => String(member.classId)).map((member) => {
     const classDef = CLASSES.find((candidate) => candidate.id === member.classId);
     if (classDef === undefined) throw new Error(`U5 파티원의 직업 정의를 찾을 수 없다: ${member.classId}`);
     const battleAbilityStatus = partyMemberBattleAbilityStatus(

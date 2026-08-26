@@ -447,8 +447,51 @@
   margin: 0;
   padding: 0;
   min-height: 0;
-  overflow: hidden;
   list-style: none;
+}
+
+.u5-log__entries,
+.u5-ecology {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.u5-log__entries:hover,
+.u5-log__entries:focus-visible,
+.u5-ecology:hover,
+.u5-ecology:focus-visible {
+  scrollbar-color: #5a4630 transparent;
+}
+
+.u5-log__entries::-webkit-scrollbar,
+.u5-ecology::-webkit-scrollbar {
+  width: 0.28rem;
+}
+
+.u5-log__entries::-webkit-scrollbar-track,
+.u5-ecology::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.u5-log__entries::-webkit-scrollbar-thumb,
+.u5-ecology::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: transparent;
+}
+
+.u5-log__entries:hover::-webkit-scrollbar-thumb,
+.u5-log__entries:focus-visible::-webkit-scrollbar-thumb,
+.u5-ecology:hover::-webkit-scrollbar-thumb,
+.u5-ecology:focus-visible::-webkit-scrollbar-thumb {
+  background: #5a4630;
+}
+
+.u5-log__entries:focus-visible,
+.u5-ecology:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--color-shell-gold) 52%, transparent);
+  outline-offset: 0.12rem;
 }
 
 .u5-log__entries li {
@@ -510,6 +553,15 @@
   /* gap 을 두지 않는다. 제목 아래 간격은 panel-section 의 --panel-title-gap
    * 이 이미 주고 있어서, 여기서 또 주면 u5 만 카드가 9px 아래에서 시작한다. */
   min-height: 0;
+}
+
+/* 공용 카드의 native 스크롤은 유지하고 U5에서만 밝은 기본 막대를 감춘다. */
+.u5-progress-screen .party-card__back {
+  scrollbar-width: none;
+}
+
+.u5-progress-screen .party-card__back::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── /u5-test 프리뷰 전환 ──

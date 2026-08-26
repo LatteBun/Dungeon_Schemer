@@ -6,52 +6,60 @@ import {
   type CharacterId,
 } from "@/lib/domain";
 import {
+  CHARACTER_GENDERS,
   CHARACTER_ROSTER,
   PORTRAIT_VARIANTS,
   characterRosterEntryFor,
 } from "./character-roster";
 
 const EXPECTED_ROSTER = [
-  ["character-warrior-a", "가론", "warrior", "a"],
-  ["character-warrior-b", "라이문드", "warrior", "b"],
-  ["character-warrior-c", "바스티안", "warrior", "c"],
-  ["character-warrior-d", "하르멜", "warrior", "d"],
-  ["character-warrior-e", "헬가", "warrior", "e"],
-  ["character-warrior-f", "브릭스턴", "warrior", "f"],
-  ["character-archer-a", "네리사", "archer", "a"],
-  ["character-archer-b", "다이린", "archer", "b"],
-  ["character-archer-c", "파에린", "archer", "c"],
-  ["character-archer-d", "노엘라", "archer", "d"],
-  ["character-archer-e", "실바나", "archer", "e"],
-  ["character-archer-f", "카트린", "archer", "f"],
-  ["character-cleric-a", "마요라", "cleric", "a"],
-  ["character-cleric-b", "세라핀", "cleric", "b"],
-  ["character-cleric-c", "이졸데", "cleric", "c"],
-  ["character-cleric-d", "로자린드", "cleric", "d"],
-  ["character-cleric-e", "제라딘", "cleric", "e"],
-  ["character-cleric-f", "미라벨", "cleric", "f"],
-  ["character-mage-a", "아드리크", "mage", "a"],
-  ["character-mage-b", "타리엘", "mage", "b"],
-  ["character-mage-c", "베로니크", "mage", "c"],
-  ["character-mage-d", "사이러스", "mage", "d"],
-  ["character-mage-e", "루시안", "mage", "e"],
-  ["character-mage-f", "이반드로", "mage", "f"],
-  ["character-rogue-a", "카심", "rogue", "a"],
-  ["character-rogue-b", "델런", "rogue", "b"],
-  ["character-rogue-c", "무렌", "rogue", "c"],
-  ["character-rogue-d", "오린", "rogue", "d"],
-  ["character-rogue-e", "코르빈", "rogue", "e"],
-  ["character-rogue-f", "펠릭스", "rogue", "f"],
+  ["character-warrior-a", "발드릭", "male", "warrior", "a"],
+  ["character-warrior-b", "브리엘라", "female", "warrior", "b"],
+  ["character-warrior-c", "로데릭", "male", "warrior", "c"],
+  ["character-warrior-d", "마르셀라", "female", "warrior", "d"],
+  ["character-warrior-e", "토르벤", "male", "warrior", "e"],
+  ["character-warrior-f", "이솔라", "female", "warrior", "f"],
+  ["character-archer-a", "엘리시아", "female", "archer", "a"],
+  ["character-archer-b", "알렌", "male", "archer", "b"],
+  ["character-archer-c", "카엘", "male", "archer", "c"],
+  ["character-archer-d", "레오니스", "male", "archer", "d"],
+  ["character-archer-e", "리비아", "female", "archer", "e"],
+  ["character-archer-f", "아델린", "female", "archer", "f"],
+  ["character-cleric-a", "세드릭", "male", "cleric", "a"],
+  ["character-cleric-b", "세실리아", "female", "cleric", "b"],
+  ["character-cleric-c", "루시엔", "male", "cleric", "c"],
+  ["character-cleric-d", "로레나", "female", "cleric", "d"],
+  ["character-cleric-e", "아멜리아", "female", "cleric", "e"],
+  ["character-cleric-f", "에드윈", "male", "cleric", "f"],
+  ["character-mage-a", "발테르", "male", "mage", "a"],
+  ["character-mage-b", "비비안", "female", "mage", "b"],
+  ["character-mage-c", "오스카르", "male", "mage", "c"],
+  ["character-mage-d", "셀레네", "female", "mage", "d"],
+  ["character-mage-e", "에리온", "male", "mage", "e"],
+  ["character-mage-f", "헨서라", "female", "mage", "f"],
+  ["character-rogue-a", "라울", "male", "rogue", "a"],
+  ["character-rogue-b", "카밀라", "female", "rogue", "b"],
+  ["character-rogue-c", "다미안", "male", "rogue", "c"],
+  ["character-rogue-d", "니콜라스", "male", "rogue", "d"],
+  ["character-rogue-e", "베로니카", "female", "rogue", "e"],
+  ["character-rogue-f", "이네스", "female", "rogue", "f"],
 ] as const;
 
 describe("공식 캐릭터 로스터", () => {
-  it("Spec의 30개 고정 ID·이름·직업·변형을 순서대로 가진다", () => {
+  it("Spec의 30개 고정 ID·이름·성별·직업·변형을 순서대로 가진다", () => {
     expect(CHARACTER_ROSTER.map((entry) => [
       entry.id,
       entry.name,
+      entry.gender,
       entry.classId,
       entry.portraitVariant,
     ])).toEqual(EXPECTED_ROSTER);
+  });
+
+  it("지원 성별을 각각 15명씩 가진다", () => {
+    expect(CHARACTER_GENDERS).toEqual(["male", "female"]);
+    expect(CHARACTER_ROSTER.filter((entry) => entry.gender === "male")).toHaveLength(15);
+    expect(CHARACTER_ROSTER.filter((entry) => entry.gender === "female")).toHaveLength(15);
   });
 
   it("전체 수와 이름·ID 고유성을 보장한다", () => {
@@ -76,7 +84,8 @@ describe("공식 캐릭터 로스터", () => {
 
   it("공식 ID로 항목을 조회하고 알 수 없는 ID는 명확하게 거절한다", () => {
     expect(characterRosterEntryFor("character-mage-f" as CharacterId)).toMatchObject({
-      name: "이반드로",
+      name: "헨서라",
+      gender: "female",
       classId: "mage",
       portraitVariant: "f",
     });

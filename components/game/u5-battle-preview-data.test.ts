@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import {
   createU5BattlePreviewEntries,
@@ -11,6 +12,13 @@ describe("U5 battle preview data", () => {
       "e3-monster",
       "e4-boss",
     ]);
+  });
+
+  it("두 상태 모두 상단 상태 바의 누적 고발 기준을 제공한다", () => {
+    for (const entry of U5_BATTLE_PREVIEW_ENTRIES) {
+      expect(entry.status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
+      expect(entry.status.zeroTrust.livingCount).toBeGreaterThanOrEqual(0);
+    }
   });
 
   it("E3 일반전은 action 기록이 있고 같은 seed에서 같은 결과를 만든다", () => {

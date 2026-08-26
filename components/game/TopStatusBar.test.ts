@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { TopStatusBar } from "./TopStatusBar";
 
 const baseStatus = {
@@ -9,7 +12,15 @@ const baseStatus = {
   gold: 10,
   canPromote: false,
   remainingDungeons: 15,
+  zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
 };
+
+/** 상태 칩 하나만 잘라서 그 칸의 상호작용 여부를 확인한다. */
+function chip(html: string, label: string): string {
+  const found = html.match(new RegExp(`<(button|div)[^>]*>(?:(?!</\\1>)[\\s\\S])*?${label}[\\s\\S]*?</\\1>`));
+  expect(found, `${label} 칸`).not.toBeNull();
+  return found![0];
+}
 
 describe("TopStatusBar U2/U3", () => {
   it("상태 아이콘은 기존 U2 자산과 에셋보드 남은 던전 PNG를 함께 사용한다", () => {
@@ -97,6 +108,47 @@ describe("TopStatusBar U2/U3", () => {
     expect(html).toContain('data-promotion-available="false"');
     expect(html).not.toContain('disabled=""');
   });
+
+  it("의심 인원과 기준을 승급 뒤 남은 던전 앞에 표시한다", () => {
+    const html = renderToStaticMarkup(createElement(TopStatusBar, {
+      status: {
+        ...baseStatus,
+        zeroTrust: { livingCount: 2, threshold: DENOUNCE_THRESHOLD },
+      },
+    }));
+
+    expect(html).toContain("의심 인원");
+    expect(html).toContain("2 / 5");
+    expect(html.indexOf("승급")).toBeLessThan(html.indexOf("의심 인원"));
+    expect(html.indexOf("의심 인원")).toBeLessThan(html.indexOf("남은 던전"));
+    expect(html).toContain("/assets/u2/status-trust.svg");
+  });
+
+  it("기준 초과 값을 제한하지 않고 의심 인원 팝업을 여는 버튼으로 표시한다", () => {
+    const html = renderToStaticMarkup(createElement(TopStatusBar, {
+      status: {
+        ...baseStatus,
+        zeroTrust: { livingCount: 7, threshold: DENOUNCE_THRESHOLD },
+      },
+      onOpenPromotion: () => undefined,
+    }));
+
+    const trust = chip(html, "의심 인원");
+    expect(trust).toContain("7 / 5");
+    expect(trust.startsWith("<button")).toBe(true);
+    expect(trust).toContain('data-testid="zero-trust-info-trigger"');
+    expect(trust).toContain('aria-label="의심 인원: 7 / 5"');
+    expect(html).not.toContain("이번 던전이 끝난 뒤 누적 고발이 시작됩니다.");
+  });
+
+  it("신뢰 상태 아이콘은 공통 24x24 SVG 계약을 따른다", () => {
+    const svg = readFileSync(
+      join(process.cwd(), "public", "assets", "u2", "status-trust.svg"),
+      "utf8",
+    );
+    expect(svg).toContain('viewBox="0 0 24 24"');
+    expect(svg).toContain("<path");
+  });
 });
 
 /*
@@ -113,13 +165,6 @@ describe("승급을 여는 자리", () => {
     canPromote: true,
     nextPromotion: { rank: "B" as const, reputationRequired: 60 },
   };
-
-  /** 그 칸이 버튼으로 그려졌는지 본다. 칸 하나만 잘라서 확인한다. */
-  function chip(html: string, label: string): string {
-    const found = html.match(new RegExp(`<(button|div)[^>]*>(?:(?!</\\1>)[\\s\\S])*?${label}[\\s\\S]*?</\\1>`));
-    expect(found, `${label} 칸`).not.toBeNull();
-    return found![0];
-  }
 
   it("「승급」 칸이 누를 수 있는 자리다", () => {
     const html = renderToStaticMarkup(createElement(TopStatusBar, {

@@ -53,7 +53,7 @@ import {
 } from "./expedition-events";
 import { applyAcceptedMerchantAdvice } from "./merchant";
 import { settleExpedition } from "./settlement";
-import { runWorldTurn } from "@/lib/domain";
+import { RANK_RISK_LIMIT, runWorldTurn } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
 import { advanceAdvicePressure, assertAdvicePressure } from "./advice-pressure";
 import {
@@ -914,9 +914,27 @@ function transitionBoard(
     if (context.selectedOffer !== null || context.activeExpedition !== null) {
       invalidTransition("게시판에 이미 선택된 계약이 있다");
     }
+    /*
+     * 두 갈래를 나눈다. 성격이 다르기 때문이다.
+     *
+     * 게시판에 없는 공고를 고르는 것은 정상 조작으로는 일어나지 않는다 — 화면이
+     * 낡은 목록을 들고 있거나 규칙이 틀린 것이다. 반면 등급이 모자란 공고를 누르는
+     * 것은 길잡이가 늘 하는 일이다. 게시판이 그 공고를 눌리게 두고 있으니 더욱
+     * 그렇다.
+     *
+     * 하나로 묶어 「선택할 수 있는 공고가 없다」 고 말하고 있었는데, 뒤쪽 갈래에는
+     * 사실이 아니다. 고를 수 있는 공고는 옆에 남아 있고 이 하나만 못 맡는 것이다.
+     * 무엇이 모자란지도 알려 준다.
+     */
     const offer = campaign.offers.find((candidate) => candidate.id === action.offerId);
-    if (offer === undefined || offer.lockReason !== null) {
-      invalidTransition("선택할 수 있는 공고가 없다", { offerId: action.offerId });
+    if (offer === undefined) {
+      invalidTransition("게시판에 없는 공고다", { offerId: action.offerId });
+    }
+    if (offer.lockReason !== null) {
+      invalidTransition(
+        `${campaign.rank}급은 ★${offer.riskLevel} 던전을 맡을 수 없다 (지금은 ★${RANK_RISK_LIMIT[campaign.rank]}까지)`,
+        { offerId: action.offerId, lockReason: offer.lockReason },
+      );
     }
     return emptyResult(campaignWithPhase(campaign, "contract"), {
       ...context,
