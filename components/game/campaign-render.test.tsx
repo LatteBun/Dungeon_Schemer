@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { DENOUNCE_THRESHOLD, type CampaignTransition, type NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { countLivingZeroTrust } from "@/lib/rules/ending";
+import { countEmergencyEligibleAdventurers } from "@/lib/rules/ending";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
@@ -300,6 +301,7 @@ describe("정산이 실제 결과로 그려진다", () => {
     }));
 
     assertClean(markup, "정산");
+    expect(status.remainingAdventurers).toBe(countEmergencyEligibleAdventurers(campaign));
     expect(status.zeroTrust.livingCount).toBe(countLivingZeroTrust(campaign));
     expect(status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
     expect(view.trustPressure?.afterCount ?? 0).toBe(countLivingZeroTrust(campaign));

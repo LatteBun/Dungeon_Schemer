@@ -1,6 +1,6 @@
 import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
-import { countLivingZeroTrust } from "@/lib/rules/ending";
+import { countEmergencyEligibleAdventurers, countLivingZeroTrust } from "@/lib/rules/ending";
 import { executeGuidePromotion, getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createBoardOffers } from "@/lib/rules/board";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
@@ -156,6 +156,7 @@ export function createU4PreviewData(input: {
     reputation: campaign.reputation,
     gold: campaign.gold,
     canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
+    remainingAdventurers: countEmergencyEligibleAdventurers(campaign),
     remainingDungeons: campaign.dungeons.filter(
       (candidate) => candidate.status !== "cleared",
     ).length,
