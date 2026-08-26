@@ -101,6 +101,8 @@
 
 ## 이번 개편 설계
 
+- [성직자 응급 치유 설계](superpowers/specs/2026-08-26-lattebun-cleric-emergency-heal-design.md): HP 50% 이하 생존자를 공격 대신 자동 치유하고 원정당 2회 자원을 일반전부터 보스전까지 이어 가는 직업 능력 계약
+- [성직자 응급 치유 구현 계획](superpowers/plans/2026-08-26-lattebun-cleric-emergency-heal.md): 변경 전 50·100·200시드 기준선부터 도메인·전투·원정 자원·U5·카드·paired 백테스트·공식 문서까지의 테스트 우선 실행 순서
 - [캠페인 기본 진입 무작위 시드 설계](superpowers/specs/2026-08-26-lattebun-campaign-random-seed-design.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 탐색 계약
 - [캠페인 기본 진입 무작위 시드 구현 계획](superpowers/plans/2026-08-26-lattebun-campaign-random-seed.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 테스트 우선 실행 순서
 - [던전 계약 보상 랜덤화 설계](superpowers/specs/2026-08-26-lattebun-dungeon-reward-randomization-design.md): 위험도별 기대값을 유지하는 독립 균등 보상, 공고 확정·계약 snapshot·정산 소비와 미래 보상 제거 계약
