@@ -135,12 +135,24 @@ describe("백테스트 gate와 보고서", () => {
       pairedAbilityEvidence: {
         beforeSnapshotPath: "/private/tmp/baseline-2.json",
         afterSnapshotPath: "/private/tmp/after-2.json",
-        beforeSourceRevision: "b1-risk-curve-v2-before",
+        beforeSourceRevision: "cleric-heal-baseline",
         afterSourceRevision: "cleric-heal-after",
         comparison: compareBattleAbilitySnapshots(
           snapshotForBattleAbilityComparison(aggregate.runs),
           snapshotForBattleAbilityComparison(aggregate.runs),
         ),
+        stages: ([50, 100, 200] as const).map((seedsPerCombination) => ({
+          seedsPerCombination,
+          beforeSnapshotPath: `/private/tmp/baseline-${seedsPerCombination}.json`,
+          afterSnapshotPath: `/private/tmp/after-${seedsPerCombination}.json`,
+          beforeSourceRevision: "cleric-heal-baseline",
+          afterSourceRevision: "cleric-heal-after",
+          comparison: compareBattleAbilitySnapshots(
+            snapshotForBattleAbilityComparison(aggregate.runs),
+            snapshotForBattleAbilityComparison(aggregate.runs),
+          ),
+          structuralGates: [],
+        })),
       },
     };
     const first = renderBacktestReport(input);
@@ -194,10 +206,12 @@ describe("백테스트 gate와 보고서", () => {
     expect(first).toContain("### 성직자 유무·초기 위험도별 첫 시도 클리어율");
     expect(first).toContain("| 성직자 포함 | 1 |");
     expect(first).toContain("## 구현 전후 paired 전투 비교");
-    expect(first).toContain("- before snapshot: `/private/tmp/baseline-2.json`");
-    expect(first).toContain("- after snapshot: `/private/tmp/after-2.json`");
-    expect(first).toContain("- source revision: b1-risk-curve-v2-before → cleric-heal-after");
+    expect(first).toContain("- source revision: cleric-heal-baseline → cleric-heal-after");
     expect(first).toContain(`- paired key 수: ${aggregate.runs.length}`);
+    expect(first).toContain("### 50 seed paired 결과");
+    expect(first).toContain("- before snapshot: `/private/tmp/baseline-50.json`");
+    expect(first).toContain("- after snapshot: `/private/tmp/after-100.json`");
+    expect(first).toContain("### 200 seed paired 결과");
     expect(first).toContain("| 성직자 포함 | ");
     expect(first).toContain("| 성직자 미포함 | ");
     expect(first).toContain("| healing-use-chain | PASS |");

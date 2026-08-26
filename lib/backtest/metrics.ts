@@ -409,20 +409,21 @@ export function aggregateHealingMetrics(runs: readonly CampaignRunMetrics[]): He
     for (const entry of run.battles) {
       const hasCleric = entry.party.some((member) => member.classId === "cleric");
       const stratum = strata[hasCleric ? "withCleric" : "withoutCleric"];
+      battleCount += 1;
+      rounds += entry.battle.rounds;
+      roundLimitCount += Number(entry.battle.termination === "roundLimit");
       stratum.rounds += entry.battle.rounds;
       stratum.battles += 1;
       for (const member of entry.party) {
         if (member.hpBefore > 0 && member.hpAfter <= 0) {
-          stratum.deaths.add(`${run.seed}\u0000${entry.expeditionId}\u0000${member.characterId}`);
-          if (entry.kind === "boss") stratum.bossDeaths.add(`${run.seed}\u0000${entry.expeditionId}\u0000${member.characterId}`);
+          const deathKey = `${run.seed}\u0000${run.strategyId}\u0000${run.accuracy}\u0000${entry.expeditionId}\u0000${member.characterId}`;
+          stratum.deaths.add(deathKey);
+          if (entry.kind === "boss") stratum.bossDeaths.add(deathKey);
         }
       }
       if (!hasCleric) continue;
       if (entry.kind === "general") general += 1;
       else boss += 1;
-      battleCount += 1;
-      rounds += entry.battle.rounds;
-      roundLimitCount += Number(entry.battle.termination === "roundLimit");
       const heals = entry.battle.actions.filter((action) => action.kind === "heal");
       if (heals.length <= 1) battleDistribution[heals.length as 0 | 1] += 1;
       else battleDistribution.overLimit += 1;

@@ -1,6 +1,6 @@
 import { CAMPAIGN_BALANCE, type CampaignCalibrationSettings } from "@/lib/balance/campaign-balance";
 import type { EndingKind } from "@/lib/domain";
-import { B1B_ACCEPTANCE, evaluateB1BAcceptance, evaluateHealingStructuralGates, type B1BAcceptanceGate, type BacktestFocus } from "./acceptance";
+import { B1B_ACCEPTANCE, evaluateB1BAcceptance, evaluateHealingStructuralGates, type B1BAcceptanceGate, type BacktestFocus, type PairedAbilityStructuralGate } from "./acceptance";
 import type { BattleAbilitySnapshotComparison } from "./battle-ability-comparison";
 import {
   aggregateRuns,
@@ -30,13 +30,26 @@ export interface BacktestReportInput {
   readonly aggregate: BacktestAggregate;
   readonly fixedGates: readonly FixedGateResult[];
   readonly calibrationEvidence: CalibrationEvidence;
-  readonly pairedAbilityEvidence?: {
-    readonly beforeSnapshotPath: string;
-    readonly afterSnapshotPath: string;
-    readonly beforeSourceRevision: string;
-    readonly afterSourceRevision: string;
-    readonly comparison: BattleAbilitySnapshotComparison;
-  };
+  readonly pairedAbilityEvidence?: PairedAbilityEvidence;
+}
+
+export interface PairedAbilityStageEvidence {
+  readonly seedsPerCombination: 50 | 100 | 200;
+  readonly beforeSnapshotPath: string;
+  readonly afterSnapshotPath: string;
+  readonly beforeSourceRevision: string;
+  readonly afterSourceRevision: string;
+  readonly comparison: BattleAbilitySnapshotComparison;
+  readonly structuralGates: readonly PairedAbilityStructuralGate[];
+}
+
+export interface PairedAbilityEvidence {
+  readonly beforeSnapshotPath: string;
+  readonly afterSnapshotPath: string;
+  readonly beforeSourceRevision: string;
+  readonly afterSourceRevision: string;
+  readonly comparison: BattleAbilitySnapshotComparison;
+  readonly stages?: readonly PairedAbilityStageEvidence[];
 }
 
 export interface CalibrationStageEvidence {
@@ -285,10 +298,38 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     }
   }
   const pairedAbility = input.pairedAbilityEvidence;
-  const pairedAbilityRows = pairedAbility === undefined ? [] : ([
-    ["성직자 포함", pairedAbility.comparison.byCleric.withCleric],
-    ["성직자 미포함", pairedAbility.comparison.byCleric.withoutCleric],
-  ] as const).map(([label, value]) => `| ${label} | ${value.pairCount} | ${nullable(value.battleVictoryRateDelta)} | ${nullable(value.meanPartyHpAfterRatioDelta)} | ${value.deathCountDelta} | ${nullable(value.meanRoundsDelta)} | ${value.healActionDelta} | ${value.actualHealingDelta} | ${value.unchangedPairCount} |`);
+  const pairedAbilityStages = pairedAbility === undefined ? [] : pairedAbility.stages ?? [{
+    seedsPerCombination,
+    beforeSnapshotPath: pairedAbility.beforeSnapshotPath,
+    afterSnapshotPath: pairedAbility.afterSnapshotPath,
+    beforeSourceRevision: pairedAbility.beforeSourceRevision,
+    afterSourceRevision: pairedAbility.afterSourceRevision,
+    comparison: pairedAbility.comparison,
+    structuralGates: [],
+  }];
+  const pairedAbilitySections = pairedAbilityStages.flatMap((stage) => {
+    const rows = ([
+      ["성직자 포함", stage.comparison.byCleric.withCleric],
+      ["성직자 미포함", stage.comparison.byCleric.withoutCleric],
+    ] as const).map(([label, value]) => `| ${label} | ${value.pairCount} | ${nullable(value.battleVictoryRateDelta)} | ${nullable(value.meanPartyHpAfterRatioDelta)} | ${value.deathCountDelta} | ${nullable(value.meanRoundsDelta)} | ${value.healActionDelta} | ${value.actualHealingDelta} | ${value.unchangedPairCount} |`);
+    return [
+      `### ${stage.seedsPerCombination} seed paired 결과`,
+      "",
+      `- before snapshot: \`${stage.beforeSnapshotPath}\``,
+      `- after snapshot: \`${stage.afterSnapshotPath}\``,
+      `- source revision: ${stage.beforeSourceRevision} → ${stage.afterSourceRevision}`,
+      `- paired key 수: ${stage.comparison.pairCount}`,
+      "",
+      "| 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |",
+      "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+      ...rows,
+      "",
+      "| 구조 gate | 결과 | 근거 |",
+      "| --- | --- | --- |",
+      ...(stage.structuralGates.length === 0 ? ["| paired structural gate | — | 별도 실행 없음 |"] : stage.structuralGates.map((gate) => `| ${gate.id} | ${gate.passed ? "PASS" : "FAIL"} | ${gate.evidence} |`)),
+      "",
+    ];
+  });
   const healingStrataRows = (["withCleric", "withoutCleric"] as const).map((key) => {
     const label = key === "withCleric" ? "성직자 포함" : "성직자 미포함";
     const value = healing.byCleric[key];
@@ -466,16 +507,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "",
     "## 구현 전후 paired 전투 비교",
     "",
-    ...(pairedAbility === undefined ? ["- baseline 비교 없음"] : [
-      `- before snapshot: \`${pairedAbility.beforeSnapshotPath}\``,
-      `- after snapshot: \`${pairedAbility.afterSnapshotPath}\``,
-      `- source revision: ${pairedAbility.beforeSourceRevision} → ${pairedAbility.afterSourceRevision}`,
-      `- paired key 수: ${pairedAbility.comparison.pairCount}`,
-      "",
-      "| 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |",
-      "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
-      ...pairedAbilityRows,
-    ]),
+    ...(pairedAbility === undefined ? ["- baseline 비교 없음"] : pairedAbilitySections),
     "",
     "## 오류와 재현 seed",
     "",

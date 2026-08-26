@@ -78,18 +78,18 @@ export interface PairedAbilityStructuralGate {
 }
 
 export function evaluatePairedAbilityStructuralGates(comparison: BattleAbilitySnapshotComparison): readonly PairedAbilityStructuralGate[] {
-  const nonHolder = comparison.byCleric.withoutCleric;
-  const nonTrigger = comparison.withoutHealing;
+  const nonHolder = comparison.controls.nonHolder;
+  const nonTrigger = comparison.controls.nonTrigger;
   return [{
     id: "non-holder-unchanged",
-    passed: nonHolder.unchangedPairCount === nonHolder.pairCount,
+    passed: nonHolder.pairCount > 0 && nonHolder.unchangedPairCount === nonHolder.pairCount,
     enforced: true,
-    evidence: `불변 ${nonHolder.unchangedPairCount}/${nonHolder.pairCount}`,
+    evidence: `전투 control 불변 ${nonHolder.unchangedPairCount}/${nonHolder.pairCount}`,
   }, {
     id: "non-trigger-unchanged",
-    passed: nonTrigger.unchangedPairCount === nonTrigger.pairCount,
+    passed: nonTrigger.pairCount > 0 && nonTrigger.unchangedPairCount === nonTrigger.pairCount,
     enforced: true,
-    evidence: `불변 ${nonTrigger.unchangedPairCount}/${nonTrigger.pairCount}`,
+    evidence: `전투 control 불변 ${nonTrigger.unchangedPairCount}/${nonTrigger.pairCount}`,
   }];
 }
 
@@ -100,6 +100,7 @@ export function evaluateHealingStructuralGates(aggregate: BacktestAggregate): re
   };
   for (const run of aggregate.runs) {
     const expeditionUses = new Map<string, number>();
+    const abilityUsesAfterBattle = new Map<string, number>();
     for (const entry of run.battles) {
       const battleUses = new Map<string, number>();
       const partyById = new Map<string, (typeof entry.party)[number]>(entry.party.map((member) => [member.characterId, member]));
@@ -142,9 +143,19 @@ export function evaluateHealingStructuralGates(aggregate: BacktestAggregate): re
       for (const member of entry.party) {
         const before = member.abilityUsesRemainingBefore;
         const after = member.abilityUsesRemainingAfter;
-        if (before === null || before === undefined || after === null || after === undefined) continue;
+        const hasBefore = before !== null && before !== undefined;
+        const hasAfter = after !== null && after !== undefined;
+        if (hasBefore !== hasAfter) {
+          fail("healing-use-chain");
+          continue;
+        }
+        if (!hasBefore || !hasAfter) continue;
+        const abilityKey = `${run.seed}\u0000${run.strategyId}\u0000${run.accuracy}\u0000${entry.expeditionId}\u0000${member.characterId}`;
+        const previousAfter = abilityUsesAfterBattle.get(abilityKey);
+        if (previousAfter !== undefined && before !== previousAfter) fail("healing-use-chain");
         const actions = battleUses.get(member.characterId) ?? 0;
         if (after > before || before - after !== actions) fail("healing-use-chain");
+        abilityUsesAfterBattle.set(abilityKey, after);
       }
       if (entry.battle.termination === "roundLimit") fail("no-round-limit");
     }

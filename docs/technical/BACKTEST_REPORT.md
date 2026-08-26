@@ -54,8 +54,8 @@
 | healing-use-chain | PASS | 위반 0건 |
 | no-round-limit | PASS | 위반 0건 |
 | no-run-errors | PASS | 실행 오류 0건 |
-| non-holder-unchanged | PASS | 불변 0/0 |
-| non-trigger-unchanged | PASS | 불변 0/0 |
+| non-holder-unchanged | PASS | 전투 control 불변 7578/7578 |
+| non-trigger-unchanged | PASS | 전투 control 불변 6163/6163 |
 | not-all-rank-s | PASS | 각 조합 S 도달률 100% 미만 |
 | reproducible-valid-runs | PASS | 위반 0건 |
 
@@ -408,12 +408,12 @@
 - 원정당 치유 0·1·2회/초과: 126·7725·2290/0
 - 전투당 치유 0·1회/초과: 12759·12305/0
 - 총 치유 행동/유효 치유/실제 회복량: 12305/12305/61525
-- 평균 전투 라운드/roundLimit: 3.2527/0
+- 평균 전투 라운드/roundLimit: 3.0660/0
 
 | 층 | 원정 | 첫 시도 | 첫 시도 클리어 | 클리어율 | 보스 진입 HP 비율 | 보스 사망 | 전체 사망 | 평균 라운드 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 성직자 포함 | 10141 | 8168 | 4525 | 0.5540 | 0.8134 | 16777 | 16967 | 3.2527 |
-| 성직자 미포함 | 7538 | 5888 | 4303 | 0.7308 | 0.8086 | 9538 | 9701 | 2.8156 |
+| 성직자 포함 | 10141 | 8168 | 4525 | 0.5540 | 0.8134 | 18317 | 18526 | 3.2527 |
+| 성직자 미포함 | 7538 | 5888 | 4303 | 0.7308 | 0.8086 | 10080 | 10254 | 2.8156 |
 
 ### 성직자 유무·초기 위험도별 첫 시도 클리어율
 
@@ -432,15 +432,57 @@
 
 ## 구현 전후 paired 전투 비교
 
+### 50 seed paired 결과
+
+- before snapshot: `/private/tmp/dungeon-schemer-cleric-heal/baseline-50.json`
+- after snapshot: `/private/tmp/dungeon-schemer-cleric-heal/after-50.json`
+- source revision: cleric-heal-baseline → cleric-heal-after
+- paired key 수: 300
+
+| 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 성직자 포함 | 300 | 0.0107 | 0.0089 | -296 | 0.0600 | 3019 | 15095 | 0 |
+| 성직자 미포함 | 0 | — | — | 0 | — | 0 | 0 | 0 |
+
+| 구조 gate | 결과 | 근거 |
+| --- | --- | --- |
+| non-holder-unchanged | PASS | 전투 control 불변 1901/1901 |
+| non-trigger-unchanged | PASS | 전투 control 불변 1462/1462 |
+
+### 100 seed paired 결과
+
+- before snapshot: `/private/tmp/dungeon-schemer-cleric-heal/baseline-100.json`
+- after snapshot: `/private/tmp/dungeon-schemer-cleric-heal/after-100.json`
+- source revision: cleric-heal-baseline → cleric-heal-after
+- paired key 수: 600
+
+| 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 성직자 포함 | 600 | 0.0111 | 0.0089 | -576 | 0.0575 | 6115 | 30575 | 0 |
+| 성직자 미포함 | 0 | — | — | 0 | — | 0 | 0 | 0 |
+
+| 구조 gate | 결과 | 근거 |
+| --- | --- | --- |
+| non-holder-unchanged | PASS | 전투 control 불변 3780/3780 |
+| non-trigger-unchanged | PASS | 전투 control 불변 3021/3021 |
+
+### 200 seed paired 결과
+
 - before snapshot: `/private/tmp/dungeon-schemer-cleric-heal/baseline-200.json`
 - after snapshot: `/private/tmp/dungeon-schemer-cleric-heal/after-200.json`
-- source revision: b1-risk-curve-v2-before → cleric-heal-after
+- source revision: cleric-heal-baseline → cleric-heal-after
 - paired key 수: 1200
 
 | 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 성직자 포함 | 1200 | 0.0127 | 0.0094 | -1425 | 0.0507 | 12305 | 61525 | 0 |
 | 성직자 미포함 | 0 | — | — | 0 | — | 0 | 0 | 0 |
+
+| 구조 gate | 결과 | 근거 |
+| --- | --- | --- |
+| non-holder-unchanged | PASS | 전투 control 불변 7578/7578 |
+| non-trigger-unchanged | PASS | 전투 control 불변 6163/6163 |
+
 
 ## 오류와 재현 seed
 

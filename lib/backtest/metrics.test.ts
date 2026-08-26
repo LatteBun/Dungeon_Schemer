@@ -198,6 +198,27 @@ describe("백테스트 통계", () => {
       actualHealing: 0, meanHealingPerEffectiveHeal: null,
     });
   });
+
+  it("같은 seed라도 전략·정확도가 다르면 사망 transition과 전체 전투 라운드를 합치지 않는다", () => {
+    const deadBattle = {
+      kind: "general" as const, expeditionId: "shared-expedition",
+      party: [{ characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 10, hpAfter: 0, maxHp: 20 }],
+      battle: { status: "wipe" as const, termination: "roundLimit" as const, rounds: 9, actions: [], party: [], enemies: [] },
+    };
+    const clericBattle = {
+      kind: "boss" as const, expeditionId: "cleric-expedition",
+      party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 10, hpAfter: 10, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: 2 }],
+      battle: { status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 3, actions: [], party: [], enemies: [] },
+    };
+    const first = metric({ seed: "shared-seed", strategyId: "survival", accuracy: 0.4, battles: [deadBattle, clericBattle] });
+    const second = metric({ seed: "shared-seed", strategyId: "opportunist", accuracy: 0.7, battles: [deadBattle, clericBattle] });
+
+    expect(aggregateHealingMetrics([first, second])).toMatchObject({
+      byCleric: { withoutCleric: { totalDeaths: 2 } },
+      meanBattleRounds: 6,
+      roundLimitCount: 2,
+    });
+  });
   it("Wilson 95% 구간의 알려진 값을 계산한다", () => {
     expect(wilsonInterval(50, 100)).toEqual({ low: expect.closeTo(0.4038315304, 9), high: expect.closeTo(0.5961684696, 9) });
   });

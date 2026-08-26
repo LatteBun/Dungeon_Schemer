@@ -159,7 +159,7 @@ describe("B1 backtest 기준선 기록", () => {
       })).toMatchObject({
         beforeSnapshotPath: baselinePath,
         afterSnapshotPath: join(directory, "after.json"),
-        beforeSourceRevision: "b1-risk-curve-v2-before",
+        beforeSourceRevision: "cleric-heal-baseline",
         afterSourceRevision: "cleric-heal-after",
         comparison: { pairCount: 12 },
         structuralGates: expect.arrayContaining([

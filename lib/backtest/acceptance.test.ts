@@ -110,22 +110,29 @@ describe("B1-B 승인 gate", () => {
     expect(gates.find((gate) => gate.id === "reproducible-valid-runs")).toMatchObject({ passed: false });
   });
 
-  it("능력 미보유·미발동 paired run이 달라지면 구조 gate를 실패시킨다", () => {
+  it("능력 미보유·미발동 control은 비치유 전투 결과 차이와 무관하게 긍정 표본을 남긴다", () => {
     const base = metric("survival", 0.7, false, 0, "unchanged");
-    const withoutCleric = { ...base, battles: [{
+    const controls = { ...base, battles: [{
       kind: "boss" as const, expeditionId: "unchanged",
       party: [{ characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 10, hpAfter: 5, maxHp: 20 }],
       battle: { status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 2, actions: [], party: [], enemies: [] },
+    }, {
+      kind: "general" as const, expeditionId: "unchanged",
+      party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 10, hpAfter: 5, maxHp: 28 }],
+      battle: { status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 2, actions: [], party: [], enemies: [] },
     }] };
-    const changed = { ...withoutCleric, battles: [{ ...withoutCleric.battles[0]!, battle: { ...withoutCleric.battles[0]!.battle, rounds: 3 } }] };
+    const changed = { ...controls, battles: controls.battles.map((entry) => ({
+      ...entry,
+      battle: { ...entry.battle, rounds: 3 },
+    })) };
     const comparison = compareBattleAbilitySnapshots(
-      snapshotForBattleAbilityComparison([withoutCleric]),
+      snapshotForBattleAbilityComparison([controls]),
       snapshotForBattleAbilityComparison([changed]),
     );
 
     expect(evaluatePairedAbilityStructuralGates(comparison)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: "non-holder-unchanged", passed: false, enforced: true }),
-      expect.objectContaining({ id: "non-trigger-unchanged", passed: false, enforced: true }),
+      expect.objectContaining({ id: "non-holder-unchanged", passed: true, evidence: "전투 control 불변 1/1", enforced: true }),
+      expect.objectContaining({ id: "non-trigger-unchanged", passed: true, evidence: "전투 control 불변 1/1", enforced: true }),
     ]));
   });
 
@@ -172,6 +179,50 @@ describe("B1-B 승인 gate", () => {
 
     expect(evaluateHealingStructuralGates(aggregate).find((gate) => gate.id === "healing-live-target-and-turn"))
       .toMatchObject({ passed: false });
+  });
+
+  it("같은 원정의 다음 전투가 직전 치유 잔여 횟수를 되돌리거나 endpoint를 누락하면 거절한다", () => {
+    const run = metric("survival", 0.7, false, 0, "use-chain-across-battles");
+    const battle = (kind: "general" | "boss", before: number | null, after: number | null) => ({
+      kind, expeditionId: "use-chain-across-battles",
+      party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 5, hpAfter: 10, maxHp: 28, abilityUsesRemainingBefore: before, abilityUsesRemainingAfter: after }],
+      battle: {
+        status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 1,
+        actions: [{ kind: "heal" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "cleric", abilityKind: "emergencyHeal" as const, healing: 5, targetHpBefore: 5, targetHpAfter: 10 }],
+        party: [], enemies: [{ id: "enemy", monsterId: "one", hp: 1, maxHp: 1, baseDamage: 1 }],
+      },
+    });
+    const reset = aggregateRuns([{ ...run, battles: [battle("general", 2, 1), battle("boss", 2, 1)] }]);
+    const missing = aggregateRuns([{ ...run, battles: [battle("general", 2, 1), battle("boss", 1, null)] }]);
+
+    expect(evaluateHealingStructuralGates(reset).find((gate) => gate.id === "healing-use-chain"))
+      .toMatchObject({ passed: false });
+    expect(evaluateHealingStructuralGates(missing).find((gate) => gate.id === "healing-use-chain"))
+      .toMatchObject({ passed: false });
+  });
+
+  it("control pair가 0건이면 미보유·미발동 gate를 통과시키지 않는다", () => {
+    const base = metric("survival", 0.7, false, 0, "no-control-evidence");
+    const clericRun = {
+      ...base,
+      battles: [{
+        kind: "boss" as const, expeditionId: "no-control-evidence",
+        party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 5, hpAfter: 10, maxHp: 28 }],
+        battle: {
+          status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 1,
+          actions: [{ kind: "heal" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "cleric", abilityKind: "emergencyHeal" as const, healing: 5, targetHpBefore: 5, targetHpAfter: 10 }], party: [], enemies: [],
+        },
+      }],
+    };
+    const comparison = compareBattleAbilitySnapshots(
+      snapshotForBattleAbilityComparison([clericRun]),
+      snapshotForBattleAbilityComparison([clericRun]),
+    );
+
+    expect(evaluatePairedAbilityStructuralGates(comparison)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "non-holder-unchanged", passed: false }),
+      expect.objectContaining({ id: "non-trigger-unchanged", passed: false }),
+    ]));
   });
   it("완주율과 완료 전멸 평균의 하한 경계를 통과시킨다", () => {
     const gates = evaluateB1BAcceptance(aggregateAtExactBandEdges("lower"));

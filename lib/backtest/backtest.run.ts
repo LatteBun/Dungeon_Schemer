@@ -6,7 +6,7 @@ import { compareBattleAbilitySnapshots, snapshotForBattleAbilityComparison, writ
 import { B1B_HOLDOUT_APPROVED, evaluateB1BAcceptance, evaluatePairedAbilityStructuralGates, type B1BAcceptanceGate, type BacktestFocus, type PairedAbilityStructuralGate } from "./acceptance";
 import { runCampaign } from "./campaign-driver";
 import { aggregateRuns, metricsForRun, type BacktestAggregate, type CampaignRunMetrics } from "./metrics";
-import { evaluateFixedGates, renderBacktestReport, type CalibrationEvidence, type CalibrationStageEvidence, type FixedGateResult } from "./report";
+import { evaluateFixedGates, renderBacktestReport, type CalibrationEvidence, type CalibrationStageEvidence, type FixedGateResult, type PairedAbilityEvidence, type PairedAbilityStageEvidence } from "./report";
 import { STRATEGY_IDS, createStrategy } from "./strategies";
 import type { Accuracy, StrategyId } from "./public-state";
 
@@ -207,18 +207,63 @@ export function buildPairedAbilityEvidence(input: {
   readonly snapshotPath: string;
   readonly sourceRevision: string;
   readonly aggregate: BacktestAggregate;
-}): NonNullable<Parameters<typeof renderBacktestReport>[0]["pairedAbilityEvidence"]> & {
+}): PairedAbilityEvidence & {
   readonly structuralGates: readonly PairedAbilityStructuralGate[];
 } {
   const comparison = loadBaselineComparison(input.baselinePath, input.aggregate);
   return {
     beforeSnapshotPath: input.baselinePath,
     afterSnapshotPath: input.snapshotPath,
-    beforeSourceRevision: "b1-risk-curve-v2-before",
+    beforeSourceRevision: "cleric-heal-baseline",
     afterSourceRevision: input.sourceRevision,
     comparison,
     structuralGates: evaluatePairedAbilityStructuralGates(comparison),
   };
+}
+
+function snapshotPathForCalibrationStage(
+  path: string,
+  currentSeeds: 50 | 100 | 200,
+  stageSeeds: 50 | 100 | 200,
+): string {
+  const suffix = `-${currentSeeds}.json`;
+  if (!path.endsWith(suffix)) {
+    throw new Error(`calibration paired snapshot 경로가 ${suffix}로 끝나야 한다: ${path}`);
+  }
+  return `${path.slice(0, -suffix.length)}-${stageSeeds}.json`;
+}
+
+function isCalibrationStageSeeds(value: BacktestSuiteOptions["seedsPerCombination"]): value is 50 | 100 | 200 {
+  return value === 50 || value === 100 || value === 200;
+}
+
+export function buildCalibrationPairedAbilityEvidence(input: {
+  readonly options: BacktestSuiteOptions;
+  readonly baselinePath: string;
+  readonly snapshotPath: string;
+  readonly sourceRevision: string;
+  readonly aggregate: BacktestAggregate;
+}): PairedAbilityEvidence & { readonly structuralGates: readonly PairedAbilityStructuralGate[] } {
+  const currentSeeds = input.options.seedsPerCombination;
+  if (input.options.mode !== "calibration" || !isCalibrationStageSeeds(currentSeeds)) {
+    return buildPairedAbilityEvidence(input);
+  }
+  const stages = ([50, 100, 200] as const)
+    .filter((seedsPerCombination) => seedsPerCombination <= currentSeeds)
+    .map((seedsPerCombination) => {
+      const stageAggregate = aggregateForCalibrationStage(input.aggregate, seedsPerCombination);
+      if (stageAggregate === null) throw new Error(`${seedsPerCombination} seed calibration aggregate가 없다`);
+      const stage = buildPairedAbilityEvidence({
+        baselinePath: snapshotPathForCalibrationStage(input.baselinePath, currentSeeds, seedsPerCombination),
+        snapshotPath: snapshotPathForCalibrationStage(input.snapshotPath, currentSeeds, seedsPerCombination),
+        sourceRevision: input.sourceRevision,
+        aggregate: stageAggregate,
+      });
+      return { ...stage, seedsPerCombination } satisfies PairedAbilityStageEvidence;
+    });
+  const current = stages.at(-1);
+  if (current === undefined) throw new Error("calibration paired evidence가 없다");
+  return { ...current, stages, structuralGates: current.structuralGates };
 }
 
 function runCli(): void {
@@ -232,7 +277,7 @@ function runCli(): void {
   const sourceRevision = process.env.B1_SOURCE_REVISION ?? "working-tree";
   const pairedAbilityEvidence = baselinePath === undefined || snapshotPath === undefined
     ? undefined
-    : buildPairedAbilityEvidence({ baselinePath, snapshotPath, sourceRevision, aggregate });
+    : buildCalibrationPairedAbilityEvidence({ options, baselinePath, snapshotPath, sourceRevision, aggregate });
   const gates: FixedGateResult[] = [
     ...evaluateFixedGates(aggregate, options.focus),
     ...(pairedAbilityEvidence?.structuralGates ?? []),

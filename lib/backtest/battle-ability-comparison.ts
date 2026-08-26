@@ -59,6 +59,10 @@ export interface BattleAbilitySnapshotComparison {
     readonly pairCount: number;
     readonly unchangedPairCount: number;
   };
+  readonly controls: Readonly<Record<"nonHolder" | "nonTrigger", {
+    readonly pairCount: number;
+    readonly unchangedPairCount: number;
+  }>>;
 }
 
 export function serializeBacktestPairKey(key: BacktestPairKey): string {
@@ -140,6 +144,21 @@ export function compareBattleAbilitySnapshots(
     healActions: battle.healActions ?? 0,
     actualHealing: battle.actualHealing ?? 0,
   }));
+  const controlBattlePairs = pairs.flatMap((pair) => pair.after.battles.flatMap((afterBattle, index) => {
+    const beforeBattle = pair.before.battles[index];
+    return beforeBattle === undefined || beforeBattle.kind !== afterBattle.kind || beforeBattle.expeditionId !== afterBattle.expeditionId
+      ? []
+      : [{ before: beforeBattle, after: afterBattle }];
+  }));
+  const hasNoHealingEffect = (battle: BattleAbilitySnapshotBattle) =>
+    (battle.healActions ?? 0) === 0 && (battle.actualHealing ?? 0) === 0;
+  const control = (predicate: (battle: BattleAbilitySnapshotBattle) => boolean) => {
+    const selected = controlBattlePairs.filter((pair) => predicate(pair.before) && predicate(pair.after));
+    return {
+      pairCount: selected.length,
+      unchangedPairCount: selected.filter((pair) => hasNoHealingEffect(pair.before) && hasNoHealingEffect(pair.after)).length,
+    };
+  };
   const group = (withCleric: boolean) => {
     const selected = pairs.filter((pair) => summarize(pair.before).hasCleric || summarize(pair.after).hasCleric ? withCleric : !withCleric);
     const deltas = selected.map((pair) => ({ before: summarize(pair.before), after: summarize(pair.after), pair }));
@@ -170,6 +189,10 @@ export function compareBattleAbilitySnapshots(
     withoutHealing: {
       pairCount: withoutHealing.length,
       unchangedPairCount: withoutHealing.filter((pair) => JSON.stringify(semanticBattles(pair.before)) === JSON.stringify(semanticBattles(pair.after))).length,
+    },
+    controls: {
+      nonHolder: control((battle) => !battle.party.some((member) => member.classId === "cleric")),
+      nonTrigger: control((battle) => battle.party.some((member) => member.classId === "cleric") && (battle.healActions ?? 0) === 0),
     },
   };
 }
