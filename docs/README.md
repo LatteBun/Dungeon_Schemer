@@ -71,6 +71,7 @@
 - [DEFERRED_WORK.md](technical/DEFERRED_WORK.md): 배정표 밖에서 나중에 하기로 미룬 일과 그 근거
 - [SESSION_PERSISTENCE_REVIEW.md](technical/SESSION_PERSISTENCE_REVIEW.md): 뒤로가기·bfcache 검토와 저장해야 할 상태 목록. I1 시작 전에 읽는다
 - [업적 화면 저장 진단 설계](superpowers/specs/2026-08-26-sbh3821-achievement-storage-diagnostics-design.md): 달성 수 5회 히든 진입, 앱 저장 제보 복사, 캠페인 진행만 초기화하는 경계
+- [사용자 노출 게임 제목 변경 설계](superpowers/specs/2026-08-26-sbh3821-visible-game-title-design.md): 화면·브라우저 탭·설치형 웹 앱의 제목만 `용사님, 이쪽입니다`로 통일하는 UI 계약
 - [TEAM_DEVELOPMENT_WORKFLOW.md](technical/TEAM_DEVELOPMENT_WORKFLOW.md): 브랜치, 리뷰, 병합 규약
 
 ## 회의 기록
