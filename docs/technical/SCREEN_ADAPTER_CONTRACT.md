@@ -38,6 +38,19 @@ fixture가 남은 경우 그 파일을 먼저 바꾼다.
 View 타입도 규칙이 정한 모양에 따라 바뀔 수 있다. 그때는 화면 컴포넌트까지
 따라 바뀐다. 그것이 정상이며, 그 비용을 줄이려고 규칙을 비틀지 않는다.
 
+### 공통 상단 상태 — C5 승급과 C6 신뢰 누적
+
+`components/game/campaign-adapters.ts`의 `statusFor(campaign, active)`가 `CampaignState`를 `TopStatusView`로 바꾸는 런타임 경계다. 어댑터는 집계 조건을 다시 쓰지 않고 C6 selector와 도메인 상수를 표시용 View로 옮긴다.
+
+```ts
+zeroTrust: {
+  livingCount: countLivingZeroTrust(campaign),
+  threshold: DENOUNCE_THRESHOLD,
+}
+```
+
+`TopStatusBar`는 `CampaignState`, `TRUST_MIN`, `DENOUNCE_THRESHOLD`, C6 규칙을 import하지 않는다. 활성 원정 파티를 캠페인 풀에 합성하지 않고 현재 캠페인 풀에 반영된 확정 상태만 표시한다.
+
 ## U5 던전 진행 ← E3
 
 **이미 실제 규칙이 하는 것**은 조언 제시·반응 판정·생태 공개다. `E2`가 완료돼
