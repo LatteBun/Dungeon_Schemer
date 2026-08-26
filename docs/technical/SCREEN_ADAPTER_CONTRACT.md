@@ -43,11 +43,13 @@ View 타입도 규칙이 정한 모양에 따라 바뀔 수 있다. 그때는 �
 `components/game/campaign-adapters.ts`의 `statusFor(campaign, active)`가 `CampaignState`를 `TopStatusView`로 바꾸는 런타임 경계다. 어댑터는 집계 조건을 다시 쓰지 않고 C6 selector와 도메인 상수를 표시용 View로 옮긴다.
 
 ```ts
-zeroTrust: {
-  livingCount: countLivingZeroTrust(campaign),
-  threshold: DENOUNCE_THRESHOLD,
+interface TopStatusView {
+  zeroTrust: {
+    livingCount: number;
+    threshold: number;
+  };
+  remainingAdventurers: number;
 }
-remainingAdventurers: number;
 ```
 
 `TopStatusBar`는 `CampaignState`, `TRUST_MIN`, `DENOUNCE_THRESHOLD`, C6 규칙을 import하지 않는다. 활성 원정 파티를 캠페인 풀에 합성하지 않고 현재 캠페인 풀에 반영된 확정 상태만 표시한다.

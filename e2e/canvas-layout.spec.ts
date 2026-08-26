@@ -46,6 +46,11 @@ async function expectAnchoredPopover(
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await dialog.getByRole("button", { name: "닫기" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
 }
 
 for (const viewport of VIEWPORTS) {
@@ -177,6 +182,31 @@ for (const viewport of STATUS_VIEWPORTS) {
         popover.expectedCopy,
       );
     }
+
+    const zeroTrustTrigger = page.getByTestId("zero-trust-info-trigger");
+    const remainingAdventurersTrigger = page.getByTestId("remaining-adventurers-info-trigger");
+    await remainingAdventurersTrigger.click();
+    const quickMenuTrigger = page.locator(".global-quick-menu__trigger");
+    await expect(quickMenuTrigger).toHaveAccessibleName("빠른 메뉴 열기");
+    await quickMenuTrigger.click();
+    await expect(page.getByRole("dialog", { name: "남은 용사" })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "빠른 메뉴" })).toBeVisible();
+    await expect(quickMenuTrigger).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("region", { name: "빠른 메뉴" })).toHaveCount(0);
+    await expect(quickMenuTrigger).toBeFocused();
+
+    await remainingAdventurersTrigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog", { name: "남은 용사" })).toBeVisible();
+    await zeroTrustTrigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog")).toHaveCount(1);
+    await expect(page.getByRole("dialog", { name: "남은 용사" })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "의심 인원" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(zeroTrustTrigger).toBeFocused();
 
     const metrics = await list.evaluate((element) => ({
       clientWidth: element.clientWidth,
