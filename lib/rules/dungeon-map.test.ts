@@ -173,6 +173,13 @@ describe("결정적 지도 생성", () => {
     const next = baseline.layers[pairIndex + 2]!.nodeIds;
     expect(next).toHaveLength(2);
     const laterSafe = [right[0]!, next[1]!] as const;
+    const baselineLeftOneOutgoing = [...baseline.nodes.find((node) => node.id === left[1])!.nextNodeIds];
+    const baselineRightZeroIncomingParents = baseline.nodes
+      .filter((node) => node.nextNodeIds.includes(right[0]!))
+      .map((node) => node.id);
+    expect(baselineLeftOneOutgoing).toEqual([right[1]]);
+    expect(baselineRightZeroIncomingParents).toEqual([left[0]]);
+    expect(baselineRightZeroIncomingParents).toHaveLength(1);
     const attempted: Array<readonly [NodeId, NodeId]> = [];
     const rank = new Map([safe1, rejected, laterSafe].map((edge, index) => [`${edge[0]}:${edge[1]}`, index]));
     __setDungeonMapGenerationTestSeam({
@@ -190,10 +197,11 @@ describe("결정적 지도 생성", () => {
       expect(adjacency.has(`${safe1[0]}:${safe1[1]}`)).toBe(true);
       expect(adjacency.has(`${rejected[0]}:${rejected[1]}`)).toBe(false);
       expect(adjacency.has(`${laterSafe[0]}:${laterSafe[1]}`)).toBe(true);
-      expect(result.map.nodes.find((node) => node.id === left[1])!.nextNodeIds).toEqual([right[1]]);
+      expect(result.map.nodes.find((node) => node.id === left[1])!.nextNodeIds).toEqual(baselineLeftOneOutgoing);
       const rightZeroIncomingParents = result.map.nodes
         .filter((node) => node.nextNodeIds.includes(right[0]!))
         .map((node) => node.id);
+      expect(rightZeroIncomingParents).toEqual(baselineRightZeroIncomingParents);
       expect(rightZeroIncomingParents).toEqual([left[0]]);
       expect(rightZeroIncomingParents).toHaveLength(1);
       expect(result.map.nodes.find((node) => node.id === right[0])!.nextNodeIds).toEqual([next[0], next[1]]);
