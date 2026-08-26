@@ -19,6 +19,12 @@ import type {
   U4RoomKind,
 } from "./u4-dungeon-map-model";
 
+export const U4_MAP_BACKGROUND_BY_THEME = {
+  spider: "/assets/u4/map/map_background_spider_parchment.png",
+  desert: "/assets/u5/dungeon-progress-scenes/desert/entry.png",
+  graveyard: "/assets/u5/dungeon-progress-scenes/graveyard/entry.png",
+} as const satisfies Readonly<Record<ThemeId, string>>;
+
 export interface U4SurveyView {
   /** 지나온 지점 수와 이 던전의 지점 수. */
   readonly visited: number;
@@ -256,6 +262,14 @@ function DungeonMap({
   U4DungeonMapScreenProps,
   "status" | "party" | "onMove"
 >) {
+  const backgroundClassName = themeId === "spider"
+    ? "u4-map-surface__background is-parchment"
+    : themeId === undefined
+      ? "u4-map-surface__background"
+      : "u4-map-surface__background is-themed";
+  const backgroundSrc = themeId === undefined
+    ? "/assets/u4/map/map_background_base.png"
+    : U4_MAP_BACKGROUND_BY_THEME[themeId];
   const roomRefs = useRef(new Map<NodeId, HTMLButtonElement>());
   const surfaceRef = useRef<HTMLDivElement>(null);
   const [surfaceSize, setSurfaceSize] = useState({ width: 1, height: 1 });
@@ -302,21 +316,21 @@ function DungeonMap({
           * 배경은 던전의 테마를 따른다.
           *
           * 테마를 주지 않는 화면(프리뷰)은 예전의 돌바닥을 그대로 쓴다.
-          */}
+        */}
         <img
-          className={themeId === undefined ? "u4-map-surface__background" : "u4-map-surface__background is-themed"}
-          src={themeId === undefined
-            ? "/assets/u4/map/map_background_base.png"
-            : `/assets/u5/dungeon-progress-scenes/${themeId}/entry.png`}
+          className={backgroundClassName}
+          src={backgroundSrc}
           alt=""
           aria-hidden="true"
         />
-        <img
-          className="u4-map-surface__atmosphere"
-          src="/assets/u4/map/map_atmosphere_ruins_props.png"
-          alt=""
-          aria-hidden="true"
-        />
+        {themeId !== "spider" ? (
+          <img
+            className="u4-map-surface__atmosphere"
+            src="/assets/u4/map/map_atmosphere_ruins_props.png"
+            alt=""
+            aria-hidden="true"
+          />
+        ) : null}
         <img
           className="u4-map-surface__vignette"
           src="/assets/u4/map/map_background_vignette.png"
