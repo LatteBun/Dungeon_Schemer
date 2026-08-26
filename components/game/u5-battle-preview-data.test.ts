@@ -21,6 +21,17 @@ describe("U5 battle preview data", () => {
     expect(first?.resolution).toEqual(second?.resolution);
   });
 
+  it("결정적 E3 fixture는 실제 치유를 정확히 한 번 포함한다", () => {
+    const entry = U5_BATTLE_PREVIEW_ENTRIES.find((candidate) => candidate.id === "e3-monster")!;
+    const heals = entry.resolution.actions.filter((action) => action.kind === "heal");
+
+    expect(heals).toHaveLength(1);
+    expect(heals[0]).toMatchObject({ abilityKind: "emergencyHeal", healing: 5 });
+    expect(entry.replay.frames.filter(
+      (frame) => frame.phase === "impact" && frame.actionKind === "heal",
+    )).toHaveLength(1);
+  });
+
   it("E3 action 하나를 attack, impact, settle 세 frame으로 확장한다", () => {
     const entry = U5_BATTLE_PREVIEW_ENTRIES.find((candidate) => candidate.id === "e3-monster")!;
 

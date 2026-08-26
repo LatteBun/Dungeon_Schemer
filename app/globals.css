@@ -686,6 +686,18 @@ body {
   z-index: 2;
 }
 
+/* 전투 정보는 유지하고 기도·회복의 짧은 이동만 즉시 끝낸다. */
+@media (prefers-reduced-motion: reduce) {
+  .u5-battle-motion.is-praying,
+  .u5-battle-motion.is-recovering,
+  .u5-battle-healing,
+  .u5-battle-hp__fill {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /*
  * 규칙이 거부했을 때의 알림.
  *

@@ -405,8 +405,12 @@ export function U5ProgressScreen({
                         battleParticipantsById.get(member.id),
                         member.id,
                       )}
-                      effect={showingBattleFrames && battlePlayback.frame?.targetId === member.id && battlePlayback.frame.damage !== null
-                        ? { kind: "hp", delta: -battlePlayback.frame.damage, token: `${battlePlayback.frameIndex}:${member.id}:hp` }
+                      effect={showingBattleFrames && battlePlayback.frame?.targetId === member.id
+                        ? battlePlayback.frame.actionKind === "attack" && battlePlayback.frame.damage !== null
+                          ? { kind: "hp", delta: -battlePlayback.frame.damage, token: `${battlePlayback.frameIndex}:${member.id}:hp` }
+                          : battlePlayback.frame.actionKind === "heal" && battlePlayback.frame.healing !== null
+                            ? { kind: "hp", delta: battlePlayback.frame.healing, token: `${battlePlayback.frameIndex}:${member.id}:hp` }
+                            : undefined
                         : undefined}
                     />
                   </li>

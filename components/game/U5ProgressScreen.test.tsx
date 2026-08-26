@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { allSituationEvents } from "@/lib/content/event-registry";
 import { U5ProgressScreen, u5SettledPartyResult } from "./U5ProgressScreen";
+import { U5_TEST_HEALING_BATTLE_REPLAY } from "./u5-battle-test-fixture";
 import { createU5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import type { U5ProgressView } from "./u5-progress-model";
@@ -65,7 +66,7 @@ const battleReplay = createU5BattleReplay({
     termination: "defeatedEnemies",
     rounds: 1,
     actions: [
-      { round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 5, targetHpBefore: 5, targetHpAfter: 0, defeated: true },
+      { kind: "attack", round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 5, targetHpBefore: 5, targetHpAfter: 0, defeated: true },
     ],
     party: [{ id: "party-1", classId: "rogue", hp: 32, maxHp: 32, attack: 5, hitWeight: 2 }],
     enemies: [{ id: "enemy-1", monsterId: "spider-hatchling", hp: 0, maxHp: 5, baseDamage: 2 }],
@@ -169,6 +170,47 @@ describe("U5ProgressScreen", () => {
     expect(calm).not.toContain('data-testid="u5-battle-scene"');
     expect(battle).not.toContain('data-testid="u5-nonbattle-party"');
     expect(battle).toContain('data-testid="u5-battle-scene"');
+  });
+
+  it("치유 impact는 우측 대상 카드에 양수 HP 효과를 표시하고 settle에서 실제 HP를 반영한다", () => {
+    const healingParty: U5ProgressView["party"] = [
+      { id: "cleric", name: "세라핀", classLabel: "성직자", personalityLabel: "침착한", hp: 10, maxHp: 10, trust: 35, gold: 18 },
+      { id: "ally", name: "코르빈", classLabel: "전사", personalityLabel: "용감한", hp: 7, maxHp: 10, trust: 40, gold: 20 },
+    ];
+    const feedback = {
+      signature: "healing-effect",
+      kind: "event" as const,
+      consequenceText: null,
+      preBattleReaction: null,
+      immediateTrustChanges: [],
+      postBattleReaction: null,
+      postBattleTrustChanges: [],
+    };
+    const healImpact = U5_TEST_HEALING_BATTLE_REPLAY.frames.find(
+      (frame) => frame.phase === "impact" && frame.actionKind === "heal",
+    )!;
+    const healSettle = U5_TEST_HEALING_BATTLE_REPLAY.frames.find(
+      (frame) => frame.phase === "settle" && frame.actionKind === "heal",
+    )!;
+    const impactHtml = render(
+      { party: healingParty },
+      {
+        battleReplay: { ...U5_TEST_HEALING_BATTLE_REPLAY, frames: [healImpact] },
+        combatFeedback: feedback,
+      },
+    );
+    const settleHtml = render(
+      { party: healingParty },
+      {
+        battleReplay: { ...U5_TEST_HEALING_BATTLE_REPLAY, frames: [healSettle] },
+        combatFeedback: { ...feedback, signature: "healing-settle" },
+      },
+    );
+
+    expect(impactHtml).toContain("HP +5");
+    expect(impactHtml).toContain(">2 / 10<");
+    expect(settleHtml).not.toContain("HP +5");
+    expect(settleHtml).toContain(">7 / 10<");
   });
 
   it("전투 replay를 표시해도 오른쪽 파티 ViewModel 마크업을 바꾸지 않는다", () => {

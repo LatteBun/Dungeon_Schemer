@@ -5,13 +5,19 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { U5BattleScene } from "./U5BattleScene";
 import * as u5BattleSceneModule from "./U5BattleScene";
-import { U5_TEST_BATTLE_REPLAY } from "./u5-battle-test-fixture";
+import {
+  U5_TEST_BATTLE_REPLAY,
+  U5_TEST_HEALING_BATTLE_REPLAY,
+} from "./u5-battle-test-fixture";
 import { createU5BattleReplay } from "./u5-battle-replay";
 import type { U5BattleReplay, U5BattleReplayFrame } from "./u5-battle-replay";
 
 const replay = U5_TEST_BATTLE_REPLAY;
 
 const battleCss = readFileSync(join(process.cwd(), "app", "u5-battle.css"), "utf8");
+const globalCss = readFileSync(join(process.cwd(), "app", "globals.css"), "utf8");
+
+const healingReplay = U5_TEST_HEALING_BATTLE_REPLAY;
 
 function render(frame: U5BattleReplayFrame = replay.frames[0]!, value: U5BattleReplay = replay): string {
   return renderToStaticMarkup(createElement(U5BattleScene, {
@@ -110,6 +116,64 @@ describe("U5BattleScene", () => {
     expect(enemy).toContain("--u5-battle-lunge-x:-16%");
   });
 
+  it("치유 impact는 능력·주체·대상·실제 회복량과 사용 전 잔여 횟수를 피해 표현 없이 보여준다", () => {
+    const impact = healingReplay.frames.find(
+      (frame) => frame.phase === "impact" && frame.actionKind === "heal",
+    );
+    if (impact === undefined) throw new Error("fixture에 heal impact frame이 없다.");
+    const html = render(impact, healingReplay);
+
+    expect(html).toContain("치유 기도");
+    expect(html).toContain("세라핀");
+    expect(html).toContain("코르빈");
+    expect(html).toContain("+5");
+    expect(html).toContain('aria-label="5 회복"');
+    expect(html).toContain("남은 횟수 2");
+    expect(html).not.toContain("피해");
+    expect(html).not.toContain("u5-battle-damage");
+  });
+
+  it("치유 settle은 HP와 남은 횟수를 frame 값 그대로 갱신한다", () => {
+    const settle = healingReplay.frames.find(
+      (frame) => frame.phase === "settle" && frame.actionKind === "heal",
+    );
+    if (settle === undefined) throw new Error("fixture에 heal settle frame이 없다.");
+    const html = render(settle, healingReplay);
+
+    expect(participantMarkup(html, "ally")).toContain(">7 / 10<");
+    expect(html).toContain("남은 횟수 1");
+    expect(html).not.toContain("+5");
+  });
+
+  it("치유자는 돌진하지 않고 대상은 피격 대신 회복 강조만 받는다", () => {
+    const prayer = healingReplay.frames.find(
+      (frame) => frame.phase === "attack" && frame.actionKind === "heal",
+    );
+    const impact = healingReplay.frames.find(
+      (frame) => frame.phase === "impact" && frame.actionKind === "heal",
+    );
+    if (prayer === undefined || impact === undefined) throw new Error("fixture에 heal action frame이 없다.");
+
+    const actor = participantMarkup(render(prayer, healingReplay), "cleric");
+    const target = participantMarkup(render(impact, healingReplay), "ally");
+    expect(actor).toContain("is-praying");
+    expect(actor).not.toContain("is-lunging");
+    expect(target).toContain("is-recovering");
+    expect(target).not.toContain("is-hit");
+  });
+
+  it("공격자는 기존 돌진, 공격 대상은 기존 피격 상태를 유지한다", () => {
+    expect(participantMarkup(render(replay.frames[1]!), "party-1")).toContain("is-lunging");
+    expect(participantMarkup(render(replay.frames[2]!), "enemy-1")).toContain("is-hit");
+  });
+
+  it("동작 줄이기는 기도·회복 이동만 없애고 숫자와 HP 전환은 숨기지 않는다", () => {
+    expect(globalCss).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.u5-battle-motion\.is-praying[\s\S]*\.u5-battle-motion\.is-recovering/);
+    expect(globalCss).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*transition-duration:\s*0\.01ms\s*!important/);
+    expect(globalCss).not.toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.u5-battle-healing[^}]*display:\s*none/);
+    expect(battleCss).toMatch(/\.u5-battle-healing\s*\{/);
+  });
+
   it("피해 숫자의 가로 중앙 정렬과 세로 motion을 서로 다른 요소에 둔다", () => {
     const enemy = participantMarkup(render(replay.frames[2]!), "enemy-1");
 
@@ -129,7 +193,7 @@ describe("U5BattleScene", () => {
     expect(html.match(/aria-live="polite"/g)).toHaveLength(1);
     expect(html).toContain("전투가 시작됩니다.");
     /* idle 은 행동이 아니다. 읽어 주는 자리는 비어 있어야 한다. */
-    expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite"><\/p>/);
+    expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true"><\/p>/);
     expect(html).not.toContain("전투 건너뛰기");
     expect(html).not.toContain("다시 보기");
   });
@@ -142,8 +206,8 @@ describe("U5BattleScene", () => {
     const settleHtml = render(settle);
     const attackHtml = render(attack);
 
-    expect(settleHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite">.+<\/p>/);
-    expect(attackHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite"><\/p>/);
+    expect(settleHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true">.+<\/p>/);
+    expect(attackHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true"><\/p>/);
   });
 
   /* "새끼거미이(가)" 처럼 두 형태를 나란히 적지 않는다. */
@@ -208,8 +272,8 @@ describe("U5BattleScene 화면 자막", () => {
         party: [{ id: "party-1", classId: "warrior", hp: 10, maxHp: 10, attack: 7, hitWeight: 3 }],
         enemies: [{ id: "enemy-1", monsterId: "spider-hatchling", hp: 0, maxHp: 7, baseDamage: 3 }],
         actions: [
-          { round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 3, targetHpBefore: 7, targetHpAfter: 4, defeated: false },
-          { round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 4, targetHpBefore: 4, targetHpAfter: 0, defeated: true },
+          { kind: "attack", round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 3, targetHpBefore: 7, targetHpAfter: 4, defeated: false },
+          { kind: "attack", round: 1, actorSide: "party", actorId: "party-1", targetId: "enemy-1", damage: 4, targetHpBefore: 4, targetHpAfter: 0, defeated: true },
         ],
       },
       presentations: [
@@ -240,7 +304,24 @@ describe("U5BattleScene 화면 자막", () => {
     // 눈으로 못 보는 사람이 잃는 것이 없어야 자막을 덜어낼 수 있다.
     const settle = frameOf("settle");
     const html = render(settle);
-    expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite">.+<\/p>/);
+    expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true">.+<\/p>/);
+  });
+
+  it("치유 impact는 색과 별개로 실제 회복 문장을 한 번 읽어 준다", () => {
+    const impact = healingReplay.frames.find(
+      (frame) => frame.phase === "impact" && frame.actionKind === "heal",
+    );
+    const settle = healingReplay.frames.find(
+      (frame) => frame.phase === "settle" && frame.actionKind === "heal",
+    );
+    if (impact === undefined || settle === undefined) throw new Error("fixture에 heal action frame이 없다.");
+    const html = render(impact, healingReplay);
+    const settleHtml = render(settle, healingReplay);
+
+    expect(html).toContain("세라핀이 코르빈을 5 회복했습니다.");
+    expect(html).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true">세라핀이 코르빈을 5 회복했습니다.<\/p>/);
+    expect(settleHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true"><\/p>/);
+    expect(html).not.toContain("피해를 받습니다");
   });
 });
 
