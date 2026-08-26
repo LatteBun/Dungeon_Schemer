@@ -186,7 +186,7 @@ describe("E4 보스 BattleEngine adapter", () => {
       dungeon: dungeon({ bossId: SPIDER_BOSSES[1].id }),
       members: [cleric, member("wounded-ally", { hp: 1 })],
       infoRecords: [morkanCocoonHelp],
-      battleAbilityUsesRemainingByCharacterId: { [cleric.id]: 2 },
+      battleAbilityUsesRemainingByCharacterId: { [cleric.id]: 1 },
     });
     const healIndex = outgoing.bossResult.battle.actions.findIndex((action) => action.kind === "heal");
     const outgoingCue = outgoing.bossResult.cues.find((cue) => cue.axis === "outgoingDamage");

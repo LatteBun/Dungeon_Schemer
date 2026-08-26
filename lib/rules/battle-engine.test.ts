@@ -18,9 +18,8 @@ function emergencyHeal(
   return {
     kind: "emergencyHeal",
     name: "치유 기도",
-    healAmount: 5,
+    healTargetMaxHpPercent: 25,
     usesPerExpedition: 2,
-    maxUsesPerBattle: 1,
     triggerAtOrBelowHpPercent: 50,
     remainingUses: 2,
     ...overrides,
@@ -50,6 +49,19 @@ function durableEnemy(overrides: Partial<BattleInput["enemies"][number]> = {}) {
     maxHp: 100,
     baseDamage: 0,
     ...overrides,
+  };
+}
+
+function battleWithInjuredTarget(
+  target: Pick<BattlePartyMember, "hp" | "maxHp">,
+): BattleInput {
+  return {
+    seed: `heal-target-${target.maxHp}`,
+    party: [
+      member("cleric", { battleAbility: emergencyHeal() }),
+      member("injured", { ...target, battleAbility: undefined }),
+    ],
+    enemies: [durableEnemy()],
   };
 }
 
@@ -144,6 +156,22 @@ describe("공통 BattleEngine", () => {
 });
 
 describe("응급 치유 선택", () => {
+  it.each([
+    [45, 11],
+    [30, 8],
+    [28, 7],
+    [24, 6],
+    [32, 8],
+  ])("대상 최대 HP %i의 25퍼센트를 반올림해 %i 회복한다", (maxHp, healing) => {
+    const result = resolveBattle(battleWithInjuredTarget({ maxHp, hp: 1 }));
+
+    expect(result.actions.find((action) => action.kind === "heal")).toMatchObject({
+      healing,
+      targetHpBefore: 1,
+      targetHpAfter: 1 + healing,
+    });
+  });
+
   it("정확히 50%인 자기 자신을 공격 대신 치유하고 한 차례에 행동 하나만 기록한다", () => {
     const result = resolveBattle({
       seed: "heal-exact-half-self",
@@ -267,20 +295,30 @@ describe("응급 치유 선택", () => {
     expect(result.party[0]?.battleAbility?.remainingUses).toBe(0);
   });
 
-  it("한 능력 보유자는 여러 라운드에서도 전투당 한도까지만 치유한다", () => {
+  it("원정 잔여 횟수 안에서 같은 전투에 두 번 치유하고 세 번째 차례에는 공격한다", () => {
     const result = resolveBattle({
-      seed: "heal-once-per-battle",
-      party: [member("cleric", {
-        hp: 1,
-        attack: 1,
-        battleAbility: emergencyHeal(),
-      })],
-      enemies: [durableEnemy({ hp: 3, maxHp: 3 })],
+      seed: "heal-twice-per-battle",
+      party: [
+        member("warrior", {
+          classId: "warrior",
+          hp: 1,
+          maxHp: 45,
+          attack: 0,
+          battleAbility: undefined,
+        }),
+        member("cleric", { battleAbility: emergencyHeal({ remainingUses: 2 }) }),
+      ],
+      enemies: [durableEnemy()],
     });
 
-    expect(result.actions.filter((action) => action.kind === "heal")).toHaveLength(1);
-    expect(result.actions.filter((action) => action.kind === "attack" && action.actorId === "cleric")).toHaveLength(3);
-    expect(result.party[0]?.battleAbility?.remainingUses).toBe(1);
+    const heals = result.actions.filter((action) => action.kind === "heal");
+    expect(heals).toMatchObject([
+      { actorId: "cleric", targetId: "warrior", healing: 11, targetHpBefore: 1, targetHpAfter: 12 },
+      { actorId: "cleric", targetId: "warrior", healing: 11, targetHpBefore: 12, targetHpAfter: 23 },
+    ]);
+    expect(result.actions.find((action) => action.kind === "attack" && action.actorId === "cleric" && action.round === 3))
+      .toMatchObject({ targetId: "ogre#1", damage: 5 });
+    expect(result.party[1]?.battleAbility?.remainingUses).toBe(0);
   });
 
   it("앞선 파티원이 마지막 적을 쓰러뜨리면 뒤 능력 보유자는 치유하거나 소비하지 않는다", () => {
@@ -298,7 +336,7 @@ describe("응급 치유 선택", () => {
     expect(result.party[1]?.battleAbility?.remainingUses).toBe(2);
   });
 
-  it("서로 다른 두 능력 보유자는 전투당 한도와 잔여 횟수를 독립적으로 관리한다", () => {
+  it("서로 다른 두 능력 보유자는 원정 잔여 횟수를 독립적으로 관리한다", () => {
     const result = resolveBattle({
       seed: "heal-independent-holders",
       party: [
@@ -311,11 +349,12 @@ describe("응급 치유 선택", () => {
     expect(result.actions.filter((action) => action.kind === "heal").map((action) => action.actorId)).toEqual([
       "cleric-a",
       "cleric-b",
+      "cleric-a",
     ]);
-    expect(result.party.map((one) => one.battleAbility?.remainingUses)).toEqual([1, 0]);
+    expect(result.party.map((one) => one.battleAbility?.remainingUses)).toEqual([0, 0]);
   });
 
-  it("사건·상인·조언 압력·보스 outgoingDamage 공격 배율은 고정 회복량을 바꾸지 않는다", () => {
+  it("사건·상인·조언 압력·보스 outgoingDamage 공격 배율은 비례 회복량을 바꾸지 않는다", () => {
     const result = resolveBattle({
       seed: "heal-ignores-outgoing-multipliers",
       party: [member("cleric", { hp: 1, battleAbility: emergencyHeal() })],
@@ -336,11 +375,10 @@ describe("응급 치유 선택", () => {
 describe("응급 치유 입력 계약과 회귀", () => {
   it.each([
     ["빈 이름", emergencyHeal({ name: "  " })],
-    ["0 회복량", emergencyHeal({ healAmount: 0 })],
-    ["안전하지 않은 회복량", emergencyHeal({ healAmount: Number.MAX_SAFE_INTEGER + 1 })],
+    ["0 대상 최대 HP 회복 백분율", emergencyHeal({ healTargetMaxHpPercent: 0 })],
+    ["안전하지 않은 대상 최대 HP 회복 백분율", emergencyHeal({ healTargetMaxHpPercent: Number.MAX_SAFE_INTEGER + 1 })],
+    ["100 초과 대상 최대 HP 회복 백분율", emergencyHeal({ healTargetMaxHpPercent: 101 })],
     ["0 원정 횟수", emergencyHeal({ usesPerExpedition: 0 })],
-    ["0 전투 횟수", emergencyHeal({ maxUsesPerBattle: 0 })],
-    ["전투 횟수가 원정 횟수 초과", emergencyHeal({ maxUsesPerBattle: 3 })],
     ["0 발동 백분율", emergencyHeal({ triggerAtOrBelowHpPercent: 0 })],
     ["100 초과 발동 백분율", emergencyHeal({ triggerAtOrBelowHpPercent: 101 })],
     ["음수 잔여 횟수", emergencyHeal({ remainingUses: -1 })],

@@ -126,7 +126,6 @@ export function resolveBattle(input: BattleInput): BattleResolution {
   const rng = createRng(input.seed).derive("battle");
   const aliveParty = () => party.filter((member) => member.hp > 0);
   const aliveEnemies = () => enemies.filter((enemy) => enemy.hp > 0);
-  const abilityUsesInBattleByActorId = new Map<string, number>();
   let rounds = 0;
   for (rounds = 1; rounds <= 50; rounds += 1) {
     for (const member of party) {
@@ -134,23 +133,23 @@ export function resolveBattle(input: BattleInput): BattleResolution {
       const target = aliveEnemies()[0];
       if (target === undefined) break;
       const ability = member.battleAbility;
-      const usesInBattle = abilityUsesInBattleByActorId.get(member.id) ?? 0;
       if (
         ability !== undefined &&
-        ability.remainingUses > 0 &&
-        usesInBattle < ability.maxUsesPerBattle
+        ability.remainingUses > 0
       ) {
         const healTarget = lowestHpRatioTarget(party, ability.triggerAtOrBelowHpPercent);
         if (healTarget !== undefined) {
           const before = healTarget.hp;
-          const healing = Math.min(ability.healAmount, healTarget.maxHp - before);
+          const nominalHealing = Math.round(
+            healTarget.maxHp * ability.healTargetMaxHpPercent / 100,
+          );
+          const healing = Math.min(nominalHealing, healTarget.maxHp - before);
           if (healing > 0) {
             healTarget.hp = before + healing;
             member.battleAbility = {
               ...ability,
               remainingUses: ability.remainingUses - 1,
             };
-            abilityUsesInBattleByActorId.set(member.id, usesInBattle + 1);
             actions.push({
               kind: "heal",
               round: rounds,

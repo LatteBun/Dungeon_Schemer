@@ -293,7 +293,7 @@ describe("E3 원정 사건 준비와 물질화", () => {
     }
   });
 
-  it("일반전 치유는 2회를 1회로 줄이고 전투에 빠진 사망자의 횟수는 보존한다", () => {
+  it("일반전 치유는 같은 전투에서도 잔여 2회를 모두 소비하고 전투에 빠진 사망자의 횟수는 보존한다", () => {
     const event = eventsForTheme("spider").find((candidate) => candidate.kind === "monster");
     if (event?.kind !== "monster" || event.encounter === undefined) throw new Error("monster encounter 없음");
     const cleric: Character = {
@@ -338,8 +338,9 @@ describe("E3 원정 사건 준비와 물질화", () => {
       actorId: cleric.id,
       targetId: cleric.id,
     });
+    expect(result.battle?.actions.filter((action) => action.kind === "heal")).toHaveLength(2);
     expect(result.battleAbilityUsesRemainingByCharacterId).toEqual({
-      [cleric.id]: 1,
+      [cleric.id]: 0,
       [deadCleric.id]: 2,
     });
     expect(result.battleAbilityUsesRemainingByCharacterId).not.toBe(before);
