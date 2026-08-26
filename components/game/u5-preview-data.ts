@@ -6,6 +6,7 @@ import {
   presentShuffledAdvice,
 } from "@/lib/rules/advice-evaluation";
 import { CLASSES } from "@/lib/content/classes";
+import { createBattleAbilityUsesForParty } from "@/lib/rules/battle-ability-state";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import {
@@ -16,7 +17,7 @@ import {
 } from "@/lib/rules/expedition-events";
 import { SPIDER_THEME } from "@/lib/content/themes";
 import { DENOUNCE_THRESHOLD } from "@/lib/domain";
-import { countLivingZeroTrust } from "@/lib/rules/ending";
+import { countEmergencyEligibleAdventurers, countLivingZeroTrust } from "@/lib/rules/ending";
 import type {
   CampaignDungeon,
   Character,
@@ -53,13 +54,18 @@ const PREVIEW_ATTEMPT = 0;
 
 const campaign = initializeCampaign(PREVIEW_SEED);
 
-/** 살아 있는 파티원. 아래에서 실제 비수용 상태를 낼 셋을 결정적으로 고른다. */
+/** 살아 있는 파티원. 성직자 한 명과 동료 둘로 실제 비수용 상태를 찾는다. */
 const livingMembers: readonly Character[] = Object.values(campaign.pool.byId)
   .filter((member): member is Character => member !== undefined && member.alive);
 
 if (livingMembers.length < 3) {
   throw new Error("U5 프리뷰에 쓸 살아 있는 파티원 셋이 없다");
 }
+const clerics = livingMembers.filter((member) => member.classId === "cleric");
+const nonClericMembers = livingMembers.filter((member) => member.classId !== "cleric");
+
+if (clerics.length === 0) throw new Error("U5 프리뷰에 쓸 성직자가 없다");
+if (nonClericMembers.length < 2) throw new Error("U5 프리뷰에 쓸 성직자 동료 둘이 없다");
 
 /* 좁힌 타입을 돌려준다. 아래 함수들이 hoisting 때문에 좁힘을 물려받지 못한다. */
 function previewDungeon(): CampaignDungeon {
@@ -155,10 +161,10 @@ interface UnacceptedCase {
 }
 
 function findUnacceptedCase(): UnacceptedCase {
-  for (let first = 0; first < livingMembers.length - 2; first += 1) {
-    for (let second = first + 1; second < livingMembers.length - 1; second += 1) {
-      for (let third = second + 1; third < livingMembers.length; third += 1) {
-        const members = [livingMembers[first]!, livingMembers[second]!, livingMembers[third]!];
+  for (const cleric of clerics) {
+    for (let first = 0; first < nonClericMembers.length - 1; first += 1) {
+      for (let second = first + 1; second < nonClericMembers.length; second += 1) {
+        const members = [cleric, nonClericMembers[first]!, nonClericMembers[second]!];
         for (const sample of [samples.monster, samples.special, samples.rest, samples.merchant]) {
           const presented = presentShuffledAdvice({
             campaignSeed: PREVIEW_SEED,
@@ -190,6 +196,10 @@ const unaccepted = findUnacceptedCase();
 /** U5 진행·전투 프리뷰가 공통으로 쓰는 실제 비수용 파티다. */
 export const U5_PREVIEW_MEMBERS: readonly Character[] = unaccepted.members;
 const members = U5_PREVIEW_MEMBERS;
+const battleAbilityUsesRemainingByCharacterId = createBattleAbilityUsesForParty({
+  members,
+  classDefs: CLASSES,
+});
 
 /*
  * 프리뷰가 무엇을 근거로 그렸는지 밝힌다.
@@ -202,6 +212,9 @@ export const U5_PREVIEW_SOURCE = {
   dungeonId: PREVIEW_DUNGEON,
   attempt: PREVIEW_ATTEMPT,
   dungeon,
+  members,
+  battleAbilityUsesRemainingByCharacterId,
+  campaign,
   samples,
 } as const;
 
@@ -240,6 +253,7 @@ function status(over: Partial<TopStatusView> = {}): TopStatusView {
     reputation: campaign.reputation,
     gold: campaign.gold,
     canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
+    remainingAdventurers: countEmergencyEligibleAdventurers(campaign),
     remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
     zeroTrust: {
       livingCount: countLivingZeroTrust(campaign),
@@ -413,6 +427,7 @@ function buildLog(): readonly U5LogEntry[] {
     seed: `${PREVIEW_SEED}/${PREVIEW_DUNGEON}/log`,
     pendingMerchantEffect: null,
     advicePressure: 0,
+    battleAbilityUsesRemainingByCharacterId,
   }).battle;
 
   const disclosed = disclosedRuleIds({

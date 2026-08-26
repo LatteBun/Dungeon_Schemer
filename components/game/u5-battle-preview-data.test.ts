@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
+import { countEmergencyEligibleAdventurers } from "@/lib/rules/ending";
+import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import {
   createU5BattlePreviewEntries,
@@ -14,12 +17,41 @@ describe("U5 battle preview data", () => {
     ]);
   });
 
+  it("두 상태 모두 상단 상태 바의 누적 고발 기준을 제공한다", () => {
+    for (const entry of U5_BATTLE_PREVIEW_ENTRIES) {
+      expect(entry.status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
+      expect(entry.status.zeroTrust.livingCount).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("두 상태 모두 실제 캠페인에서 계산한 남은 용사 수를 제공한다", () => {
+    const campaign = initializeCampaign("u5-dungeon-progress-preview-fixed-roster");
+    const expected = countEmergencyEligibleAdventurers(campaign);
+
+    for (const entry of U5_BATTLE_PREVIEW_ENTRIES) {
+      expect(entry.status.remainingAdventurers).toBe(expected);
+    }
+  });
+
   it("E3 일반전은 action 기록이 있고 같은 seed에서 같은 결과를 만든다", () => {
     const first = createU5BattlePreviewEntries().find((entry) => entry.id === "e3-monster");
     const second = createU5BattlePreviewEntries().find((entry) => entry.id === "e3-monster");
 
     expect(first?.resolution.actions.length).toBeGreaterThan(0);
     expect(first?.resolution).toEqual(second?.resolution);
+  });
+
+  it("결정적 E3 fixture는 대상 최대 HP의 25%인 실제 치유를 정확히 한 번 포함한다", () => {
+    const entry = U5_BATTLE_PREVIEW_ENTRIES.find((candidate) => candidate.id === "e3-monster")!;
+    const heals = entry.resolution.actions.filter((action) => action.kind === "heal");
+    const heal = heals[0]!;
+    const target = entry.resolution.party.find((member) => member.id === heal.targetId)!;
+
+    expect(heals).toHaveLength(1);
+    expect(heal).toMatchObject({ abilityKind: "emergencyHeal", healing: Math.round(target.maxHp * 25 / 100) });
+    expect(entry.replay.frames.filter(
+      (frame) => frame.phase === "impact" && frame.actionKind === "heal",
+    )).toHaveLength(1);
   });
 
   it("E3 action 하나를 attack, impact, settle 세 frame으로 확장한다", () => {

@@ -1,5 +1,6 @@
 import type { RiskLevel } from "@/lib/domain";
 import type { BacktestAggregate, CombinationId } from "./metrics";
+import type { BattleAbilitySnapshotComparison } from "./battle-ability-comparison";
 
 /**
  * holdout은 승인된 calibration 설정을 동결한 뒤에만 열어야 한다.
@@ -51,6 +52,125 @@ export interface B1BAcceptanceGate {
   readonly passed: boolean;
   readonly enforced: boolean;
   readonly evidence: string;
+}
+
+export interface HealingStructuralGate {
+  readonly id:
+    | "healing-expedition-use-limit"
+    | "healing-amount-and-hp"
+    | "healing-live-target-and-turn"
+    | "healing-after-victory"
+    | "healing-use-chain"
+    | "healing-holder-only"
+    | "reproducible-valid-runs"
+    | "no-round-limit";
+  readonly passed: boolean;
+  readonly enforced: true;
+  readonly evidence: string;
+}
+
+export interface PairedAbilityStructuralGate {
+  readonly id: "non-holder-unchanged" | "non-trigger-unchanged";
+  readonly passed: boolean;
+  readonly enforced: true;
+  readonly evidence: string;
+}
+
+export function evaluatePairedAbilityStructuralGates(comparison: BattleAbilitySnapshotComparison): readonly PairedAbilityStructuralGate[] {
+  const nonHolder = comparison.controls.nonHolder;
+  const nonTrigger = comparison.controls.nonTrigger;
+  return [{
+    id: "non-holder-unchanged",
+    passed: nonHolder.pairCount > 0 && nonHolder.unchangedPairCount === nonHolder.pairCount,
+    enforced: true,
+    evidence: `전투 control 불변 ${nonHolder.unchangedPairCount}/${nonHolder.pairCount}`,
+  }, {
+    id: "non-trigger-unchanged",
+    passed: nonTrigger.pairCount > 0 && nonTrigger.unchangedPairCount === nonTrigger.pairCount,
+    enforced: true,
+    evidence: `전투 control 불변 ${nonTrigger.unchangedPairCount}/${nonTrigger.pairCount}`,
+  }];
+}
+
+export function evaluateHealingStructuralGates(aggregate: BacktestAggregate): readonly HealingStructuralGate[] {
+  const violations = new Map<HealingStructuralGate["id"], number>();
+  const fail = (id: HealingStructuralGate["id"]): void => {
+    violations.set(id, (violations.get(id) ?? 0) + 1);
+  };
+  for (const run of aggregate.runs) {
+    const expeditionUses = new Map<string, number>();
+    const abilityUsesAfterBattle = new Map<string, number>();
+    for (const entry of run.battles) {
+      const battleUses = new Map<string, number>();
+      const partyById = new Map<string, (typeof entry.party)[number]>(entry.party.map((member) => [member.characterId, member]));
+      const partyHpById = new Map<string, number>(entry.party.map((member) => [member.characterId, member.hpBefore]));
+      const aliveEnemyIds = new Set(entry.battle.enemies.filter((enemy) => enemy.maxHp > 0).map((enemy) => enemy.id));
+      let enemiesDefeated = aliveEnemyIds.size === 0;
+      for (const action of entry.battle.actions) {
+        if (action.kind === "attack" && action.actorSide === "party" && action.defeated) {
+          aliveEnemyIds.delete(action.targetId);
+          enemiesDefeated = aliveEnemyIds.size === 0;
+        }
+        if (action.kind !== "heal") {
+          if (partyHpById.has(action.targetId)) partyHpById.set(action.targetId, action.targetHpAfter);
+          continue;
+        }
+        const expeditionKey = `${entry.expeditionId}\u0000${action.actorId}`;
+        expeditionUses.set(expeditionKey, (expeditionUses.get(expeditionKey) ?? 0) + 1);
+        battleUses.set(action.actorId, (battleUses.get(action.actorId) ?? 0) + 1);
+        const target = partyById.get(action.targetId);
+        const expectedHealing = target === undefined ? Number.NaN : Math.min(
+          Math.round(target.maxHp * 25 / 100),
+          target.maxHp - action.targetHpBefore,
+        );
+        if (!Number.isInteger(action.healing) || action.healing !== expectedHealing
+          || action.targetHpAfter !== action.targetHpBefore + action.healing
+          || action.targetHpAfter > (target?.maxHp ?? Number.NEGATIVE_INFINITY)) {
+          fail("healing-amount-and-hp");
+        }
+        const sameTurnAttack = entry.battle.actions.some((candidate) => candidate.kind === "attack"
+          && candidate.actorSide === "party" && candidate.actorId === action.actorId && candidate.round === action.round);
+        const actorHpBeforeAction = partyHpById.get(action.actorId);
+        const targetHpBeforeAction = partyHpById.get(action.targetId);
+        if (actorHpBeforeAction === undefined || actorHpBeforeAction <= 0
+          || targetHpBeforeAction !== action.targetHpBefore || action.targetHpBefore <= 0 || sameTurnAttack) {
+          fail("healing-live-target-and-turn");
+        }
+        if (enemiesDefeated) fail("healing-after-victory");
+        const actor = partyById.get(action.actorId);
+        if (actor?.classId !== "cleric" || actor.abilityUsesRemainingBefore === null || actor.abilityUsesRemainingBefore === undefined) {
+          fail("healing-holder-only");
+        }
+        partyHpById.set(action.targetId, action.targetHpAfter);
+      }
+      for (const member of entry.party) {
+        const before = member.abilityUsesRemainingBefore;
+        const after = member.abilityUsesRemainingAfter;
+        const hasBefore = before !== null && before !== undefined;
+        const hasAfter = after !== null && after !== undefined;
+        if (hasBefore !== hasAfter) {
+          fail("healing-use-chain");
+          continue;
+        }
+        if (!hasBefore || !hasAfter) continue;
+        const abilityKey = `${run.seed}\u0000${run.strategyId}\u0000${run.accuracy}\u0000${entry.expeditionId}\u0000${member.characterId}`;
+        const previousAfter = abilityUsesAfterBattle.get(abilityKey);
+        if (previousAfter !== undefined && before !== previousAfter) fail("healing-use-chain");
+        const actions = battleUses.get(member.characterId) ?? 0;
+        if (after > before || before - after !== actions) fail("healing-use-chain");
+        abilityUsesAfterBattle.set(abilityKey, after);
+      }
+      if (entry.battle.termination === "roundLimit") fail("no-round-limit");
+    }
+    for (const count of expeditionUses.values()) if (count > 2) fail("healing-expedition-use-limit");
+  }
+  if (aggregate.errorCount > 0) fail("reproducible-valid-runs");
+  const ids: readonly HealingStructuralGate["id"][] = [
+    "healing-expedition-use-limit", "healing-amount-and-hp",
+    "healing-live-target-and-turn", "healing-after-victory", "healing-use-chain",
+    "healing-holder-only", "reproducible-valid-runs", "no-round-limit",
+  ];
+  return ids.map((id) => ({ id, passed: (violations.get(id) ?? 0) === 0, enforced: true, evidence: `위반 ${violations.get(id) ?? 0}건` }));
 }
 
 const DEFAULT_ACCEPTANCE_CONTEXT: B1BAcceptanceContext = { mode: "calibration", seedsPerCombination: 50, focus: "full-campaign" };

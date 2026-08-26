@@ -20,4 +20,19 @@ describe("CLASSES", () => {
       expect(classDef.hitWeight).toBeGreaterThan(0);
     }
   });
+
+  it("성직자만 확정된 응급 치유 능력을 가진다", () => {
+    const cleric = CLASSES.find((classDef) => classDef.id === "cleric");
+
+    expect(cleric?.battleAbility).toEqual({
+      kind: "emergencyHeal",
+      name: "치유 기도",
+      healTargetMaxHpPercent: 25,
+      usesPerExpedition: 2,
+      triggerAtOrBelowHpPercent: 50,
+    });
+    expect(CLASSES.filter((classDef) => classDef.id !== "cleric")).toEqual(
+      expect.not.arrayContaining([expect.objectContaining({ battleAbility: expect.anything() })]),
+    );
+  });
 });

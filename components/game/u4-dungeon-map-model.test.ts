@@ -168,4 +168,23 @@ describe("U4 character portraits", () => {
     expect(view?.alive).toBe(false);
     expect(view?.portraitSrc).toBe("/assets/characters/live/cleric/cleric_a.png");
   });
+
+  it("활성 원정 맵의 현재 횟수를 성직자 카드 상태로 옮긴다", () => {
+    const character: Character = {
+      id: characterId("character-cleric-a"),
+      name: "세리아",
+      classId: classId("cleric"),
+      personality: "prudent",
+      maxHp: 28,
+      hp: 20,
+      trust: 50,
+      gold: 24,
+      alive: true,
+      gravelyWounded: false,
+    };
+
+    const [view] = createU4PartyMemberViews([character], { [character.id]: 1 });
+
+    expect(view?.battleAbilityStatus).toEqual({ label: "치유", remaining: 1, total: 2 });
+  });
 });

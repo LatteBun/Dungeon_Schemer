@@ -171,6 +171,7 @@ export const U1_PREVIEW_STATUS = {
   reputation: 74,
   gold: 186,
   canPromote: true,
+  remainingAdventurers: 12,
   remainingDungeons: 11,
   zeroTrust: { livingCount: 7, threshold: DENOUNCE_THRESHOLD },
   currentDungeon: { name: "자카르의 불탄 우물", riskLevel: 5 },

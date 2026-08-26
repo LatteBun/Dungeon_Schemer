@@ -1,18 +1,23 @@
 import { CLASSES } from "@/lib/content/classes";
 import { eventsForTheme } from "@/lib/content/event-registry";
 import { SPIDER_THEME } from "@/lib/content/themes";
-import type { Character, InfoRecord, SituationEvent } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, type Character, type InfoRecord, type SituationEvent } from "@/lib/domain";
 import { initializeCampaign } from "@/lib/rules/campaign-init";
+import { countEmergencyEligibleAdventurers, countLivingZeroTrust } from "@/lib/rules/ending";
 import type { BattleResolution } from "@/lib/rules/battle-engine";
 import { resolveBossBattle } from "@/lib/rules/boss-battle-adapter";
 import { presentShuffledAdvice, resolveBossInfoAdvice } from "@/lib/rules/advice-evaluation";
 import { resolveMonsterEventBattle } from "@/lib/rules/expedition-events";
 import type { TopStatusView } from "./TopStatusBar";
-import { portraitSrcForCharacterId } from "./character-labels";
+import {
+  PERSONALITY_LABEL,
+  classLabel,
+  portraitSrcForCharacterId,
+} from "./character-labels";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
-import { U5_PREVIEW_ENTRIES, U5_PREVIEW_MEMBERS } from "./u5-preview-data";
+import { U5_PREVIEW_MEMBERS } from "./u5-preview-data";
 import type { U5ProgressView } from "./u5-progress-model";
 import type { U5CombatFeedbackView } from "./u5-combat-feedback";
 
@@ -32,25 +37,24 @@ export interface U5BattlePreviewEntry {
 }
 
 const campaign = initializeCampaign("u5-dungeon-progress-preview-fixed-roster");
-const members = U5_PREVIEW_MEMBERS;
+const cleric = U5_PREVIEW_MEMBERS.find((member) => member.classId === "cleric");
+if (cleric === undefined) throw new Error("U5-2 치유 프리뷰에 쓸 성직자가 없다");
+const clericId = cleric.id;
+const companions = U5_PREVIEW_MEMBERS.filter((member) => member.id !== clericId);
+if (companions.length !== 2) throw new Error("U5-2 치유 프리뷰에 쓸 동료 둘이 없다");
+const injuredCompanion = {
+  ...companions[0]!,
+  hp: Math.max(1, Math.floor(companions[0]!.maxHp / 2)),
+};
+const members: readonly Character[] = U5_PREVIEW_MEMBERS.map((member) =>
+  member.id === injuredCompanion.id ? injuredCompanion : member,
+);
+const battleAbilityUsesRemainingByCharacterId = { [clericId]: 2 } as const;
 const bossCandidate = SPIDER_THEME.bosses.find((candidate) => candidate.id === "boss-spider-2");
 
 if (members.length !== 3) throw new Error("U5-2 프리뷰에 쓸 살아 있는 파티원 셋이 없다");
 if (bossCandidate === undefined) throw new Error("U5-2 프리뷰에 쓸 공식 거미 보스가 없다");
 const boss = bossCandidate;
-
-function battleMember(member: Character, hp = member.hp) {
-  const classDef = CLASSES.find((candidate) => candidate.id === member.classId);
-  if (classDef === undefined) throw new Error(`U5-2 프리뷰 파티 직업이 없다: ${member.classId}`);
-  return {
-    id: member.id,
-    classId: member.classId,
-    hp,
-    maxHp: member.maxHp,
-    attack: classDef.attack,
-    hitWeight: classDef.hitWeight,
-  };
-}
 
 /*
  * 보스전은 `E4` 가 계산한다.
@@ -109,6 +113,7 @@ function resolveBoss() {
     seed: "u5-2-boss-preview",
     pendingMerchantEffect: null,
     advicePressure: 0,
+    battleAbilityUsesRemainingByCharacterId,
   });
 }
 
@@ -145,15 +150,55 @@ function createE3Resolution(): BattleResolution {
     seed: "u5-2-e3-monster-preview",
     pendingMerchantEffect: null,
     advicePressure: 0,
+    battleAbilityUsesRemainingByCharacterId,
   });
   if (battle === null) throw new Error("U5-2 E3 프리뷰 전투 결과가 비어 있다");
   return battle;
 }
 
 function basePreview() {
-  const entry = U5_PREVIEW_ENTRIES.find((candidate) => candidate.id === "monster-before");
-  if (entry === undefined) throw new Error("U5-2 프리뷰가 재사용할 U5 spider 상태가 없다");
-  return entry;
+  return {
+    status: {
+      rank: campaign.rank,
+      reputation: campaign.reputation,
+      gold: campaign.gold,
+      canPromote: false,
+      remainingAdventurers: countEmergencyEligibleAdventurers(campaign),
+      remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
+      zeroTrust: {
+        livingCount: countLivingZeroTrust(campaign),
+        threshold: DENOUNCE_THRESHOLD,
+      },
+      currentDungeon: { name: bossDungeon.name, riskLevel: bossDungeon.riskLevel },
+    } satisfies TopStatusView,
+    progress: {
+      dungeonName: bossDungeon.name,
+      theme: "spider",
+      sceneKind: "monster",
+      nodeLabel: "전투 프리뷰",
+      situation: "확정된 자동 전투 기록을 순서대로 재생한다.",
+      advice: [],
+      outcome: null,
+      party: members.map((member) => ({
+        id: String(member.id),
+        name: member.name,
+        classLabel: classLabel(member.classId),
+        personalityLabel: PERSONALITY_LABEL[member.personality],
+        hp: member.hp,
+        maxHp: member.maxHp,
+        trust: member.trust,
+        gold: member.gold,
+        alive: member.alive,
+        portraitSrc: portraitSrcForCharacterId(member.id),
+        ...(member.id === clericId ? { battleAbilityUsesRemaining: 2 } : {}),
+      })),
+    } satisfies U5ProgressView,
+    log: [] as readonly U5LogEntry[],
+    ecology: {
+      disclosedRules: SPIDER_THEME.rules.slice(0, 2).map((rule) => rule.text),
+      observedClues: [],
+    } satisfies U5EcologyView,
+  };
 }
 
 function previewPostBattleFeedback(

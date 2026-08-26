@@ -217,6 +217,7 @@ describe("ExpeditionState", () => {
       currentNodeId: "node-entry" as never,
       visitedNodeIds: ["node-entry" as never],
       advicePressure: 0,
+      battleAbilityUsesRemainingByCharacterId: {},
       infoRecords: [],
       pendingMerchantEffect,
       bossResult: null,

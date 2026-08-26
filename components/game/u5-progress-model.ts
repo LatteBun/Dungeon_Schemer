@@ -1,4 +1,9 @@
 import type { PartyMemberCardView } from "./PartyMemberCard";
+import type { U5BattleReplayFrame } from "./u5-battle-replay";
+import {
+  withPartyMemberBattleAbilityRemaining,
+  type PartyMemberBattleAbilityStatus,
+} from "./party-member-ability-view";
 import type {
   ChoiceId,
   InfoReaction,
@@ -86,8 +91,39 @@ export interface U5OutcomeView {
   changes: readonly U5ChangeView[];
 }
 
-/** 파티원 표시는 화면마다 갈리지 않도록 공용 카드 타입을 그대로 쓴다. */
-export type U5PartyMemberView = PartyMemberCardView;
+/**
+ * 파티원 표시는 화면마다 갈리지 않도록 공용 카드 타입을 그대로 쓴다.
+ *
+ * 능력 상태는 replay frame이 최종 HP·신뢰와 독립적으로 되감아야 하므로
+ * U5 경계에서 카드의 다른 수치와 분리해 운반한다.
+ */
+export interface U5PartyMemberView extends PartyMemberCardView {
+  readonly battleAbilityStatus?: PartyMemberBattleAbilityStatus;
+}
+
+/**
+ * 우측 파티의 확정 HP·신뢰는 그대로 두고, 원정 자원만 현재 전투 frame으로
+ * 되감는다. replay가 끝난 뒤 다시 보기를 눌러도 이미 확정된 결과가 흔들리지
+ * 않게 하는 U5 전용 경계다.
+ */
+export function u5PartyViewsForBattleFrame(
+  party: readonly U5PartyMemberView[],
+  frame: U5BattleReplayFrame | undefined,
+): readonly U5PartyMemberView[] {
+  if (frame === undefined) return party;
+  return party.map((member) => {
+    const frameRemaining = frame.battleAbilityUsesRemainingByParticipantId[member.id];
+    return frameRemaining === undefined || member.battleAbilityStatus === undefined
+      ? member
+      : {
+        ...member,
+        battleAbilityStatus: withPartyMemberBattleAbilityRemaining(
+          member.battleAbilityStatus,
+          frameRemaining,
+        ),
+      };
+  });
+}
 
 export interface U5ProgressView {
   dungeonName: string;

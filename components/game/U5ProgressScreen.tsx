@@ -16,7 +16,11 @@ import {
   type U5LogEntry,
   type U5LogFilter,
 } from "./u5-log";
-import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
+import {
+  sceneSrc,
+  u5PartyViewsForBattleFrame,
+  type U5ProgressView,
+} from "./u5-progress-model";
 import { U5BattleScene } from "./U5BattleScene";
 import { U5NonBattlePartyScene } from "./U5NonBattlePartyScene";
 import type { U5BattleReplay, U5BattleReplayParticipant } from "./u5-battle-replay";
@@ -271,7 +275,8 @@ export function U5ProgressScreen({
   const battleParticipantsById = new Map(
     battleReplay?.participants.map((participant) => [participant.id, participant] as const) ?? [],
   );
-  const shownParty = combatFeedback === undefined ? progress.party : progress.party.map((member) => {
+  const frameParty = u5PartyViewsForBattleFrame(progress.party, battlePlayback.frame);
+  const shownParty = combatFeedback === undefined ? frameParty : frameParty.map((member) => {
     const participant = battleParticipantsById.get(member.id);
     const hp = u5VisibleHp({
       phase: feedback.phase,
@@ -402,6 +407,7 @@ export function U5ProgressScreen({
                       member={member}
                       index={index}
                       testId="u5-party-member"
+                      battleAbilityStatus={member.battleAbilityStatus}
                       reserveSettledResultSpace
                       changes={feedbackComplete ? changesByMemberId?.[member.id] : undefined}
                       settledResult={combatFeedback === undefined ? undefined : u5SettledPartyResult(
@@ -410,8 +416,12 @@ export function U5ProgressScreen({
                         battleParticipantsById.get(member.id),
                         member.id,
                       )}
-                      effect={showingBattleFrames && battlePlayback.frame?.targetId === member.id && battlePlayback.frame.damage !== null
-                        ? { kind: "hp", delta: -battlePlayback.frame.damage, token: `${battlePlayback.frameIndex}:${member.id}:hp` }
+                      effect={showingBattleFrames && battlePlayback.frame?.targetId === member.id
+                        ? battlePlayback.frame.actionKind === "attack" && battlePlayback.frame.damage !== null
+                          ? { kind: "hp", delta: -battlePlayback.frame.damage, token: `${battlePlayback.frameIndex}:${member.id}:hp` }
+                          : battlePlayback.frame.actionKind === "heal" && battlePlayback.frame.healing !== null
+                            ? { kind: "hp", delta: battlePlayback.frame.healing, token: `${battlePlayback.frameIndex}:${member.id}:hp` }
+                            : undefined
                         : undefined}
                     />
                   </li>

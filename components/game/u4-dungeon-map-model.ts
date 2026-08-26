@@ -1,6 +1,11 @@
 import { CLASSES } from "@/lib/content/classes";
 import { portraitSrcForCharacterId } from "./character-labels";
+import {
+  partyMemberBattleAbilityStatus,
+  type PartyMemberBattleAbilityStatus,
+} from "./party-member-ability-view";
 import type {
+  BattleAbilityUsesRemaining,
   Character,
   CharacterId,
   ClassId,
@@ -39,6 +44,7 @@ export interface U4PartyMemberView {
   gold: number;
   alive: boolean;
   portraitSrc: string;
+  battleAbilityStatus?: PartyMemberBattleAbilityStatus;
 }
 
 const PERSONALITY_LABELS: Readonly<Record<Personality, string>> = {
@@ -103,18 +109,29 @@ export function createU4MapNodeViews(input: {
 /* 초상 매핑은 character-labels.ts 로 옮겼다. 기존 import 를 위해 다시 내보낸다. */
 export function createU4PartyMemberViews(
   characters: readonly Character[],
+  battleAbilityUsesRemaining?: BattleAbilityUsesRemaining,
 ): readonly U4PartyMemberView[] {
-  return characters.map((character) => ({
-    id: character.id,
-    name: character.name,
-    classId: character.classId,
-    classLabel: classLabel(character.classId),
-    personalityLabel: PERSONALITY_LABELS[character.personality],
-    hp: character.hp,
-    maxHp: character.maxHp,
-    trust: character.trust,
-    gold: character.gold,
-    alive: character.alive,
-    portraitSrc: portraitSrcForCharacterId(character.id),
-  }));
+  return characters.map((character) => {
+    const classDef = CLASSES.find((candidate) => candidate.id === character.classId);
+    const battleAbilityStatus = battleAbilityUsesRemaining === undefined
+      ? undefined
+      : partyMemberBattleAbilityStatus(
+        classDef?.battleAbility,
+        battleAbilityUsesRemaining[character.id],
+      );
+    return {
+      id: character.id,
+      name: character.name,
+      classId: character.classId,
+      classLabel: classLabel(character.classId),
+      personalityLabel: PERSONALITY_LABELS[character.personality],
+      hp: character.hp,
+      maxHp: character.maxHp,
+      trust: character.trust,
+      gold: character.gold,
+      alive: character.alive,
+      portraitSrc: portraitSrcForCharacterId(character.id),
+      ...(battleAbilityStatus === undefined ? {} : { battleAbilityStatus }),
+    };
+  });
 }

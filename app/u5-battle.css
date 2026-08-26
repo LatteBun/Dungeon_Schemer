@@ -174,6 +174,14 @@
   transform: translateX(-50%);
 }
 
+.u5-battle-healing-anchor {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+}
+
 /*
  * 피해 숫자가 이 화면의 주인공이다.
  *
@@ -193,6 +201,51 @@
     0 0.08rem 0.2rem #200,
     0 0 0.7rem rgb(255 92 48 / 85%),
     0 0 1.5rem rgb(255 60 20 / 55%);
+}
+
+/* 회복은 부호와 "회복" 안내를 함께 제공하므로 색이 없어도 피해와 갈린다. */
+.u5-battle-healing {
+  display: block;
+  color: #caff9c;
+  font-size: clamp(1.5rem, 5.4cqh, 2.9rem);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  -webkit-text-stroke: 0.06em rgb(16 55 22 / 92%);
+  paint-order: stroke fill;
+  text-shadow:
+    0 0.08rem 0.2rem #031b08,
+    0 0 0.7rem rgb(118 221 94 / 85%),
+    0 0 1.5rem rgb(84 194 82 / 55%);
+}
+
+.u5-battle-motion.is-praying .u5-battle-sprite-frame,
+.u5-battle-motion.is-recovering .u5-battle-sprite-frame {
+  filter: drop-shadow(0 0 0.55rem rgb(190 255 151 / 82%));
+}
+
+.u5-battle-heal-action {
+  position: absolute;
+  top: clamp(0.35rem, 1.2cqh, 0.8rem);
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  gap: clamp(0.3rem, 0.6cqw, 0.65rem);
+  align-items: center;
+  max-width: 55%;
+  padding: clamp(0.16rem, 0.45cqh, 0.28rem) clamp(0.45rem, 0.9cqw, 0.8rem);
+  border: 0.0625rem solid rgb(166 221 123 / 68%);
+  border-radius: 0.2rem;
+  background: rgb(8 18 7 / 90%);
+  color: #d9efbd;
+  font-size: clamp(0.5rem, 1.45cqh, 0.78rem);
+  line-height: 1.2;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.u5-battle-heal-action strong {
+  color: #f0ffd9;
 }
 
 .u5-battle-defeated {

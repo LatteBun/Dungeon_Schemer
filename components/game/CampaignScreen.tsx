@@ -280,7 +280,10 @@ function ExpeditionScreens() {
         publicKindByNodeId: publicKindByNodeId(active),
       })}
       layout={createU4DungeonMapLayout(active.expedition.map)}
-      party={createU4PartyMemberViews(inFormationOrder(active.partyMembers, (member) => String(member.classId)))}
+      party={createU4PartyMemberViews(
+        inFormationOrder(active.partyMembers, (member) => String(member.classId)),
+        active.expedition.battleAbilityUsesRemainingByCharacterId,
+      )}
       survey={surveyViewFor(campaign, active)}
       changesByMemberId={changesByMemberId(active)}
       selectedNextNodeId={selected}

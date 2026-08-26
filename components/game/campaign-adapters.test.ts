@@ -1,16 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { DENOUNCE_THRESHOLD, type CampaignState, type Character } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, type CampaignState, type Character, type ClassId } from "@/lib/domain";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
 import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
+import { countEmergencyEligibleAdventurers } from "@/lib/rules/ending";
 import {
   adviceIdForSlotIn,
   ecologyViewFor,
   logFor,
+  partyViewsFor,
   progressViewFor,
   publicKindByNodeId,
   statusFor,
 } from "./campaign-adapters";
+import { u5PartyViewsForBattleFrame } from "./u5-progress-model";
 
 /**
  * 어댑터 계약.
@@ -40,6 +43,24 @@ function withZeroTrust(
   return { ...campaign, pool: { ...campaign.pool, byId } };
 }
 
+function withEmergencyEligibility(
+  campaign: CampaignState,
+  affected: { wounded: number; dead: number; zeroTrust: number },
+): CampaignState {
+  const byId = { ...campaign.pool.byId } as Record<string, Character>;
+  let cursor = 0;
+  const update = (changes: Partial<Character>) => {
+    const id = campaign.pool.order[cursor++];
+    const member = id === undefined ? undefined : byId[id];
+    if (member === undefined) throw new Error("missing character");
+    byId[id] = { ...member, ...changes };
+  };
+  for (let index = 0; index < affected.wounded; index++) update({ gravelyWounded: true });
+  for (let index = 0; index < affected.dead; index++) update({ alive: false, hp: 0 });
+  for (let index = 0; index < affected.zeroTrust; index++) update({ trust: 0 });
+  return { ...campaign, pool: { ...campaign.pool, byId } };
+}
+
 function inExpedition() {
   const store = createCampaignStore(SEED);
   store.getState().dispatch({ type: "OPEN_BOARD" });
@@ -59,6 +80,18 @@ function atEvent() {
 }
 
 describe("상태 바", () => {
+  it("응급 편성 가능한 남은 용사 수를 전달한다", () => {
+    const initial = createCampaignStore(SEED).getState().campaign;
+    const campaign = withEmergencyEligibility(initial, {
+      wounded: 1,
+      dead: 1,
+      zeroTrust: 1,
+    });
+
+    expect(statusFor(campaign, null).remainingAdventurers)
+      .toBe(countEmergencyEligibleAdventurers(campaign));
+  });
+
   it("초기 캠페인은 살아 있는 신뢰 0 인원과 도메인 기준을 함께 낸다", () => {
     const campaign = createCampaignStore(SEED).getState().campaign;
 
@@ -141,6 +174,91 @@ describe("지도의 공개 분류", () => {
 });
 
 describe("진행 화면 View", () => {
+  it("전투 뒤 파티의 HP·신뢰와 능력 잔여 횟수를 서로 덮어쓰지 않고 옮긴다", () => {
+    const member = inExpedition().getState().context.activeExpedition!.partyMembers
+      .find((candidate) => candidate.classId === "cleric")!;
+    const finalMember = { ...member, hp: member.hp - 1, trust: member.trust - 2 };
+    const view = partyViewsFor("u5-final-party", [finalMember], { [member.id]: 0 })[0]!;
+
+    expect(view).toMatchObject({
+      id: String(member.id),
+      hp: finalMember.hp,
+      trust: finalMember.trust,
+      battleAbilityStatus: { label: "치유", remaining: 0, total: 2 },
+    });
+  });
+
+  it("완료된 U5를 다시 볼 때 HP·신뢰는 최종값이고 잔여 횟수만 replay frame을 따른다", () => {
+    const member = inExpedition().getState().context.activeExpedition!.partyMembers
+      .find((candidate) => candidate.classId === "cleric")!;
+    const finalMember = { ...member, hp: member.hp - 1, trust: member.trust - 2 };
+    const finalParty = partyViewsFor("u5-replay-party", [finalMember], { [member.id]: 0 });
+    const frame = {
+      phase: "idle",
+      actionIndex: null,
+      actorId: null,
+      targetId: null,
+      actionKind: null,
+      damage: null,
+      healing: null,
+      hpByParticipantId: { [member.id]: member.hp },
+      battleAbilityUsesRemainingByParticipantId: { [member.id]: 1 },
+      defeatedParticipantIds: [],
+      cues: [],
+    } as const;
+
+    const shown = u5PartyViewsForBattleFrame(finalParty, frame)[0]!;
+
+    expect(shown).toMatchObject({
+      hp: finalMember.hp,
+      trust: finalMember.trust,
+      battleAbilityStatus: { label: "치유", remaining: 1, total: 2 },
+    });
+  });
+
+  it("replay 비참가 사망 능력 보유자는 기존 잔여 횟수를 보존한다", () => {
+    const members = inExpedition().getState().context.activeExpedition!.partyMembers.slice(0, 2);
+    const participant = { ...members[0]!, classId: "cleric" as ClassId };
+    const deadNonparticipant = {
+      ...members[1]!,
+      classId: "cleric" as ClassId,
+      hp: 0,
+      alive: false,
+    };
+    const finalParty = partyViewsFor(
+      "u5-dead-nonparticipant",
+      [participant, deadNonparticipant],
+      { [participant.id]: 0, [deadNonparticipant.id]: 2 },
+    );
+    const frame = {
+      phase: "idle",
+      actionIndex: null,
+      actorId: null,
+      targetId: null,
+      actionKind: null,
+      damage: null,
+      healing: null,
+      hpByParticipantId: { [participant.id]: participant.hp },
+      battleAbilityUsesRemainingByParticipantId: { [participant.id]: 1 },
+      defeatedParticipantIds: [],
+      cues: [],
+    } as const;
+
+    const shown = u5PartyViewsForBattleFrame(finalParty, frame);
+
+    expect(shown.find((member) => member.id === String(participant.id))?.battleAbilityStatus).toEqual({
+      label: "치유",
+      remaining: 1,
+      total: 2,
+    });
+    expect(shown.find((member) => member.id === String(deadNonparticipant.id))).toMatchObject({
+      hp: 0,
+      alive: false,
+      classLabel: "성직자",
+      battleAbilityStatus: { label: "치유", remaining: 2, total: 2 },
+    });
+  });
+
   it("사건이 없으면 만들지 않는다", () => {
     const store = inExpedition();
     expect(progressViewFor(store.getState().campaign, store.getState().context.activeExpedition!)).toBeNull();

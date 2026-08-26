@@ -421,6 +421,7 @@ function U4PartyMember({ member, index, changes }: {
       index={index}
       testId="u4-party-member"
       changes={changes}
+      battleAbilityStatus={member.battleAbilityStatus}
     />
   );
 }

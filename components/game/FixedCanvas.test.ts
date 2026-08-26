@@ -33,6 +33,14 @@ function styleSheets(): string[] {
   );
 }
 
+function disallowedMediaConditions(source: string): string[] {
+  const cssWithoutComments = source.replace(/\/\*[\s\S]*?\*\//g, "");
+
+  return [...cssWithoutComments.matchAll(/@media\s*([^{]+)\{/gi)]
+    .map((match) => match[1]?.trim() ?? "")
+    .filter((condition) => !/^\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)$/i.test(condition));
+}
+
 function uiSources(): Array<{ name: string; source: string }> {
   return ["app", join("components", "game")].flatMap((root) => {
     const absoluteRoot = join(process.cwd(), root);
@@ -151,8 +159,23 @@ describe("16:9 고정 캔버스", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("고정 비율 화면에는 창 반응형 미디어 쿼리가 없다", () => {
-    const offenders = styleSheets().filter((name) => css(name).includes("@media"));
+  it("동작 줄이기만 허용하고 뷰포트·breakpoint 미디어 쿼리는 거부한다", () => {
+    const fixture = `
+      @media (prefers-reduced-motion: reduce) { .motion { transition: none; } }
+      @media (max-width: 80rem) { .canvas { width: 100%; } }
+      @media screen and (orientation: portrait) { .canvas { height: auto; } }
+    `;
+
+    expect(disallowedMediaConditions(fixture)).toEqual([
+      "(max-width: 80rem)",
+      "screen and (orientation: portrait)",
+    ]);
+  });
+
+  it("고정 비율 화면에는 접근성 외 미디어 쿼리가 없다", () => {
+    const offenders = styleSheets().flatMap((name) =>
+      disallowedMediaConditions(css(name)).map((condition) => `${name}: ${condition}`),
+    );
 
     expect(offenders).toEqual([]);
   });
