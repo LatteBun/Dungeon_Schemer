@@ -39,6 +39,20 @@ describe("캠페인 바깥 화면의 통일성", () => {
     expect(rule).toMatch(/background:\s*linear-gradient\(180deg,\s*#171315\s+0%,\s*#090708\s+100%\)/);
   });
 
+  it("메인 메뉴 단추 사이를 판 높이로 띄운다", () => {
+    /*
+     * 세로 간격의 퍼센트는 이 상자 자신의 높이를 기준으로 푼다. 그 높이는 결국
+     * 단추를 쌓은 만큼이라, 예전의 `gap: 2.15%` 는 실제로 5px 로 풀렸다. 78px
+     * 짜리 단추가 5px 을 사이에 두고 서면 테두리와 안쪽 그림자가 겹쳐 한 덩어리로
+     * 읽힌다. 단추 높이가 `cqh` 로 잡혀 있으므로 간격도 같은 자를 써야 판이
+     * 커지든 작아지든 비율이 유지된다.
+     */
+    const rule = css("main-menu.css").match(/\.main-menu-screen__actions\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(rule).toMatch(/gap:\s*[\d.]+cqh/);
+    expect(rule).not.toMatch(/gap:\s*[\d.]+%/);
+  });
+
   it("업적 화면의 제목이 셸의 제목 토큰을 쓴다", () => {
     const rule = css("achievements.css").match(/\.achievement-screen__header h1\s*\{([^}]*)\}/)?.[1] ?? "";
 

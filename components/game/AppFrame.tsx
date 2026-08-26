@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import { AchievementOverlay } from "./AchievementOverlay";
 import { AppQuickMenuProvider } from "./AppQuickMenuContext";
 import { useAppBattlePlaybackRate } from "./AppBattlePlaybackRateProvider";
@@ -18,7 +17,6 @@ function soundKindFor(control: Element): UiSoundKind | null {
 }
 
 export function AppFrame({ children }: { readonly children: ReactNode }) {
-  const pathname = usePathname();
   const playbackRateControl = useAppBattlePlaybackRate();
   const settings = useAppAudioStore((state) => state.settings);
   const statusMessage = useAppAudioStore((state) => state.message);
@@ -65,6 +63,13 @@ export function AppFrame({ children }: { readonly children: ReactNode }) {
           {children}
         </div>
       </AppQuickMenuProvider>
+      {/*
+        * 설정은 어느 화면에서나 우측 상단에 있다.
+        *
+        * 한동안 메인 화면에서만 이 단추를 숨기고 메뉴 목록에 「설정」을 끼워
+        * 넣었는데, 그러면 설정을 찾는 자리가 화면마다 달라진다. 늘 같은 자리에
+        * 두어 한 번 익히면 어디서든 통하게 한다.
+        */}
       <GlobalQuickMenu
         open={menuOpen}
         bgmEnabled={settings.bgmEnabled}
@@ -72,7 +77,7 @@ export function AppFrame({ children }: { readonly children: ReactNode }) {
         statusMessage={statusMessage}
         buttonRef={menuButtonRef}
         restoreFocusRef={restoreFocusRef}
-        triggerVisible={pathname !== "/"}
+        triggerVisible
         onToggleOpen={toggleMenu}
         onRequestClose={() => setMenuOpen(false)}
         onToggleBgm={() => { void toggleBgm(); }}
