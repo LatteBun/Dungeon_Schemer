@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GeneratedMap, NodeId } from "@/lib/domain";
-import { countU4GeometricCrossings, createU4DungeonMapLayout, resolveU4MapLayoutCandidatesForTest, roomVariationFor, U4MapLayoutError } from "./u4-dungeon-map-layout";
+import { countU4GeometricCrossings, createU4DungeonMapLayout, createU4DungeonMapLayoutCandidatesForTest, resolveU4MapLayoutCandidatesForTest, roomVariationFor, U4MapLayoutError } from "./u4-dungeon-map-layout";
 import {
   countU4LayerCrossings,
   createU4OptimizedLayerOrder,
@@ -89,6 +89,22 @@ describe("U4 dungeon map layout", () => {
   it("falls back to flat depths when wobbled geometry crosses", () => {
     const flat = crossingLayout(false);
     expect(resolveU4MapLayoutCandidatesForTest(crossingLayout(true), flat)).toBe(flat);
+  });
+
+  it("fallback flattens only normal-depth Y wobble and preserves X placement", () => {
+    const { wobbled, fallback } = createU4DungeonMapLayoutCandidatesForTest(MAP);
+
+    for (const layer of MAP.layers) {
+      const wobbledYs = layer.nodeIds.map((nodeId) => wobbled.nodePositions[nodeId]!.y);
+      const fallbackYs = layer.nodeIds.map((nodeId) => fallback.nodePositions[nodeId]!.y);
+      expect(new Set(fallbackYs).size).toBe(1);
+      expect(new Set(wobbledYs).size).toBeGreaterThan(1);
+      for (const nodeId of layer.nodeIds) {
+        expect(fallback.nodePositions[nodeId]!.x).toBe(wobbled.nodePositions[nodeId]!.x);
+      }
+    }
+    expect(fallback.nodePositions[ENTRY]).toEqual(wobbled.nodePositions[ENTRY]);
+    expect(fallback.nodePositions[BOSS]).toEqual(wobbled.nodePositions[BOSS]);
   });
 
   it("throws the geometric crossing count when both candidates cross", () => {

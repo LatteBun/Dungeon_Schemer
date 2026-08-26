@@ -150,10 +150,16 @@ function requirePosition(
   return point;
 }
 
+interface LayoutWobbleOptions {
+  readonly xWobble: boolean;
+  readonly yWobble: boolean;
+  readonly layerShift: boolean;
+}
+
 function buildLayout(
   map: GeneratedMap,
   rows: readonly (readonly NodeId[])[],
-  wobbled: boolean,
+  options: LayoutWobbleOptions,
 ): U4MapLayout {
   const positions: Partial<Record<NodeId, U4Point>> = {
     [map.entryNodeId]: ENTRY_POSITION,
@@ -163,7 +169,7 @@ function buildLayout(
   map.layers.forEach((layer, layerIndex) => {
     const orderedNodeIds = rows[layerIndex + 1]!;
     /* 층마다 조금씩 옆으로 민다. 층과 층이 같은 자리에 서면 다시 격자가 된다. */
-    const shift = wobbled ? wobble(layer.nodeIds[0] ?? map.entryNodeId, 6) * 0.07 : 0;
+    const shift = options.layerShift ? wobble(layer.nodeIds[0] ?? map.entryNodeId, 6) * 0.07 : 0;
     const xs = xPositions(layer.nodeIds.length, spreadFor(layer.nodeIds.length), shift);
     const y = depthY(layerIndex, map.layers.length);
     const xGap = layer.nodeIds.length > 1
@@ -173,11 +179,11 @@ function buildLayout(
 
     orderedNodeIds.forEach((nodeId, nodeIndex) => {
       const x = clampTo(
-        xs[nodeIndex]! + (wobbled ? wobble(nodeId, 1) * xGap * X_WOBBLE : 0),
+        xs[nodeIndex]! + (options.xWobble ? wobble(nodeId, 1) * xGap * X_WOBBLE : 0),
         HORIZONTAL_MIN,
         HORIZONTAL_MAX,
       );
-      positions[nodeId] = renderPoint(x, y + (wobbled ? wobble(nodeId, 2) * yGap * Y_WOBBLE : 0));
+      positions[nodeId] = renderPoint(x, y + (options.yWobble ? wobble(nodeId, 2) * yGap * Y_WOBBLE : 0));
     });
   });
 
@@ -253,10 +259,27 @@ export function countU4GeometricCrossings(
 }
 
 export function createU4DungeonMapLayout(map: GeneratedMap): U4MapLayout {
+  const { wobbled, fallback } = createU4DungeonMapLayoutCandidatesForTest(map);
+  return resolveU4MapLayoutCandidatesForTest(wobbled, fallback);
+}
+
+/** Exposes the two deterministic candidates for invariant-focused layout tests. */
+export function createU4DungeonMapLayoutCandidatesForTest(map: GeneratedMap): {
+  readonly wobbled: U4MapLayout;
+  readonly fallback: U4MapLayout;
+} {
   const optimized = createU4OptimizedLayerOrder(map);
-  const wobbled = buildLayout(map, optimized.rows, true);
-  const flatDepths = buildLayout(map, optimized.rows, false);
-  return resolveU4MapLayoutCandidatesForTest(wobbled, flatDepths);
+  const wobbled = buildLayout(map, optimized.rows, {
+    xWobble: true,
+    yWobble: true,
+    layerShift: true,
+  });
+  const fallback = buildLayout(map, optimized.rows, {
+    xWobble: true,
+    yWobble: false,
+    layerShift: true,
+  });
+  return { wobbled, fallback };
 }
 
 export function resolveU4MapLayoutCandidatesForTest(
