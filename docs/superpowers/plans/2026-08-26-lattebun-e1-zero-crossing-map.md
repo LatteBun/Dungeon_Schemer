@@ -323,13 +323,15 @@ pnpm build
 
 Expected: lint, TypeScript, 모든 Vitest, production build가 모두 성공한다.
 
-실행 결과(2026-08-26): `pnpm typecheck`은 성공했다. `pnpm lint`는 PR base에도
-동일하게 존재하는 `components/game/TopStatusBar.tsx:90`의
-`react-hooks/immutability` 오류로 실패했고, `pnpm test`는 PR base 이후 변경되지
-않은 U5 preview 두 suite와 IntroScreen assertion에서 3 suite/1 assertion이
-실패했다. `pnpm build`는 검수용 dev server 종료와 stale `.next/lock` 격리 후에도
-Turbopack 최적화 단계가 worker 없이 완료 신호를 내지 않아 중단했다. 이 PR은 해당
-범위 밖 기준선 실패를 고치지 않으며, PR 갱신에 결과를 기록한다.
+실행 결과(2026-08-26): `pnpm typecheck`은 성공했다. E1 topology 변경으로
+`/u5-test`의 import-time 프리뷰 파티가 실제 비수용 사례를 찾지 못하던 회귀는,
+모든 살아 있는 조합을 결정적으로 탐색하고 U5-2 전투 프리뷰와 그 파티를 공유하게
+고쳤다. 관련 Vitest 3 suite/18 tests는 통과했고 전체 Vitest는 143 suite/1,577 tests
+중 `IntroScreen` assertion 1건만 실패한다. 이 assertion은 상태 바의 기존 정보 버튼도
+금지하므로 이번 U5 수정과 무관하다. `pnpm lint`는 PR base에도 동일하게 존재하는
+`components/game/TopStatusBar.tsx:90`의 `react-hooks/immutability` 오류로 실패한다.
+격리 worktree는 공유 `node_modules` symlink를 쓰므로 Turbopack이 project root 밖
+symlink를 거부한다. production build 결과는 PR push 뒤 Vercel 검증으로 확인한다.
 
 - [x] **Step 4: 네 viewport 브라우저 검수를 수행한다.**
 

@@ -12,7 +12,7 @@ import { portraitSrcForCharacterId } from "./character-labels";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
-import { U5_PREVIEW_ENTRIES } from "./u5-preview-data";
+import { U5_PREVIEW_ENTRIES, U5_PREVIEW_MEMBERS } from "./u5-preview-data";
 import type { U5ProgressView } from "./u5-progress-model";
 import type { U5CombatFeedbackView } from "./u5-combat-feedback";
 
@@ -32,9 +32,7 @@ export interface U5BattlePreviewEntry {
 }
 
 const campaign = initializeCampaign("u5-dungeon-progress-preview-fixed-roster");
-const members: readonly Character[] = Object.values(campaign.pool.byId)
-  .filter((member): member is Character => member !== undefined && member.alive)
-  .slice(0, 3);
+const members = U5_PREVIEW_MEMBERS;
 const bossCandidate = SPIDER_THEME.bosses.find((candidate) => candidate.id === "boss-spider-2");
 
 if (members.length !== 3) throw new Error("U5-2 프리뷰에 쓸 살아 있는 파티원 셋이 없다");

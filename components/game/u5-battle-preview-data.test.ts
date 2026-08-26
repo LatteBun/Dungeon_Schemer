@@ -4,6 +4,7 @@ import {
   createU5BattlePreviewEntries,
   U5_BATTLE_PREVIEW_ENTRIES,
 } from "./u5-battle-preview-data";
+import { U5_PREVIEW_ENTRIES } from "./u5-preview-data";
 
 describe("U5 battle preview data", () => {
   it("실제 E3 일반전과 실제 E4 보스전 두 상태만 제공한다", () => {
@@ -56,6 +57,20 @@ describe("U5 battle preview data", () => {
       for (const participant of party) {
         expect(participant.imageSrc).toMatch(/^\/assets\/characters\/live\/(warrior|archer|cleric|mage|rogue)\/\1_[a-f]\.png$/);
       }
+    }
+  });
+
+  it("전투 replay와 피드백은 U5 진행 프리뷰의 같은 파티를 사용한다", () => {
+    const progressPartyIds = U5_PREVIEW_ENTRIES.find((entry) => entry.id === "monster-before")!
+      .progress.party.map((member) => member.id);
+
+    for (const entry of U5_BATTLE_PREVIEW_ENTRIES) {
+      const replayPartyIds = entry.replay.participants
+        .filter((participant) => participant.side === "party")
+        .map((participant) => String(participant.id));
+      expect(replayPartyIds).toEqual(progressPartyIds);
+      expect(progressPartyIds).toContain(String(entry.feedback.postBattleReaction?.memberId));
+      expect(progressPartyIds).toContain(String(entry.feedback.postBattleTrustChanges[0]?.memberId));
     }
   });
 

@@ -53,10 +53,13 @@ const PREVIEW_ATTEMPT = 0;
 
 const campaign = initializeCampaign(PREVIEW_SEED);
 
-/** 살아 있는 파티원 셋. 캠페인 풀에서 결정적으로 고른다. */
-const members: readonly Character[] = Object.values(campaign.pool.byId)
-  .filter((member): member is Character => member !== undefined && member.alive)
-  .slice(0, 3);
+/** 살아 있는 파티원. 아래에서 실제 비수용 상태를 낼 셋을 결정적으로 고른다. */
+const livingMembers: readonly Character[] = Object.values(campaign.pool.byId)
+  .filter((member): member is Character => member !== undefined && member.alive);
+
+if (livingMembers.length < 3) {
+  throw new Error("U5 프리뷰에 쓸 살아 있는 파티원 셋이 없다");
+}
 
 /* 좁힌 타입을 돌려준다. 아래 함수들이 hoisting 때문에 좁힘을 물려받지 못한다. */
 function previewDungeon(): CampaignDungeon {
@@ -145,32 +148,48 @@ const samples = materializeSamples();
  * 신뢰가 낮거나 의심 많은 파티원이 모이면 좋은 조언도 통하지 않는다는 것이
  * 이 화면이 말하려는 바다. 그것을 지어내면 말이 되지 않는다.
  */
-function findUnacceptedCase(): { readonly sample: Sample; readonly slot: 0 | 1 | 2 } {
-  for (const sample of [samples.monster, samples.special, samples.rest, samples.merchant]) {
-    const presented = presentShuffledAdvice({
-      campaignSeed: PREVIEW_SEED,
-      dungeonId: PREVIEW_DUNGEON,
-      attempt: PREVIEW_ATTEMPT,
-      depth: sample.depth,
-      event: sample.event,
-    });
-    for (const slot of [0, 1, 2] as const) {
-      const decision = decideImmediateAdvice({
-        campaignSeed: PREVIEW_SEED,
-        dungeonId: PREVIEW_DUNGEON,
-        attempt: PREVIEW_ATTEMPT,
-        depth: sample.depth,
-        event: sample.event,
-        adviceId: adviceIdForSlot(presented, slot),
-        members,
-      });
-      if (!decision.executed) return { sample, slot };
+interface UnacceptedCase {
+  readonly members: readonly Character[];
+  readonly sample: Sample;
+  readonly slot: 0 | 1 | 2;
+}
+
+function findUnacceptedCase(): UnacceptedCase {
+  for (let first = 0; first < livingMembers.length - 2; first += 1) {
+    for (let second = first + 1; second < livingMembers.length - 1; second += 1) {
+      for (let third = second + 1; third < livingMembers.length; third += 1) {
+        const members = [livingMembers[first]!, livingMembers[second]!, livingMembers[third]!];
+        for (const sample of [samples.monster, samples.special, samples.rest, samples.merchant]) {
+          const presented = presentShuffledAdvice({
+            campaignSeed: PREVIEW_SEED,
+            dungeonId: PREVIEW_DUNGEON,
+            attempt: PREVIEW_ATTEMPT,
+            depth: sample.depth,
+            event: sample.event,
+          });
+          for (const slot of [0, 1, 2] as const) {
+            const decision = decideImmediateAdvice({
+              campaignSeed: PREVIEW_SEED,
+              dungeonId: PREVIEW_DUNGEON,
+              attempt: PREVIEW_ATTEMPT,
+              depth: sample.depth,
+              event: sample.event,
+              adviceId: adviceIdForSlot(presented, slot),
+              members,
+            });
+            if (!decision.executed) return { members, sample, slot };
+          }
+        }
+      }
     }
   }
-  throw new Error("아무도 수용하지 않는 경우를 프리뷰 파티에서 찾지 못했다");
+  throw new Error("프리뷰 파티에서 아무도 수용하지 않는 경우를 찾지 못했다");
 }
 
 const unaccepted = findUnacceptedCase();
+/** U5 진행·전투 프리뷰가 공통으로 쓰는 실제 비수용 파티다. */
+export const U5_PREVIEW_MEMBERS: readonly Character[] = unaccepted.members;
+const members = U5_PREVIEW_MEMBERS;
 
 /*
  * 프리뷰가 무엇을 근거로 그렸는지 밝힌다.
