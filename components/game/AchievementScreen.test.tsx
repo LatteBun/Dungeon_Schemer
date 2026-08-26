@@ -193,6 +193,32 @@ describe("길잡이 업적 기록 화면", () => {
     expect(html).toContain("닫기");
   });
 
+  it("캠페인 초기화 확인은 보존 범위와 취소·확정 동작을 표시한다", () => {
+    const html = renderToStaticMarkup(createElement(AchievementStorageDiagnostics, {
+      snapshot: {
+        version: 1,
+        collectedAt: "2026-08-26T12:00:00.000Z",
+        userAgent: "test-agent",
+        status: "ready",
+        reason: null,
+        campaign: null,
+        entries: [],
+      },
+      copyStatus: "idle",
+      confirmingClear: true,
+      onCopy: () => {},
+      onRequestClear: () => {},
+      onCancelClear: () => {},
+      onConfirmClear: () => {},
+      onClose: () => {},
+    }));
+
+    expect(html).toContain("진행 중인 캠페인만 초기화합니다.");
+    expect(html).toContain("업적 기록과 오디오 설정은 그대로 유지됩니다.");
+    expect(html).toContain("취소");
+    expect(html).toContain("캠페인 초기화 확인");
+  });
+
   it("dialog mount는 native modal을 열고 cleanup은 열린 dialog를 닫는다", () => {
     const calls: string[] = [];
     const dialog = {

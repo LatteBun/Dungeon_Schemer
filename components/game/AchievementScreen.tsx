@@ -10,9 +10,10 @@ import {
   unlockedAchievementCount,
 } from "@/lib/achievements/player-progress";
 import type { AchievementId, PlayerProgressV1 } from "@/lib/achievements/player-progress";
-import { collectStorageDiagnostics, type StorageDiagnosticSnapshot } from "@/lib/diagnostics/local-storage-diagnostics";
+import { collectStorageDiagnostics, formatStorageDiagnostics, type StorageDiagnosticSnapshot } from "@/lib/diagnostics/local-storage-diagnostics";
 import { AchievementStorageDiagnostics } from "./AchievementStorageDiagnostics";
 import { advanceDiagnosticTrigger, initialDiagnosticTriggerState } from "./achievement-storage-trigger";
+import { copyStorageDiagnostics, resetCampaignForDiagnostics } from "./achievement-storage-actions";
 
 export interface AchievementCardView {
   readonly id: AchievementId;
@@ -257,6 +258,8 @@ export function Achievements({ backAction }: { readonly backAction: AchievementB
   const trigger = useRef(initialDiagnosticTriggerState());
   const [diagnostics, setDiagnostics] = useState<StorageDiagnosticSnapshot | null>(null);
   const [confirmingCampaignClear, setConfirmingCampaignClear] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const [campaignClearError, setCampaignClearError] = useState<string | null>(null);
 
   return (
     <>
@@ -277,6 +280,8 @@ export function Achievements({ backAction }: { readonly backAction: AchievementB
             collectedAt: new Date().toISOString(),
             userAgent: window.navigator.userAgent,
           }));
+          setCopyStatus("idle");
+          setCampaignClearError(null);
         }}
         onClear={() => {
           clear();
@@ -286,14 +291,38 @@ export function Achievements({ backAction }: { readonly backAction: AchievementB
       {diagnostics === null ? null : (
         <AchievementStorageDiagnostics
           snapshot={diagnostics}
-          copyStatus="idle"
+          copyStatus={copyStatus}
           confirmingClear={confirmingCampaignClear}
-          onCopy={() => {}}
-          onRequestClear={() => setConfirmingCampaignClear(true)}
+          clearError={campaignClearError}
+          onCopy={() => {
+            const clipboard = window.navigator.clipboard;
+            if (clipboard === undefined) {
+              setCopyStatus("failed");
+              return;
+            }
+            void copyStorageDiagnostics(clipboard, formatStorageDiagnostics(diagnostics)).then((result) => {
+              setCopyStatus(result.ok ? "copied" : "failed");
+            });
+          }}
+          onRequestClear={() => {
+            setCampaignClearError(null);
+            setConfirmingCampaignClear(true);
+          }}
           onCancelClear={() => setConfirmingCampaignClear(false)}
-          onConfirmClear={() => {}}
+          onConfirmClear={() => {
+            const result = resetCampaignForDiagnostics(
+              window.localStorage,
+              (href) => window.location.assign(href),
+            );
+            if (!result.ok) {
+              setConfirmingCampaignClear(false);
+              setCampaignClearError(`캠페인 초기화 실패: ${result.reason}`);
+            }
+          }}
           onClose={() => {
             setConfirmingCampaignClear(false);
+            setCopyStatus("idle");
+            setCampaignClearError(null);
             setDiagnostics(null);
           }}
         />
