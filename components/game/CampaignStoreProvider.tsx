@@ -4,11 +4,9 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useStore } from "zustand";
 import type { CampaignStore, CampaignStoreState } from "@/lib/store/campaign-store";
 import { createCampaignStore } from "@/lib/store/campaign-store";
-import { replayRun } from "@/lib/store/campaign-run";
+import { restoreCampaignRun } from "@/lib/store/campaign-run-restore";
 import {
   CAMPAIGN_RUN_VERSION,
-  clearCampaignRun,
-  loadCampaignRun,
   saveCampaignRun,
   type StringStorage,
 } from "@/lib/store/campaign-run-storage";
@@ -84,19 +82,9 @@ export function CampaignStoreProvider({ seed, children, store: providedStore, ex
     const storage = browserStorage();
     if (storage === null) return;
 
-    const loaded = loadCampaignRun(storage);
-    if (loaded.status !== "ready") return;
-
-    const replayed = replayRun(loaded.run.seed, loaded.run.actions);
-    if (!replayed.ok) {
-      /*
-       * 규칙이 바뀌어 옛 저장을 못 읽는다. 들고 있어 봐야 매번 같은 자리에서
-       * 막히므로 버리고 새 판으로 간다. 지금 화면이 이미 새 캠페인이다.
-       */
-      clearCampaignRun(storage);
-      return;
-    }
-    store.getState().restore(loaded.run.seed, replayed.state, loaded.run.actions);
+    const restored = restoreCampaignRun(storage);
+    if (restored.status !== "restored") return;
+    store.getState().restore(restored.run.seed, restored.state, restored.run.actions);
   }, [store, providedStore, explicitSeed]);
 
   /*
