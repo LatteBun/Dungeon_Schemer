@@ -136,6 +136,7 @@ describe("TopStatusBar U2/U3", () => {
     expect(remaining).toContain("12명");
     expect(remaining.startsWith("<button")).toBe(true);
     expect(remaining).toContain('data-testid="remaining-adventurers-info-trigger"');
+    expect(remaining).toContain('/assets/u2/status-adventurers.svg');
     expect(html.indexOf("의심 인원")).toBeLessThan(html.indexOf("남은 용사"));
     expect(html.indexOf("남은 용사")).toBeLessThan(html.indexOf("남은 던전"));
     expect(html).not.toContain("서로 다른 직업의 용사 세 명을 더는 모을 수 없으면");
@@ -162,6 +163,15 @@ describe("TopStatusBar U2/U3", () => {
   it("신뢰 상태 아이콘은 공통 24x24 SVG 계약을 따른다", () => {
     const svg = readFileSync(
       join(process.cwd(), "public", "assets", "u2", "status-trust.svg"),
+      "utf8",
+    );
+    expect(svg).toContain('viewBox="0 0 24 24"');
+    expect(svg).toContain("<path");
+  });
+
+  it("남은 용사 아이콘은 공통 24x24 SVG 계약을 따른다", () => {
+    const svg = readFileSync(
+      join(process.cwd(), "public", "assets", "u2", "status-adventurers.svg"),
       "utf8",
     );
     expect(svg).toContain('viewBox="0 0 24 24"');

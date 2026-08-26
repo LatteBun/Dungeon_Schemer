@@ -231,6 +231,7 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
         <StatusInfoItem
           label="남은 용사"
           value={`${status.remainingAdventurers}명`}
+          iconSrc="/assets/u2/status-adventurers.svg"
           testId="remaining-adventurers-info-trigger"
           isOpen={activeInfoPopover === "remainingAdventurers"}
           onOpen={() => setActiveInfoPopover("remainingAdventurers")}
