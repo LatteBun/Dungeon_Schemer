@@ -92,6 +92,11 @@ const render = (over: Partial<U5ProgressView> = {}, props: Record<string, unknow
 const cssRule = (sheet: string, selector: string) =>
   sheet.match(new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{[^}]*\\}`))?.[0] ?? "";
 
+const standaloneCssRule = (sheet: string, selector: string) => {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return sheet.match(new RegExp(`(?:^|})\\s*${escaped}\\s*\\{[^}]*\\}`, "m"))?.[0] ?? "";
+};
+
 describe("U5ProgressScreen", () => {
   it("반응 확인 전에는 완료 변화량을 숨기고 확인 뒤에는 0이 아닌 값만 남긴다", () => {
     const feedback = {
@@ -439,6 +444,32 @@ describe("U5ProgressScreen", () => {
     expect(sheet).toContain(".u5-ecology:hover::-webkit-scrollbar-thumb");
     expect(sheet).toContain(".u5-ecology:focus-visible::-webkit-scrollbar-thumb");
     expect(sheet).toContain(".u5-log__entries:hover,\n.u5-log__entries:focus-visible,");
+  });
+
+  it("파티 카드 뒷면은 U5에서만 scrollbar를 숨기고 공용 스크롤은 유지한다", () => {
+    const progressSheet = readFileSync("app/u5-progress.css", "utf8");
+    const partySheet = readFileSync("app/party-card.css", "utf8");
+    const sharedBack = standaloneCssRule(partySheet, ".party-card__back");
+    const scopedBack = standaloneCssRule(
+      progressSheet,
+      ".u5-progress-screen .party-card__back",
+    );
+    const scopedWebkit = standaloneCssRule(
+      progressSheet,
+      ".u5-progress-screen .party-card__back::-webkit-scrollbar",
+    );
+
+    expect(sharedBack).toMatch(/overflow-y:\s*auto/);
+    expect(sharedBack).not.toMatch(/scrollbar-width:\s*none/);
+    expect(scopedBack).toMatch(/scrollbar-width:\s*none/);
+    expect(scopedWebkit).toMatch(/display:\s*none/);
+    expect(standaloneCssRule(progressSheet, ".party-card__back")).toBe("");
+    expect(standaloneCssRule(progressSheet, ".party-card__back::-webkit-scrollbar")).toBe("");
+
+    for (const rule of [scopedBack, scopedWebkit]) {
+      expect(rule).not.toMatch(/overflow(?:-y)?:\s*(?:hidden|clip)/);
+      expect(rule).not.toMatch(/max-height\s*:/);
+    }
   });
 
   it("생태 탭은 확인된 생태와 관찰 단서를 구역으로 나눈다", () => {
