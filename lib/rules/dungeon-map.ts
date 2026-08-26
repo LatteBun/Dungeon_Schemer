@@ -330,6 +330,16 @@ export interface DungeonMapGenerationResult {
   readonly diagnostics: DungeonMapGenerationDiagnostics;
 }
 
+export interface DungeonMapGenerationTestSeam {
+  readonly candidateOrder?: (from: NodeId, to: NodeId) => number;
+  readonly passesRandomGate?: (from: NodeId, to: NodeId) => boolean;
+}
+
+let generationTestSeam: DungeonMapGenerationTestSeam | undefined;
+export function __setDungeonMapGenerationTestSeam(seam: DungeonMapGenerationTestSeam | undefined): void {
+  generationTestSeam = seam;
+}
+
 export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput): DungeonMapGenerationResult {
   const { campaignSeed, dungeonId, initialRiskLevel, attempt } = input;
   if (
@@ -371,9 +381,10 @@ export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput
   }
 
   const shuffledLayers = layers.map((layer) => mapRng.shuffle(layer.nodeIds));
+  const solver = createLayeredOrderSolver(shuffledLayers);
   for (let layerIndex = 0; layerIndex < shuffledLayers.length - 1; layerIndex += 1) {
-    const current = layers[layerIndex]!.nodeIds;
-    const next = layers[layerIndex + 1]!.nodeIds;
+    const current = shuffledLayers[layerIndex]!;
+    const next = shuffledLayers[layerIndex + 1]!;
     if (current.length <= next.length) {
       for (let index = 0; index < next.length; index += 1) {
         const from = current[Math.floor((index * current.length) / next.length)]!;
@@ -388,11 +399,12 @@ export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput
         incoming.set(to, (incoming.get(to) ?? 0) + 1);
       }
     }
-    const candidates = mapRng.shuffle(current.flatMap((from) => next.map((to) => [from, to] as const)));
+    const candidates = mapRng.shuffle(current.flatMap((from) => next.map((to) => [from, to] as const)))
+      .sort(([fromA, toA], [fromB, toB]) => (generationTestSeam?.candidateOrder?.(fromA, toA) ?? 0) - (generationTestSeam?.candidateOrder?.(fromB, toB) ?? 0));
     maximumRowCandidateCount = Math.max(maximumRowCandidateCount, candidates.length);
     for (const [from, to] of candidates) {
       const targetIncoming = incoming.get(to) ?? 0;
-      if (edges.get(from)!.length >= 2 || targetIncoming >= 2 || edges.get(from)!.includes(to) || mapRng.int(0, 3) !== 0) continue;
+      if (edges.get(from)!.length >= 2 || targetIncoming >= 2 || edges.get(from)!.includes(to) || !(generationTestSeam?.passesRandomGate?.(from, to) ?? (mapRng.int(0, 3) === 0))) continue;
       evaluatedOptionalCandidateCount += 1;
       const trialEdges: LayeredEdge[] = [];
       for (let row = 0; row < layers.length - 1; row += 1) {
@@ -403,7 +415,6 @@ export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput
         }
       }
       trialEdges.push({ from, to });
-      const solver = createLayeredOrderSolver(layers.map((layer) => layer.nodeIds));
       if (solver.solve(trialEdges).crossingCount !== 0) {
         rejectedForCrossingCount += 1;
         continue;
@@ -417,7 +428,6 @@ export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput
   for (const nodeId of layers.at(-1)!.nodeIds) addEdge(edges, nodeId, bossNodeId);
 
   let baseEdgeCount = [...edges.values()].reduce((sum, targets) => sum + targets.length, 0) - acceptedOptionalEdgeCount;
-  const finalSolver = createLayeredOrderSolver(layers.map((layer) => layer.nodeIds));
   const finalEdges: LayeredEdge[] = [];
   for (let row = 0; row < layers.length - 1; row += 1) {
     for (const source of layers[row]!.nodeIds) {
@@ -426,23 +436,18 @@ export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput
       }
     }
   }
-  let finalSolution = finalSolver.solve(finalEdges);
-  if (finalSolution.crossingCount !== 0 && acceptedOptionalEdges.length > 0) {
-    for (const [from, to] of acceptedOptionalEdges) {
-      const targets = edges.get(from)!;
-      targets.splice(targets.indexOf(to), 1);
-    }
+  let finalSolution = solver.solve(finalEdges);
+  if (finalSolution.crossingCount !== 0) {
+    for (const [from, to] of acceptedOptionalEdges) edges.get(from)!.splice(edges.get(from)!.indexOf(to), 1);
     acceptedOptionalEdgeCount = 0;
     baseEdgeCount = [...edges.values()].reduce((sum, targets) => sum + targets.length, 0);
     finalEdges.length = 0;
     for (let row = 0; row < layers.length - 1; row += 1) {
-      for (const source of layers[row]!.nodeIds) {
-        for (const target of edges.get(source)!) {
-          if (layers[row + 1]!.nodeIds.includes(target)) finalEdges.push({ from: source, to: target });
-        }
+      for (const source of layers[row]!.nodeIds) for (const target of edges.get(source)!) {
+        if (layers[row + 1]!.nodeIds.includes(target)) finalEdges.push({ from: source, to: target });
       }
     }
-    finalSolution = finalSolver.solve(finalEdges);
+    finalSolution = solver.solve(finalEdges);
   }
   const solvedRows = finalSolution.rows;
   const orderedLayers = layers.map((layer, index) => ({ ...layer, nodeIds: solvedRows[index]! }));
@@ -454,7 +459,7 @@ export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput
   ];
   const map: GeneratedMap = { entryNodeId, bossNodeId, layers: orderedLayers, nodes };
   validateGeneratedMap(map, initialRiskLevel);
-  return { map, diagnostics: { baseEdgeCount: baseEdgeCount - acceptedOptionalEdgeCount, evaluatedOptionalCandidateCount, acceptedOptionalEdgeCount, rejectedForCrossingCount, maximumRowCandidateCount } };
+  return { map, diagnostics: { baseEdgeCount, evaluatedOptionalCandidateCount, acceptedOptionalEdgeCount, rejectedForCrossingCount, maximumRowCandidateCount } };
 }
 
 export function generateDungeonMap(input: GenerateDungeonMapInput): GeneratedMap {

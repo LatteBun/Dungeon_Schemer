@@ -55,12 +55,19 @@ describe("생성 지도 구조 검증", () => {
       }))),
       { id: "boss" as NodeId, kind: "boss", nextNodeIds: [] },
     ];
-    expect(() => validateGeneratedMap({
+    const error = (() => {
+      try { validateGeneratedMap({
       entryNodeId: "entry" as NodeId,
       bossNodeId: "boss" as NodeId,
       layers,
       nodes,
-    }, 1)).toThrow(/minimumCrossingCount/);
+      }, 1); return undefined;
+      } catch (caught) { return caught as RuleError; }
+    })();
+    expect(error).toBeInstanceOf(RuleError);
+    expect(error?.code).toBe("INVALID_GENERATION");
+    expect(error?.details.minimumCrossingCount).toBeGreaterThan(0);
+    expect(error?.message).toContain("minimumCrossingCount");
   });
 
   it("진단 생성기는 지도와 선택 간선 산식을 함께 반환한다", () => {
