@@ -96,3 +96,25 @@ describe("업적 기록 초기화 확인 창", () => {
     expect(width).toMatch(/rem/);
   });
 });
+
+describe("업적 저장 진단 창", () => {
+  const sheet = (): string => css("achievements.css");
+
+  it("달성 수 버튼은 상태 chip 모양 위에 브라우저 기본 버튼 판을 덧씌우지 않는다", () => {
+    const rule = sheet().match(/\.achievement-screen__count\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(rule).toMatch(/border:\s*0/);
+    expect(rule).toMatch(/background:\s*none/);
+    expect(rule).toMatch(/font:\s*inherit/);
+  });
+
+  it("진단 창과 원문은 캔버스 안에서 넘침을 스크롤한다", () => {
+    const dialog = sheet().match(/\.achievement-storage-diagnostics\s*\{([^}]*)\}/)?.[1] ?? "";
+    const raw = sheet().match(/\.achievement-storage-diagnostics pre\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(dialog).toMatch(/max-height:/);
+    expect(dialog).toMatch(/overflow:\s*hidden/);
+    expect(raw).toMatch(/overflow:\s*auto/);
+    expect(raw).toMatch(/white-space:\s*pre-wrap/);
+  });
+});

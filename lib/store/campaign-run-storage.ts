@@ -127,9 +127,18 @@ export function saveCampaignRun(storage: StringStorage, run: SavedCampaignRun): 
 }
 
 export function clearCampaignRun(storage: StringStorage): void {
+  clearSavedCampaignRun(storage);
+}
+
+/** 버그 진단 화면처럼 삭제 성공 여부를 알아야 하는 호출부가 사용한다. */
+export function clearSavedCampaignRun(storage: StringStorage): SaveResult {
   try {
     storage.removeItem(CAMPAIGN_RUN_STORAGE_KEY);
-  } catch {
-    /* 지우지 못해도 할 수 있는 일이 없다. */
+    if (storage.getItem(CAMPAIGN_RUN_STORAGE_KEY) !== null) {
+      return { ok: false, reason: "캠페인 저장이 남아 있다" };
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, reason: reasonFor(error) };
   }
 }

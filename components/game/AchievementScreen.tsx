@@ -10,6 +10,10 @@ import {
   unlockedAchievementCount,
 } from "@/lib/achievements/player-progress";
 import type { AchievementId, PlayerProgressV1 } from "@/lib/achievements/player-progress";
+import { collectStorageDiagnosticsFromOwner, formatStorageDiagnostics, type StorageDiagnosticSnapshot } from "@/lib/diagnostics/local-storage-diagnostics";
+import { AchievementStorageDiagnostics } from "./AchievementStorageDiagnostics";
+import { advanceDiagnosticTrigger, initialDiagnosticTriggerState } from "./achievement-storage-trigger";
+import { copyStorageDiagnostics, resetCampaignFromOwner } from "./achievement-storage-actions";
 
 export interface AchievementCardView {
   readonly id: AchievementId;
@@ -83,6 +87,7 @@ export interface AchievementScreenProps {
   readonly onRequestClear?: () => void;
   readonly onCancelClear?: () => void;
   readonly onClear: () => void;
+  readonly onActivateDiagnostics?: () => void;
 }
 
 interface ResetDialogElement {
@@ -199,6 +204,7 @@ export function AchievementScreen({
   onRequestClear,
   onCancelClear,
   onClear,
+  onActivateDiagnostics,
 }: AchievementScreenProps) {
   return (
     /*
@@ -215,9 +221,9 @@ export function AchievementScreen({
           <h1>길잡이 업적 기록</h1>
           <span role="status">{statusNotice(status, message)}</span>
         </div>
-        <p className="game-shell__status-chip achievement-screen__count">
+        <button type="button" className="game-shell__status-chip achievement-screen__count" onClick={onActivateDiagnostics}>
           달성 <strong>{unlockedCount}</strong> / {cards.length}
-        </p>
+        </button>
       </header>
 
       <section
@@ -249,21 +255,78 @@ export function Achievements({ backAction }: { readonly backAction: AchievementB
   const message = usePlayerProgressStore((state) => state.message);
   const clear = usePlayerProgressStore((state) => state.clear);
   const [confirming, setConfirming] = useState(false);
+  const trigger = useRef(initialDiagnosticTriggerState());
+  const [diagnostics, setDiagnostics] = useState<StorageDiagnosticSnapshot | null>(null);
+  const [confirmingCampaignClear, setConfirmingCampaignClear] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const [campaignClearError, setCampaignClearError] = useState<string | null>(null);
 
   return (
-    <AchievementScreen
-      cards={achievementCardViewsFor(progress)}
-      unlockedCount={unlockedAchievementCount(progress)}
-      status={status}
-      message={message}
-      backAction={backAction}
-      confirming={confirming}
-      onRequestClear={() => setConfirming(true)}
-      onCancelClear={() => setConfirming(false)}
-      onClear={() => {
-        clear();
-        setConfirming(false);
-      }}
-    />
+    <>
+      <AchievementScreen
+        cards={achievementCardViewsFor(progress)}
+        unlockedCount={unlockedAchievementCount(progress)}
+        status={status}
+        message={message}
+        backAction={backAction}
+        confirming={confirming}
+        onRequestClear={() => setConfirming(true)}
+        onCancelClear={() => setConfirming(false)}
+        onActivateDiagnostics={() => {
+          const advanced = advanceDiagnosticTrigger(trigger.current, performance.now());
+          trigger.current = advanced.state;
+          if (!advanced.open) return;
+          setDiagnostics(collectStorageDiagnosticsFromOwner(window, {
+            collectedAt: new Date().toISOString(),
+            userAgent: window.navigator.userAgent,
+          }));
+          setCopyStatus("idle");
+          setCampaignClearError(null);
+        }}
+        onClear={() => {
+          clear();
+          setConfirming(false);
+        }}
+      />
+      {diagnostics === null ? null : (
+        <AchievementStorageDiagnostics
+          snapshot={diagnostics}
+          copyStatus={copyStatus}
+          confirmingClear={confirmingCampaignClear}
+          clearError={campaignClearError}
+          onCopy={() => {
+            const clipboard = window.navigator.clipboard;
+            if (clipboard === undefined) {
+              setCopyStatus("failed");
+              return;
+            }
+            void copyStorageDiagnostics(clipboard, formatStorageDiagnostics(diagnostics)).then((result) => {
+              setCopyStatus(result.ok ? "copied" : "failed");
+            });
+          }}
+          onRequestClear={() => {
+            setCampaignClearError(null);
+            setConfirmingCampaignClear(true);
+          }}
+          onCancelClear={() => setConfirmingCampaignClear(false)}
+          onConfirmClear={() => {
+            const result = resetCampaignFromOwner(
+              window,
+              (href) => window.location.assign(href),
+            );
+            if (!result.ok) {
+              setConfirmingCampaignClear(false);
+              setCampaignClearError(`캠페인 초기화 실패: ${result.reason}`);
+            }
+          }}
+          onClose={() => {
+            setConfirmingCampaignClear(false);
+            setCopyStatus("idle");
+            setCampaignClearError(null);
+            setDiagnostics(null);
+          }}
+        />
+      )}
+    </>
   );
 }

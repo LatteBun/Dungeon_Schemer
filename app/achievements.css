@@ -68,9 +68,14 @@
 /* 살결은 상단 상태 바의 알약 규칙이 준다. 여기서는 글자만 정한다. */
 .achievement-screen__count {
   gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--color-muted);
+  font: inherit;
   font-size: clamp(0.72rem, 0.9cqw, 0.95rem);
   letter-spacing: 0.04em;
+  cursor: default;
 }
 
 .achievement-screen__count strong {
@@ -295,7 +300,61 @@
   line-height: 1.5;
 }
 
-.achievement-screen__dialog div {
+.achievement-screen__dialog > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+
+.achievement-storage-diagnostics {
+  width: min(64rem, calc(100% - 4rem));
+  max-height: calc(100% - 4rem);
+  overflow: hidden;
+}
+
+.achievement-storage-diagnostics__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.achievement-storage-diagnostics__summary div {
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid #6f5a32;
+  background: #0f120f;
+}
+
+.achievement-storage-diagnostics__summary dt {
+  color: #c9bea5;
+  font-size: 0.78rem;
+}
+
+.achievement-storage-diagnostics__summary dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+  color: #f3d57f;
+}
+
+.achievement-storage-diagnostics pre {
+  box-sizing: border-box;
+  max-height: 28rem;
+  margin: 0;
+  padding: 0.8rem;
+  overflow: auto;
+  border: 1px solid #6f5a32;
+  background: #090b09;
+  color: #d8d1bd;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.achievement-storage-diagnostics__actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
