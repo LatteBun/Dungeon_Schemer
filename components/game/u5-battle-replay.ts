@@ -24,6 +24,8 @@ export interface U5BattleReplayInput {
 export interface U5BattleReplayParticipant {
   readonly id: string;
   readonly side: "party" | "enemy";
+  /** 서는 차례를 정하는 데 쓴다. 적에게는 직업이 없으므로 `null` 이다. */
+  readonly classId: string | null;
   readonly name: string;
   readonly imageSrc: string;
   readonly maxHp: number;
@@ -146,7 +148,7 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
   const participants = [...input.resolution.party.map((member) => [member, "party"] as const), ...input.resolution.enemies.map((enemy) => [enemy, "enemy"] as const)].map(([source, side]) => {
     const presentation = presentationById.get(source.id);
     if (presentation === undefined) invalid(`presentation이 없는 참가자다: ${source.id}`);
-    return { id: source.id, side, name: presentation.name, imageSrc: presentation.imageSrc, maxHp: source.maxHp, initialHp: initialHpByParticipantId[source.id], finalHp: source.hp };
+    return { id: source.id, side, classId: "classId" in source ? source.classId : null, name: presentation.name, imageSrc: presentation.imageSrc, maxHp: source.maxHp, initialHp: initialHpByParticipantId[source.id], finalHp: source.hp };
   });
 
   const cueViews = (input.cues ?? []).map((cue) => ({
