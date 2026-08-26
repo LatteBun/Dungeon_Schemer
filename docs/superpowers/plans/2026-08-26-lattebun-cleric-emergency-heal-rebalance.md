@@ -449,11 +449,11 @@ git commit -m "검증: 비례 치유의 밸런스 영향을 측정한다" -m "�
 
 **Interfaces:**
 - Consumes: Task 2~5에서 확정된 타입·엔진·replay·측정 결과.
-- Produces: 핵심 검증을 마친 spec/문서 색인과 production build 확인이 남은 PR 브랜치.
+- Produces: production build를 포함한 검증을 마친 spec/문서 색인과 PR 브랜치.
 
 - [ ] **Step 1: spec 상태와 README plan 색인을 갱신한다**
 
-spec의 상태를 `사용자 재설계 승인 · 구현 및 핵심 검증 완료 · production build 검증 진행`으로 바꾼다. `docs/README.md`에는 이 follow-up plan 링크와 “전투당 제한 제거·대상 최대 HP 25% 회복”, CI 또는 정상 환경 build 확인 대기 상태를 추가하고 기존 최초 구현 plan은 역사 기록으로 유지한다.
+spec의 상태를 `사용자 재설계 승인 및 구현 완료`로 바꾼다. `docs/README.md`에는 이 follow-up plan 링크와 “전투당 제한 제거·대상 최대 HP 25% 회복”, CI production build 확인 완료 상태를 추가하고 기존 최초 구현 plan은 역사 기록으로 유지한다.
 
 - [ ] **Step 2: 오래된 구현 계약이 남지 않았는지 검사한다**
 

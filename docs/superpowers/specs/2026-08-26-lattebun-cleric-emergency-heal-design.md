@@ -3,7 +3,7 @@
 - 작성자: LatteBun
 - 작성 도구: ChatGPT
 - 작업 분류: 직업 전투 능력 · 원정 자원 · U5 전투 재생 · 밸런스 변경
-- 상태: 사용자 재설계 승인 · 구현 및 핵심 검증 완료 · production build 검증 진행
+- 상태: 사용자 재설계 승인 및 구현 완료
 
 ## 1. 목적
 
@@ -653,8 +653,7 @@ U5 replay는 판별된 행동 종류별로 HP 사슬을 검증한다.
     소비한다.
 37. 백테스트 driver가 일반전 `pendingOutcome.battle`과 보스전 `bossResult.battle`을
     사라지기 전에 한 번만 수집하고, 같은 시드·전략·정확도끼리 전후 결과를 짝짓는다.
-38. lint, typecheck, unit test, 캠페인 브라우저 smoke가 통과한다. `pnpm build`는 CI 또는
-    정상 빌드 환경에서 exit 0을 확인하기 전까지 검증 진행 상태로 둔다.
+38. lint, typecheck, unit test, 캠페인 브라우저 smoke와 CI production build가 통과한다.
 
 ## 13. 백테스트와 중단 조건
 

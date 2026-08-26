@@ -103,7 +103,7 @@
 
 - [성직자 응급 치유 설계](superpowers/specs/2026-08-26-lattebun-cleric-emergency-heal-design.md): HP 50% 이하 생존자를 대상 최대 HP의 25%만큼 공격 대신 자동 치유하고, 전투별 추가 제한 없이 원정당 2회 자원을 이어 가는 직업 능력 계약
 - [성직자 응급 치유 구현 계획](superpowers/plans/2026-08-26-lattebun-cleric-emergency-heal.md): 변경 전 50·100·200시드 기준선부터 도메인·전투·원정 자원·U5·카드·paired 백테스트·공식 문서까지의 테스트 우선 실행 순서
-- [성직자 응급 치유 재조정 구현 계획](superpowers/plans/2026-08-26-lattebun-cleric-emergency-heal-rebalance.md): 구현과 핵심 검증 완료, CI 또는 정상 환경 production build 확인 대기. 전투당 제한 제거와 대상 최대 HP 25% 회복을 타입·전투·U5·paired 백테스트에 반영한 후속 테스트 우선 실행 기록
+- [성직자 응급 치유 재조정 구현 계획](superpowers/plans/2026-08-26-lattebun-cleric-emergency-heal-rebalance.md): 구현과 production build를 포함한 검증 완료. 전투당 제한 제거와 대상 최대 HP 25% 회복을 타입·전투·U5·paired 백테스트에 반영한 후속 테스트 우선 실행 기록
 - [상단 상태 바 신뢰 0 인원 표시 설계](superpowers/specs/2026-08-26-lattebun-top-status-zero-trust-count-design.md): 살아 있는 신뢰 0 인원과 누적 고발 기준을 C6 selector에서 공통 상태 바로 전달하는 화면 계약
 - [상단 상태 바 신뢰 0 인원 표시 구현 계획](superpowers/plans/2026-08-26-lattebun-top-status-zero-trust-count.md): 필수 View 계약, 프리뷰 원본 구분, 읽기 전용 칩과 최대 7개 레이아웃 검증의 테스트 우선 실행 순서
 - [의심 인원 상태 칩과 경고 팝업 설계](superpowers/specs/2026-08-26-lattebun-suspicion-status-dialog-design.md): 누적 고발 위험을 설명하는 상단 상태 바 팝업 계약
