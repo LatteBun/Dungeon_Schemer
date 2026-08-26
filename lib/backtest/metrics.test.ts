@@ -200,6 +200,26 @@ describe("백테스트 통계", () => {
     });
   });
 
+  it("같은 성직자가 한 전투에 세 번 치유하면 0·1·2회 bucket은 보존하고 초과 bucket에 센다", () => {
+    const run = metric({
+      balanceExpeditions: [expedition({ expeditionId: "three-heals", party: [{ characterId: "c" as never, classId: "cleric" as never }] })],
+      battles: [{
+        kind: "general", expeditionId: "three-heals",
+        party: [{ characterId: "c" as never, classId: "cleric" as never, hpBefore: 1, hpAfter: 16, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: 0 }],
+        battle: {
+          status: "victory", termination: "defeatedEnemies", rounds: 3,
+          actions: [
+            { kind: "heal", round: 1, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 1, targetHpAfter: 6 },
+            { kind: "heal", round: 2, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 6, targetHpAfter: 11 },
+            { kind: "heal", round: 3, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 11, targetHpAfter: 16 },
+          ], party: [], enemies: [],
+        },
+      }],
+    });
+
+    expect(aggregateHealingMetrics([run]).healUsesPerBattle).toEqual({ 0: 0, 1: 0, 2: 0, overLimit: 1 });
+  });
+
   it("같은 seed라도 전략·정확도가 다르면 사망 transition과 전체 전투 라운드를 합치지 않는다", () => {
     const deadBattle = {
       kind: "general" as const, expeditionId: "shared-expedition",

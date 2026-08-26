@@ -141,6 +141,30 @@ describe("B1-B 승인 gate", () => {
     expect(threeUses.find((gate) => gate.id === "healing-use-chain")).toMatchObject({ passed: false });
   });
 
+  it("대상이 거의 가득 찼으면 25% 명목값 대신 남은 HP만 회복해야 한다", () => {
+    const run = metric("survival", 0.7, false, 0, "near-full-proportional-heal");
+    const battle = (healing: 5 | 4) => ({
+      kind: "general" as const, expeditionId: "near-full-proportional-heal",
+      party: [
+        { characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 20, hpAfter: 20, maxHp: 28, abilityUsesRemainingBefore: 1, abilityUsesRemainingAfter: 0 },
+        { characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 40, hpAfter: 40 + healing, maxHp: 45 },
+      ],
+      battle: {
+        status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 1,
+        actions: [{
+          kind: "heal" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "warrior",
+          abilityKind: "emergencyHeal" as const, healing, targetHpBefore: 40, targetHpAfter: 40 + healing,
+        }], party: [], enemies: [{ id: "enemy", monsterId: "one", hp: 1, maxHp: 1, baseDamage: 1 }],
+      },
+    });
+
+    const capped = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(5)] }]));
+    const uncapped = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(4)] }]));
+
+    expect(capped.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: true });
+    expect(uncapped.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: false });
+  });
+
   it("능력 미보유·미발동 control의 라운드가 달라지면 불변 gate를 실패시킨다", () => {
     const base = metric("survival", 0.7, false, 0, "unchanged");
     const controls = { ...base, battles: [{
