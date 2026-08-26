@@ -31,7 +31,8 @@ for (const viewport of VIEWPORTS) {
 
     expect(actionsBox.x).toBeGreaterThan(canvasBox.x);
     expect(actionsBox.x + actionsBox.width).toBeLessThan(canvasBox.x + canvasBox.width);
-    expect(actionsBox.y).toBeGreaterThan(canvasBox.y);
+    const actionTopRatio = (actionsBox.y - canvasBox.y) / canvasBox.height;
+    expect(actionTopRatio).toBeGreaterThanOrEqual(0.555);
     expect(actionsBox.y + actionsBox.height).toBeLessThan(canvasBox.y + canvasBox.height);
     expectNoBrowserErrors(failures, `${viewport.name} 일러스트 메인 메뉴`);
   });
