@@ -10,11 +10,13 @@ function renderMenu({
   bgmEnabled,
   sfxEnabled,
   playbackRate = 1,
+  triggerVisible = true,
 }: {
   readonly open: boolean;
   readonly bgmEnabled: boolean;
   readonly sfxEnabled: boolean;
   readonly playbackRate?: 1 | 2;
+  readonly triggerVisible?: boolean;
 }) {
   return renderToStaticMarkup(createElement(GlobalQuickMenu, {
     open,
@@ -22,6 +24,8 @@ function renderMenu({
     sfxEnabled,
     statusMessage: null,
     buttonRef: createRef<HTMLButtonElement>(),
+    restoreFocusRef: createRef<HTMLElement>(),
+    triggerVisible,
     onToggleOpen: noop,
     onRequestClose: noop,
     onToggleBgm: noop,
@@ -81,5 +85,17 @@ describe("전역 퀵 메뉴", () => {
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('id="global-quick-menu-panel"');
     expect(html).not.toContain('role="switch"');
+  });
+
+  it("메인 화면에서는 trigger를 숨겨도 열린 panel은 유지한다", () => {
+    const html = renderMenu({
+      open: true,
+      bgmEnabled: false,
+      sfxEnabled: false,
+      triggerVisible: false,
+    });
+
+    expect(html).toContain('class="global-quick-menu__trigger global-quick-menu__trigger--hidden"');
+    expect(html).toContain('id="global-quick-menu-panel"');
   });
 });

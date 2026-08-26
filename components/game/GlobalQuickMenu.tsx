@@ -10,6 +10,8 @@ export interface GlobalQuickMenuProps {
   readonly sfxEnabled: boolean;
   readonly statusMessage: string | null;
   readonly buttonRef: RefObject<HTMLButtonElement | null>;
+  readonly restoreFocusRef: RefObject<HTMLElement | null>;
+  readonly triggerVisible: boolean;
   readonly onToggleOpen: () => void;
   readonly onRequestClose: () => void;
   readonly onToggleBgm: () => void;
@@ -25,6 +27,8 @@ export function GlobalQuickMenu({
   sfxEnabled,
   statusMessage,
   buttonRef,
+  restoreFocusRef,
+  triggerVisible,
   onToggleOpen,
   onRequestClose,
   onToggleBgm,
@@ -40,7 +44,7 @@ export function GlobalQuickMenu({
 
     const closeAndRestoreFocus = () => {
       onRequestClose();
-      requestAnimationFrame(() => { buttonRef.current?.focus(); });
+      requestAnimationFrame(() => { (restoreFocusRef.current ?? buttonRef.current)?.focus(); });
     };
     const handlePointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Node)) return;
@@ -59,17 +63,18 @@ export function GlobalQuickMenu({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [buttonRef, onRequestClose, open]);
+  }, [buttonRef, onRequestClose, open, restoreFocusRef]);
 
   return (
     <div className="global-quick-menu">
       <button
         ref={buttonRef}
-        className="global-quick-menu__trigger"
+        className={`global-quick-menu__trigger${triggerVisible ? "" : " global-quick-menu__trigger--hidden"}`}
         type="button"
         aria-label={open ? "빠른 메뉴 닫기" : "빠른 메뉴 열기"}
         aria-expanded={open}
         aria-controls="global-quick-menu-panel"
+        tabIndex={triggerVisible ? undefined : -1}
         data-ui-sound="none"
         onClick={onToggleOpen}
       >
