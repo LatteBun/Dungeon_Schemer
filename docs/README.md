@@ -71,6 +71,7 @@
 - [DEFERRED_WORK.md](technical/DEFERRED_WORK.md): 배정표 밖에서 나중에 하기로 미룬 일과 그 근거
 - [SESSION_PERSISTENCE_REVIEW.md](technical/SESSION_PERSISTENCE_REVIEW.md): 뒤로가기·bfcache 검토와 저장해야 할 상태 목록. I1 시작 전에 읽는다
 - [업적 화면 저장 진단 설계](superpowers/specs/2026-08-26-sbh3821-achievement-storage-diagnostics-design.md): 달성 수 5회 히든 진입, 앱 저장 제보 복사, 캠페인 진행만 초기화하는 경계
+- [캠페인 복원 실패 안전장치 설계](superpowers/specs/2026-08-26-sbh3821-campaign-restore-failure-guard-design.md): 손상 replay를 오류 화면 대신 원문 백업과 새 캠페인으로 격리하는 저장 경계
 - [사용자 노출 게임 제목 변경 설계](superpowers/specs/2026-08-26-sbh3821-visible-game-title-design.md): 화면·브라우저 탭·설치형 웹 앱의 제목만 `용사님, 이쪽입니다`로 통일하는 UI 계약
 - [일러스트 통합 메인 메뉴 설계](superpowers/specs/2026-08-26-sbh3821-illustrated-main-menu-design.md): 승인된 16:9 일러스트와 실제 캠페인·업적·설정 버튼을 하나의 반응형 메인 메뉴로 결합하는 UI 계약
 - [일러스트 통합 메인 메뉴 구현 계획](superpowers/plans/2026-08-26-sbh3821-illustrated-main-menu.md): 승인 이미지 크롭, 전역 설정 context, 실제 메뉴 배치와 데스크톱·모바일 좌표 검증의 테스트 우선 실행 순서

@@ -82,6 +82,10 @@ export type ReplayResult =
   /** 어느 액션에서 막혔는지 남긴다. 규칙이 바뀌면 옛 저장이 여기로 온다. */
   | { readonly ok: false; readonly reason: string; readonly failedAt: number };
 
+function reasonForReplayFailure(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * 시드와 액션 기록을 캠페인으로 되돌린다.
  *
@@ -94,7 +98,12 @@ export function replayRun(seed: string, actions: readonly CampaignTransition[]):
   let state = initialRunState(seed);
 
   for (const [index, action] of actions.entries()) {
-    const step = advanceRun(state, action);
+    let step: AdvanceResult;
+    try {
+      step = advanceRun(state, action);
+    } catch (error) {
+      return { ok: false, reason: reasonForReplayFailure(error), failedAt: index };
+    }
     if (!step.ok) return { ok: false, reason: step.reason, failedAt: index };
     state = step.state;
   }

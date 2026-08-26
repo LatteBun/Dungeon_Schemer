@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { CampaignTransition } from "@/lib/domain";
 import {
+  CAMPAIGN_RUN_CORRUPT_BACKUP_KEY,
   CAMPAIGN_RUN_STORAGE_KEY,
   CAMPAIGN_RUN_VERSION,
   clearCampaignRun,
   clearSavedCampaignRun,
   loadCampaignRun,
+  quarantineCampaignRun,
   saveCampaignRun,
   type StringStorage,
 } from "./campaign-run-storage";
@@ -35,6 +37,28 @@ function stickyStorage(key: string, value: string): StringStorage {
     getItem: (candidate) => candidate === key ? value : null,
     setItem() {},
     removeItem() {},
+  };
+}
+
+function backupFailingStorage(seed: Record<string, string>): StringStorage & { readonly map: Map<string, string> } {
+  const storage = memoryStorage(seed);
+  return {
+    ...storage,
+    setItem(key, value) {
+      if (key === CAMPAIGN_RUN_CORRUPT_BACKUP_KEY) throw new Error("백업 거부됨");
+      storage.setItem(key, value);
+    },
+  };
+}
+
+function clearFailingStorage(seed: Record<string, string>): StringStorage & { readonly map: Map<string, string> } {
+  const storage = memoryStorage(seed);
+  return {
+    ...storage,
+    removeItem(key) {
+      if (key === CAMPAIGN_RUN_STORAGE_KEY) throw new Error("삭제 거부됨");
+      storage.removeItem(key);
+    },
   };
 }
 
@@ -117,11 +141,15 @@ describe("캠페인 저장 읽고 쓰기", () => {
    * 미래 버전을 덮어쓰지 않는다. 새 코드가 쓴 저장을 옛 코드가 열었을 때
    * 지워 버리면 브라우저를 되돌린 사람이 진행을 잃는다.
    */
-  it("모르는 버전을 덮어쓰지 않고 쓸 수 없다고만 본다", () => {
+  it("미래 버전을 지원하지 않는 저장으로 구분하고 원문을 보존한다", () => {
     const raw = JSON.stringify({ version: CAMPAIGN_RUN_VERSION + 1, seed: "s", actions: [] });
     const storage = memoryStorage({ [CAMPAIGN_RUN_STORAGE_KEY]: raw });
 
-    expect(loadCampaignRun(storage).status).toBe("unusable");
+    expect(loadCampaignRun(storage)).toEqual({
+      status: "unsupported",
+      version: CAMPAIGN_RUN_VERSION + 1,
+      raw,
+    });
     expect(storage.map.get(CAMPAIGN_RUN_STORAGE_KEY)).toBe(raw);
   });
 
@@ -142,6 +170,70 @@ describe("캠페인 저장 읽고 쓰기", () => {
 
   it("지우기가 막혀도 던지지 않는다", () => {
     expect(() => { clearCampaignRun(failingStorage(new Error("거부됨"))); }).not.toThrow();
+  });
+
+  it("ready 저장도 복원할 원문을 함께 반환한다", () => {
+    const raw = JSON.stringify({ version: CAMPAIGN_RUN_VERSION, seed: "saved", actions: [OPEN_BOARD] });
+
+    expect(loadCampaignRun(memoryStorage({ [CAMPAIGN_RUN_STORAGE_KEY]: raw }))).toMatchObject({
+      status: "ready",
+      raw,
+    });
+  });
+
+  it("복원 실패 원문을 최신 백업으로 격리하고 캠페인 진행만 지운다", () => {
+    const raw = "{damaged}";
+    const storage = memoryStorage({
+      [CAMPAIGN_RUN_STORAGE_KEY]: raw,
+      [CAMPAIGN_RUN_CORRUPT_BACKUP_KEY]: "old backup",
+      "dungeon-schemer.player-progress.v1": "achievement",
+      "dungeon-schemer.player-progress.corrupt-backup": "achievement backup",
+      "dungeon-schemer.audio-settings.v1": "audio",
+      "outside-app": "outside",
+    });
+
+    expect(quarantineCampaignRun(storage, {
+      raw,
+      reason: "Cannot read properties of undefined",
+      failedAt: 2,
+      capturedAt: "2026-08-26T13:00:00.000Z",
+    })).toEqual({ backup: { ok: true }, clear: { ok: true } });
+    expect(JSON.parse(storage.map.get(CAMPAIGN_RUN_CORRUPT_BACKUP_KEY)!)).toEqual({
+      version: 1,
+      capturedAt: "2026-08-26T13:00:00.000Z",
+      reason: "Cannot read properties of undefined",
+      failedAt: 2,
+      raw,
+    });
+    expect(storage.map.has(CAMPAIGN_RUN_STORAGE_KEY)).toBe(false);
+    expect(Object.fromEntries(storage.map)).toMatchObject({
+      "dungeon-schemer.player-progress.v1": "achievement",
+      "dungeon-schemer.player-progress.corrupt-backup": "achievement backup",
+      "dungeon-schemer.audio-settings.v1": "audio",
+      "outside-app": "outside",
+    });
+  });
+
+  it("백업 저장이 막혀도 캠페인 진행 삭제를 계속 시도한다", () => {
+    const storage = backupFailingStorage({ [CAMPAIGN_RUN_STORAGE_KEY]: "{damaged}" });
+
+    expect(quarantineCampaignRun(storage, { raw: "{damaged}", reason: "broken", failedAt: null })).toEqual({
+      backup: { ok: false, reason: "백업 거부됨" },
+      clear: { ok: true },
+    });
+    expect(storage.map.has(CAMPAIGN_RUN_STORAGE_KEY)).toBe(false);
+  });
+
+  it("캠페인 진행 삭제가 막혀도 격리 결과만 반환한다", () => {
+    const storage = clearFailingStorage({ [CAMPAIGN_RUN_STORAGE_KEY]: "{damaged}" });
+
+    expect(quarantineCampaignRun(storage, {
+      raw: "{damaged}", reason: "broken", failedAt: null, capturedAt: "2026-08-26T13:00:00.000Z",
+    })).toEqual({
+      backup: { ok: true },
+      clear: { ok: false, reason: "삭제 거부됨" },
+    });
+    expect(storage.map.get(CAMPAIGN_RUN_STORAGE_KEY)).toBe("{damaged}");
   });
 });
 
@@ -180,6 +272,22 @@ describe("캠페인 되살리기", () => {
     expect(replayed.ok).toBe(false);
     if (replayed.ok) return;
     expect(replayed.failedAt).toBe(0);
+  });
+
+  it("저장 replay의 일반 예외를 실패 위치로 반환한다", () => {
+    const opened = advanceRun(initialRunState("damaged"), OPEN_BOARD);
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) return;
+    const actions = [
+      OPEN_BOARD,
+      { type: "SELECT_CONTRACT", offerId: opened.state.campaign.offers[0]!.id },
+      { type: "START_EXPEDITION", expeditionId: "broken" },
+    ] as unknown as CampaignTransition[];
+
+    expect(replayRun("damaged", actions)).toMatchObject({
+      ok: false,
+      failedAt: 2,
+    });
   });
 });
 

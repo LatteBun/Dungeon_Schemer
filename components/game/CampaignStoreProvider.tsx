@@ -4,11 +4,9 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useStore } from "zustand";
 import type { CampaignStore, CampaignStoreState } from "@/lib/store/campaign-store";
 import { createCampaignStore } from "@/lib/store/campaign-store";
-import { replayRun } from "@/lib/store/campaign-run";
+import { restoreCampaignRun } from "@/lib/store/campaign-run-restore";
 import {
   CAMPAIGN_RUN_VERSION,
-  clearCampaignRun,
-  loadCampaignRun,
   saveCampaignRun,
   type StringStorage,
 } from "@/lib/store/campaign-run-storage";
@@ -38,6 +36,21 @@ function browserStorage(): StringStorage | null {
 
 const StoreContext = createContext<CampaignStore | null>(null);
 
+function initializeProviderStore(seed: string, providedStore: CampaignStore | undefined, persistenceBlockedInitially: boolean) {
+  let persistenceBlocked = persistenceBlockedInitially;
+  const store = providedStore ?? createCampaignStore(seed, (runSeed, actions) => {
+    if (persistenceBlocked) return;
+    const storage = browserStorage();
+    if (storage === null) return;
+    saveCampaignRun(storage, { version: CAMPAIGN_RUN_VERSION, seed: runSeed, actions });
+  });
+
+  return {
+    store,
+    blockPersistence() { persistenceBlocked = true; },
+  };
+}
+
 export function CampaignStoreProvider({ seed, children, store: providedStore, explicitSeed = false }: {
   readonly seed: string;
   readonly children: React.ReactNode;
@@ -58,16 +71,14 @@ export function CampaignStoreProvider({ seed, children, store: providedStore, ex
    * 에서 막힌다. `useState` 의 초기화 함수는 첫 렌더에서 한 번만 돈다.
    */
   /*
-   * 저장은 조작이 성공할 때마다 덮어쓴다.
+   * 저장 가능한 판은 조작이 성공할 때마다 덮어쓴다.
    *
    * 스토어를 만들 때 붙여야 첫 조작부터 남는다. 화면이 저장을 부르게 하면 부르지
-   * 않는 화면이 생기고, 그 화면을 지나온 판만 이어할 수 없게 된다.
+   * 않는 화면이 생기고, 그 화면을 지나온 판만 이어할 수 없게 된다. 명시적 시드와
+   * 미래 버전 저장을 발견한 세션은 이 listener 안에서 막아 기존 저장을 보존한다.
    */
-  const [store] = useState(() => providedStore ?? createCampaignStore(seed, (runSeed, actions) => {
-    const storage = browserStorage();
-    if (storage === null) return;
-    saveCampaignRun(storage, { version: CAMPAIGN_RUN_VERSION, seed: runSeed, actions });
-  }));
+  const [{ store, blockPersistence }] = useState(() =>
+    initializeProviderStore(seed, providedStore, explicitSeed));
 
   /*
    * 되살리기는 첫 렌더가 아니라 effect 에서 한다.
@@ -84,20 +95,14 @@ export function CampaignStoreProvider({ seed, children, store: providedStore, ex
     const storage = browserStorage();
     if (storage === null) return;
 
-    const loaded = loadCampaignRun(storage);
-    if (loaded.status !== "ready") return;
-
-    const replayed = replayRun(loaded.run.seed, loaded.run.actions);
-    if (!replayed.ok) {
-      /*
-       * 규칙이 바뀌어 옛 저장을 못 읽는다. 들고 있어 봐야 매번 같은 자리에서
-       * 막히므로 버리고 새 판으로 간다. 지금 화면이 이미 새 캠페인이다.
-       */
-      clearCampaignRun(storage);
+    const restored = restoreCampaignRun(storage);
+    if (restored.status === "unsupported") {
+      blockPersistence();
       return;
     }
-    store.getState().restore(loaded.run.seed, replayed.state, loaded.run.actions);
-  }, [store, providedStore, explicitSeed]);
+    if (restored.status !== "restored") return;
+    store.getState().restore(restored.run.seed, restored.state, restored.run.actions);
+  }, [store, providedStore, explicitSeed, blockPersistence]);
 
   /*
    * 뒤로가기로 되살아난 문서를 다시 그린다.
