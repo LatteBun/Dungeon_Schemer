@@ -54,8 +54,8 @@
 | healing-use-chain | PASS | 위반 0건 |
 | no-round-limit | PASS | 위반 0건 |
 | no-run-errors | PASS | 실행 오류 0건 |
-| non-holder-unchanged | PASS | 전투 control 불변 7578/7578 |
-| non-trigger-unchanged | PASS | 전투 control 불변 6163/6163 |
+| non-holder-unchanged | PASS | 전투 control 불변 1906/1906 |
+| non-trigger-unchanged | PASS | 전투 control 불변 1539/1539 |
 | not-all-rank-s | PASS | 각 조합 S 도달률 100% 미만 |
 | reproducible-valid-runs | PASS | 위반 0건 |
 
@@ -439,15 +439,16 @@
 - source revision: cleric-heal-baseline → cleric-heal-after
 - paired key 수: 300
 
-| 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
+| 층 | paired 전투 | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 성직자 포함 | 300 | 0.0107 | 0.0089 | -296 | 0.0600 | 3019 | 15095 | 0 |
-| 성직자 미포함 | 0 | — | — | 0 | — | 0 | 0 | 0 |
+| 성직자 포함 | 3207 | 0.0265 | 0.0145 | -242 | 0.1060 | 1574 | 7870 | 950 |
+| 성직자 미포함 | 2235 | 0.0000 | -0.0013 | -13 | -0.0121 | 0 | 0 | 1327 |
+| 구성 변경 | 1495 | -0.0154 | -0.0009 | 14 | 0.1104 | 407 | 2035 | 0 |
 
 | 구조 gate | 결과 | 근거 |
 | --- | --- | --- |
-| non-holder-unchanged | PASS | 전투 control 불변 1901/1901 |
-| non-trigger-unchanged | PASS | 전투 control 불변 1462/1462 |
+| non-holder-unchanged | PASS | 전투 control 불변 539/539 |
+| non-trigger-unchanged | PASS | 전투 control 불변 381/381 |
 
 ### 100 seed paired 결과
 
@@ -456,15 +457,16 @@
 - source revision: cleric-heal-baseline → cleric-heal-after
 - paired key 수: 600
 
-| 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
+| 층 | paired 전투 | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 성직자 포함 | 600 | 0.0111 | 0.0089 | -576 | 0.0575 | 6115 | 30575 | 0 |
-| 성직자 미포함 | 0 | — | — | 0 | — | 0 | 0 | 0 |
+| 성직자 포함 | 6567 | 0.0262 | 0.0158 | -489 | 0.0949 | 3182 | 15910 | 1887 |
+| 성직자 미포함 | 4386 | -0.0018 | -0.0026 | 13 | -0.0107 | 0 | 0 | 2670 |
+| 구성 변경 | 2913 | -0.0031 | 0.0025 | -20 | 0.0920 | 801 | 4005 | 0 |
 
 | 구조 gate | 결과 | 근거 |
 | --- | --- | --- |
-| non-holder-unchanged | PASS | 전투 control 불변 3780/3780 |
-| non-trigger-unchanged | PASS | 전투 control 불변 3021/3021 |
+| non-holder-unchanged | PASS | 전투 control 불변 1099/1099 |
+| non-trigger-unchanged | PASS | 전투 control 불변 759/759 |
 
 ### 200 seed paired 결과
 
@@ -473,15 +475,16 @@
 - source revision: cleric-heal-baseline → cleric-heal-after
 - paired key 수: 1200
 
-| 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
+| 층 | paired 전투 | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 성직자 포함 | 1200 | 0.0127 | 0.0094 | -1425 | 0.0507 | 12305 | 61525 | 0 |
-| 성직자 미포함 | 0 | — | — | 0 | — | 0 | 0 | 0 |
+| 성직자 포함 | 13344 | 0.0251 | 0.0161 | -1062 | 0.0849 | 6475 | 32375 | 3850 |
+| 성직자 미포함 | 8806 | -0.0010 | -0.0025 | 6 | -0.0014 | 0 | 0 | 5287 |
+| 구성 변경 | 5923 | -0.0022 | 0.0008 | -46 | 0.0827 | 1642 | 8210 | 0 |
 
 | 구조 gate | 결과 | 근거 |
 | --- | --- | --- |
-| non-holder-unchanged | PASS | 전투 control 불변 7578/7578 |
-| non-trigger-unchanged | PASS | 전투 control 불변 6163/6163 |
+| non-holder-unchanged | PASS | 전투 control 불변 1906/1906 |
+| non-trigger-unchanged | PASS | 전투 control 불변 1539/1539 |
 
 
 ## 오류와 재현 seed

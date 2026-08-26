@@ -311,6 +311,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     const rows = ([
       ["성직자 포함", stage.comparison.byCleric.withCleric],
       ["성직자 미포함", stage.comparison.byCleric.withoutCleric],
+      ["구성 변경", stage.comparison.byCleric.compositionChanged],
     ] as const).map(([label, value]) => `| ${label} | ${value.pairCount} | ${nullable(value.battleVictoryRateDelta)} | ${nullable(value.meanPartyHpAfterRatioDelta)} | ${value.deathCountDelta} | ${nullable(value.meanRoundsDelta)} | ${value.healActionDelta} | ${value.actualHealingDelta} | ${value.unchangedPairCount} |`);
     return [
       `### ${stage.seedsPerCombination} seed paired 결과`,
@@ -320,7 +321,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
       `- source revision: ${stage.beforeSourceRevision} → ${stage.afterSourceRevision}`,
       `- paired key 수: ${stage.comparison.pairCount}`,
       "",
-      "| 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |",
+      "| 층 | paired 전투 | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |",
       "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
       ...rows,
       "",

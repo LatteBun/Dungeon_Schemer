@@ -110,7 +110,7 @@ describe("B1-B 승인 gate", () => {
     expect(gates.find((gate) => gate.id === "reproducible-valid-runs")).toMatchObject({ passed: false });
   });
 
-  it("능력 미보유·미발동 control은 비치유 전투 결과 차이와 무관하게 긍정 표본을 남긴다", () => {
+  it("능력 미보유·미발동 control의 라운드가 달라지면 불변 gate를 실패시킨다", () => {
     const base = metric("survival", 0.7, false, 0, "unchanged");
     const controls = { ...base, battles: [{
       kind: "boss" as const, expeditionId: "unchanged",
@@ -131,8 +131,8 @@ describe("B1-B 승인 gate", () => {
     );
 
     expect(evaluatePairedAbilityStructuralGates(comparison)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: "non-holder-unchanged", passed: true, evidence: "전투 control 불변 1/1", enforced: true }),
-      expect.objectContaining({ id: "non-trigger-unchanged", passed: true, evidence: "전투 control 불변 1/1", enforced: true }),
+      expect.objectContaining({ id: "non-holder-unchanged", passed: false, evidence: "전투 control 불변 0/1", enforced: true }),
+      expect.objectContaining({ id: "non-trigger-unchanged", passed: false, evidence: "전투 control 불변 0/1", enforced: true }),
     ]));
   });
 

@@ -5,11 +5,11 @@ function invalid(message: string, details: Record<string, unknown>): never {
 }
 
 function requirePositiveSafeInteger(
-  value: number,
+  value: unknown,
   field: string,
   classId: string,
 ): void {
-  if (!Number.isSafeInteger(value) || value <= 0) {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
     invalid(`직업 능력의 ${field}이 양의 안전한 정수가 아니다: ${classId}`, {
       contentType: "classBattleAbility",
       classId,
@@ -19,38 +19,56 @@ function requirePositiveSafeInteger(
   }
 }
 
-function validateBattleAbility(ability: ClassBattleAbilityDef, classId: string): void {
-  if (ability.name.trim() === "") {
+function validateBattleAbility(ability: unknown, classId: string): asserts ability is ClassBattleAbilityDef {
+  if (ability === null || typeof ability !== "object" || Array.isArray(ability)) {
+    invalid(`직업 능력 정의가 객체가 아니다: ${classId}`, {
+      contentType: "classBattleAbility",
+      classId,
+      value: ability,
+    });
+  }
+  const candidate = ability as Record<string, unknown>;
+  if (candidate.kind !== "emergencyHeal") {
+    invalid(`지원하지 않는 직업 능력 종류다: ${classId}`, {
+      contentType: "classBattleAbility",
+      classId,
+      field: "kind",
+      value: candidate.kind,
+    });
+  }
+  if (typeof candidate.name !== "string" || candidate.name.trim() === "") {
     invalid(`직업 능력 이름이 비어 있다: ${classId}`, {
       contentType: "classBattleAbility",
       classId,
       field: "name",
+      value: candidate.name,
     });
   }
 
-  requirePositiveSafeInteger(ability.healAmount, "healAmount", classId);
-  requirePositiveSafeInteger(ability.usesPerExpedition, "usesPerExpedition", classId);
-  requirePositiveSafeInteger(ability.maxUsesPerBattle, "maxUsesPerBattle", classId);
+  requirePositiveSafeInteger(candidate.healAmount, "healAmount", classId);
+  requirePositiveSafeInteger(candidate.usesPerExpedition, "usesPerExpedition", classId);
+  requirePositiveSafeInteger(candidate.maxUsesPerBattle, "maxUsesPerBattle", classId);
 
-  if (ability.maxUsesPerBattle > ability.usesPerExpedition) {
+  if ((candidate.maxUsesPerBattle as number) > (candidate.usesPerExpedition as number)) {
     invalid(`직업 능력의 전투당 사용 횟수가 원정당 사용 횟수를 초과한다: ${classId}`, {
       contentType: "classBattleAbility",
       classId,
-      maxUsesPerBattle: ability.maxUsesPerBattle,
-      usesPerExpedition: ability.usesPerExpedition,
+      maxUsesPerBattle: candidate.maxUsesPerBattle,
+      usesPerExpedition: candidate.usesPerExpedition,
     });
   }
 
   if (
-    !Number.isSafeInteger(ability.triggerAtOrBelowHpPercent) ||
-    ability.triggerAtOrBelowHpPercent < 1 ||
-    ability.triggerAtOrBelowHpPercent > 100
+    typeof candidate.triggerAtOrBelowHpPercent !== "number" ||
+    !Number.isSafeInteger(candidate.triggerAtOrBelowHpPercent) ||
+    (candidate.triggerAtOrBelowHpPercent as number) < 1 ||
+    (candidate.triggerAtOrBelowHpPercent as number) > 100
   ) {
     invalid(`직업 능력의 발동 HP 백분율이 1~100 안전한 정수가 아니다: ${classId}`, {
       contentType: "classBattleAbility",
       classId,
       field: "triggerAtOrBelowHpPercent",
-      value: ability.triggerAtOrBelowHpPercent,
+      value: candidate.triggerAtOrBelowHpPercent,
     });
   }
 }

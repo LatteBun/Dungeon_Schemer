@@ -59,6 +59,16 @@ describe("validateClasses", () => {
     ]));
   });
 
+  it.each([
+    ["null 능력", null],
+    ["문자열이 아닌 이름", emergencyHeal({ name: 42 as never })],
+    ["지원하지 않는 kind", { ...emergencyHeal(), kind: "manaShield" }],
+  ])("%s 주입값을 RuleError INVALID_GENERATION으로 거부한다", (_caseName, battleAbility) => {
+    expectInvalidGeneration(() => validateClasses([
+      classDef("cleric", { battleAbility: battleAbility as never }),
+    ]));
+  });
+
   it("중복 직업 ID를 INVALID_GENERATION으로 거부한다", () => {
     expectInvalidGeneration(() => validateClasses([
       classDef("cleric"),

@@ -195,7 +195,7 @@ export function writeBacktestSnapshotIfRequested(path: string | undefined, aggre
 
 export function loadBaselineComparison(path: string, aggregate: BacktestAggregate): BattleAbilitySnapshotComparison {
   const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-  if (parsed === null || typeof parsed !== "object" || (parsed as { version?: unknown }).version !== 1
+  if (parsed === null || typeof parsed !== "object" || (parsed as { version?: unknown }).version !== 2
     || !Array.isArray((parsed as { runs?: unknown }).runs)) {
     throw new Error(`유효하지 않은 baseline snapshot: ${path}`);
   }

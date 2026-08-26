@@ -214,6 +214,8 @@ describe("백테스트 gate와 보고서", () => {
     expect(first).toContain("### 200 seed paired 결과");
     expect(first).toContain("| 성직자 포함 | ");
     expect(first).toContain("| 성직자 미포함 | ");
+    expect(first).toContain("| 구성 변경 | ");
+    expect(first).toContain("| 층 | paired 전투 | 전투 승리율 Δ |");
     expect(first).toContain("| healing-use-chain | PASS |");
     expect(first).not.toContain("조정 가능한 기준");
     expect(first).not.toMatch(/duration|elapsed|실행 시간/i);
