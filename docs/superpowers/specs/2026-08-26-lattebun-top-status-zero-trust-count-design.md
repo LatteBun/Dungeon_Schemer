@@ -8,6 +8,7 @@
 - 대상 작업: 누적 고발 엔딩에 사용되는 생존 신뢰 0 인원을 공통 상단 상태 바에 표시
 - 기준 브랜치: `spec/top-status-zero-trust-count`
 - 기준 커밋: `bc07a75`
+- 최신 `main` 구조 재검토 커밋: `6b019ad`
 
 ## 1. 문제와 목표
 
@@ -53,6 +54,9 @@
   - `TopStatusView`와 공통 상태 칩 렌더링을 소유한다.
 - `components/game/campaign-adapters.ts`
   - `CampaignState`를 `TopStatusView`로 변환하는 단일 경계인 `statusFor()`를 소유한다.
+- `components/game/AppFrame.tsx`, `app/app-frame.css`
+  - 최신 `main`은 모든 route 위에 전역 퀵 메뉴를 합성한다.
+  - 우측 상단 트리거와 열린 패널이 최대 7개 상태 칩을 가리지 않아야 한다.
 - `lib/rules/ending.ts`
   - `countLivingZeroTrust(campaign)`가 생존 신뢰 0 인원을 계산한다.
 - `lib/domain/campaign.ts`
@@ -198,6 +202,11 @@ zeroTrust: {
 - `TopStatusBar`는 `CampaignState`, 캐릭터 풀, C6 규칙을 import하지 않는다.
 - `DENOUNCE_THRESHOLD`도 화면 컴포넌트에서 import하지 않는다.
 
+`campaign-adapters.ts`의 기존 주석은 selector 호출까지 규칙 재계산으로 읽힐 수
+있다. `statusFor()`는 이미 승급 selector를 호출하고 있으므로, 구현에서는 이
+경계를 "규칙을 화면에서 다시 구현하지 않고 규칙 selector 결과를 View로 옮긴다"로
+정확히 설명한다. 새 집계 조건을 어댑터에 작성하는 것은 계속 금지한다.
+
 상단바의 숫자는 캠페인 풀에 반영된 확정 상태를 표시한다. 활성 원정의 임시
 파티 상태를 별도로 합성해 두 번째 계산 경로를 만들지 않는다. 신뢰 변화와 사망을
 캠페인 풀에 반영하는 기존 전이 및 정산 시점은 이번 작업에서 변경하지 않는다.
@@ -259,6 +268,17 @@ View다. 공통 상단바는 U6 모델을 재사용하거나 의존하지 않는
 - 지도와 진행 화면: 현재 던전을 포함한 최대 7개 칩
 - 16:9보다 넓거나 좁은 창: 레터박스 안의 고정 캔버스에서 동일한 한 줄 유지
 - 작은 창: 캔버스 전체 축소 뒤에도 텍스트 잘림과 상태 바 내부 스크롤 없음
+- 최신 `main`의 전역 퀵 메뉴가 닫힌 상태와 열린 상태: 트리거·패널이 상태 칩과
+  겹치거나 칩의 조작을 가리지 않음
+
+기존 `e2e/canvas-layout.spec.ts`는 문서 전체 스크롤과 캔버스 경계만 확인하며,
+상태 바 내부의 넘침이나 같은 행 배치를 직접 증명하지 않는다. 구현에서는 현재
+던전을 포함한 7개 칩 fixture로 다음 브라우저 계약을 추가한다.
+
+- `.game-shell__status-list`의 `scrollWidth <= clientWidth`
+- 모든 상태 칩의 상단 좌표가 허용 오차 안에서 동일
+- 가장 긴 실제 던전 이름과 `신뢰 0 7 / 5`에서도 값 잘림과 칩 간 겹침 없음
+- 전역 퀵 메뉴 트리거 및 열린 패널과 상태 칩의 bounding box가 겹치지 않음
 
 ## 7. 경계 사례
 
@@ -274,9 +294,14 @@ View다. 공통 상단바는 U6 모델을 재사용하거나 의존하지 않는
 
 ### 7.3 기준 도달
 
-`livingCount === threshold`가 되면 정상 캠페인 경로에서 누적 고발 엔딩이 성립한다.
-종료 전이가 완료되면 캠페인 엔딩 화면으로 넘어가므로 공통 상단바가 계속 5 / 5로
-남아 있을 필요는 없다.
+`livingCount >= threshold`가 되면 정상 캠페인 경로에서 누적 고발 엔딩이 성립한다.
+판정은 정산과 월드턴 뒤에 실행되므로, 한 원정에서 여러 명이 동시에 신뢰 0이 되면
+정산 화면의 상단 상태 바는 잠시 `6 / 5` 또는 `7 / 5`를 표시할 수 있다.
+
+화면은 `livingCount`를 5로 제한하지 않고 selector 결과를 그대로 표시한다. 이는
+현재 실제 인원을 보여 준다는 정보 계약과 `n은 countLivingZeroTrust(campaign)의
+결과와 같다`는 완료 조건을 지킨다. 종료 전이가 완료되면 상단 상태 바가 없는
+캠페인 엔딩 화면으로 넘어간다.
 
 화면은 `>= 5`를 다시 판정하거나 엔딩을 발생시키지 않는다.
 
@@ -287,9 +312,19 @@ S급의 `승급: 최고`, 현재 던전의 이름과 위험도, 신뢰 0 칩은 
 
 ### 7.5 프리뷰와 테스트 경로
 
-정적 프리뷰는 실제 캠페인 규칙을 실행하지 않으므로 각 fixture가 표시할
-`zeroTrust` 값을 명시한다. 기본 프리뷰는 `0 / 5`를 사용하고, 상단바 상태 확인용
-fixture 한 곳에서는 2명 이상 값을 사용해 숫자 서식을 검증한다.
+프리뷰와 테스트 경로는 데이터 원본에 따라 나눈다.
+
+- U1·U2 정적 프리뷰와 순수 화면 테스트 fixture는 실제 캠페인 규칙을 실행하지
+  않으므로 `livingCount`를 명시한다. `threshold`는 이 경로에서도 숫자 5를
+  하드코딩하지 않고 `DENOUNCE_THRESHOLD`를 사용한다. 기본 표시는 `0 / 5`를
+  사용하고, 상단바 상태 확인용 fixture 한 곳은 `2 / 5` 이상을 사용한다.
+- U3~U6의 캠페인 기반 프리뷰는 실제 초기화·전이·정산·엔딩 규칙으로 캠페인을
+  만든다. 이 경로는 `livingCount`나 기준값을 리터럴로 복제하지 않고
+  `statusFor()` 또는 C6 selector와 도메인 상수에서 값을 만든다.
+
+필수 필드 추가를 이유로 모든 프리뷰에 `livingCount: 0`, `threshold: 5`를 일괄
+하드코딩하지 않는다. 실제 캠페인과 프리뷰 상태 바가 다시 어긋나는 중복 구현을
+막기 위함이다.
 
 ## 8. 테스트와 검증
 
@@ -299,46 +334,59 @@ TDD 순서는 다음과 같다.
    - 초기 캠페인은 `livingCount: 0`, `threshold: DENOUNCE_THRESHOLD`를 반환한다.
    - 살아 있는 신뢰 0 캐릭터만 센다.
    - 사망한 신뢰 0 캐릭터는 제외한다.
+   - 기준 초과 상태에서도 selector 결과를 제한하지 않는다.
 2. `TopStatusBar.test.ts`에 실패하는 렌더링 테스트를 추가한다.
    - `신뢰 0`과 `2 / 5`를 렌더링한다.
+   - 기준 초과 값은 `7 / 5`로 그대로 렌더링한다.
    - `/assets/u2/status-trust.svg`를 사용한다.
+   - 새 SVG 파일이 실제로 존재하며 공통 24×24 viewBox 계약을 따른다.
    - 승급 뒤, 남은 던전 앞에 놓인다.
    - 버튼이 아니며 승급 진입 test id를 갖지 않는다.
 3. `TopStatusView`와 `statusFor()`를 구현한다.
-4. 모든 프리뷰와 테스트 fixture에 필수 `zeroTrust` 값을 추가한다.
+4. 프리뷰와 테스트 경로를 데이터 원본에 맞춰 갱신한다.
+   - 정적 fixture는 `livingCount`와 `DENOUNCE_THRESHOLD`로 필수 View를 채운다.
+   - 캠페인 기반 프리뷰는 `statusFor()` 또는 C6 selector 결과를 사용한다.
 5. `TopStatusBar`와 자산을 구현한다.
 6. 공통 상태 바 및 고정 캔버스 회귀 테스트를 실행한다.
+   - 7개 칩의 내부 overflow와 같은 행 배치를 브라우저에서 수치로 검증한다.
+   - 최신 `main`의 전역 퀵 메뉴 닫힘·열림 상태와 겹치지 않는지 검증한다.
 7. 실제 캠페인에서 신뢰 0 인원이 반영된 뒤 상단 숫자가 갱신되는지 브라우저로
    확인한다.
 
 필수 자동 검증:
 
-- `npx vitest run components/game/TopStatusBar.test.ts`
-- `npx vitest run components/game/campaign-adapters.test.ts`
-- `npx vitest run components/game/StatusBarConsistency.test.ts`
+- `pnpm vitest run components/game/TopStatusBar.test.ts`
+- `pnpm vitest run components/game/campaign-adapters.test.ts`
+- `pnpm vitest run components/game/StatusBarConsistency.test.ts`
 - 관련 U2, U3, U4, U5, U6 화면 및 프리뷰 테스트 통과
-- `npm test` 통과
-- `npm run typecheck` 통과
-- `npx eslint . --ignore-pattern 'playwright-report/**' --ignore-pattern 'test-results/**'`
+- `pnpm test` 통과
+- `pnpm typecheck` 통과
+- `pnpm exec eslint . --ignore-pattern 'playwright-report/**' --ignore-pattern 'test-results/**'`
   오류 0개
-- `npm run build -- --webpack` 통과
+- `pnpm exec next build --webpack` 통과
+- 상태 바 최대 7개 칩을 포함한 관련 `pnpm test:e2e` 시나리오 통과
 - `git diff --check` 통과
 
 필수 시각 검증:
 
 - 기본 상태 `신뢰 0 0 / 5`
 - 진행 상태 `신뢰 0 2 / 5`
+- 기준 초과 정산 상태 `신뢰 0 6 / 5` 또는 `7 / 5`
 - 원정 중 현재 던전까지 포함한 7개 칩
 - 1920×1080, 1280×720, 비16:9 창의 레터박스 상태
 - 가로 잘림, 줄바꿈, 스크롤, 아이콘 투명 여백 없음
+- 전역 퀵 메뉴 닫힘·열림 상태에서 트리거·패널과 상태 칩 겹침 없음
 
 ## 9. 공식 문서 반영
 
 구현 PR은 다음 공식 문서를 함께 갱신한다.
 
+- `docs/README.md`
+  - 이 Spec과 후속 구현 Plan을 `이번 개편 설계` 색인에 추가
 - `docs/experience/SCREEN_LAYOUT.md`
   - `GameShell` 상단 상태 바 목록에 `신뢰 0 인원 / 누적 고발 기준` 추가
   - 최대 7개 칩 레이아웃 계약 기록
+  - 전역 퀵 메뉴와 최대 7개 칩의 비겹침 계약 기록
 - `docs/experience/ONBOARDING_AND_INTERFACE.md`
   - 캠페인 공통 정보에 신뢰 0 인원 추가
   - 사망자는 집계에서 빠지고 5명에서 누적 고발이 성립한다는 연결 명시
@@ -357,9 +405,15 @@ TDD 순서는 다음과 같다.
 - Modify: `components/game/campaign-adapters.ts`
 - Modify: `components/game/TopStatusBar.test.ts`
 - Modify: `components/game/campaign-adapters.test.ts`
-- Modify: 상단 상태 fixture를 가진 U1~U6 프리뷰와 화면 테스트
+- Modify: 정적 상태 fixture를 가진 `components/game/u1-preview-data.ts`,
+  `components/game/U2Preview.tsx`와 `GameShell`, `IntroScreen`, U3, U4, U5, U6 화면 테스트
+- Modify: 캠페인 기반 상태 생성 경로인 `components/game/U3Preview.tsx`,
+  `components/game/u4-preview-data.ts`, `components/game/u5-preview-data.ts`,
+  `components/game/u6-preview-data.ts`
 - Add: `public/assets/u2/status-trust.svg`
 - Modify if needed after visual validation: `app/globals.css`
+- Modify: `e2e/canvas-layout.spec.ts` 또는 같은 계약을 소유하는 상태 바 전용 E2E
+- Modify: `docs/README.md`
 - Modify: `docs/experience/SCREEN_LAYOUT.md`
 - Modify: `docs/experience/ONBOARDING_AND_INTERFACE.md`
 - Modify: `docs/technical/SCREEN_ADAPTER_CONTRACT.md`
@@ -387,10 +441,12 @@ TDD 순서는 다음과 같다.
 
 - 모든 `GameShell` 화면 상단에 `신뢰 0 n / 5`가 항상 표시된다.
 - `n`은 C6의 `countLivingZeroTrust(campaign)` 결과와 같다.
+- `n > 5`여도 5로 제한하지 않고 실제 selector 결과를 표시한다.
 - 사망한 신뢰 0 캐릭터는 숫자에 포함되지 않는다.
 - 기준값 5를 화면이나 fixture에서 별도 하드코딩하지 않고 도메인 상수를 전달한다.
 - `TopStatusBar`는 캠페인 도메인과 엔딩 규칙을 직접 import하지 않는다.
 - 새 상태 칩은 읽기 전용이며 기존 승급 버튼 동작을 바꾸지 않는다.
 - 최대 7개 칩에서도 줄바꿈, 잘림, 상태 바 스크롤이 없다.
+- 최대 7개 칩은 전역 퀵 메뉴가 닫히거나 열려도 트리거·패널과 겹치지 않는다.
 - 화면별 상태 바 CSS 재정의가 생기지 않는다.
 - 관련 공식 문서, 단위 테스트, 통합 테스트와 빌드가 모두 갱신되고 통과한다.
