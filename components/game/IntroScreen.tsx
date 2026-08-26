@@ -69,6 +69,7 @@ function IntroMainContent({ boardHref, onEnterBoard }: { boardHref: string; onEn
             <p>명성으로 인정받아 정식 승급</p>
             <p>골드로 뒷거래 승급</p>
             <p>C → B → A → S</p>
+            <p>높은 등급일수록 더 위험한 던전에 입장할 수 있습니다.</p>
           </article>
           <article>
             <h2>원정의 목표</h2>

@@ -35,6 +35,7 @@ describe("IntroScreen", () => {
     expect(introHtml).toContain("명성으로 인정받아 정식 승급");
     expect(introHtml).toContain("골드로 뒷거래 승급");
     expect(introHtml).toContain("C → B → A → S");
+    expect(introHtml).toContain("높은 등급일수록 더 위험한 던전에 입장할 수 있습니다.");
     expect(introHtml).toContain("15개의 던전을 돌파하십시오.");
     expect(introHtml).toContain("최고의 목표는 S급 길잡이");
     expect(introHtml).toContain("길잡이에게도 끝은 찾아옵니다");
