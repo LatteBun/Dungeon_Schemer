@@ -331,6 +331,7 @@ export interface DungeonMapGenerationResult {
 }
 
 export interface DungeonMapGenerationTestSeam {
+  readonly candidatePairs?: readonly (readonly [NodeId, NodeId])[];
   readonly candidateOrder?: (from: NodeId, to: NodeId) => number;
   readonly passesRandomGate?: (from: NodeId, to: NodeId) => boolean;
 }
@@ -400,7 +401,10 @@ export function generateDungeonMapWithDiagnostics(input: GenerateDungeonMapInput
         incoming.set(to, (incoming.get(to) ?? 0) + 1);
       }
     }
-    const candidates = mapRng.shuffle(current.flatMap((from) => next.map((to) => [from, to] as const)))
+    const generatedCandidates = current.flatMap((from) => next.map((to) => [from, to] as const));
+    const candidates = (generationTestSeam?.candidatePairs
+      ? generationTestSeam.candidatePairs.filter(([from, to]) => current.includes(from) && next.includes(to))
+      : mapRng.shuffle(generatedCandidates))
       .sort(([fromA, toA], [fromB, toB]) => (generationTestSeam?.candidateOrder?.(fromA, toA) ?? 0) - (generationTestSeam?.candidateOrder?.(fromB, toB) ?? 0));
     maximumRowCandidateCount = Math.max(maximumRowCandidateCount, candidates.length);
     for (const [from, to] of candidates) {
