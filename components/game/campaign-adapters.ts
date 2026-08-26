@@ -15,7 +15,7 @@ import { presentShuffledAdvice } from "@/lib/rules/advice-evaluation";
 import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacterId } from "./character-labels";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
-import { inSeatOrder } from "./party-seat-order";
+import { inFormationOrder } from "./party-formation-order";
 import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
@@ -70,7 +70,7 @@ function themeOf(campaign: CampaignState, active: ActiveExpeditionContext): Them
 }
 
 export function partyViewsFor(seed: string, members: readonly Character[]) {
-  return inSeatOrder(seed, members, (member) => String(member.id)).map((member) => ({
+  return inFormationOrder(members, (member) => String(member.classId)).map((member) => ({
     id: String(member.id),
     name: member.name,
     classLabel: classLabel(member.classId),
