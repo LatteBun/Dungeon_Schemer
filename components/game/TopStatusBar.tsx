@@ -8,6 +8,7 @@ export interface TopStatusView {
   reputation: number;
   gold: number;
   canPromote: boolean;
+  remainingAdventurers: number;
   remainingDungeons: number;
   zeroTrust: {
     livingCount: number;

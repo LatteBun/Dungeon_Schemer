@@ -1,4 +1,4 @@
-import { CAMPAIGN_DUNGEON_COUNT, DENOUNCE_THRESHOLD, TRUST_MIN } from "@/lib/domain";
+import { CAMPAIGN_DUNGEON_COUNT, canDeployEmergency, DENOUNCE_THRESHOLD, TRUST_MIN } from "@/lib/domain";
 import type { CampaignEnding, CampaignState, Character } from "@/lib/domain";
 import { canCreateEmergencyParty } from "./board";
 import { getGuidePromotionEligibility } from "./promotion";
@@ -13,6 +13,14 @@ export function countLivingZeroTrust(campaign: CampaignState): number {
   return campaign.pool.order.reduce((count, id) => {
     const member = campaign.pool.byId[id];
     return count + Number(member?.alive === true && member.trust === TRUST_MIN);
+  }, 0);
+}
+
+/** 마지막 응급 편성에 동원할 수 있는 생존 용사 수다. */
+export function countEmergencyEligibleAdventurers(campaign: CampaignState): number {
+  return campaign.pool.order.reduce((count, id) => {
+    const member = campaign.pool.byId[id];
+    return count + Number(member !== undefined && canDeployEmergency(member));
   }, 0);
 }
 
