@@ -63,15 +63,22 @@ describe("IntroScreen", () => {
     expect(html).not.toContain('<a class="u2-intro__cta"');
   });
 
-  it("고정 캔버스 안에서 도움과 배신 전략 및 원정 정보를 배치한다", () => {
-    expect(css).toMatch(/\.u2-intro\s*\{[\s\S]*?grid-template-rows:/);
-    expect(css).toMatch(/\.u2-intro__strategy\s*\{[\s\S]*?grid-template-columns:/);
-    expect(css).toMatch(/\.u2-intro__facts\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3,/);
-    expect(css).toMatch(/\.u2-intro__strategy-card--help/);
-    expect(css).toMatch(/\.u2-intro__strategy-card--betray/);
+  it("원본 비율로 이미지를 담고 CTA를 이미지 프레임 좌표에 배치한다", () => {
+    expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?container-type:\s*size/);
+    expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?place-items:\s*center/);
     expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?overflow:\s*hidden/);
+    expect(css).toMatch(/\.u2-intro__guide\s*\{[\s\S]*?aspect-ratio:\s*1672\s*\/\s*941/);
+    expect(css).toMatch(/\.u2-intro__guide\s*\{[\s\S]*?100cqh/);
+    expect(css).toMatch(/\.u2-intro__guide-image\s*\{[\s\S]*?object-fit:\s*contain/);
+    expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?position:\s*absolute/);
+    expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?left:\s*28\.2%/);
+    expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?top:\s*91\.75%/);
+    expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?width:\s*43\.5%/);
+    expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?height:\s*6\.9%/);
     expect(css).toMatch(/\.u2-intro__cta:focus-visible\s*\{/);
-    expect(css).not.toMatch(/@media/);
+    expect(css).not.toMatch(/u2-intro__(?:copy|strategy|facts)/);
+    expect(css).not.toMatch(/intro-background-full\.png/);
+    expect(css).not.toMatch(/@media|\b(?:vw|vh)\b/);
     expect(css).not.toMatch(/--status-(?:bar|label|value)/);
   });
 });
