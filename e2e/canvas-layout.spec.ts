@@ -124,9 +124,16 @@ for (const viewport of STATUS_VIEWPORTS) {
     const list = page.locator(".game-shell__status-list");
     const chips = page.locator(".game-shell__status-chip");
     await expect(chips).toHaveCount(7);
-    const zeroTrustChip = chips.filter({ has: page.getByText("신뢰 0", { exact: true }) });
+    const zeroTrustChip = chips.filter({ has: page.getByText("의심 인원", { exact: true }) });
     await expect(zeroTrustChip).toHaveCount(1);
     await expect(zeroTrustChip.getByText("7 / 5", { exact: true })).toBeVisible();
+
+    await zeroTrustChip.click();
+    const dialog = page.getByRole("dialog", { name: "의심 인원" });
+    await expect(dialog).toContainText("이번 던전이 끝난 뒤 누적 고발이 시작됩니다.");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByTestId("zero-trust-info-trigger")).toBeFocused();
 
     const metrics = await list.evaluate((element) => ({
       clientWidth: element.clientWidth,
