@@ -229,6 +229,7 @@ for (const viewport of STATUS_VIEWPORTS) {
         overlaps(dialogBox, panelBox),
         `${viewport.name} ${popover.dialogName} popover ${JSON.stringify(dialogBox)}와 퀵 메뉴 panel ${JSON.stringify(panelBox)} 겹침`,
       ).toBe(false);
+      expect(overlaps(dialogBox, triggerBox)).toBe(false);
       await page.keyboard.press("Escape");
       await expect(dialog).toHaveCount(0);
       await expect(panel).toHaveCount(0);
