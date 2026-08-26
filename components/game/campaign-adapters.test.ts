@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DENOUNCE_THRESHOLD, type CampaignState, type Character } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, type CampaignState, type Character, type ClassId } from "@/lib/domain";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
 import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
@@ -8,10 +8,12 @@ import {
   adviceIdForSlotIn,
   ecologyViewFor,
   logFor,
+  partyViewsFor,
   progressViewFor,
   publicKindByNodeId,
   statusFor,
 } from "./campaign-adapters";
+import { u5PartyViewsForBattleFrame } from "./u5-progress-model";
 
 /**
  * 어댑터 계약.
@@ -172,6 +174,91 @@ describe("지도의 공개 분류", () => {
 });
 
 describe("진행 화면 View", () => {
+  it("전투 뒤 파티의 HP·신뢰와 능력 잔여 횟수를 서로 덮어쓰지 않고 옮긴다", () => {
+    const member = inExpedition().getState().context.activeExpedition!.partyMembers
+      .find((candidate) => candidate.classId === "cleric")!;
+    const finalMember = { ...member, hp: member.hp - 1, trust: member.trust - 2 };
+    const view = partyViewsFor("u5-final-party", [finalMember], { [member.id]: 0 })[0]!;
+
+    expect(view).toMatchObject({
+      id: String(member.id),
+      hp: finalMember.hp,
+      trust: finalMember.trust,
+      battleAbilityStatus: { label: "치유", remaining: 0, total: 2 },
+    });
+  });
+
+  it("완료된 U5를 다시 볼 때 HP·신뢰는 최종값이고 잔여 횟수만 replay frame을 따른다", () => {
+    const member = inExpedition().getState().context.activeExpedition!.partyMembers
+      .find((candidate) => candidate.classId === "cleric")!;
+    const finalMember = { ...member, hp: member.hp - 1, trust: member.trust - 2 };
+    const finalParty = partyViewsFor("u5-replay-party", [finalMember], { [member.id]: 0 });
+    const frame = {
+      phase: "idle",
+      actionIndex: null,
+      actorId: null,
+      targetId: null,
+      actionKind: null,
+      damage: null,
+      healing: null,
+      hpByParticipantId: { [member.id]: member.hp },
+      battleAbilityUsesRemainingByParticipantId: { [member.id]: 1 },
+      defeatedParticipantIds: [],
+      cues: [],
+    } as const;
+
+    const shown = u5PartyViewsForBattleFrame(finalParty, frame)[0]!;
+
+    expect(shown).toMatchObject({
+      hp: finalMember.hp,
+      trust: finalMember.trust,
+      battleAbilityStatus: { label: "치유", remaining: 1, total: 2 },
+    });
+  });
+
+  it("replay 비참가 사망 능력 보유자는 기존 잔여 횟수를 보존한다", () => {
+    const members = inExpedition().getState().context.activeExpedition!.partyMembers.slice(0, 2);
+    const participant = { ...members[0]!, classId: "cleric" as ClassId };
+    const deadNonparticipant = {
+      ...members[1]!,
+      classId: "cleric" as ClassId,
+      hp: 0,
+      alive: false,
+    };
+    const finalParty = partyViewsFor(
+      "u5-dead-nonparticipant",
+      [participant, deadNonparticipant],
+      { [participant.id]: 0, [deadNonparticipant.id]: 2 },
+    );
+    const frame = {
+      phase: "idle",
+      actionIndex: null,
+      actorId: null,
+      targetId: null,
+      actionKind: null,
+      damage: null,
+      healing: null,
+      hpByParticipantId: { [participant.id]: participant.hp },
+      battleAbilityUsesRemainingByParticipantId: { [participant.id]: 1 },
+      defeatedParticipantIds: [],
+      cues: [],
+    } as const;
+
+    const shown = u5PartyViewsForBattleFrame(finalParty, frame);
+
+    expect(shown.find((member) => member.id === String(participant.id))?.battleAbilityStatus).toEqual({
+      label: "치유",
+      remaining: 1,
+      total: 2,
+    });
+    expect(shown.find((member) => member.id === String(deadNonparticipant.id))).toMatchObject({
+      hp: 0,
+      alive: false,
+      classLabel: "성직자",
+      battleAbilityStatus: { label: "치유", remaining: 2, total: 2 },
+    });
+  });
+
   it("사건이 없으면 만들지 않는다", () => {
     const store = inExpedition();
     expect(progressViewFor(store.getState().campaign, store.getState().context.activeExpedition!)).toBeNull();

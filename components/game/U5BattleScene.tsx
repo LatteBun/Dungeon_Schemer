@@ -66,12 +66,25 @@ function frameDescription(replay: U5BattleReplay, frame: U5BattleReplayFrame): s
       return "전투가 시작됩니다.";
     case "attack":
       if (actor === undefined || target === undefined) return "";
+      if (frame.actionKind === "heal") {
+        return `${withSubjectParticle(actor.name)} ${withObjectParticle(target.name)} 위한 치유 기도를 올립니다.`;
+      }
       return `${withSubjectParticle(actor.name)} ${withObjectParticle(target.name)} 공격합니다.`;
     case "impact":
-      if (target === undefined || frame.damage === null) return "";
+      if (actor === undefined || target === undefined) return "";
+      if (frame.actionKind === "heal") {
+        return frame.healing === null
+          ? ""
+          : `${withSubjectParticle(actor.name)} ${withObjectParticle(target.name)} ${frame.healing} 회복했습니다.`;
+      }
+      if (frame.damage === null) return "";
       return `${withSubjectParticle(target.name)} ${frame.damage} 피해를 받습니다.`;
     case "settle": {
       if (actor === undefined || target === undefined) return "";
+      if (frame.actionKind === "heal") {
+        const hp = frame.hpByParticipantId[target.id];
+        return hp === undefined ? "" : `${target.name}의 HP가 ${hp}까지 회복되었습니다.`;
+      }
       if (frame.defeatedParticipantIds.includes(target.id)) {
         return `${withSubjectParticle(actor.name)} ${withObjectParticle(target.name)} 쓰러뜨렸습니다.`;
       }
@@ -96,6 +109,9 @@ function frameDescription(replay: U5BattleReplay, frame: U5BattleReplayFrame): s
  * 어떻게 했는지를 그 안에 다 담고 있으므로 그것만으로 따라갈 수 있다.
  */
 function announcement(replay: U5BattleReplay, frame: U5BattleReplayFrame): string {
+  if (frame.actionKind === "heal") {
+    return frame.phase === "impact" ? frameDescription(replay, frame) : "";
+  }
   return frame.phase === "settle" || frame.phase === "complete" ? frameDescription(replay, frame) : "";
 }
 
@@ -114,6 +130,7 @@ function announcement(replay: U5BattleReplay, frame: U5BattleReplayFrame): strin
  */
 function caption(replay: U5BattleReplay, frame: U5BattleReplayFrame): string {
   if (frame.phase === "idle" || frame.phase === "complete") return frameDescription(replay, frame);
+  if (frame.actionKind === "heal" && frame.phase === "impact") return frameDescription(replay, frame);
   if (frame.phase === "settle" && frame.defeatedParticipantIds.includes(String(frame.targetId))) {
     return frameDescription(replay, frame);
   }
@@ -134,6 +151,17 @@ function motionForParticipant(
     };
   }
   if (frame.phase === "attack" && frame.actorId === participant.id) {
+    if (frame.actionKind === "heal") {
+      return {
+        animate: {
+          x: 0,
+          y: 0,
+          scale: reducedMotion ? 1 : [1, 1.05, 1],
+          opacity: 1,
+        },
+        transition: { duration: reducedMotion ? 0 : u5BattleMotionDuration(0.32, playbackRate) },
+      };
+    }
     return {
       animate: { x: reducedMotion ? 0 : "var(--u5-battle-lunge-x)", y: 0, opacity: 1 },
       transition: {
@@ -144,6 +172,17 @@ function motionForParticipant(
     };
   }
   if (frame.phase === "impact" && frame.targetId === participant.id) {
+    if (frame.actionKind === "heal") {
+      return {
+        animate: {
+          x: 0,
+          y: 0,
+          scale: reducedMotion ? 1 : [1, 1.08, 1],
+          opacity: 1,
+        },
+        transition: { duration: reducedMotion ? 0 : u5BattleMotionDuration(0.3, playbackRate) },
+      };
+    }
     return {
       animate: { x: reducedMotion ? 0 : [0, "-3%", "3%", 0], y: 0, opacity: 1 },
       transition: { duration: u5BattleMotionDuration(0.24, playbackRate) },
@@ -174,6 +213,23 @@ function motionForParticipant(
   };
 }
 
+function participantMotionClass(
+  participant: U5BattleReplayParticipant,
+  frame: U5BattleReplayFrame,
+): string {
+  if (frame.phase === "attack" && frame.actorId === participant.id) {
+    return frame.actionKind === "heal"
+      ? "u5-battle-motion is-praying"
+      : "u5-battle-motion is-lunging";
+  }
+  if (frame.phase === "impact" && frame.targetId === participant.id) {
+    return frame.actionKind === "heal"
+      ? "u5-battle-motion is-recovering"
+      : "u5-battle-motion is-hit";
+  }
+  return "u5-battle-motion";
+}
+
 function Participant({ participant, frame, reducedMotion, playbackRate }: {
   readonly participant: U5BattleReplayParticipant;
   readonly frame: U5BattleReplayFrame;
@@ -185,7 +241,14 @@ function Participant({ participant, frame, reducedMotion, playbackRate }: {
   const hp = frame.hpByParticipantId[participant.id] ?? participant.finalHp;
   const hpPercent = Math.max(0, Math.min(100, hp / participant.maxHp * 100));
   const defeated = frame.defeatedParticipantIds.includes(participant.id);
-  const showDamage = frame.phase === "impact" && frame.targetId === participant.id;
+  const showDamage = frame.phase === "impact"
+    && frame.actionKind === "attack"
+    && frame.targetId === participant.id
+    && frame.damage !== null;
+  const showHealing = frame.phase === "impact"
+    && frame.actionKind === "heal"
+    && frame.targetId === participant.id
+    && frame.healing !== null;
   const motionState = motionForParticipant(participant, frame, reducedMotion, playbackRate);
   const participantStyle = {
     "--u5-battle-lunge-x": participant.side === "party" ? "16%" : "-16%",
@@ -204,7 +267,7 @@ function Participant({ participant, frame, reducedMotion, playbackRate }: {
       style={participantStyle}
     >
       <motion.div
-        className="u5-battle-motion"
+        className={participantMotionClass(participant, frame)}
         animate={motionState.animate}
         transition={motionState.transition}
       >
@@ -245,6 +308,22 @@ function Participant({ participant, frame, reducedMotion, playbackRate }: {
               transition={{ duration: reducedMotion ? 0 : u5BattleMotionDuration(0.24, playbackRate) }}
             >
               -{frame.damage}
+            </motion.span>
+          </span>
+        ) : null}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showHealing ? (
+          <span className="u5-battle-healing-anchor">
+            <motion.span
+              className="u5-battle-healing"
+              aria-label={`${frame.healing} 회복`}
+              initial={{ opacity: 0, y: reducedMotion ? 0 : "12%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: reducedMotion ? 0 : "-18%" }}
+              transition={{ duration: reducedMotion ? 0 : u5BattleMotionDuration(0.24, playbackRate) }}
+            >
+              <span aria-hidden="true">+{frame.healing}</span>
             </motion.span>
           </span>
         ) : null}
@@ -291,6 +370,11 @@ export function U5BattleScene({
   );
   const enemies = replay.participants.filter((participant) => participant.side === "enemy");
   const complete = frame.phase === "complete";
+  const healActor = frame.actionKind === "heal" ? participantById(replay, frame.actorId) : undefined;
+  const healTarget = frame.actionKind === "heal" ? participantById(replay, frame.targetId) : undefined;
+  const healUsesRemaining = frame.actorId === null
+    ? undefined
+    : frame.battleAbilityUsesRemainingByParticipantId[frame.actorId];
 
   return (
     <section
@@ -326,6 +410,13 @@ export function U5BattleScene({
           ))}
         </div>
       </div>
+      {healActor === undefined || healTarget === undefined || healUsesRemaining === undefined ? null : (
+        <div className="u5-battle-heal-action" aria-label="치유 행동">
+          <strong>치유 기도</strong>
+          <span>{healActor.name} → {healTarget.name}</span>
+          <span>남은 횟수 {healUsesRemaining}</span>
+        </div>
+      )}
       {/* 빈 문장에도 자리는 지킨다. 줄이 나타났다 사라지면 화면이 덜컹거린다. */}
       <p className="u5-battle-live" data-empty={caption(replay, frame) === "" ? "true" : "false"}>
         {caption(replay, frame)}
@@ -339,7 +430,7 @@ export function U5BattleScene({
           ))}
         </ul>
       )}
-      <p className="u5-battle-announcement" aria-live="polite">{announcement(replay, frame)}</p>
+      <p className="u5-battle-announcement" aria-live="polite" aria-atomic="true">{announcement(replay, frame)}</p>
       <div className="u5-battle-controls">
         <button
           type="button"

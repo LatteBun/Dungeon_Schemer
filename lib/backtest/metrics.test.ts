@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runCampaign } from "./campaign-driver";
 import { createStrategy } from "./strategies";
-import { aggregateRuns, metricsForRun, pairedMeanDifference, wilsonInterval, type CampaignRunMetrics } from "./metrics";
+import { aggregateHealingMetrics, aggregateRuns, metricsForRun, pairedMeanDifference, wilsonInterval, type CampaignRunMetrics } from "./metrics";
 
 function metric({
   balanceExpeditions: balanceOverrides,
@@ -143,6 +143,103 @@ function expedition(overrides: Partial<CampaignRunMetrics["balanceExpeditions"][
 }
 
 describe("백테스트 통계", () => {
+  it("확정 heal action만 치유 사용·회복으로 세고 attack과 클래스 미확정 원정은 분모에서 뺀다", () => {
+    const run = metric({
+      balanceExpeditions: [
+        expedition({ expeditionId: "cleric", party: [{ characterId: "c" as never, classId: "cleric" as never }] }),
+        expedition({ expeditionId: "no-cleric", party: [{ characterId: "w" as never, classId: "warrior" as never }] }),
+        expedition({ expeditionId: "unknown", party: undefined }),
+      ],
+      battles: [{
+        kind: "general", expeditionId: "cleric",
+        party: [{ characterId: "c" as never, classId: "cleric" as never, hpBefore: 10, hpAfter: 15, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: 1 }],
+        battle: {
+          status: "victory", termination: "defeatedEnemies", rounds: 1,
+          actions: [
+            { kind: "heal", round: 1, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 10, targetHpAfter: 15 },
+            { kind: "heal", round: 2, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 15, targetHpAfter: 20 },
+            { kind: "attack", round: 1, actorSide: "party", actorId: "c", targetId: "e", damage: 999, defeated: true, targetHpBefore: 10, targetHpAfter: 0 },
+          ], party: [], enemies: [],
+        },
+      }],
+    });
+
+    expect(aggregateHealingMetrics([run])).toMatchObject({
+      expeditions: { withCleric: 1, withoutCleric: 1, unknownComposition: 1 },
+      clericBattles: { general: 1, boss: 0 },
+      healUsesPerExpedition: { 0: 0, 1: 0, 2: 1, overLimit: 0 },
+      healUsesPerBattle: { 0: 0, 1: 0, 2: 1, overLimit: 0 },
+      healActions: 2,
+      effectiveHealActions: 2,
+      actualHealing: 10,
+      byCleric: {
+        withCleric: { expeditions: 1, firstAttemptStarts: 1, firstAttemptClears: 0, totalDeaths: 0 },
+        withoutCleric: { expeditions: 1, firstAttemptStarts: 1, firstAttemptClears: 0, totalDeaths: 0 },
+      },
+    });
+  });
+
+  it("회피 전투는 전투 분모를 만들지 않고 0 회복은 유효 회복 평균의 분모가 아니다", () => {
+    const run = metric({
+      balanceExpeditions: [expedition({ expeditionId: "evaded", party: [{ characterId: "c" as never, classId: "cleric" as never }] })],
+      battles: [],
+    });
+    const zeroHeal = metric({
+      seed: "zero-heal",
+      balanceExpeditions: [expedition({ expeditionId: "zero", party: [{ characterId: "c" as never, classId: "cleric" as never }] })],
+      battles: [{
+        kind: "boss", expeditionId: "zero",
+        party: [{ characterId: "c" as never, classId: "cleric" as never, hpBefore: 10, hpAfter: 10, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: 1 }],
+        battle: { status: "victory", termination: "defeatedEnemies", rounds: 1, actions: [{ kind: "heal", round: 1, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 0, targetHpBefore: 10, targetHpAfter: 10 }], party: [], enemies: [] },
+      }],
+    });
+
+    expect(aggregateHealingMetrics([run, zeroHeal])).toMatchObject({
+      clericBattles: { general: 0, boss: 1 }, healActions: 1, effectiveHealActions: 0,
+      actualHealing: 0, meanHealingPerEffectiveHeal: null,
+    });
+  });
+
+  it("같은 성직자가 한 전투에 세 번 치유하면 0·1·2회 bucket은 보존하고 초과 bucket에 센다", () => {
+    const run = metric({
+      balanceExpeditions: [expedition({ expeditionId: "three-heals", party: [{ characterId: "c" as never, classId: "cleric" as never }] })],
+      battles: [{
+        kind: "general", expeditionId: "three-heals",
+        party: [{ characterId: "c" as never, classId: "cleric" as never, hpBefore: 1, hpAfter: 16, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: 0 }],
+        battle: {
+          status: "victory", termination: "defeatedEnemies", rounds: 3,
+          actions: [
+            { kind: "heal", round: 1, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 1, targetHpAfter: 6 },
+            { kind: "heal", round: 2, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 6, targetHpAfter: 11 },
+            { kind: "heal", round: 3, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 11, targetHpAfter: 16 },
+          ], party: [], enemies: [],
+        },
+      }],
+    });
+
+    expect(aggregateHealingMetrics([run]).healUsesPerBattle).toEqual({ 0: 0, 1: 0, 2: 0, overLimit: 1 });
+  });
+
+  it("같은 seed라도 전략·정확도가 다르면 사망 transition과 전체 전투 라운드를 합치지 않는다", () => {
+    const deadBattle = {
+      kind: "general" as const, expeditionId: "shared-expedition",
+      party: [{ characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 10, hpAfter: 0, maxHp: 20 }],
+      battle: { status: "wipe" as const, termination: "roundLimit" as const, rounds: 9, actions: [], party: [], enemies: [] },
+    };
+    const clericBattle = {
+      kind: "boss" as const, expeditionId: "cleric-expedition",
+      party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 10, hpAfter: 10, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: 2 }],
+      battle: { status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 3, actions: [], party: [], enemies: [] },
+    };
+    const first = metric({ seed: "shared-seed", strategyId: "survival", accuracy: 0.4, battles: [deadBattle, clericBattle] });
+    const second = metric({ seed: "shared-seed", strategyId: "opportunist", accuracy: 0.7, battles: [deadBattle, clericBattle] });
+
+    expect(aggregateHealingMetrics([first, second])).toMatchObject({
+      byCleric: { withoutCleric: { totalDeaths: 2 } },
+      meanBattleRounds: 6,
+      roundLimitCount: 2,
+    });
+  });
   it("Wilson 95% 구간의 알려진 값을 계산한다", () => {
     expect(wilsonInterval(50, 100)).toEqual({ low: expect.closeTo(0.4038315304, 9), high: expect.closeTo(0.5961684696, 9) });
   });
@@ -159,6 +256,7 @@ describe("백테스트 통계", () => {
     expect(metrics.totalExpeditions).toBeGreaterThan(0);
     expect(metrics.adviceTotal).toBe(run.ok ? run.trace.adviceSelections.length : 0);
     expect(metrics.depletion).toEqual(run.trace.depletion);
+    expect(metrics.battles).toEqual(run.trace.battles);
     expect(metrics.termination).toBeDefined();
   });
 

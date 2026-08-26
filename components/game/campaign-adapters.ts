@@ -1,3 +1,4 @@
+import { CLASSES } from "@/lib/content/classes";
 import { THEMES } from "@/lib/content/themes";
 import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import type {
@@ -22,6 +23,7 @@ import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
 import { toAdviceViews, type U5OutcomeView, type U5ProgressView, type U5SceneKind } from "./u5-progress-model";
+import { partyMemberBattleAbilityStatus } from "./party-member-ability-view";
 
 /**
  * 스토어 상태에서 화면 View 를 만든다.
@@ -76,19 +78,33 @@ function themeOf(campaign: CampaignState, active: ActiveExpeditionContext): Them
   return theme;
 }
 
-export function partyViewsFor(seed: string, members: readonly Character[]) {
-  return inFormationOrder(members, (member) => String(member.classId)).map((member) => ({
-    id: String(member.id),
-    name: member.name,
-    classLabel: classLabel(member.classId),
-    personalityLabel: PERSONALITY_LABEL[member.personality],
-    hp: member.hp,
-    maxHp: member.maxHp,
-    trust: member.trust,
-    gold: member.gold,
-    alive: member.alive,
-    portraitSrc: portraitSrcForCharacterId(member.id),
-  }));
+export function partyViewsFor(
+  seed: string,
+  members: readonly Character[],
+  battleAbilityUsesRemainingByCharacterId: Readonly<Partial<Record<Character["id"], number>>>,
+) {
+  void seed;
+  return inFormationOrder(members, (member) => String(member.classId)).map((member) => {
+    const classDef = CLASSES.find((candidate) => candidate.id === member.classId);
+    if (classDef === undefined) throw new Error(`U5 파티원의 직업 정의를 찾을 수 없다: ${member.classId}`);
+    const battleAbilityStatus = partyMemberBattleAbilityStatus(
+      classDef.battleAbility,
+      battleAbilityUsesRemainingByCharacterId[member.id],
+    );
+    return {
+      id: String(member.id),
+      name: member.name,
+      classLabel: classLabel(member.classId),
+      personalityLabel: PERSONALITY_LABEL[member.personality],
+      hp: member.hp,
+      maxHp: member.maxHp,
+      trust: member.trust,
+      gold: member.gold,
+      alive: member.alive,
+      portraitSrc: portraitSrcForCharacterId(member.id),
+      ...(battleAbilityStatus === undefined ? {} : { battleAbilityStatus }),
+    };
+  });
 }
 
 /** 사건 분류를 장면 종류로 옮긴다. 지도의 공개 분류와 같은 낱말이다. */
@@ -171,7 +187,11 @@ export function progressViewFor(
     situation: event.description,
     advice: toAdviceViews(presented, unavailableAdviceSlots(campaign, active, presented)),
     outcome: outcomeViewFor(active),
-    party: partyViewsFor(campaign.seed, active.partyMembers),
+    party: partyViewsFor(
+      campaign.seed,
+      active.partyMembers,
+      active.expedition.battleAbilityUsesRemainingByCharacterId,
+    ),
   };
 }
 
@@ -419,7 +439,11 @@ export function expeditionEndViewFor(
      * 회색이면 재생이 시작하기도 전에 결말이 서 있는 셈이고, 화면이 깨진 것처럼
      * 보인다. 무슨 일이 있었는지는 아래 결과가 말한다.
      */
-    party: partyViewsFor(campaign.seed, rewound(active)),
+    party: partyViewsFor(
+      campaign.seed,
+      rewound(active),
+      active.expedition.battleAbilityUsesRemainingByCharacterId,
+    ),
   };
 }
 

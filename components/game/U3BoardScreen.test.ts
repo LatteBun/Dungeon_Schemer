@@ -21,7 +21,7 @@ const status: TopStatusView = {
 const party = [
   { id: "character-1" as CharacterId, name: "아델", classLabel: "전사", personalityLabel: "신중한", hp: 40, maxHp: 45, trust: 72, gold: 24, portraitSrc: "/assets/characters/adel.webp" },
   { id: "character-2" as CharacterId, name: "보른", classLabel: "도적", personalityLabel: "의심 많은", hp: 27, maxHp: 32, trust: 61, gold: 31 },
-  { id: "character-3" as CharacterId, name: "세라", classLabel: "성직자", personalityLabel: "정의로운", hp: 28, maxHp: 28, trust: 80, gold: 20 },
+  { id: "character-3" as CharacterId, name: "세라", classLabel: "성직자", personalityLabel: "정의로운", hp: 28, maxHp: 28, trust: 80, gold: 20, battleAbilityStatus: { label: "치유", remaining: 2, total: 2 } },
 ] as const;
 
 function detail(offerId: string, dungeonName: string, locked: boolean): U3OfferDetailView {
@@ -121,6 +121,16 @@ describe("U3BoardScreen", () => {
     expect(html).toContain("/assets/characters/adel.webp");
     expect((html.match(/class="party-card__gold"/g) ?? [])).toHaveLength(3);
     expect(html).toContain("/assets/u2/status-gold.svg");
+  });
+
+  it("계약 상세의 성직자 카드에만 시작 횟수를 n회로 표시한다", () => {
+    const html = render("offer-1");
+
+    expect((html.match(/party-card__ability/g) ?? [])).toHaveLength(1);
+    expect(html).toContain("치유 2회");
+    expect(html).not.toContain("치유 2/2");
+    const notices = html.match(/<div class="u3-guild-board"[\s\S]*?<\/div><\/div>/)?.[0] ?? "";
+    expect(notices).not.toContain("치유");
   });
 
   /* 공용 카드로 옮기며 라벨 문구를 없앴다. 아이콘과 금액이 붙어 있으면 읽힌다. */

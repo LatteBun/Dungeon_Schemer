@@ -17,6 +17,7 @@
 
 import { useState } from "react";
 import { useReducedMotion } from "framer-motion";
+import type { PartyMemberBattleAbilityStatus } from "./party-member-ability-view";
 
 export interface PartyMemberCardView {
   id: string;
@@ -63,6 +64,10 @@ export interface PartyMemberCardProps {
   settledResult?: PartyMemberSettledResult;
   /** U5 결과 카드처럼 변화량 유무와 무관하게 결과 한 줄의 높이를 유지한다. */
   reserveSettledResultSpace?: boolean;
+  /** U3·U4·U5가 공통 변환기로 만든 선택적 직업 능력 상태. */
+  battleAbilityStatus?: PartyMemberBattleAbilityStatus;
+  /** 계약 전 시작값만 `n회`, 활성 원정과 replay는 `n/total`로 표시한다. */
+  battleAbilityStatusFormat?: "initial" | "remaining";
 }
 
 const GOLD_ICON = "/assets/u2/status-gold.svg";
@@ -124,6 +129,8 @@ export function PartyMemberCard({
   effect,
   settledResult,
   reserveSettledResultSpace = false,
+  battleAbilityStatus,
+  battleAbilityStatusFormat = "remaining",
 }: PartyMemberCardProps) {
   const alive = member.alive ?? true;
   const reducedMotion = useReducedMotion() ?? false;
@@ -164,7 +171,16 @@ export function PartyMemberCard({
       <div className="party-card__content">
         <header className="party-card__identity">
           <strong>{member.name}</strong>
-          <span>{member.classLabel}</span>
+          <span>
+            {member.classLabel}
+            {battleAbilityStatus === undefined ? null : (
+              <> · <span className="party-card__ability">
+                {battleAbilityStatus.label} {battleAbilityStatusFormat === "initial"
+                  ? `${battleAbilityStatus.remaining}회`
+                  : `${battleAbilityStatus.remaining}/${battleAbilityStatus.total}`}
+              </span></>
+            )}
+          </span>
           <small>{member.personalityLabel}</small>
         </header>
 

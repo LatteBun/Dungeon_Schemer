@@ -56,6 +56,10 @@ import { settleExpedition } from "./settlement";
 import { RANK_RISK_LIMIT, runWorldTurn } from "@/lib/domain";
 import { createRng } from "@/lib/rng";
 import { advanceAdvicePressure, assertAdvicePressure } from "./advice-pressure";
+import {
+  createBattleAbilityUsesForParty,
+  validateBattleAbilityUses,
+} from "./battle-ability-state";
 
 /**
  * 끝난 캠페인이 남기는 기록.
@@ -231,6 +235,13 @@ function validateExpedition(
     invalidTransition("원정 파티가 공고와 다르다");
   }
   validatePartyMembers(campaign, offer, partyMembers);
+  validateBattleAbilityUses({
+    members: partyMembers,
+    classDefs: CLASSES,
+    usesRemaining: expedition.battleAbilityUsesRemainingByCharacterId,
+    phase: "start",
+    errorCode: "INVALID_TRANSITION",
+  });
 }
 
 function validateSnapshot(
@@ -501,6 +512,8 @@ function transitionChooseAdvice(
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/${active.expedition.currentNodeId}`,
     pendingMerchantEffect: purchased?.pendingMerchantEffect ?? active.expedition.pendingMerchantEffect,
     advicePressure,
+    battleAbilityUsesRemainingByCharacterId:
+      active.expedition.battleAbilityUsesRemainingByCharacterId,
   });
 
   /*
@@ -530,6 +543,9 @@ function transitionChooseAdvice(
   const nextExpedition: ExpeditionState = {
     ...active.expedition,
     advicePressure,
+    battleAbilityUsesRemainingByCharacterId: battle
+      ?.battleAbilityUsesRemainingByCharacterId
+      ?? active.expedition.battleAbilityUsesRemainingByCharacterId,
     infoRecords: [...active.expedition.infoRecords, ...resolution.decision.delayedRecords],
     pendingMerchantEffect: battle?.pendingMerchantEffect
       ?? purchased?.pendingMerchantEffect
@@ -655,6 +671,8 @@ function transitionEnterBoss(
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/boss`,
     pendingMerchantEffect: expedition.pendingMerchantEffect,
     advicePressure: expedition.advicePressure,
+    battleAbilityUsesRemainingByCharacterId:
+      expedition.battleAbilityUsesRemainingByCharacterId,
   });
 
   const withTrust = resolved.members.map((member) => {
@@ -666,6 +684,8 @@ function transitionEnterBoss(
   const nextExpedition: ExpeditionState = {
     ...expedition,
     bossResult: resolved.bossResult,
+    battleAbilityUsesRemainingByCharacterId:
+      resolved.battleAbilityUsesRemainingByCharacterId,
     pendingMerchantEffect: resolved.pendingMerchantEffect,
     result: { status: resolved.bossResult.status, survivorIds: resolved.bossResult.survivorIds },
   };
@@ -781,7 +801,7 @@ export function createSettlementSnapshotFor(
         ? "반응한 사람이 없다"
         : cause.reactions.map((one) => `${nameOf(one.characterId)} ${word[one.reaction] ?? one.reaction}`).join(" · "),
       damage: cause === undefined || cause === null || cause.damage.length === 0
-        ? "피해 없이 지나갔다"
+        ? "최종 HP 변화 없음"
         : cause.damage.map((one) => `${nameOf(one.characterId)} HP ${one.before} → ${one.after}`).join(" · "),
     },
   };
@@ -824,6 +844,10 @@ export function createExpeditionForOffer(
       currentNodeId: map.entryNodeId,
       visitedNodeIds: [map.entryNodeId],
       advicePressure: 0,
+      battleAbilityUsesRemainingByCharacterId: createBattleAbilityUsesForParty({
+        members: partyMembers,
+        classDefs: CLASSES,
+      }),
       infoRecords: [],
       pendingMerchantEffect: null,
       bossResult: null,
@@ -854,6 +878,9 @@ function copyActiveExpedition(
     expedition: {
       ...action.expedition,
       party: { memberIds: [...action.expedition.party.memberIds] },
+      battleAbilityUsesRemainingByCharacterId: {
+        ...action.expedition.battleAbilityUsesRemainingByCharacterId,
+      },
     },
     partyMembers: action.partyMembers.map((member) => ({ ...member })),
     /*
@@ -987,6 +1014,13 @@ export function transitionCampaign(
   if (campaign.phase === "expedition") {
     requirePhase(campaign, "expedition");
     const active = activeExpedition(context);
+    validateBattleAbilityUses({
+      members: active.partyMembers,
+      classDefs: CLASSES,
+      usesRemaining: active.expedition.battleAbilityUsesRemainingByCharacterId,
+      phase: "active",
+      errorCode: "INVALID_TRANSITION",
+    });
     if (action.type === "APPLY_TRUST_BATCH") {
       validateTrustBatch(campaign, active, action.partyMembers);
       const nextById = { ...campaign.pool.byId };

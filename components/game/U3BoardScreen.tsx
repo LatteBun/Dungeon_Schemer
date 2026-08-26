@@ -100,6 +100,8 @@ function PartyCard({ member, index }: { member: U3OfferDetailView["party"][numbe
       }}
       index={index}
       testId="u3-party-member"
+      battleAbilityStatus={member.battleAbilityStatus}
+      battleAbilityStatusFormat="initial"
     />
   );
 }

@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { DENOUNCE_THRESHOLD, type CampaignTransition, type NodeId } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, type CampaignTransition, type Character, type NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { countLivingZeroTrust } from "@/lib/rules/ending";
 import { countEmergencyEligibleAdventurers } from "@/lib/rules/ending";
@@ -28,6 +28,7 @@ import { createU4MapNodeViews, createU4PartyMemberViews } from "./u4-dungeon-map
 import { createU4DungeonMapLayout } from "./u4-dungeon-map-layout";
 import { createU6EndingView } from "./u6-ending-adapter";
 import { createU6SettlementView } from "./u6-settlement-model";
+import { u5PartyViewsForBattleFrame } from "./u5-progress-model";
 
 /**
  * 실제 캠페인 값이 실제 화면에 찍히는 것까지 본다.
@@ -703,6 +704,172 @@ function afterBossFight() {
   }
   throw new Error("보스전에 닿지 못했다");
 }
+
+function setActivePartyHp(
+  run: ReturnType<typeof driven>,
+  hpFor: (member: Character) => number,
+) {
+  /* TypeScript가 store state의 중첩 narrowing을 유지하지 않으므로, 실제 active를
+   * 먼저 꺼낸 뒤 그 자리만 바꾼다. */
+  const state = run.state();
+  const active = state.context.activeExpedition!;
+  run.store.setState({
+    context: {
+      ...state.context,
+      activeExpedition: {
+        ...active,
+        partyMembers: active.partyMembers.map((member) => {
+          const hp = hpFor(member);
+          return { ...member, hp, alive: hp > 0 };
+        }),
+      },
+    },
+  });
+}
+
+function firstMonster(run: ReturnType<typeof driven>) {
+  for (let step = 0; step < 40; step += 1) {
+    const active = run.state().context.activeExpedition!;
+    if (active.pendingEvent?.kind === "monster") return active;
+    if (active.pendingEvent !== null) {
+      run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+      run.act({ type: "ACKNOWLEDGE_OUTCOME" });
+      continue;
+    }
+    const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
+    const next = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
+    if (next === undefined || next === active.expedition.map.bossNodeId) return null;
+    run.act({ type: "VISIT_NODE", nodeId: next });
+  }
+  return null;
+}
+
+function reachBossWithOneHeal(run: ReturnType<typeof driven>, clericId: Character["id"]): boolean {
+  for (let step = 0; step < 60; step += 1) {
+    const active = run.state().context.activeExpedition!;
+    if (active.pendingEvent !== null) {
+      run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, active) });
+      if (run.state().context.activeExpedition!
+        .expedition.battleAbilityUsesRemainingByCharacterId[clericId] !== 1) return false;
+      run.act({ type: "ACKNOWLEDGE_OUTCOME" });
+      continue;
+    }
+    const here = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId);
+    const next = here?.nextNodeIds.find((id) => !active.expedition.visitedNodeIds.includes(id));
+    if (next === undefined) return active.expedition.currentNodeId === active.expedition.map.bossNodeId;
+    run.act({ type: "VISIT_NODE", nodeId: next });
+  }
+  return false;
+}
+
+describe("치유 자원이 실제 화면 경계를 지난다", () => {
+  it("U3 2/2 → 일반전 U5 1/2 → U4 1/2 → 보스 U5 0/2를 실제 캠페인으로 그린다", () => {
+    for (let index = 0; index < 80; index += 1) {
+      const run = driven(`cleric-render-flow-${index}`);
+      run.act({ type: "OPEN_BOARD" });
+      const board = createU3BoardView(run.state().campaign, run.state().campaign.offers);
+      const notice = board.notices.find((candidate) => {
+        const offer = run.state().campaign.offers.find((one) => one.id === candidate.offerId);
+        return offer?.lockReason === null && offer.party.memberIds.some(
+          (memberId) => run.state().campaign.pool.byId[memberId]?.classId === "cleric",
+        );
+      });
+      if (notice === undefined) continue;
+      const offer = run.state().campaign.offers.find((candidate) => candidate.id === notice.offerId)!;
+      const boardCampaign = run.state().campaign;
+      const u3Markup = renderToStaticMarkup(createElement(U3BoardScreen, {
+        status: statusFor(boardCampaign, null),
+        board,
+        selectedOfferId: offer.id,
+        promotion: createU3PromotionView(getGuidePromotionEligibility(boardCampaign), "contract", null),
+        onSelectOffer: noop, onContract: noop, onOpenPromotion: noop,
+        onCancelPromotion: noop, onConfirmPromotion: noop, onDismissPromotionResult: noop,
+      }));
+
+      run.act({ type: "SELECT_CONTRACT", offerId: offer.id });
+      run.act({ type: "START_EXPEDITION", expeditionId: `cleric-render-${index}`, ...createExpeditionForOffer(run.state().campaign, offer) });
+      const starting = run.state().context.activeExpedition!;
+      const cleric = starting.partyMembers.find((member) => member.classId === "cleric");
+      const injured = starting.partyMembers.find((member) => member.id !== cleric?.id);
+      if (cleric === undefined || injured === undefined) continue;
+      if (starting.expedition.battleAbilityUsesRemainingByCharacterId[cleric.id] !== 2) continue;
+
+      const monster = firstMonster(run);
+      if (monster === null) continue;
+      setActivePartyHp(run, (member) => member.id === injured.id
+        ? Math.floor(member.maxHp / 2)
+        : member.hp);
+      run.act({ type: "CHOOSE_ADVICE", adviceId: firstChoosableAdvice(run.state().campaign, run.state().context.activeExpedition!) });
+      const afterGeneral = run.state().context.activeExpedition!;
+      if (afterGeneral.expedition.battleAbilityUsesRemainingByCharacterId[cleric.id] !== 1) continue;
+
+      const u5AfterGeneral = renderToStaticMarkup(createElement(U5ProgressScreen, {
+        status: statusFor(run.state().campaign, afterGeneral),
+        progress: progressViewFor(run.state().campaign, afterGeneral)!,
+        log: logFor(run.state().campaign, afterGeneral),
+        ecology: ecologyViewFor(run.state().campaign, afterGeneral),
+        playbackRate: 1, onTogglePlaybackRate: noop,
+      }));
+      run.act({ type: "ACKNOWLEDGE_OUTCOME" });
+      const onMap = run.state().context.activeExpedition!;
+      const dungeon = run.state().campaign.dungeons.find((candidate) => candidate.id === onMap.expedition.dungeonId)!;
+      const u4AfterGeneral = renderToStaticMarkup(createElement(U4DungeonMapScreen, {
+        status: statusFor(run.state().campaign, onMap), dungeonName: dungeon.name,
+        riskLevel: onMap.expedition.riskLevel,
+        nodes: createU4MapNodeViews({ map: onMap.expedition.map, currentNodeId: onMap.expedition.currentNodeId, visitedNodeIds: onMap.expedition.visitedNodeIds, publicKindByNodeId: publicKindByNodeId(onMap) }),
+        layout: createU4DungeonMapLayout(onMap.expedition.map),
+        party: createU4PartyMemberViews(onMap.partyMembers, onMap.expedition.battleAbilityUsesRemainingByCharacterId),
+        selectedNextNodeId: null, onSelectNextNode: noop, onMove: noop,
+      }));
+
+      setActivePartyHp(run, (member) => member.maxHp);
+      if (!reachBossWithOneHeal(run, cleric.id)) continue;
+      setActivePartyHp(run, (member) => member.id === injured.id
+        ? Math.floor(member.maxHp / 2)
+        : member.maxHp);
+      run.act({ type: "ENTER_BOSS" });
+      const afterBoss = run.state().context.activeExpedition!;
+      if (afterBoss.expedition.battleAbilityUsesRemainingByCharacterId[cleric.id] !== 0) continue;
+      const replay = bossReplayFor(run.state().campaign, afterBoss)!;
+      const completed = replay.frames.at(-1)!;
+      const u5AfterBoss = renderToStaticMarkup(createElement(U5ProgressScreen, {
+        status: statusFor(run.state().campaign, afterBoss),
+        progress: {
+          ...expeditionEndViewFor(run.state().campaign, afterBoss),
+          party: u5PartyViewsForBattleFrame(
+            expeditionEndViewFor(run.state().campaign, afterBoss).party,
+            completed,
+          ),
+        },
+        log: logFor(run.state().campaign, afterBoss),
+        ecology: ecologyViewFor(run.state().campaign, afterBoss),
+        playbackRate: 1, onTogglePlaybackRate: noop,
+      }));
+
+      expect(u3Markup).toContain("치유 2회");
+      expect(u5AfterGeneral).toContain("치유 1/2");
+      expect(u4AfterGeneral).toContain("치유 1/2");
+      expect(afterBoss.expedition.bossResult!.battle.actions.some((action) => action.kind === "heal")).toBe(true);
+      expect(u5AfterBoss).toContain("치유 0/2");
+      return;
+    }
+    throw new Error("일반전과 보스전에서 차례로 치유하는 결정적 캠페인을 찾지 못했다");
+  });
+
+  it("U6 정산 카드는 원정 중 능력 잔여 행을 렌더링하지 않는다", () => {
+    const run = settled();
+    const settlement = run.state().last!.settlement!;
+    const dungeon = run.state().campaign.dungeons.find((candidate) => candidate.id === settlement.dungeonId)!;
+    const markup = renderToStaticMarkup(createElement(U6SettlementScreen, {
+      status: statusFor(run.state().campaign, null),
+      settlement: createU6SettlementView(run.state().campaign, settlement, dungeon.name, dungeon.theme),
+    }));
+
+    expect(markup).not.toContain("치유 0/2");
+    expect(markup).not.toContain("치유 1/2");
+    expect(markup).not.toContain("치유 2/2");
+  });
+});
 
 describe("원정 중에 되짚어 볼 수 있다", () => {
   it("파티원마다 이 원정의 변화를 낸다", () => {

@@ -6,6 +6,8 @@ import type { EventKind, SituationEvent } from "./content";
 import type { BattleResolution } from "./battle";
 import type { AdvicePressure } from "../balance/campaign-balance";
 
+export type BattleAbilityUsesRemaining = Readonly<Partial<Record<CharacterId, number>>>;
+
 export type ExpeditionStatus = "cleared" | "wiped";
 
 export type BossInfoAxis = "targetWeight" | "incomingDamage" | "outgoingDamage";
@@ -86,6 +88,8 @@ export interface ExpeditionState {
   visitedNodeIds: readonly NodeId[];
   /** 현재 원정에서 실행한 조언이 누적한 전투 압력. */
   readonly advicePressure: AdvicePressure;
+  /** 현재 파티의 능력 보유자별 원정 잔여 사용 횟수. */
+  readonly battleAbilityUsesRemainingByCharacterId: BattleAbilityUsesRemaining;
   /** 보스전 뒤 검증할 지연형 조언의 개인별 반응이다. accepted와 suspected를 보존한다. */
   infoRecords: readonly InfoRecord[];
   pendingMerchantEffect: PendingMerchantEffect | null;

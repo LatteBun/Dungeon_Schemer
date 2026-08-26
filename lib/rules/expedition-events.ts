@@ -6,7 +6,12 @@ import { consumePendingMerchantEffect } from "@/lib/rules/merchant";
 import { resolveBattle, type BattleResolution } from "@/lib/rules/battle-engine";
 import { expandEncounter, resolveEncounter } from "@/lib/rules/encounter";
 import { combatMultipliersForAdvicePressure } from "@/lib/rules/advice-pressure";
-import type { AdviceDecision, AdvicePressure, Character, ClassDef, EncounterModifier, EventKind, ImmediateEventEffect, MaterializedNodeEvent, MonsterDef, PendingMerchantEffect, PreparedExpeditionEvents, PreparedNodePlan, SituationEvent, StrongLinkPlan, ThemeContent } from "@/lib/domain";
+import {
+  extractBattleAbilityUsesAfterBattle,
+  hydrateBattlePartyAbility,
+  validateBattleAbilityUses,
+} from "@/lib/rules/battle-ability-state";
+import type { AdviceDecision, AdvicePressure, BattleAbilityUsesRemaining, Character, ClassDef, EncounterModifier, EventKind, ImmediateEventEffect, MaterializedNodeEvent, MonsterDef, PendingMerchantEffect, PreparedExpeditionEvents, PreparedNodePlan, SituationEvent, StrongLinkPlan, ThemeContent } from "@/lib/domain";
 import type { ClueId, DungeonId, EventId, MonsterId, NodeId, RuleId } from "@/lib/domain";
 import type { GeneratedMap, RiskLevel } from "@/lib/domain";
 
@@ -616,9 +621,25 @@ export function resolveMonsterEventBattle(input: {
   readonly seed: string;
   readonly advicePressure: AdvicePressure;
   readonly pendingMerchantEffect: PendingMerchantEffect | null;
-}): { readonly battle: BattleResolution | null; readonly pendingMerchantEffect: PendingMerchantEffect | null } {
+  readonly battleAbilityUsesRemainingByCharacterId: BattleAbilityUsesRemaining;
+}): {
+  readonly battle: BattleResolution | null;
+  readonly pendingMerchantEffect: PendingMerchantEffect | null;
+  readonly battleAbilityUsesRemainingByCharacterId: BattleAbilityUsesRemaining;
+} {
+  validateBattleAbilityUses({
+    members: input.members,
+    classDefs: input.classDefs,
+    usesRemaining: input.battleAbilityUsesRemainingByCharacterId,
+    phase: "active",
+    errorCode: "INVALID_GENERATION",
+  });
   if (input.modifier.avoidCombat === true) {
-    return { battle: null, pendingMerchantEffect: input.pendingMerchantEffect };
+    return {
+      battle: null,
+      pendingMerchantEffect: input.pendingMerchantEffect,
+      battleAbilityUsesRemainingByCharacterId: input.battleAbilityUsesRemainingByCharacterId,
+    };
   }
   if (input.event.encounter === undefined) invalid("monster 사건의 encounter가 없다", { eventId: input.event.id });
   const resolved = resolveEncounter({ base: input.event.encounter, modifier: input.modifier, activeMonsterIds: input.activeMonsterIds });
@@ -635,7 +656,19 @@ export function resolveMonsterEventBattle(input: {
     party: input.members.filter((member) => member.alive).map((member) => {
       const classDef = classById.get(member.classId);
       if (classDef === undefined) invalid("전투 파티의 직업 정의가 없다", { classId: member.classId });
-      return { id: member.id, classId: member.classId, hp: member.hp, maxHp: member.maxHp, attack: classDef.attack, hitWeight: classDef.hitWeight };
+      return {
+        id: member.id,
+        classId: member.classId,
+        hp: member.hp,
+        maxHp: member.maxHp,
+        attack: classDef.attack,
+        hitWeight: classDef.hitWeight,
+        battleAbility: hydrateBattlePartyAbility({
+          member,
+          classDef,
+          usesRemaining: input.battleAbilityUsesRemainingByCharacterId,
+        }),
+      };
     }),
     enemies: expanded.map((enemy) => {
       const monster = defs.get(enemy.monsterId);
@@ -652,5 +685,14 @@ export function resolveMonsterEventBattle(input: {
     partyDamageMultiplier: (input.modifier.partyDamageMultiplier ?? 1) * (partyDamageMultiplier ?? 1) * pressure.outgoingDamageMultiplier,
     incomingDamageMultiplier: (input.modifier.incomingDamageMultiplier ?? 1) * (incomingDamageMultiplier ?? 1) * pressure.incomingDamageMultiplier,
   });
-  return { battle, pendingMerchantEffect: consumed.pendingMerchantEffect };
+  return {
+    battle,
+    pendingMerchantEffect: consumed.pendingMerchantEffect,
+    battleAbilityUsesRemainingByCharacterId: extractBattleAbilityUsesAfterBattle({
+      before: input.battleAbilityUsesRemainingByCharacterId,
+      members: input.members,
+      classDefs: input.classDefs,
+      battleParty: battle.party,
+    }),
+  };
 }

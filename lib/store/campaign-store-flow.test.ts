@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { Character, ExpeditionState, NodeId } from "@/lib/domain";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
+import { CLASSES } from "@/lib/content/classes";
+import { createBattleAbilityUsesForParty } from "@/lib/rules/battle-ability-state";
 import { createCampaignStore, screenForPhase } from "./campaign-store";
 
 /**
@@ -51,6 +53,10 @@ describe("스토어로 걷는 흐름", () => {
       currentNodeId: map.entryNodeId,
       visitedNodeIds: [map.entryNodeId],
       advicePressure: 0,
+      battleAbilityUsesRemainingByCharacterId: createBattleAbilityUsesForParty({
+        members: partyMembers,
+        classDefs: CLASSES,
+      }),
       infoRecords: [],
       pendingMerchantEffect: null,
       bossResult: null,
@@ -62,6 +68,13 @@ describe("스토어로 걷는 흐름", () => {
     });
     expect(at()).toBe("expedition");
     expect(store.getState().rejected).toBeNull();
+    /* Break caught: 수동 ExpeditionState fixture가 능력 없는 사람 키를 넣거나
+     * 능력 보유자 키를 빼면 시작 전이에서 조용히 통과하면 안 된다. */
+    expect(expedition.battleAbilityUsesRemainingByCharacterId).toEqual(
+      Object.fromEntries(partyMembers
+        .filter((member) => member.classId === "cleric")
+        .map((member) => [member.id, 2])),
+    );
 
     const active = store.getState().context.activeExpedition!;
     const entry = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
