@@ -3,6 +3,7 @@ import { CAMPAIGN_RUN_STORAGE_KEY, type StringStorage } from "@/lib/store/campai
 import {
   copyStorageDiagnostics,
   resetCampaignForDiagnostics,
+  resetCampaignFromOwner,
 } from "./achievement-storage-actions";
 
 function memoryStorage(seed: Record<string, string> = {}): StringStorage {
@@ -64,6 +65,19 @@ describe("업적 저장 진단 동작", () => {
       stickyStorage(CAMPAIGN_RUN_STORAGE_KEY, "saved"),
       (href) => destinations.push(href),
     )).toEqual({ ok: false, reason: "캠페인 저장이 남아 있다" });
+    expect(destinations).toEqual([]);
+  });
+
+  it("브라우저 localStorage getter가 막히면 이동하지 않는다", () => {
+    const owner = Object.defineProperty({}, "localStorage", {
+      get() { throw new Error("getter blocked"); },
+    });
+    const destinations: string[] = [];
+
+    expect(resetCampaignFromOwner(owner, (href) => destinations.push(href))).toEqual({
+      ok: false,
+      reason: "getter blocked",
+    });
     expect(destinations).toEqual([]);
   });
 });

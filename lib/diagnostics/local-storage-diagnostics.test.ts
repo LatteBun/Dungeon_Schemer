@@ -3,6 +3,7 @@ import { CAMPAIGN_RUN_STORAGE_KEY } from "@/lib/store/campaign-run-storage";
 import {
   collectStorageDiagnostics,
   formatStorageDiagnostics,
+  collectStorageDiagnosticsFromOwner,
   type DiagnosticStorage,
 } from "./local-storage-diagnostics";
 
@@ -73,6 +74,18 @@ describe("브라우저 저장 진단", () => {
       status: "unavailable",
       reason: "blocked",
       campaign: null,
+      entries: [],
+    });
+  });
+
+  it("브라우저 localStorage getter 접근 예외도 진단 상태로 바꾼다", () => {
+    const owner = Object.defineProperty({}, "localStorage", {
+      get() { throw new Error("getter blocked"); },
+    });
+
+    expect(collectStorageDiagnosticsFromOwner(owner, context)).toMatchObject({
+      status: "unavailable",
+      reason: "getter blocked",
       entries: [],
     });
   });

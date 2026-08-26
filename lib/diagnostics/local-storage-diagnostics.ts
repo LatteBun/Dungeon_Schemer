@@ -36,6 +36,10 @@ interface DiagnosticContext {
   readonly userAgent: string;
 }
 
+interface StorageOwner {
+  readonly localStorage: DiagnosticStorage;
+}
+
 function reasonFor(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -93,6 +97,26 @@ export function collectStorageDiagnostics(
       campaign: campaignSummary(entries.find(({ key }) => key === CAMPAIGN_RUN_STORAGE_KEY)),
       entries,
     };
+  } catch (error) {
+    return {
+      version: 1,
+      ...context,
+      status: "unavailable",
+      reason: reasonFor(error),
+      campaign: null,
+      entries: [],
+    };
+  }
+}
+
+export function collectStorageDiagnosticsFromOwner(
+  owner: unknown,
+  context: DiagnosticContext,
+): StorageDiagnosticSnapshot {
+  try {
+    const storage = (owner as StorageOwner).localStorage;
+    if (storage === undefined || storage === null) throw new TypeError("localStorage is unavailable");
+    return collectStorageDiagnostics(storage, context);
   } catch (error) {
     return {
       version: 1,

@@ -29,3 +29,16 @@ export function resetCampaignForDiagnostics(
   navigate("/campaign");
   return { ok: true };
 }
+
+export function resetCampaignFromOwner(
+  owner: unknown,
+  navigate: (href: string) => void,
+): SaveResult {
+  try {
+    const storage = (owner as { readonly localStorage?: StringStorage }).localStorage;
+    if (storage === undefined || storage === null) throw new TypeError("localStorage is unavailable");
+    return resetCampaignForDiagnostics(storage, navigate);
+  } catch (error) {
+    return { ok: false, reason: reasonFor(error) };
+  }
+}

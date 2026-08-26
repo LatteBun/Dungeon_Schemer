@@ -10,10 +10,10 @@ import {
   unlockedAchievementCount,
 } from "@/lib/achievements/player-progress";
 import type { AchievementId, PlayerProgressV1 } from "@/lib/achievements/player-progress";
-import { collectStorageDiagnostics, formatStorageDiagnostics, type StorageDiagnosticSnapshot } from "@/lib/diagnostics/local-storage-diagnostics";
+import { collectStorageDiagnosticsFromOwner, formatStorageDiagnostics, type StorageDiagnosticSnapshot } from "@/lib/diagnostics/local-storage-diagnostics";
 import { AchievementStorageDiagnostics } from "./AchievementStorageDiagnostics";
 import { advanceDiagnosticTrigger, initialDiagnosticTriggerState } from "./achievement-storage-trigger";
-import { copyStorageDiagnostics, resetCampaignForDiagnostics } from "./achievement-storage-actions";
+import { copyStorageDiagnostics, resetCampaignFromOwner } from "./achievement-storage-actions";
 
 export interface AchievementCardView {
   readonly id: AchievementId;
@@ -276,7 +276,7 @@ export function Achievements({ backAction }: { readonly backAction: AchievementB
           const advanced = advanceDiagnosticTrigger(trigger.current, performance.now());
           trigger.current = advanced.state;
           if (!advanced.open) return;
-          setDiagnostics(collectStorageDiagnostics(window.localStorage, {
+          setDiagnostics(collectStorageDiagnosticsFromOwner(window, {
             collectedAt: new Date().toISOString(),
             userAgent: window.navigator.userAgent,
           }));
@@ -310,8 +310,8 @@ export function Achievements({ backAction }: { readonly backAction: AchievementB
           }}
           onCancelClear={() => setConfirmingCampaignClear(false)}
           onConfirmClear={() => {
-            const result = resetCampaignForDiagnostics(
-              window.localStorage,
+            const result = resetCampaignFromOwner(
+              window,
               (href) => window.location.assign(href),
             );
             if (!result.ok) {
