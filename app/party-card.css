@@ -110,6 +110,14 @@
   display: inline;
 }
 
+/* 직업과 짧은 능력 상태는 한 줄을 공유해 카드 높이를 늘리지 않는다. */
+.party-card__identity > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .party-card__identity strong {
   color: var(--color-parchment);
   font-size: clamp(0.84rem, 0.9cqw, 1.25rem);
@@ -120,6 +128,12 @@
 .party-card__identity small {
   color: var(--color-muted);
   font-size: clamp(0.7rem, 0.75cqw, 1rem);
+}
+
+.party-card__ability {
+  color: #d9bb79;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 /* HP 와 신뢰를 세로로 쌓는다. 나란히 두면 막대가 절반 폭이라 눈금이 안 읽힌다. */

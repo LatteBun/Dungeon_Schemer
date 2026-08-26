@@ -3,6 +3,10 @@ import { createRng } from "@/lib/rng";
 import { inSeatOrder } from "./party-seat-order";
 import { contractRewardForSurvivors, RANK_RISK_LIMIT } from "@/lib/domain";
 import { PERSONALITY_LABEL, portraitSrcForCharacterId } from "./character-labels";
+import {
+  partyMemberBattleAbilityStatus,
+  type PartyMemberBattleAbilityStatus,
+} from "./party-member-ability-view";
 import type {
   BoardOffer,
   CampaignState,
@@ -37,6 +41,7 @@ export interface U3PartyMemberView {
   gold: number;
   /** 향후 캐릭터 고유 초상 자산이 준비되면 ID 매핑으로 주입한다. */
   portraitSrc?: string;
+  battleAbilityStatus?: PartyMemberBattleAbilityStatus;
 }
 
 export interface U3BoardNoticeView {
@@ -171,6 +176,14 @@ export function createU3BoardView(
 
       /* 주입된 초상이 없으면 공용 매핑으로 채운다. 화면마다 빈 자리가 나오면 안 된다. */
       const portraitSrc = portraitSrcForCharacterId(character.id);
+      const classDef = CLASSES.find((candidate) => candidate.id === character.classId);
+      if (classDef === undefined) {
+        throw new Error(`U3 파티원의 직업 정의를 찾을 수 없습니다: ${character.classId}`);
+      }
+      const battleAbilityStatus = partyMemberBattleAbilityStatus(
+        classDef.battleAbility,
+        classDef.battleAbility?.usesPerExpedition,
+      );
       return {
         id: character.id,
         name: character.name,
@@ -181,6 +194,7 @@ export function createU3BoardView(
         trust: character.trust,
         gold: character.gold,
         ...(portraitSrc === undefined ? {} : { portraitSrc }),
+        ...(battleAbilityStatus === undefined ? {} : { battleAbilityStatus }),
       } satisfies U3PartyMemberView;
     });
 

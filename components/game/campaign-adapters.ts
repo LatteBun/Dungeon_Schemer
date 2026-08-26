@@ -1,3 +1,4 @@
+import { CLASSES } from "@/lib/content/classes";
 import { THEMES } from "@/lib/content/themes";
 import type {
   ActiveExpeditionContext,
@@ -20,6 +21,7 @@ import type { TopStatusView } from "./TopStatusBar";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
 import { getMerchantAdviceAvailability } from "@/lib/rules/merchant";
 import { toAdviceViews, type U5OutcomeView, type U5ProgressView, type U5SceneKind } from "./u5-progress-model";
+import { partyMemberBattleAbilityStatus } from "./party-member-ability-view";
 
 /**
  * 스토어 상태에서 화면 View 를 만든다.
@@ -72,23 +74,29 @@ function themeOf(campaign: CampaignState, active: ActiveExpeditionContext): Them
 export function partyViewsFor(
   seed: string,
   members: readonly Character[],
-  battleAbilityUsesRemainingByCharacterId: Readonly<Partial<Record<Character["id"], number>>> = {},
+  battleAbilityUsesRemainingByCharacterId: Readonly<Partial<Record<Character["id"], number>>>,
 ) {
-  return inSeatOrder(seed, members, (member) => String(member.id)).map((member) => ({
-    id: String(member.id),
-    name: member.name,
-    classLabel: classLabel(member.classId),
-    personalityLabel: PERSONALITY_LABEL[member.personality],
-    hp: member.hp,
-    maxHp: member.maxHp,
-    trust: member.trust,
-    gold: member.gold,
-    alive: member.alive,
-    portraitSrc: portraitSrcForCharacterId(member.id),
-    ...(battleAbilityUsesRemainingByCharacterId[member.id] === undefined
-      ? {}
-      : { battleAbilityUsesRemaining: battleAbilityUsesRemainingByCharacterId[member.id] }),
-  }));
+  return inSeatOrder(seed, members, (member) => String(member.id)).map((member) => {
+    const classDef = CLASSES.find((candidate) => candidate.id === member.classId);
+    if (classDef === undefined) throw new Error(`U5 파티원의 직업 정의를 찾을 수 없다: ${member.classId}`);
+    const battleAbilityStatus = partyMemberBattleAbilityStatus(
+      classDef.battleAbility,
+      battleAbilityUsesRemainingByCharacterId[member.id],
+    );
+    return {
+      id: String(member.id),
+      name: member.name,
+      classLabel: classLabel(member.classId),
+      personalityLabel: PERSONALITY_LABEL[member.personality],
+      hp: member.hp,
+      maxHp: member.maxHp,
+      trust: member.trust,
+      gold: member.gold,
+      alive: member.alive,
+      portraitSrc: portraitSrcForCharacterId(member.id),
+      ...(battleAbilityStatus === undefined ? {} : { battleAbilityStatus }),
+    };
+  });
 }
 
 /** 사건 분류를 장면 종류로 옮긴다. 지도의 공개 분류와 같은 낱말이다. */

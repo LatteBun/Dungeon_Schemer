@@ -63,6 +63,24 @@ describe("U3 board model", () => {
     }
   });
 
+  it("계약 전 직업 정의의 원정 시작 횟수를 성직자 카드 상태로 옮긴다", () => {
+    const campaign = initializeCampaign("u3-board-model-ability");
+    const offers = createBoardOffers(campaign);
+    const clericId = campaign.pool.order.find((id) => campaign.pool.byId[id]?.classId === "cleric")!;
+    const otherIds = campaign.pool.order.filter((id) => id !== clericId).slice(0, 2);
+    const offer = {
+      ...offers[0]!,
+      party: { memberIds: [clericId, otherIds[0]!, otherIds[1]!] },
+    };
+    const board = createU3BoardView(campaign, [offer]);
+    const members = Object.values(board.detailsByOfferId).flatMap((detail) => detail.party);
+    const cleric = members.find((member) => campaign.pool.byId[member.id]?.classId === "cleric");
+    const others = members.filter((member) => campaign.pool.byId[member.id]?.classId !== "cleric");
+
+    expect(cleric?.battleAbilityStatus).toEqual({ label: "치유", remaining: 2, total: 2 });
+    expect(others.every((member) => member.battleAbilityStatus === undefined)).toBe(true);
+  });
+
   it("캐릭터 초상 매핑이 있으면 파티 화면 모델에 경로를 전달한다", () => {
     const campaign = initializeCampaign("u3-board-model-portrait");
     const offers = createBoardOffers(campaign);

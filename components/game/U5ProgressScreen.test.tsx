@@ -174,7 +174,7 @@ describe("U5ProgressScreen", () => {
 
   it("치유 impact는 우측 대상 카드에 양수 HP 효과를 표시하고 settle에서 실제 HP를 반영한다", () => {
     const healingParty: U5ProgressView["party"] = [
-      { id: "cleric", name: "세라핀", classLabel: "성직자", personalityLabel: "침착한", hp: 10, maxHp: 10, trust: 35, gold: 18 },
+      { id: "cleric", name: "세라핀", classLabel: "성직자", personalityLabel: "침착한", hp: 10, maxHp: 10, trust: 35, gold: 18, battleAbilityStatus: { label: "치유", remaining: 1, total: 2 } },
       { id: "ally", name: "코르빈", classLabel: "전사", personalityLabel: "용감한", hp: 7, maxHp: 10, trust: 40, gold: 20 },
     ];
     const feedback = {
@@ -209,8 +209,10 @@ describe("U5ProgressScreen", () => {
 
     expect(impactHtml).toContain("HP +5");
     expect(impactHtml).toContain(">2 / 10<");
+    expect(impactHtml).toContain("치유 2/2");
     expect(settleHtml).not.toContain("HP +5");
     expect(settleHtml).toContain(">7 / 10<");
+    expect(settleHtml).toContain("치유 1/2");
   });
 
   it("전투 replay를 표시해도 오른쪽 파티 ViewModel 마크업을 바꾸지 않는다", () => {

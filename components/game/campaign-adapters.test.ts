@@ -103,7 +103,8 @@ describe("지도의 공개 분류", () => {
 
 describe("진행 화면 View", () => {
   it("전투 뒤 파티의 HP·신뢰와 능력 잔여 횟수를 서로 덮어쓰지 않고 옮긴다", () => {
-    const member = inExpedition().getState().context.activeExpedition!.partyMembers[0]!;
+    const member = inExpedition().getState().context.activeExpedition!.partyMembers
+      .find((candidate) => candidate.classId === "cleric")!;
     const finalMember = { ...member, hp: member.hp - 1, trust: member.trust - 2 };
     const view = partyViewsFor("u5-final-party", [finalMember], { [member.id]: 0 })[0]!;
 
@@ -111,12 +112,13 @@ describe("진행 화면 View", () => {
       id: String(member.id),
       hp: finalMember.hp,
       trust: finalMember.trust,
-      battleAbilityUsesRemaining: 0,
+      battleAbilityStatus: { label: "치유", remaining: 0, total: 2 },
     });
   });
 
   it("완료된 U5를 다시 볼 때 HP·신뢰는 최종값이고 잔여 횟수만 replay frame을 따른다", () => {
-    const member = inExpedition().getState().context.activeExpedition!.partyMembers[0]!;
+    const member = inExpedition().getState().context.activeExpedition!.partyMembers
+      .find((candidate) => candidate.classId === "cleric")!;
     const finalMember = { ...member, hp: member.hp - 1, trust: member.trust - 2 };
     const finalParty = partyViewsFor("u5-replay-party", [finalMember], { [member.id]: 0 });
     const frame = {
@@ -138,13 +140,13 @@ describe("진행 화면 View", () => {
     expect(shown).toMatchObject({
       hp: finalMember.hp,
       trust: finalMember.trust,
-      battleAbilityUsesRemaining: 1,
+      battleAbilityStatus: { label: "치유", remaining: 1, total: 2 },
     });
   });
 
   it("replay 비참가 사망 능력 보유자는 기존 잔여 횟수를 보존한다", () => {
     const members = inExpedition().getState().context.activeExpedition!.partyMembers.slice(0, 2);
-    const participant = members[0]!;
+    const participant = { ...members[0]!, classId: "cleric" as ClassId };
     const deadNonparticipant = {
       ...members[1]!,
       classId: "cleric" as ClassId,
@@ -172,12 +174,16 @@ describe("진행 화면 View", () => {
 
     const shown = u5PartyViewsForBattleFrame(finalParty, frame);
 
-    expect(shown.find((member) => member.id === String(participant.id))?.battleAbilityUsesRemaining).toBe(1);
+    expect(shown.find((member) => member.id === String(participant.id))?.battleAbilityStatus).toEqual({
+      label: "치유",
+      remaining: 1,
+      total: 2,
+    });
     expect(shown.find((member) => member.id === String(deadNonparticipant.id))).toMatchObject({
       hp: 0,
       alive: false,
       classLabel: "성직자",
-      battleAbilityUsesRemaining: 2,
+      battleAbilityStatus: { label: "치유", remaining: 2, total: 2 },
     });
   });
 

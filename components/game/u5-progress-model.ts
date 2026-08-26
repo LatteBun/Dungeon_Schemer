@@ -1,5 +1,9 @@
 import type { PartyMemberCardView } from "./PartyMemberCard";
 import type { U5BattleReplayFrame } from "./u5-battle-replay";
+import {
+  withPartyMemberBattleAbilityRemaining,
+  type PartyMemberBattleAbilityStatus,
+} from "./party-member-ability-view";
 import type {
   ChoiceId,
   InfoReaction,
@@ -90,11 +94,11 @@ export interface U5OutcomeView {
 /**
  * 파티원 표시는 화면마다 갈리지 않도록 공용 카드 타입을 그대로 쓴다.
  *
- * 횟수는 아직 카드 문구가 아니다. replay frame이 최종 HP·신뢰와 독립적으로
- * 되감아야 하므로 U5 경계에서 숫자만 따로 운반한다.
+ * 능력 상태는 replay frame이 최종 HP·신뢰와 독립적으로 되감아야 하므로
+ * U5 경계에서 카드의 다른 수치와 분리해 운반한다.
  */
 export interface U5PartyMemberView extends PartyMemberCardView {
-  readonly battleAbilityUsesRemaining?: number;
+  readonly battleAbilityStatus?: PartyMemberBattleAbilityStatus;
 }
 
 /**
@@ -109,9 +113,15 @@ export function u5PartyViewsForBattleFrame(
   if (frame === undefined) return party;
   return party.map((member) => {
     const frameRemaining = frame.battleAbilityUsesRemainingByParticipantId[member.id];
-    return frameRemaining === undefined
+    return frameRemaining === undefined || member.battleAbilityStatus === undefined
       ? member
-      : { ...member, battleAbilityUsesRemaining: frameRemaining };
+      : {
+        ...member,
+        battleAbilityStatus: withPartyMemberBattleAbilityRemaining(
+          member.battleAbilityStatus,
+          frameRemaining,
+        ),
+      };
   });
 }
 

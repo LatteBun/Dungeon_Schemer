@@ -16,7 +16,11 @@ import {
   type U5LogEntry,
   type U5LogFilter,
 } from "./u5-log";
-import { sceneSrc, type U5ProgressView } from "./u5-progress-model";
+import {
+  sceneSrc,
+  u5PartyViewsForBattleFrame,
+  type U5ProgressView,
+} from "./u5-progress-model";
 import { U5BattleScene } from "./U5BattleScene";
 import { U5NonBattlePartyScene } from "./U5NonBattlePartyScene";
 import type { U5BattleReplay, U5BattleReplayParticipant } from "./u5-battle-replay";
@@ -266,7 +270,8 @@ export function U5ProgressScreen({
   const battleParticipantsById = new Map(
     battleReplay?.participants.map((participant) => [participant.id, participant] as const) ?? [],
   );
-  const shownParty = combatFeedback === undefined ? progress.party : progress.party.map((member) => {
+  const frameParty = u5PartyViewsForBattleFrame(progress.party, battlePlayback.frame);
+  const shownParty = combatFeedback === undefined ? frameParty : frameParty.map((member) => {
     const participant = battleParticipantsById.get(member.id);
     const hp = u5VisibleHp({
       phase: feedback.phase,
@@ -397,6 +402,7 @@ export function U5ProgressScreen({
                       member={member}
                       index={index}
                       testId="u5-party-member"
+                      battleAbilityStatus={member.battleAbilityStatus}
                       reserveSettledResultSpace
                       changes={feedbackComplete ? changesByMemberId?.[member.id] : undefined}
                       settledResult={combatFeedback === undefined ? undefined : u5SettledPartyResult(

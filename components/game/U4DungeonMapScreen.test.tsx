@@ -82,6 +82,7 @@ const party: readonly U4PartyMemberView[] = [
     gold: 24,
     alive: false,
     portraitSrc: "/assets/characters/live/cleric/cleric_b.png",
+    battleAbilityStatus: { label: "치유", remaining: 1, total: 2 },
   },
   {
     id: characterId("archer-1"),
@@ -181,6 +182,13 @@ describe("U4DungeonMapScreen", () => {
     expect(html).toContain("party-card is-dead");
     expect(html).toContain("사망");
     expect(html).toContain("/assets/u2/status-gold.svg");
+  });
+
+  it("활성 원정의 성직자 카드에 현재 치유 횟수를 표시한다", () => {
+    const html = render();
+
+    expect((html.match(/party-card__ability/g) ?? [])).toHaveLength(1);
+    expect(html).toContain("치유 1/2");
   });
 
   it("shows the selected destination separately and keeps CTA text in HTML", () => {
