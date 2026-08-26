@@ -173,7 +173,12 @@ body {
   min-width: 0;
 }
 
-.game-shell__zero-trust-dialog {
+.game-shell__zero-trust-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  translate: -50% 0;
   width: min(34rem, 70cqw);
   border: 1px solid #a77b3c;
   border-radius: 0.5rem;
@@ -183,10 +188,9 @@ body {
   box-shadow: 0 1rem 3rem rgb(0 0 0 / 72%);
 }
 
-.game-shell__zero-trust-dialog::backdrop { background: rgb(0 0 0 / 65%); }
-.game-shell__zero-trust-dialog h2 { margin: 0 0 0.75rem; color: #e8c27a; }
-.game-shell__zero-trust-dialog p { margin: 0 0 0.8rem; line-height: 1.6; }
-.game-shell__zero-trust-dialog button { float: right; }
+.game-shell__zero-trust-popover h2 { margin: 0 0 0.75rem; color: #e8c27a; }
+.game-shell__zero-trust-popover p { margin: 0 0 0.8rem; line-height: 1.6; }
+.game-shell__zero-trust-popover button { float: right; }
 
 .game-shell__status-item {
   display: flex;

@@ -138,7 +138,7 @@ describe("TopStatusBar U2/U3", () => {
     expect(trust.startsWith("<button")).toBe(true);
     expect(trust).toContain('data-testid="zero-trust-info-trigger"');
     expect(trust).toContain('aria-label="의심 인원: 7 / 5"');
-    expect(html).toContain("이번 던전이 끝난 뒤 누적 고발이 시작됩니다.");
+    expect(html).not.toContain("이번 던전이 끝난 뒤 누적 고발이 시작됩니다.");
   });
 
   it("신뢰 상태 아이콘은 공통 24x24 SVG 계약을 따른다", () => {

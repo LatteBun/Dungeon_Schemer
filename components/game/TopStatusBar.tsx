@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 
 export interface TopStatusView {
   rank: string;
@@ -29,10 +29,11 @@ interface StatusItemProps {
   iconSrc?: string;
   onClick?: () => void;
   testId?: string;
+  buttonRef?: Ref<HTMLButtonElement>;
   available?: boolean;
 }
 
-function StatusItem({ label, value, iconSrc, onClick, testId, available = false }: StatusItemProps) {
+function StatusItem({ label, value, iconSrc, onClick, testId, buttonRef, available = false }: StatusItemProps) {
   const content = (
     <>
       {iconSrc === undefined ? null : (
@@ -58,6 +59,7 @@ function StatusItem({ label, value, iconSrc, onClick, testId, available = false 
 
   return (
     <button
+      ref={buttonRef}
       type="button"
       className={`game-shell__status-item game-shell__status-chip game-shell__status-chip--action${available ? " is-available" : ""}`}
       data-testid={testId}
@@ -78,12 +80,18 @@ interface TopStatusBarProps {
 export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
   const [isZeroTrustInfoOpen, setZeroTrustInfoOpen] = useState(false);
   const zeroTrustTriggerRef = useRef<HTMLButtonElement>(null);
-  const zeroTrustDialogRef = useRef<HTMLDialogElement>(null);
+  const zeroTrustPopoverRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    const dialog = zeroTrustDialogRef.current;
-    if (dialog === null) return;
-    if (isZeroTrustInfoOpen) dialog.showModal();
-    else if (dialog.open) dialog.close();
+    if (!isZeroTrustInfoOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && !zeroTrustTriggerRef.current?.contains(event.target) && !zeroTrustPopoverRef.current?.contains(event.target)) setZeroTrustInfoOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); closeZeroTrustInfo(); }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => { document.removeEventListener("pointerdown", onPointerDown); document.removeEventListener("keydown", onKeyDown); };
   }, [isZeroTrustInfoOpen]);
   const closeZeroTrustInfo = () => {
     setZeroTrustInfoOpen(false);
@@ -154,6 +162,7 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
           iconSrc="/assets/u2/status-trust.svg"
           onClick={() => setZeroTrustInfoOpen(true)}
           testId="zero-trust-info-trigger"
+          buttonRef={zeroTrustTriggerRef}
         />
         <StatusItem
           label="남은 던전"
@@ -167,19 +176,18 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
           />
         )}
       </dl>
-      <dialog
-        ref={zeroTrustDialogRef}
-        className="game-shell__zero-trust-dialog"
+      {isZeroTrustInfoOpen ? <section
+        ref={zeroTrustPopoverRef}
+        className="game-shell__zero-trust-popover"
+        role="dialog"
         aria-label="의심 인원"
         aria-modal="true"
-        onCancel={(event) => { event.preventDefault(); closeZeroTrustInfo(); }}
-        onClick={(event) => { if (event.target === event.currentTarget) closeZeroTrustInfo(); }}
       >
         <h2>의심 인원</h2>
         <p>신뢰를 완전히 잃은 용사가 다섯 명 이상이면, 이번 던전이 끝난 뒤 누적 고발이 시작됩니다.</p>
         <p>결국 고블린은 처형되고 당신의 길잡이 일도 끝나겠죠. 다만 죽은 용사는 집계에서 제외됩니다. 신뢰를 잃은 자가 돌아오지 못하게 하는 편이 나을지도 모릅니다.</p>
         <button type="button" autoFocus onClick={closeZeroTrustInfo}>닫기</button>
-      </dialog>
+      </section> : null}
     </header>
   );
 }
