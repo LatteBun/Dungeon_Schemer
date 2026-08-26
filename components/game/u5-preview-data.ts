@@ -6,6 +6,7 @@ import {
   presentShuffledAdvice,
 } from "@/lib/rules/advice-evaluation";
 import { CLASSES } from "@/lib/content/classes";
+import { createBattleAbilityUsesForParty } from "@/lib/rules/battle-ability-state";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import {
@@ -51,10 +52,20 @@ const PREVIEW_ATTEMPT = 0;
 
 const campaign = initializeCampaign(PREVIEW_SEED);
 
-/** 살아 있는 파티원 셋. 캠페인 풀에서 결정적으로 고른다. */
-const members: readonly Character[] = Object.values(campaign.pool.byId)
-  .filter((member): member is Character => member !== undefined && member.alive)
-  .slice(0, 3);
+/** 성직자와 서로 다른 동료 둘. 실제 캠페인 풀에서 결정적으로 고른다. */
+const aliveMembers = Object.values(campaign.pool.byId)
+  .filter((member): member is Character => member !== undefined && member.alive);
+const cleric = aliveMembers.find((member) => member.classId === "cleric");
+if (cleric === undefined) throw new Error("U5 프리뷰에 쓸 성직자가 없다");
+const companions = aliveMembers
+  .filter((member) => member.id !== cleric.id && member.classId !== "cleric")
+  .slice(0, 2);
+if (companions.length !== 2) throw new Error("U5 프리뷰에 쓸 성직자 동료 둘이 없다");
+const members: readonly Character[] = [cleric, ...companions];
+const battleAbilityUsesRemainingByCharacterId = createBattleAbilityUsesForParty({
+  members,
+  classDefs: CLASSES,
+});
 
 /* 좁힌 타입을 돌려준다. 아래 함수들이 hoisting 때문에 좁힘을 물려받지 못한다. */
 function previewDungeon(): CampaignDungeon {
@@ -181,6 +192,8 @@ export const U5_PREVIEW_SOURCE = {
   dungeonId: PREVIEW_DUNGEON,
   attempt: PREVIEW_ATTEMPT,
   dungeon,
+  members,
+  battleAbilityUsesRemainingByCharacterId,
   samples,
 } as const;
 
@@ -388,6 +401,7 @@ function buildLog(): readonly U5LogEntry[] {
     seed: `${PREVIEW_SEED}/${PREVIEW_DUNGEON}/log`,
     pendingMerchantEffect: null,
     advicePressure: 0,
+    battleAbilityUsesRemainingByCharacterId,
   }).battle;
 
   const disclosed = disclosedRuleIds({

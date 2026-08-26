@@ -16,6 +16,31 @@ import { firstChoosableAdvice } from "./legal-advice";
 const SEED = "i1-store";
 
 describe("캠페인 스토어", () => {
+  it("새 원정에 들어가면 성직자의 능력 횟수가 2/2로 시작한다", () => {
+    for (let index = 0; index < 80; index += 1) {
+      const store = createCampaignStore(`cleric-new-expedition-${index}`);
+      store.getState().dispatch({ type: "OPEN_BOARD" });
+      const offer = store.getState().campaign.offers.find((candidate) =>
+        candidate.lockReason === null && candidate.party.memberIds.some(
+          (memberId) => store.getState().campaign.pool.byId[memberId]?.classId === "cleric",
+        ));
+      if (offer === undefined) continue;
+
+      store.getState().dispatch({ type: "SELECT_CONTRACT", offerId: offer.id });
+      store.getState().dispatch({
+        type: "START_EXPEDITION",
+        expeditionId: `cleric-new-${index}`,
+        ...createExpeditionForOffer(store.getState().campaign, offer),
+      });
+      const active = store.getState().context.activeExpedition!;
+      const cleric = active.partyMembers.find((member) => member.classId === "cleric")!;
+
+      expect(active.expedition.battleAbilityUsesRemainingByCharacterId).toEqual({ [cleric.id]: 2 });
+      return;
+    }
+    throw new Error("성직자가 있는 새 원정 공고를 찾지 못했다");
+  });
+
   it("시드로 시작하고 인트로에 선다", () => {
     const store = createCampaignStore(SEED);
     const state = store.getState();

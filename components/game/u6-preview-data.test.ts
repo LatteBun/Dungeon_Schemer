@@ -1,14 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { ENDING_ORDER } from "@/lib/domain";
-import { U6_PREVIEW_ENTRIES, U6_PREVIEW_IDS } from "./u6-preview-data";
+import { U6_PREVIEW_ENTRIES, U6_PREVIEW_IDS, U6_PREVIEW_SOURCE } from "./u6-preview-data";
 
 const FUTURE_REWARD_PROPERTY = "next" + "Reward";
 
 describe("U6 프리뷰 데이터", () => {
+  it("실제 정산 근거 원정은 능력 보유자만 유효한 잔여 횟수 맵에 담는다", () => {
+    const clerics = U6_PREVIEW_SOURCE.party.filter((member) => member.classId === "cleric");
+
+    expect(clerics).toHaveLength(1);
+    expect(U6_PREVIEW_SOURCE.battleAbilityUsesRemainingByCharacterId).toEqual({
+      [clerics[0]!.id]: 2,
+    });
+  });
+
   it("정산 3종과 엔딩 5종을 모두 담는다", () => {
     expect(U6_PREVIEW_IDS).toHaveLength(8);
     expect(U6_PREVIEW_ENTRIES.filter((entry) => entry.settlement)).toHaveLength(3);
     expect(U6_PREVIEW_ENTRIES.filter((entry) => entry.ending)).toHaveLength(5);
+  });
+
+  it("정산 멤버에는 원정 중 능력 잔여 횟수를 보존하지 않는다", () => {
+    for (const entry of U6_PREVIEW_ENTRIES) {
+      if (entry.settlement === undefined) continue;
+      for (const member of entry.settlement.members) {
+        expect(member).not.toHaveProperty("battleAbilityStatus");
+      }
+    }
   });
 
   it("엔딩 5종을 하나도 빠뜨리지 않는다", () => {

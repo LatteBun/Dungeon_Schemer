@@ -11,6 +11,15 @@ import { U5_PREVIEW_ENTRIES, U5_PREVIEW_SOURCE } from "./u5-preview-data";
  */
 
 describe("U5 프리뷰 데이터", () => {
+  it("실제 프리뷰 파티의 능력 보유자만 원정 시작 횟수 맵에 담는다", () => {
+    const clerics = U5_PREVIEW_SOURCE.members.filter((member) => member.classId === "cleric");
+
+    expect(clerics).toHaveLength(1);
+    expect(U5_PREVIEW_SOURCE.battleAbilityUsesRemainingByCharacterId).toEqual({
+      [clerics[0]!.id]: 2,
+    });
+  });
+
   it("아홉 상태를 담는다", () => {
     expect(U5_PREVIEW_ENTRIES).toHaveLength(9);
     expect(new Set(U5_PREVIEW_ENTRIES.map((entry) => entry.id)).size).toBe(9);

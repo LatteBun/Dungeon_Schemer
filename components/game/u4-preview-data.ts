@@ -1,8 +1,11 @@
 import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { executeGuidePromotion, getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { createBoardOffers } from "@/lib/rules/board";
+import { createBattleAbilityUsesForParty } from "@/lib/rules/battle-ability-state";
+import { CLASSES } from "@/lib/content/classes";
 import { generateDungeonMap } from "@/lib/rules/dungeon-map";
 import type {
+  BattleAbilityUsesRemaining,
   CampaignState,
   Character,
   EventKind,
@@ -35,6 +38,7 @@ export interface U4PreviewData {
   nodes: readonly U4MapNodeView[];
   layout: U4MapLayout;
   party: readonly U4PartyMemberView[];
+  battleAbilityUsesRemainingByCharacterId: BattleAbilityUsesRemaining;
   currentNodeId: NodeId;
   visitedNodeIds: readonly NodeId[];
   publicKindByNodeId: Readonly<Partial<Record<NodeId, EventKind>>>;
@@ -142,8 +146,14 @@ export function createU4PreviewData(input: {
     publicKindByNodeId,
   });
   const layout = createU4DungeonMapLayout(map);
+  const partyMembers = partyCharacters(campaign, offer.party.memberIds, input.deadPreview);
+  const battleAbilityUsesRemainingByCharacterId = createBattleAbilityUsesForParty({
+    members: partyMembers,
+    classDefs: CLASSES,
+  });
   const party = createU4PartyMemberViews(
-    partyCharacters(campaign, offer.party.memberIds, input.deadPreview),
+    partyMembers,
+    battleAbilityUsesRemainingByCharacterId,
   );
   const selectedNextNodeId =
     nodes.find((node) => node.state === "selectable")?.id ?? null;
@@ -175,6 +185,7 @@ export function createU4PreviewData(input: {
     nodes,
     layout,
     party,
+    battleAbilityUsesRemainingByCharacterId,
     currentNodeId,
     visitedNodeIds,
     publicKindByNodeId,
