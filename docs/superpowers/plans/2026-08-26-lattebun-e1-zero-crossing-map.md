@@ -246,10 +246,18 @@ Expected: geometry export와 zero-crossing expectation 때문에 실패한다.
 `u4-dungeon-map-order.ts`은 `GeneratedMap` rows/edges 변환만 남기고 공용 solver를 호출한다. layout은 positions/corridors를 만드는 pure helper를 두 번 호출할 수 있게 분리한다.
 
 ```ts
-const wobbled = buildLayout(map, optimized.rows, true);
+const wobbled = buildLayout(map, optimized.rows, {
+  xWobble: true,
+  yWobble: true,
+  layerShift: true,
+});
 if (countU4GeometricCrossings(wobbled.corridors) === 0) return wobbled;
 
-const flatDepths = buildLayout(map, optimized.rows, false);
+const flatDepths = buildLayout(map, optimized.rows, {
+  xWobble: true,
+  yWobble: false,
+  layerShift: true,
+});
 const geometricCrossingCount = countU4GeometricCrossings(flatDepths.corridors);
 if (geometricCrossingCount !== 0) {
   throw new U4MapLayoutError(geometricCrossingCount);
@@ -282,13 +290,25 @@ git commit -m "화면: U4 통로 교차를 0으로 보장한다" -m "공용 순�
 - Modify: `docs/README.md`
 - Modify: `docs/superpowers/plans/2026-08-26-lattebun-e1-zero-crossing-map.md`
 
-- [ ] **Step 1: 공식 문서를 갱신한다.**
+- [x] **Step 1: 공식 문서를 갱신한다.**
 
-`DUNGEON_EVENTS_AND_BOSSES.md`의 위험도별 지도 절에 E1이 optional edge를 exact minimum crossing 0일 때만 채택하고 `GeneratedMap`이 zero-crossing 가능한 topology라는 규칙을 한 번만 기록한다. `U4_DUNGEON_MAP.md`에는 공용 solver adapter, 4자리 중심선 검사, Y-only fallback, 전용 오류 책임을 기록한다. `docs/README.md`의 이번 개편 설계 목록에 spec과 이 Plan 링크를 추가한다.
+`DUNGEON_EVENTS_AND_BOSSES.md`의 위험도별 지도 절에 E1이 optional edge를 exact minimum crossing 0일 때만 채택하고 `GeneratedMap`이 zero-crossing 가능한 topology라는 규칙을 한 번만 기록한다. `U4_DUNGEON_MAP.md`에는 공용 solver adapter, 4자리 중심선 검사, Y-only fallback, 전용 오류 책임을 기록한다. `docs/README.md`의 이번 개편 설계 목록에 spec과 이 Plan 링크를 추가한다. 완료했다.
 
-- [ ] **Step 2: 기준선/변경 후 진단 표를 수집한다.**
+- [x] **Step 2: 기준선/변경 후 진단 표를 수집한다.**
 
 spec 기준 SHA `226085835516fe5487e6dce681db76e9c6dbb06d`에서 고정 300-map 행렬의 `전체 edge 수 - base edge 수`를 위험도별로 집계한다. 현재 구현에서도 동일 집계를 하고 accepted/rejected optional edge, maximum row candidates, maximum logical crossing을 기록한다. 이 값은 PR #204 설명 또는 PR comment에 표로 남기며 `GeneratedMap`에 저장하지 않는다.
+
+재현 명령: 임시 Vitest 진단 스크립트로 seed `e1-zero-crossing-00..19`, `dungeonId=e1-zero-crossing-risk-{1..5}`, attempt `0..2`를 순회했다. baseline은 SHA `226085835516fe5487e6dce681db76e9c6dbb06d`를 archive한 별도 임시 작업공간에서 실행했다.
+
+| 위험도 | baseline total-base | current accepted optional | current rejected crossing | max row candidates | max logical crossing |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| ★1 | 93 | 86 | 8 | 6 | 0 |
+| ★2 | 145 | 115 | 28 | 9 | 0 |
+| ★3 | 297 | 150 | 110 | 20 | 0 |
+| ★4 | 415 | 181 | 222 | 20 | 0 |
+| ★5 | 563 | 208 | 341 | 25 | 0 |
+
+현재 accepted 합계는 `total edges - base edges`와 일치했으며 300개 지도 모두 logical crossing 최대값이 0이었다. 진단값은 PR #204 설명 또는 comment에도 동일 표로 남긴다.
 
 - [ ] **Step 3: 전체 정적·단위 검증을 실행한다.**
 
@@ -303,9 +323,17 @@ pnpm build
 
 Expected: lint, TypeScript, 모든 Vitest, production build가 모두 성공한다.
 
-- [ ] **Step 4: 네 viewport 브라우저 검수를 수행한다.**
+실행 결과(2026-08-26): `pnpm typecheck`은 성공했다. `pnpm lint`는 PR base에도
+동일하게 존재하는 `components/game/TopStatusBar.tsx:90`의
+`react-hooks/immutability` 오류로 실패했고, `pnpm test`는 PR base 이후 변경되지
+않은 U5 preview 두 suite와 IntroScreen assertion에서 3 suite/1 assertion이
+실패했다. `pnpm build`는 검수용 dev server 종료와 stale `.next/lock` 격리 후에도
+Turbopack 최적화 단계가 worker 없이 완료 신호를 내지 않아 중단했다. 이 PR은 해당
+범위 밖 기준선 실패를 고치지 않으며, PR 갱신에 결과를 기록한다.
 
-`/u4-test` 또는 실제 campaign U4에서 `1920×1080`, `2560×1440`, `1440×900`, `1280×1024`를 각각 확인한다. X자 corridor 교차, room overlap, scroll, 60:40 비율 변화, clipping, current/selectable 상태 손실이 없어야 한다. 결과 캡처와 관찰값을 PR #204에 남긴다.
+- [x] **Step 4: 네 viewport 브라우저 검수를 수행한다.**
+
+`/u4-test` 또는 실제 campaign U4에서 `1920×1080`, `2560×1440`, `1440×900`, `1280×1024`를 각각 확인한다. X자 corridor 교차, room overlap, scroll, 60:40 비율 변화, clipping, current/selectable 상태 손실이 없어야 한다. 결과 캡처와 관찰값을 PR #204에 남긴다. 완료했다: 네 viewport 모두 corridor 28개/room 23개/selectable state 1개를 유지했고 room/page horizontal overflow는 0이었다. 60:40 패널, scroll 범위, clipping 및 X자 교차도 보이지 않았다.
 
 - [ ] **Step 5: 문서와 검증 변경을 커밋하고 PR을 갱신한다.**
 

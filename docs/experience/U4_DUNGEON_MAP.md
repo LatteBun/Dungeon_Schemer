@@ -94,6 +94,20 @@ U4는 E1의 NodeId와 `nextNodeIds`를 바꾸지 않고, 각 Depth의 좌우 순
 기준으로 만든 후보 순서가 앞선 조합을 선택해 동일한 입력에 항상 같은
 좌표를 반환한다.
 
+순서 계산은 E1과 U4가 공유하는 `lib/rules/layered-map-crossing.ts`의 exact
+solver를 thin adapter로 호출한다. U4 adapter는 `GeneratedMap`의 층과 인접
+층 간선을 solver 입력으로만 변환하며 topology나 간선을 수정하지 않는다.
+
+### 통로 기하 안전장치
+
+solver가 0을 반환한 순서를 기준으로 방과 통로를 배치한 뒤, 렌더 좌표를
+소수점 네 자리(`10_000`배 정수)로 고정해 closed-segment 교차를 검사한다.
+같은 NodeId를 endpoint로 공유하는 분기·합류 통로 쌍은 교차로 세지 않는다.
+방의 시각적 자연스러움을 위한 Y wobble에서 기하 교차가 발견되면 일반
+Depth의 Y wobble만 제거한 fallback을 한 번 적용한다. fallback 뒤에도
+교차가 남으면 `U4MapLayoutError`(geometricCrossingCount 포함)를 던지며,
+U4가 topology를 재생성하거나 좌표를 임의 재추첨하지 않는다.
+
 ### 지도 레이어
 
 비네팅은 배경과 atmosphere 위, corridor와 room 아래에서만 합성한다.

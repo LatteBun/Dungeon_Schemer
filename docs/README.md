@@ -101,6 +101,9 @@
 
 ## 이번 개편 설계
 
+- [E1 지도 경로 교차 0 보장 설계](superpowers/specs/2026-08-26-lattebun-e1-zero-crossing-map-design.md): 선택 간선을 exact minimum crossing 0 조건으로 필터하고 U4 표시에서 기하 교차를 검증하는 생성·렌더링 계약
+- [E1 지도 경로 교차 0 보장 구현 계획](superpowers/plans/2026-08-26-lattebun-e1-zero-crossing-map.md): 공용 solver, E1 진단, U4 fallback과 20×5×3 회귀·통합 검증 순서
+
 - [상단 상태 바 신뢰 0 인원 표시 설계](superpowers/specs/2026-08-26-lattebun-top-status-zero-trust-count-design.md): 살아 있는 신뢰 0 인원과 누적 고발 기준을 C6 selector에서 공통 상태 바로 전달하는 화면 계약
 - [상단 상태 바 신뢰 0 인원 표시 구현 계획](superpowers/plans/2026-08-26-lattebun-top-status-zero-trust-count.md): 필수 View 계약, 프리뷰 원본 구분, 읽기 전용 칩과 최대 7개 레이아웃 검증의 테스트 우선 실행 순서
 - [의심 인원 상태 칩과 경고 팝업 설계](superpowers/specs/2026-08-26-lattebun-suspicion-status-dialog-design.md): 누적 고발 위험을 설명하는 상단 상태 바 팝업 계약
