@@ -25,7 +25,7 @@ export function MainMenuScreen({ unlockedCount, loading }: MainMenuScreenProps) 
           * 수단이므로 그것을 적는다.
           */}
         <p>그들은 당신의 말을 믿는다</p>
-        <h1>Dungeon Schemer</h1>
+        <h1>용사님, 이쪽입니다</h1>
       </header>
       <nav className="main-menu-screen__actions" aria-label="메인 메뉴">
         <Link

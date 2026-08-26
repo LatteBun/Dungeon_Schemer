@@ -14,8 +14,8 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Dungeon Schemer",
-    short_name: "Dungeon Schemer",
+    name: "용사님, 이쪽입니다",
+    short_name: "용사님, 이쪽입니다",
     description: "그들은 당신의 말을 믿는다",
     start_url: "/",
     display: "fullscreen",

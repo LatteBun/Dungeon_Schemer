@@ -25,6 +25,16 @@ vi.mock("next/link", () => ({
 import { MainMenuScreen } from "./MainMenuScreen";
 
 describe("메인 메뉴 화면", () => {
+  it("새 게임 제목과 기존 표어를 표시한다", () => {
+    const html = renderToStaticMarkup(
+      createElement(MainMenuScreen, { unlockedCount: 0, loading: false }),
+    );
+
+    expect(html).toContain("용사님, 이쪽입니다");
+    expect(html).not.toContain("Dungeon Schemer");
+    expect(html).toContain("그들은 당신의 말을 믿는다");
+  });
+
   it("캠페인과 업적 기록으로 가는 실제 링크를 제공한다", () => {
     const html = renderToStaticMarkup(
       createElement(MainMenuScreen, { unlockedCount: 3, loading: false }),
