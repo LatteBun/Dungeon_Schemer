@@ -314,7 +314,7 @@ function Participant({ participant, frame, reducedMotion, playbackRate }: {
       <AnimatePresence>
         {showHealing ? (
           <span className="u5-battle-healing-anchor">
-            <motion.output
+            <motion.span
               className="u5-battle-healing"
               aria-label={`${frame.healing} 회복`}
               initial={{ opacity: 0, y: reducedMotion ? 0 : "12%" }}
@@ -323,7 +323,7 @@ function Participant({ participant, frame, reducedMotion, playbackRate }: {
               transition={{ duration: reducedMotion ? 0 : u5BattleMotionDuration(0.24, playbackRate) }}
             >
               <span aria-hidden="true">+{frame.healing}</span>
-            </motion.output>
+            </motion.span>
           </span>
         ) : null}
       </AnimatePresence>

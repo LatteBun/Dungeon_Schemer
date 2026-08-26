@@ -323,6 +323,20 @@ describe("U5BattleScene 화면 자막", () => {
     expect(settleHtml).toMatch(/<p class="u5-battle-announcement" aria-live="polite" aria-atomic="true"><\/p>/);
     expect(html).not.toContain("피해를 받습니다");
   });
+
+  it("회복 숫자는 별도 status가 아닌 이름 있는 비-live 요소로 노출한다", () => {
+    const impact = healingReplay.frames.find(
+      (frame) => frame.phase === "impact" && frame.actionKind === "heal",
+    );
+    if (impact === undefined) throw new Error("fixture에 heal impact frame이 없다.");
+    const html = render(impact, healingReplay);
+    const healingMarkup = html.match(
+      /<([a-z]+) class="u5-battle-healing"[^>]*aria-label="5 회복"[^>]*><span aria-hidden="true">\+5<\/span><\/\1>/,
+    );
+
+    expect(healingMarkup?.[1]).toBe("span");
+    expect(html.match(/aria-live="polite"/g)).toHaveLength(1);
+  });
 });
 
 /* 쓰러진 사람은 흐려지기만 하면 화면 결함처럼 보인다. 상태를 표식으로 남긴다. */
