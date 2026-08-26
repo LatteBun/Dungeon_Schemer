@@ -108,6 +108,24 @@ describe("createU5BattleReplay", () => {
     ]).toEqual([1, 1, 0]);
   });
 
+  it("기록된 실제 회복량이 actor의 런타임 능력 healAmount를 넘으면 거부한다", () => {
+    const actorAbilityIsOne: BattleResolution = {
+      ...healingResolution,
+      party: [
+        {
+          ...healingResolution.party[0],
+          battleAbility: { ...emergencyHeal, healAmount: 1, remainingUses: 0 },
+        },
+        healingResolution.party[1]!,
+      ],
+    };
+
+    expect(() => createU5BattleReplay({
+      resolution: actorAbilityIsOne,
+      presentations: healingPresentations,
+    })).toThrowError(/능력.*회복량/);
+  });
+
   it("최종 잔여 횟수와 치유 action 수로 시작값을 복원하고 heal settle마다 한 번 감소시킨다", () => {
     const secondCleric = { ...healingResolution.party[0], id: "cleric-2", battleAbility: { ...emergencyHeal, remainingUses: 1 } };
     const replay = createU5BattleReplay({

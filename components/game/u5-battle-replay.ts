@@ -249,6 +249,10 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
         invalid(`승리 뒤 치유 행동이다: ${action.actorId}`);
       }
       if (!Number.isSafeInteger(action.healing) || action.healing <= 0) invalid(`치유량이 유효하지 않다: ${action.targetId}`);
+      const actorAbility = "battleAbility" in actor ? actor.battleAbility : undefined;
+      if (actorAbility === undefined || action.healing > actorAbility.healAmount) {
+        invalid(`치유 능력보다 실제 회복량이 크다: ${action.actorId}`);
+      }
       const expectedAfter = Math.min(target.maxHp, action.targetHpBefore + action.healing);
       if (action.targetHpAfter !== expectedAfter || action.healing !== expectedAfter - action.targetHpBefore) {
         invalid(`치유 HP chain과 실제 회복량이 맞지 않는다: ${action.targetId}`);

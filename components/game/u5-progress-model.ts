@@ -108,12 +108,10 @@ export function u5PartyViewsForBattleFrame(
 ): readonly U5PartyMemberView[] {
   if (frame === undefined) return party;
   return party.map((member) => {
-    const settledMember = { ...member };
-    delete settledMember.battleAbilityUsesRemaining;
     const frameRemaining = frame.battleAbilityUsesRemainingByParticipantId[member.id];
     return frameRemaining === undefined
-      ? settledMember
-      : { ...settledMember, battleAbilityUsesRemaining: frameRemaining };
+      ? member
+      : { ...member, battleAbilityUsesRemaining: frameRemaining };
   });
 }
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ClassId } from "@/lib/domain";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
 import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
@@ -138,6 +139,45 @@ describe("진행 화면 View", () => {
       hp: finalMember.hp,
       trust: finalMember.trust,
       battleAbilityUsesRemaining: 1,
+    });
+  });
+
+  it("replay 비참가 사망 능력 보유자는 기존 잔여 횟수를 보존한다", () => {
+    const members = inExpedition().getState().context.activeExpedition!.partyMembers.slice(0, 2);
+    const participant = members[0]!;
+    const deadNonparticipant = {
+      ...members[1]!,
+      classId: "cleric" as ClassId,
+      hp: 0,
+      alive: false,
+    };
+    const finalParty = partyViewsFor(
+      "u5-dead-nonparticipant",
+      [participant, deadNonparticipant],
+      { [participant.id]: 0, [deadNonparticipant.id]: 2 },
+    );
+    const frame = {
+      phase: "idle",
+      actionIndex: null,
+      actorId: null,
+      targetId: null,
+      actionKind: null,
+      damage: null,
+      healing: null,
+      hpByParticipantId: { [participant.id]: participant.hp },
+      battleAbilityUsesRemainingByParticipantId: { [participant.id]: 1 },
+      defeatedParticipantIds: [],
+      cues: [],
+    } as const;
+
+    const shown = u5PartyViewsForBattleFrame(finalParty, frame);
+
+    expect(shown.find((member) => member.id === String(participant.id))?.battleAbilityUsesRemaining).toBe(1);
+    expect(shown.find((member) => member.id === String(deadNonparticipant.id))).toMatchObject({
+      hp: 0,
+      alive: false,
+      classLabel: "성직자",
+      battleAbilityUsesRemaining: 2,
     });
   });
 
