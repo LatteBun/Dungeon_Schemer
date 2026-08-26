@@ -25,10 +25,10 @@ import "./app-frame.css";
 import "./screen-fit.css";
 
 export const metadata: Metadata = {
-  title: "Dungeon Schemer",
-  description: "Dungeon Schemer prototype",
+  title: "용사님, 이쪽입니다",
+  description: "용사님, 이쪽입니다 프로토타입",
   /* iOS 는 manifest 의 display 를 읽지 않는다. 홈 화면 앱 여부를 따로 말해 준다. */
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Dungeon Schemer" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "용사님, 이쪽입니다" },
   /*
    * Next 는 표준형 `mobile-web-app-capable` 만 낸다. 예전 iOS 는 apple 접두사가
    * 붙은 쪽만 읽으므로 둘 다 둔다 — 이것이 없으면 홈 화면에서 열어도 주소창이 남는다.
