@@ -1,8 +1,10 @@
 import { CAMPAIGN_BALANCE, type CampaignCalibrationSettings } from "@/lib/balance/campaign-balance";
 import type { EndingKind } from "@/lib/domain";
-import { B1B_ACCEPTANCE, evaluateB1BAcceptance, type B1BAcceptanceGate, type BacktestFocus } from "./acceptance";
+import { B1B_ACCEPTANCE, evaluateB1BAcceptance, evaluateHealingStructuralGates, type B1BAcceptanceGate, type BacktestFocus } from "./acceptance";
+import type { BattleAbilitySnapshotComparison } from "./battle-ability-comparison";
 import {
   aggregateRuns,
+  aggregateHealingMetrics,
   pairedMeanDifference,
   wilsonInterval,
   type BacktestAggregate,
@@ -13,7 +15,7 @@ import {
 import type { Accuracy, StrategyId } from "./public-state";
 
 export interface FixedGateResult {
-  readonly id: "no-run-errors" | "accuracy-interval" | "not-all-rank-s" | "betrayal-can-complete" | "accuracy-has-effect";
+  readonly id: string;
   readonly passed: boolean;
   readonly enforced: boolean;
   readonly evidence: string;
@@ -28,6 +30,13 @@ export interface BacktestReportInput {
   readonly aggregate: BacktestAggregate;
   readonly fixedGates: readonly FixedGateResult[];
   readonly calibrationEvidence: CalibrationEvidence;
+  readonly pairedAbilityEvidence?: {
+    readonly beforeSnapshotPath: string;
+    readonly afterSnapshotPath: string;
+    readonly beforeSourceRevision: string;
+    readonly afterSourceRevision: string;
+    readonly comparison: BattleAbilitySnapshotComparison;
+  };
 }
 
 export interface CalibrationStageEvidence {
@@ -70,7 +79,7 @@ function pairedCompleted(aggregate: BacktestAggregate, strategy: StrategyId): Pa
   return pairedLeft.length < 2 ? null : pairedMeanDifference(pairedRight, pairedLeft);
 }
 
-function fixedGateEnforced(id: FixedGateResult["id"], focus: BacktestFocus): boolean {
+function fixedGateEnforced(id: string, focus: BacktestFocus): boolean {
   return focus === "full-campaign" || id === "no-run-errors" || id === "not-all-rank-s";
 }
 
@@ -128,6 +137,7 @@ export function evaluateFixedGates(aggregate: BacktestAggregate, focus: Backtest
       enforced: fixedGateEnforced("accuracy-has-effect", focus),
       evidence: `최소 실질 차이 ${B1B_ACCEPTANCE.minimumPairedAccuracyEffect.toFixed(3)}; ${pairedEvidence.join("; ")}`,
     },
+    ...evaluateHealingStructuralGates(aggregate),
   ];
 }
 
@@ -188,6 +198,7 @@ function resolveSeedsPerCombination(input: BacktestReportInput): 2 | 50 | 100 | 
 export function renderBacktestReport(input: BacktestReportInput): string {
   const aggregate = aggregateRuns([...input.aggregate.runs].sort((left, right) => `${left.strategyId}@${left.accuracy}/${left.seed}`.localeCompare(`${right.strategyId}@${right.accuracy}/${right.seed}`)));
   const seedsPerCombination = resolveSeedsPerCombination(input);
+  const healing = aggregateHealingMetrics(aggregate.runs);
   const gates = [...input.fixedGates].sort((left, right) => left.id.localeCompare(right.id));
   const b1bGates = [...evaluateB1BAcceptance(aggregate, {
     mode: input.mode,
@@ -273,6 +284,23 @@ export function renderBacktestReport(input: BacktestReportInput): string {
       pairedRows.push(`| ${strategy} | ${difference.mean.toFixed(3)} | ${difference.low95.toFixed(3)} | ${difference.high95.toFixed(3)} |`);
     }
   }
+  const pairedAbility = input.pairedAbilityEvidence;
+  const pairedAbilityRows = pairedAbility === undefined ? [] : ([
+    ["성직자 포함", pairedAbility.comparison.byCleric.withCleric],
+    ["성직자 미포함", pairedAbility.comparison.byCleric.withoutCleric],
+  ] as const).map(([label, value]) => `| ${label} | ${value.pairCount} | ${nullable(value.battleVictoryRateDelta)} | ${nullable(value.meanPartyHpAfterRatioDelta)} | ${value.deathCountDelta} | ${nullable(value.meanRoundsDelta)} | ${value.healActionDelta} | ${value.actualHealingDelta} | ${value.unchangedPairCount} |`);
+  const healingStrataRows = (["withCleric", "withoutCleric"] as const).map((key) => {
+    const label = key === "withCleric" ? "성직자 포함" : "성직자 미포함";
+    const value = healing.byCleric[key];
+    return `| ${label} | ${value.expeditions} | ${value.firstAttemptStarts} | ${value.firstAttemptClears} | ${nullable(value.firstAttemptClearRate)} | ${nullable(value.meanBossEntryHpRatio)} | ${value.bossDeaths} | ${value.totalDeaths} | ${nullable(value.meanBattleRounds)} |`;
+  });
+  const healingRiskRows = (["withCleric", "withoutCleric"] as const).flatMap((key) => {
+    const label = key === "withCleric" ? "성직자 포함" : "성직자 미포함";
+    return ([1, 2, 3, 4, 5] as const).map((risk) => {
+      const value = healing.byCleric[key].firstAttemptByRisk[risk];
+      return `| ${label} | ${risk} | ${value.starts} | ${value.clears} | ${nullable(value.clearRate)} |`;
+    });
+  });
   const bossMultipliers = Object.entries(CAMPAIGN_BALANCE.bossBaseStatMultiplierByInitialRisk).map(([risk, multiplier]) => `★${risk}: ${calibrationMultiplier(multiplier)}`).join(", ");
   const pressureRows = Object.entries(CAMPAIGN_BALANCE.advicePressure).map(([pressure, values]) =>
     `| ${pressure} | ${values.incomingDamageMultiplier.toFixed(2)} | ${values.outgoingDamageMultiplier.toFixed(2)} |`,
@@ -296,6 +324,9 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "- 전략: survival, opportunist, selective-betrayal",
     "- 정확도: 0.4, 0.7",
     `- 조합당 표본: ${seedsPerCombination}`,
+    input.mode === "calibration"
+      ? "- 2,000-seed holdout: 실행하지 않음 (calibration 범위)"
+      : "- 2,000-seed holdout: 실행",
     "",
     "## 설정 revision과 현재 수치",
     "",
@@ -411,6 +442,40 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     "| 전략 | 0.7−0.4 평균 | 95% CI 하한 | 95% CI 상한 |",
     "| --- | ---: | ---: | ---: |",
     ...pairedRows,
+    "",
+    "## 성직자 치유 trace 지표",
+    "",
+    `- 성직자 포함 원정: ${healing.expeditions.withCleric}`,
+    `- 성직자 미포함 원정: ${healing.expeditions.withoutCleric}`,
+    `- 클래스 구성 미확정 원정(분모 제외): ${healing.expeditions.unknownComposition}`,
+    `- 성직자 포함 일반전/보스전: ${healing.clericBattles.general}/${healing.clericBattles.boss}`,
+    `- 원정당 치유 0·1·2회/초과: ${healing.healUsesPerExpedition[0]}·${healing.healUsesPerExpedition[1]}·${healing.healUsesPerExpedition[2]}/${healing.healUsesPerExpedition.overLimit}`,
+    `- 전투당 치유 0·1회/초과: ${healing.healUsesPerBattle[0]}·${healing.healUsesPerBattle[1]}/${healing.healUsesPerBattle.overLimit}`,
+    `- 총 치유 행동/유효 치유/실제 회복량: ${healing.healActions}/${healing.effectiveHealActions}/${healing.actualHealing}`,
+    `- 평균 전투 라운드/roundLimit: ${nullable(healing.meanBattleRounds)}/${healing.roundLimitCount}`,
+    "",
+    "| 층 | 원정 | 첫 시도 | 첫 시도 클리어 | 클리어율 | 보스 진입 HP 비율 | 보스 사망 | 전체 사망 | 평균 라운드 |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...healingStrataRows,
+    "",
+    "### 성직자 유무·초기 위험도별 첫 시도 클리어율",
+    "",
+    "| 층 | 초기 위험도 | 첫 시도 | 클리어 | 클리어율 |",
+    "| --- | ---: | ---: | ---: | ---: |",
+    ...healingRiskRows,
+    "",
+    "## 구현 전후 paired 전투 비교",
+    "",
+    ...(pairedAbility === undefined ? ["- baseline 비교 없음"] : [
+      `- before snapshot: \`${pairedAbility.beforeSnapshotPath}\``,
+      `- after snapshot: \`${pairedAbility.afterSnapshotPath}\``,
+      `- source revision: ${pairedAbility.beforeSourceRevision} → ${pairedAbility.afterSourceRevision}`,
+      `- paired key 수: ${pairedAbility.comparison.pairCount}`,
+      "",
+      "| 층 | paired key | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |",
+      "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+      ...pairedAbilityRows,
+    ]),
     "",
     "## 오류와 재현 seed",
     "",

@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { assertBacktestPasses, buildCalibrationEvidence, campaignSeed, optionsFromEnvironment, runBacktestSuite, shouldFailBacktest, validateBacktestSuiteOptions, writeBacktestSnapshotIfRequested } from "./backtest.run";
+import { assertBacktestPasses, buildCalibrationEvidence, buildPairedAbilityEvidence, campaignSeed, loadBaselineComparison, optionsFromEnvironment, runBacktestSuite, shouldFailBacktest, validateBacktestSuiteOptions, writeBacktestSnapshotIfRequested } from "./backtest.run";
 
 describe("B1 backtest seed 계약", () => {
   it("B1-B calibration namespace와 번호를 고정 폭으로 조합한다", () => {
@@ -143,4 +143,39 @@ describe("B1 backtest 기준선 기록", () => {
       rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  it("baseline JSON을 읽어 after와 완전 pair join하고 누락 키를 보고서 전에 거절한다", () => {
+    const directory = mkdtempSync(join(tmpdir(), "dungeon-schemer-backtest-pair-"));
+    const baselinePath = join(directory, "baseline.json");
+    const aggregate = runBacktestSuite({ mode: "calibration", focus: "risk-curve", seedsPerCombination: 2, namespace: "b1-risk-curve-v2-calibration" });
+    try {
+      writeBacktestSnapshotIfRequested(baselinePath, aggregate);
+      expect(loadBaselineComparison(baselinePath, aggregate)).toMatchObject({ pairCount: 12 });
+      expect(buildPairedAbilityEvidence({
+        baselinePath,
+        snapshotPath: join(directory, "after.json"),
+        sourceRevision: "cleric-heal-after",
+        aggregate,
+      })).toMatchObject({
+        beforeSnapshotPath: baselinePath,
+        afterSnapshotPath: join(directory, "after.json"),
+        beforeSourceRevision: "b1-risk-curve-v2-before",
+        afterSourceRevision: "cleric-heal-after",
+        comparison: { pairCount: 12 },
+        structuralGates: expect.arrayContaining([
+          expect.objectContaining({ id: "non-holder-unchanged", passed: true, enforced: true }),
+          expect.objectContaining({ id: "non-trigger-unchanged", passed: true, enforced: true }),
+        ]),
+      });
+      expect(() => loadBaselineComparison(baselinePath, aggregateRunsForTest(aggregate.runs.slice(1)))).toThrow("짝이 없는 backtest pair key");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
 });
+
+function aggregateRunsForTest(runs: Parameters<typeof import("./metrics").aggregateRuns>[0]) {
+  return requireAggregateRuns(runs);
+}
+
+import { aggregateRuns as requireAggregateRuns } from "./metrics";

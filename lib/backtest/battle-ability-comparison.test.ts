@@ -64,4 +64,28 @@ describe("전투 능력 기준선 snapshot", () => {
       rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  it("같은 안정 키의 전후 전투 결과를 성직자 유무별 paired delta로 계산한다", () => {
+    const before = snapshotForBattleAbilityComparison([run("with"), {
+      ...run("without"),
+      battles: [{ ...run("without").battles[0]!, party: [{ characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 20, hpAfter: 10, maxHp: 20 }] }],
+    }]);
+    const after = snapshotForBattleAbilityComparison([{
+      ...run("with"),
+      battles: [{ ...run("with").battles[0]!, party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 12, hpAfter: 12, maxHp: 28 }] }],
+    }, {
+      ...run("without"),
+      battles: [{ ...run("without").battles[0]!, party: [{ characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 20, hpAfter: 10, maxHp: 20 }] }],
+    }]);
+
+    const comparison = compareBattleAbilitySnapshots(before, after);
+    expect(comparison).toMatchObject({
+      pairCount: 2,
+      byCleric: {
+        withCleric: { pairCount: 1, meanPartyHpAfterRatioDelta: expect.closeTo(5 / 28, 8) },
+        withoutCleric: { pairCount: 1, unchangedPairCount: 1 },
+      },
+      withoutHealing: { pairCount: 2, unchangedPairCount: 1 },
+    });
+  });
 });

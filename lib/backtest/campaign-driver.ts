@@ -92,6 +92,8 @@ export interface BattleTraceEntry {
     readonly hpBefore: number;
     readonly hpAfter: number;
     readonly maxHp: number;
+    readonly abilityUsesRemainingBefore?: number | null;
+    readonly abilityUsesRemainingAfter?: number | null;
   }[];
   readonly battle: BattleResolution;
 }
@@ -127,6 +129,11 @@ export interface ExpeditionBalanceTrace {
   readonly initialRiskLevel: RiskLevel;
   readonly currentRiskLevel: RiskLevel;
   readonly attemptNumber: number;
+  /** 원정 시작 시 확정된 파티 구성. 전투가 없는 회피 원정도 이 분류를 보존한다. */
+  readonly party?: readonly {
+    readonly characterId: CharacterId;
+    readonly classId: ClassId;
+  }[];
   readonly startAdvicePressure: 0;
   readonly maxAdvicePressure: AdvicePressure;
   readonly bossEntry: null | {
@@ -262,6 +269,7 @@ function freezeTrace(
     reactionCounts: { ...trace.reactionCounts },
     balanceExpeditions: trace.balanceExpeditions.map((expedition) => ({
       ...expedition,
+      party: expedition.party?.map((member) => ({ ...member })),
       endAdvicePressure: expedition.endAdvicePressure
         ?? (active?.expeditionId === expedition.expeditionId
           ? active.expedition.advicePressure
@@ -317,6 +325,8 @@ function appendBattleTraceFor(
   if (battle === null) return;
 
   const afterById = new Map(afterActive.partyMembers.map((member) => [member.id, member]));
+  const usesBefore = beforeActive.expedition.battleAbilityUsesRemainingByCharacterId;
+  const usesAfter = afterActive.expedition.battleAbilityUsesRemainingByCharacterId;
   trace.battles.push({
     kind,
     expeditionId: beforeActive.expeditionId,
@@ -326,6 +336,8 @@ function appendBattleTraceFor(
       hpBefore: member.hp,
       hpAfter: afterById.get(member.id)?.hp ?? member.hp,
       maxHp: member.maxHp,
+      abilityUsesRemainingBefore: usesBefore[member.id] ?? null,
+      abilityUsesRemainingAfter: usesAfter[member.id] ?? null,
     })),
     battle,
   });
@@ -689,6 +701,7 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
           initialRiskLevel: dungeon.initialRiskLevel,
           currentRiskLevel: dungeon.riskLevel,
           attemptNumber: dungeon.attempts + 1,
+          party: active.partyMembers.map((member) => ({ characterId: member.id, classId: member.classId })),
           startAdvicePressure: 0,
           maxAdvicePressure: active.expedition.advicePressure,
           bossEntry: null,

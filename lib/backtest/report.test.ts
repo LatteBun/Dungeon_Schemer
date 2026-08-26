@@ -3,6 +3,7 @@ import { runCampaign } from "./campaign-driver";
 import { createStrategy } from "./strategies";
 import { aggregateRuns, metricsForRun, type BacktestAggregate } from "./metrics";
 import { evaluateFixedGates, renderBacktestReport } from "./report";
+import { compareBattleAbilitySnapshots, snapshotForBattleAbilityComparison } from "./battle-ability-comparison";
 
 function aggregateFixture(): BacktestAggregate {
   const runs = ["survival", "opportunist", "selective-betrayal"].flatMap((strategyId) => [0.4, 0.7].map((accuracy) =>
@@ -131,12 +132,23 @@ describe("백테스트 gate와 보고서", () => {
           },
         ],
       },
+      pairedAbilityEvidence: {
+        beforeSnapshotPath: "/private/tmp/baseline-2.json",
+        afterSnapshotPath: "/private/tmp/after-2.json",
+        beforeSourceRevision: "b1-risk-curve-v2-before",
+        afterSourceRevision: "cleric-heal-after",
+        comparison: compareBattleAbilitySnapshots(
+          snapshotForBattleAbilityComparison(aggregate.runs),
+          snapshotForBattleAbilityComparison(aggregate.runs),
+        ),
+      },
     };
     const first = renderBacktestReport(input);
     const second = renderBacktestReport({ ...input, aggregate: aggregateRuns([...aggregate.runs].reverse()) });
     expect(second).toBe(first);
     expect(first).toContain("## 고정 무결성 gate");
     expect(first).toContain("- focus: risk-curve");
+    expect(first).toContain("- 2,000-seed holdout: 실행하지 않음 (calibration 범위)");
     expect(first).toContain("## 설정 revision과 현재 수치");
     expect(first).toContain("## calibration 선택과 단계별 근거");
     expect(first).toContain("선택 축: bossBaseStatMultiplierByInitialRisk");
@@ -176,6 +188,19 @@ describe("백테스트 gate와 보고서", () => {
     expect(first).toContain("| betrayal-can-complete | OBSERVE |");
     expect(first).toContain("## 엔딩·최종 등급 분포");
     expect(first).toContain("## paired 정확도 비교");
+    expect(first).toContain("## 성직자 치유 trace 지표");
+    expect(first).toContain("성직자 포함 원정");
+    expect(first).toContain("원정당 치유 0·1·2회");
+    expect(first).toContain("### 성직자 유무·초기 위험도별 첫 시도 클리어율");
+    expect(first).toContain("| 성직자 포함 | 1 |");
+    expect(first).toContain("## 구현 전후 paired 전투 비교");
+    expect(first).toContain("- before snapshot: `/private/tmp/baseline-2.json`");
+    expect(first).toContain("- after snapshot: `/private/tmp/after-2.json`");
+    expect(first).toContain("- source revision: b1-risk-curve-v2-before → cleric-heal-after");
+    expect(first).toContain(`- paired key 수: ${aggregate.runs.length}`);
+    expect(first).toContain("| 성직자 포함 | ");
+    expect(first).toContain("| 성직자 미포함 | ");
+    expect(first).toContain("| healing-use-chain | PASS |");
     expect(first).not.toContain("조정 가능한 기준");
     expect(first).not.toMatch(/duration|elapsed|실행 시간/i);
   });

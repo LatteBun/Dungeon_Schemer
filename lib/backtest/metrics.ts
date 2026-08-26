@@ -154,6 +154,34 @@ export interface BacktestAggregate {
   readonly errorCounts: Readonly<Record<RunErrorKind, number>>;
 }
 
+export interface HealingBacktestMetrics {
+  readonly expeditions: {
+    readonly withCleric: number;
+    readonly withoutCleric: number;
+    readonly unknownComposition: number;
+  };
+  readonly clericBattles: { readonly general: number; readonly boss: number };
+  readonly healUsesPerExpedition: Readonly<Record<0 | 1 | 2, number>> & { readonly overLimit: number };
+  readonly healUsesPerBattle: Readonly<Record<0 | 1, number>> & { readonly overLimit: number };
+  readonly healActions: number;
+  readonly effectiveHealActions: number;
+  readonly actualHealing: number;
+  readonly meanHealingPerEffectiveHeal: number | null;
+  readonly meanBattleRounds: number | null;
+  readonly roundLimitCount: number;
+  readonly byCleric: Readonly<Record<"withCleric" | "withoutCleric", {
+    readonly expeditions: number;
+    readonly firstAttemptStarts: number;
+    readonly firstAttemptClears: number;
+    readonly firstAttemptClearRate: number | null;
+    readonly firstAttemptByRisk: Readonly<Record<RiskLevel, { readonly starts: number; readonly clears: number; readonly clearRate: number | null }>>;
+    readonly meanBossEntryHpRatio: number | null;
+    readonly bossDeaths: number;
+    readonly totalDeaths: number;
+    readonly meanBattleRounds: number | null;
+  }>>;
+}
+
 export class AggregationError extends Error {
   constructor(message: string) {
     super(message);
@@ -316,6 +344,121 @@ export function pairedMeanDifference(left: readonly number[], right: readonly nu
   const variance = differences.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / (differences.length - 1);
   const standardError = Math.sqrt(variance / differences.length);
   return { mean, standardError, low95: mean - 1.96 * standardError, high95: mean + 1.96 * standardError };
+}
+
+/** 확정 BattleResolution.action만 소비한다. HP delta나 UI 문구에서 치유를 추론하지 않는다. */
+export function aggregateHealingMetrics(runs: readonly CampaignRunMetrics[]): HealingBacktestMetrics {
+  let withCleric = 0;
+  let withoutCleric = 0;
+  let unknownComposition = 0;
+  let general = 0;
+  let boss = 0;
+  const expeditionDistribution = { 0: 0, 1: 0, 2: 0, overLimit: 0 };
+  const battleDistribution = { 0: 0, 1: 0, overLimit: 0 };
+  let healActions = 0;
+  let effectiveHealActions = 0;
+  let actualHealing = 0;
+  let rounds = 0;
+  let battleCount = 0;
+  let roundLimitCount = 0;
+  type Stratum = "withCleric" | "withoutCleric";
+  const strata = Object.fromEntries((["withCleric", "withoutCleric"] as const).map((key) => [key, {
+    expeditions: 0,
+    firstAttemptStarts: 0,
+    firstAttemptClears: 0,
+    byRisk: Object.fromEntries(RISK_LEVELS.map((risk) => [risk, { starts: 0, clears: 0 }])) as Record<RiskLevel, { starts: number; clears: number }>,
+    bossHpRatios: [] as number[],
+    bossDeaths: new Set<string>(),
+    deaths: new Set<string>(),
+    rounds: 0,
+    battles: 0,
+  }])) as Record<Stratum, {
+    expeditions: number; firstAttemptStarts: number; firstAttemptClears: number;
+    byRisk: Record<RiskLevel, { starts: number; clears: number }>;
+    bossHpRatios: number[]; bossDeaths: Set<string>; deaths: Set<string>; rounds: number; battles: number;
+  }>;
+
+  for (const run of runs) {
+    for (const expedition of run.balanceExpeditions) {
+      if (expedition.party === undefined) {
+        unknownComposition += 1;
+        continue;
+      }
+      const hasCleric = expedition.party.some((member) => member.classId === "cleric");
+      const stratum = strata[hasCleric ? "withCleric" : "withoutCleric"];
+      stratum.expeditions += 1;
+      if (expedition.attemptNumber === 1) {
+        stratum.firstAttemptStarts += 1;
+        stratum.firstAttemptClears += Number(expedition.result === "cleared");
+        stratum.byRisk[expedition.initialRiskLevel].starts += 1;
+        stratum.byRisk[expedition.initialRiskLevel].clears += Number(expedition.result === "cleared");
+      }
+      if (expedition.bossEntry !== null) stratum.bossHpRatios.push(expedition.bossEntry.hp / expedition.bossEntry.maxHp);
+      if (!hasCleric) {
+        withoutCleric += 1;
+        continue;
+      }
+      withCleric += 1;
+      const uses = run.battles
+        .filter((battle) => battle.expeditionId === expedition.expeditionId)
+        .flatMap((battle) => battle.battle.actions)
+        .filter((action) => action.kind === "heal").length;
+      if (uses <= 2) expeditionDistribution[uses as 0 | 1 | 2] += 1;
+      else expeditionDistribution.overLimit += 1;
+    }
+    for (const entry of run.battles) {
+      const hasCleric = entry.party.some((member) => member.classId === "cleric");
+      const stratum = strata[hasCleric ? "withCleric" : "withoutCleric"];
+      stratum.rounds += entry.battle.rounds;
+      stratum.battles += 1;
+      for (const member of entry.party) {
+        if (member.hpBefore > 0 && member.hpAfter <= 0) {
+          stratum.deaths.add(`${run.seed}\u0000${entry.expeditionId}\u0000${member.characterId}`);
+          if (entry.kind === "boss") stratum.bossDeaths.add(`${run.seed}\u0000${entry.expeditionId}\u0000${member.characterId}`);
+        }
+      }
+      if (!hasCleric) continue;
+      if (entry.kind === "general") general += 1;
+      else boss += 1;
+      battleCount += 1;
+      rounds += entry.battle.rounds;
+      roundLimitCount += Number(entry.battle.termination === "roundLimit");
+      const heals = entry.battle.actions.filter((action) => action.kind === "heal");
+      if (heals.length <= 1) battleDistribution[heals.length as 0 | 1] += 1;
+      else battleDistribution.overLimit += 1;
+      healActions += heals.length;
+      for (const action of heals) {
+        actualHealing += action.healing;
+        effectiveHealActions += Number(action.healing > 0);
+      }
+    }
+  }
+  return {
+    expeditions: { withCleric, withoutCleric, unknownComposition },
+    clericBattles: { general, boss },
+    healUsesPerExpedition: expeditionDistribution,
+    healUsesPerBattle: battleDistribution,
+    healActions,
+    effectiveHealActions,
+    actualHealing,
+    meanHealingPerEffectiveHeal: effectiveHealActions === 0 ? null : actualHealing / effectiveHealActions,
+    meanBattleRounds: battleCount === 0 ? null : rounds / battleCount,
+    roundLimitCount,
+    byCleric: Object.fromEntries((Object.entries(strata) as [Stratum, typeof strata[Stratum]][]).map(([key, value]) => [key, {
+      expeditions: value.expeditions,
+      firstAttemptStarts: value.firstAttemptStarts,
+      firstAttemptClears: value.firstAttemptClears,
+      firstAttemptClearRate: value.firstAttemptStarts === 0 ? null : value.firstAttemptClears / value.firstAttemptStarts,
+      firstAttemptByRisk: Object.fromEntries(RISK_LEVELS.map((risk) => {
+        const one = value.byRisk[risk];
+        return [risk, { ...one, clearRate: one.starts === 0 ? null : one.clears / one.starts }];
+      })) as Record<RiskLevel, { starts: number; clears: number; clearRate: number | null }>,
+      meanBossEntryHpRatio: meanOrNull(value.bossHpRatios),
+      bossDeaths: value.bossDeaths.size,
+      totalDeaths: value.deaths.size,
+      meanBattleRounds: value.battles === 0 ? null : value.rounds / value.battles,
+    }])) as HealingBacktestMetrics["byCleric"],
+  };
 }
 
 function meanOrNull(values: readonly number[]): number | null {

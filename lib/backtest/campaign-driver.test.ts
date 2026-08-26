@@ -52,6 +52,8 @@ describe("백테스트 캠페인 driver", () => {
     expect(result.trace.balanceExpeditions.every((one) => one.maxAdvicePressure >= 0 && one.maxAdvicePressure <= 3)).toBe(true);
     expect(result.trace.balanceExpeditions.filter((one) => one.bossEntry !== null)
       .every((one) => one.bossEntry!.hp <= one.bossEntry!.maxHp)).toBe(true);
+    expect(result.trace.balanceExpeditions.every((one) => one.party !== undefined && one.party.length === 3
+      && one.party.every((member) => member.characterId.length > 0 && member.classId.length > 0))).toBe(true);
   });
 
   it("회피·비전투를 제외하고 확정 일반전과 보스전을 전이 직후 한 번씩만 관측한다", () => {
@@ -67,6 +69,12 @@ describe("백테스트 캠페인 driver", () => {
     expect(battles.every((entry) => entry.battle.party.every((member) => {
       const partyMember = entry.party.find((candidate) => candidate.characterId === member.id);
       return partyMember !== undefined && partyMember.hpAfter === member.hp;
+    }))).toBe(true);
+    expect(battles.every((entry) => entry.party.every((member) => {
+      const resolved = entry.battle.party.find((candidate) => candidate.id === member.characterId);
+      return member.abilityUsesRemainingBefore === null
+        ? member.abilityUsesRemainingAfter === null
+        : resolved?.battleAbility?.remainingUses === member.abilityUsesRemainingAfter;
     }))).toBe(true);
     const keys = battles.map((entry) => `${entry.kind}\u0000${entry.expeditionId}\u0000${JSON.stringify(entry.battle)}`);
     expect(new Set(keys).size).toBe(keys.length);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runCampaign } from "./campaign-driver";
 import { createStrategy } from "./strategies";
-import { aggregateRuns, metricsForRun, pairedMeanDifference, wilsonInterval, type CampaignRunMetrics } from "./metrics";
+import { aggregateHealingMetrics, aggregateRuns, metricsForRun, pairedMeanDifference, wilsonInterval, type CampaignRunMetrics } from "./metrics";
 
 function metric({
   balanceExpeditions: balanceOverrides,
@@ -143,6 +143,61 @@ function expedition(overrides: Partial<CampaignRunMetrics["balanceExpeditions"][
 }
 
 describe("백테스트 통계", () => {
+  it("확정 heal action만 치유 사용·회복으로 세고 attack과 클래스 미확정 원정은 분모에서 뺀다", () => {
+    const run = metric({
+      balanceExpeditions: [
+        expedition({ expeditionId: "cleric", party: [{ characterId: "c" as never, classId: "cleric" as never }] }),
+        expedition({ expeditionId: "no-cleric", party: [{ characterId: "w" as never, classId: "warrior" as never }] }),
+        expedition({ expeditionId: "unknown", party: undefined }),
+      ],
+      battles: [{
+        kind: "general", expeditionId: "cleric",
+        party: [{ characterId: "c" as never, classId: "cleric" as never, hpBefore: 10, hpAfter: 15, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: 1 }],
+        battle: {
+          status: "victory", termination: "defeatedEnemies", rounds: 1,
+          actions: [
+            { kind: "heal", round: 1, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 10, targetHpAfter: 15 },
+            { kind: "attack", round: 1, actorSide: "party", actorId: "c", targetId: "e", damage: 999, defeated: true, targetHpBefore: 10, targetHpAfter: 0 },
+          ], party: [], enemies: [],
+        },
+      }],
+    });
+
+    expect(aggregateHealingMetrics([run])).toMatchObject({
+      expeditions: { withCleric: 1, withoutCleric: 1, unknownComposition: 1 },
+      clericBattles: { general: 1, boss: 0 },
+      healUsesPerExpedition: { 0: 0, 1: 1, 2: 0, overLimit: 0 },
+      healUsesPerBattle: { 0: 0, 1: 1, overLimit: 0 },
+      healActions: 1,
+      effectiveHealActions: 1,
+      actualHealing: 5,
+      byCleric: {
+        withCleric: { expeditions: 1, firstAttemptStarts: 1, firstAttemptClears: 0, totalDeaths: 0 },
+        withoutCleric: { expeditions: 1, firstAttemptStarts: 1, firstAttemptClears: 0, totalDeaths: 0 },
+      },
+    });
+  });
+
+  it("회피 전투는 전투 분모를 만들지 않고 0 회복은 유효 회복 평균의 분모가 아니다", () => {
+    const run = metric({
+      balanceExpeditions: [expedition({ expeditionId: "evaded", party: [{ characterId: "c" as never, classId: "cleric" as never }] })],
+      battles: [],
+    });
+    const zeroHeal = metric({
+      seed: "zero-heal",
+      balanceExpeditions: [expedition({ expeditionId: "zero", party: [{ characterId: "c" as never, classId: "cleric" as never }] })],
+      battles: [{
+        kind: "boss", expeditionId: "zero",
+        party: [{ characterId: "c" as never, classId: "cleric" as never, hpBefore: 10, hpAfter: 10, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: 1 }],
+        battle: { status: "victory", termination: "defeatedEnemies", rounds: 1, actions: [{ kind: "heal", round: 1, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 0, targetHpBefore: 10, targetHpAfter: 10 }], party: [], enemies: [] },
+      }],
+    });
+
+    expect(aggregateHealingMetrics([run, zeroHeal])).toMatchObject({
+      clericBattles: { general: 0, boss: 1 }, healActions: 1, effectiveHealActions: 0,
+      actualHealing: 0, meanHealingPerEffectiveHeal: null,
+    });
+  });
   it("Wilson 95% 구간의 알려진 값을 계산한다", () => {
     expect(wilsonInterval(50, 100)).toEqual({ low: expect.closeTo(0.4038315304, 9), high: expect.closeTo(0.5961684696, 9) });
   });

@@ -14,6 +14,8 @@ export interface BattleAbilitySnapshotBattle {
   readonly status: "victory" | "wipe";
   readonly termination: "defeatedEnemies" | "partyWipe" | "roundLimit";
   readonly rounds: number;
+  readonly healActions?: number;
+  readonly actualHealing?: number;
   readonly party: readonly {
     readonly characterId: string;
     readonly classId: string;
@@ -43,6 +45,20 @@ export interface BattleAbilitySnapshotComparison {
     readonly before: BattleAbilitySnapshotRun;
     readonly after: BattleAbilitySnapshotRun;
   }[];
+  readonly byCleric: Readonly<Record<"withCleric" | "withoutCleric", {
+    readonly pairCount: number;
+    readonly unchangedPairCount: number;
+    readonly battleVictoryRateDelta: number | null;
+    readonly meanPartyHpAfterRatioDelta: number | null;
+    readonly deathCountDelta: number;
+    readonly meanRoundsDelta: number | null;
+    readonly healActionDelta: number;
+    readonly actualHealingDelta: number;
+  }>>;
+  readonly withoutHealing: {
+    readonly pairCount: number;
+    readonly unchangedPairCount: number;
+  };
 }
 
 export function serializeBacktestPairKey(key: BacktestPairKey): string {
@@ -57,6 +73,8 @@ function snapshotRunFor(run: CampaignRunMetrics): BattleAbilitySnapshotRun {
     status: entry.battle.status,
     termination: entry.battle.termination,
     rounds: entry.battle.rounds,
+    healActions: entry.battle.actions.filter((action) => action.kind === "heal").length,
+    actualHealing: entry.battle.actions.reduce((sum, action) => sum + (action.kind === "heal" ? action.healing : 0), 0),
     party: entry.party.map((member) => ({
       characterId: member.characterId,
       classId: member.classId,
@@ -105,5 +123,53 @@ export function compareBattleAbilitySnapshots(
     if (!beforeKeys.has(run.key)) throw new Error(`짝이 없는 backtest pair key: ${run.key}`);
   }
   const pairs = before.runs.map((run) => ({ key: run.key, before: run, after: afterByKey.get(run.key)! }));
-  return { pairCount: pairs.length, pairs };
+  const summarize = (run: BattleAbilitySnapshotRun) => {
+    const parties = run.battles.flatMap((battle) => battle.party);
+    return {
+      hasCleric: parties.some((member) => member.classId === "cleric"),
+      victoryRate: run.battles.length === 0 ? null : run.battles.filter((battle) => battle.status === "victory").length / run.battles.length,
+      hpRatio: parties.length === 0 ? null : parties.reduce((sum, member) => sum + member.hpAfter / member.maxHp, 0) / parties.length,
+      deaths: parties.filter((member) => member.aliveBefore && !member.aliveAfter).length,
+      rounds: run.battles.length === 0 ? null : run.battles.reduce((sum, battle) => sum + battle.rounds, 0) / run.battles.length,
+      heals: run.battles.reduce((sum, battle) => sum + (battle.healActions ?? 0), 0),
+      healing: run.battles.reduce((sum, battle) => sum + (battle.actualHealing ?? 0), 0),
+    };
+  };
+  const semanticBattles = (run: BattleAbilitySnapshotRun) => run.battles.map((battle) => ({
+    ...battle,
+    healActions: battle.healActions ?? 0,
+    actualHealing: battle.actualHealing ?? 0,
+  }));
+  const group = (withCleric: boolean) => {
+    const selected = pairs.filter((pair) => summarize(pair.before).hasCleric || summarize(pair.after).hasCleric ? withCleric : !withCleric);
+    const deltas = selected.map((pair) => ({ before: summarize(pair.before), after: summarize(pair.after), pair }));
+    const nullableDelta = (selector: (value: ReturnType<typeof summarize>) => number | null): number | null => {
+      const values = deltas.flatMap(({ before: left, after: right }) => {
+        const beforeValue = selector(left);
+        const afterValue = selector(right);
+        return beforeValue === null || afterValue === null ? [] : [afterValue - beforeValue];
+      });
+      return values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length;
+    };
+    return {
+      pairCount: selected.length,
+      unchangedPairCount: selected.filter(({ before: left, after: right }) => JSON.stringify(semanticBattles(left)) === JSON.stringify(semanticBattles(right))).length,
+      battleVictoryRateDelta: nullableDelta((value) => value.victoryRate),
+      meanPartyHpAfterRatioDelta: nullableDelta((value) => value.hpRatio),
+      deathCountDelta: deltas.reduce((sum, value) => sum + value.after.deaths - value.before.deaths, 0),
+      meanRoundsDelta: nullableDelta((value) => value.rounds),
+      healActionDelta: deltas.reduce((sum, value) => sum + value.after.heals - value.before.heals, 0),
+      actualHealingDelta: deltas.reduce((sum, value) => sum + value.after.healing - value.before.healing, 0),
+    };
+  };
+  const withoutHealing = pairs.filter((pair) => summarize(pair.after).heals === 0);
+  return {
+    pairCount: pairs.length,
+    pairs,
+    byCleric: { withCleric: group(true), withoutCleric: group(false) },
+    withoutHealing: {
+      pairCount: withoutHealing.length,
+      unchangedPairCount: withoutHealing.filter((pair) => JSON.stringify(semanticBattles(pair.before)) === JSON.stringify(semanticBattles(pair.after))).length,
+    },
+  };
 }

@@ -1,9 +1,9 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { B1_RISK_CURVE_V2_CALIBRATION_SELECTION } from "@/lib/balance/campaign-balance";
-import { writeBattleAbilitySnapshot } from "./battle-ability-comparison";
-import { B1B_HOLDOUT_APPROVED, evaluateB1BAcceptance, type B1BAcceptanceGate, type BacktestFocus } from "./acceptance";
+import { compareBattleAbilitySnapshots, snapshotForBattleAbilityComparison, writeBattleAbilitySnapshot, type BattleAbilitySnapshot, type BattleAbilitySnapshotComparison } from "./battle-ability-comparison";
+import { B1B_HOLDOUT_APPROVED, evaluateB1BAcceptance, evaluatePairedAbilityStructuralGates, type B1BAcceptanceGate, type BacktestFocus, type PairedAbilityStructuralGate } from "./acceptance";
 import { runCampaign } from "./campaign-driver";
 import { aggregateRuns, metricsForRun, type BacktestAggregate, type CampaignRunMetrics } from "./metrics";
 import { evaluateFixedGates, renderBacktestReport, type CalibrationEvidence, type CalibrationStageEvidence, type FixedGateResult } from "./report";
@@ -193,22 +193,63 @@ export function writeBacktestSnapshotIfRequested(path: string | undefined, aggre
   writeBattleAbilitySnapshot(path, aggregate.runs);
 }
 
+export function loadBaselineComparison(path: string, aggregate: BacktestAggregate): BattleAbilitySnapshotComparison {
+  const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+  if (parsed === null || typeof parsed !== "object" || (parsed as { version?: unknown }).version !== 1
+    || !Array.isArray((parsed as { runs?: unknown }).runs)) {
+    throw new Error(`유효하지 않은 baseline snapshot: ${path}`);
+  }
+  return compareBattleAbilitySnapshots(parsed as BattleAbilitySnapshot, snapshotForBattleAbilityComparison(aggregate.runs));
+}
+
+export function buildPairedAbilityEvidence(input: {
+  readonly baselinePath: string;
+  readonly snapshotPath: string;
+  readonly sourceRevision: string;
+  readonly aggregate: BacktestAggregate;
+}): NonNullable<Parameters<typeof renderBacktestReport>[0]["pairedAbilityEvidence"]> & {
+  readonly structuralGates: readonly PairedAbilityStructuralGate[];
+} {
+  const comparison = loadBaselineComparison(input.baselinePath, input.aggregate);
+  return {
+    beforeSnapshotPath: input.baselinePath,
+    afterSnapshotPath: input.snapshotPath,
+    beforeSourceRevision: "b1-risk-curve-v2-before",
+    afterSourceRevision: input.sourceRevision,
+    comparison,
+    structuralGates: evaluatePairedAbilityStructuralGates(comparison),
+  };
+}
+
 function runCli(): void {
   const options = optionsFromEnvironment();
   const aggregate = runBacktestSuite(options);
-  const gates = evaluateFixedGates(aggregate, options.focus);
+  const baselinePath = process.env.B1_BACKTEST_BASELINE_PATH;
+  const snapshotPath = process.env.B1_BACKTEST_SNAPSHOT_PATH;
+  if ((baselinePath === undefined) !== (snapshotPath === undefined)) {
+    throw new Error("paired 비교에는 B1_BACKTEST_BASELINE_PATH와 B1_BACKTEST_SNAPSHOT_PATH가 모두 필요하다");
+  }
+  const sourceRevision = process.env.B1_SOURCE_REVISION ?? "working-tree";
+  const pairedAbilityEvidence = baselinePath === undefined || snapshotPath === undefined
+    ? undefined
+    : buildPairedAbilityEvidence({ baselinePath, snapshotPath, sourceRevision, aggregate });
+  const gates: FixedGateResult[] = [
+    ...evaluateFixedGates(aggregate, options.focus),
+    ...(pairedAbilityEvidence?.structuralGates ?? []),
+  ];
   const report = renderBacktestReport({
     mode: options.mode,
     focus: options.focus,
     namespace: options.namespace,
     seedsPerCombination: options.seedsPerCombination,
-    sourceRevision: process.env.B1_SOURCE_REVISION ?? "working-tree",
+    sourceRevision,
     aggregate,
     fixedGates: gates,
     calibrationEvidence: buildCalibrationEvidence(options, aggregate),
+    pairedAbilityEvidence,
   });
   writeFileSync(resolve(process.cwd(), "docs/technical/BACKTEST_REPORT.md"), report, "utf8");
-  writeBacktestSnapshotIfRequested(process.env.B1_BACKTEST_SNAPSHOT_PATH, aggregate);
+  writeBacktestSnapshotIfRequested(snapshotPath, aggregate);
   const acceptanceGates = evaluateB1BAcceptance(aggregate, {
     mode: options.mode,
     seedsPerCombination: options.seedsPerCombination,
