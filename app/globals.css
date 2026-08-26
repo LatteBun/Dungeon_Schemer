@@ -154,7 +154,8 @@ body {
 
 .game-shell__status-bar {
   position: relative;
-  z-index: 10;
+  /* 화면 내부 overlay(최대 50) 위, 전역 퀵 메뉴(80) 아래에 둔다. */
+  z-index: 60;
   min-width: 0;
   padding: var(--status-bar-padding-block) var(--status-bar-padding-inline);
   border-top: 1px solid rgb(112 79 34 / 65%);
