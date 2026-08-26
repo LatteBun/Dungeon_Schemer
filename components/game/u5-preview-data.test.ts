@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { presentShuffledAdvice } from "@/lib/rules/advice-evaluation";
 import { eventsForTheme } from "@/lib/content/event-registry";
 import { DENOUNCE_THRESHOLD } from "@/lib/domain";
+import { countEmergencyEligibleAdventurers } from "@/lib/rules/ending";
 import { U5_PREVIEW_ENTRIES, U5_PREVIEW_SOURCE } from "./u5-preview-data";
 
 /**
@@ -15,6 +16,10 @@ describe("U5 프리뷰 데이터", () => {
   it("상태 바의 누적 고발 기준은 도메인 상수와 같다", () => {
     for (const entry of U5_PREVIEW_ENTRIES) {
       expect(entry.status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
+      expect(Number.isInteger(entry.status.remainingAdventurers)).toBe(true);
+      expect(entry.status.remainingAdventurers).toBeGreaterThanOrEqual(0);
+      expect(entry.status.remainingAdventurers)
+        .toBe(countEmergencyEligibleAdventurers(U5_PREVIEW_SOURCE.campaign));
     }
   });
 

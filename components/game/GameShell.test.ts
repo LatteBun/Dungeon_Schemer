@@ -9,6 +9,7 @@ const status = {
   reputation: 74,
   gold: 186,
   canPromote: true,
+  remainingAdventurers: 12,
   remainingDungeons: 11,
   zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
   currentDungeon: { name: "거미굴 3번", riskLevel: 2 },

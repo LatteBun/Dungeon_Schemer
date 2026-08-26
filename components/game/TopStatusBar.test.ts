@@ -11,13 +11,16 @@ const baseStatus = {
   reputation: 30,
   gold: 10,
   canPromote: false,
+  remainingAdventurers: 12,
   remainingDungeons: 15,
   zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
 };
 
 /** 상태 칩 하나만 잘라서 그 칸의 상호작용 여부를 확인한다. */
 function chip(html: string, label: string): string {
-  const found = html.match(new RegExp(`<(button|div)[^>]*>(?:(?!</\\1>)[\\s\\S])*?${label}[\\s\\S]*?</\\1>`));
+  const found = ["button", "div"]
+    .map((tag) => html.match(new RegExp(`<${tag}[^>]*class="[^"]*game-shell__status-chip[^"]*"[^>]*>(?:(?!</${tag}>)[\\s\\S])*?${label}(?:(?!</${tag}>)[\\s\\S])*?</${tag}>`)))
+    .find((match) => match !== null) ?? null;
   expect(found, `${label} 칸`).not.toBeNull();
   return found![0];
 }
@@ -124,7 +127,23 @@ describe("TopStatusBar U2/U3", () => {
     expect(html).toContain("/assets/u2/status-trust.svg");
   });
 
-  it("기준 초과 값을 제한하지 않고 의심 인원 팝업을 여는 버튼으로 표시한다", () => {
+  it("남은 용사를 의심 인원과 남은 던전 사이에 표시한다", () => {
+    const html = renderToStaticMarkup(createElement(TopStatusBar, {
+      status: { ...baseStatus, remainingAdventurers: 12 },
+    }));
+
+    const remaining = chip(html, "남은 용사");
+    expect(remaining).toContain("12명");
+    expect(remaining.startsWith("<button")).toBe(true);
+    expect(remaining).toContain('data-testid="remaining-adventurers-info-trigger"');
+    expect(remaining).toContain('/assets/u2/status-adventurers.svg');
+    expect(html.indexOf("의심 인원")).toBeLessThan(html.indexOf("남은 용사"));
+    expect(html.indexOf("남은 용사")).toBeLessThan(html.indexOf("남은 던전"));
+    expect(html).not.toContain("서로 다른 직업의 용사 세 명을 더는 모을 수 없으면");
+    expect(html).not.toContain("이번 던전이 끝난 뒤 누적 고발이 시작됩니다.");
+  });
+
+  it("기준 초과 값을 제한하지 않고 의심 인원 비모달 팝오버를 여는 버튼으로 표시한다", () => {
     const html = renderToStaticMarkup(createElement(TopStatusBar, {
       status: {
         ...baseStatus,
@@ -144,6 +163,15 @@ describe("TopStatusBar U2/U3", () => {
   it("신뢰 상태 아이콘은 공통 24x24 SVG 계약을 따른다", () => {
     const svg = readFileSync(
       join(process.cwd(), "public", "assets", "u2", "status-trust.svg"),
+      "utf8",
+    );
+    expect(svg).toContain('viewBox="0 0 24 24"');
+    expect(svg).toContain("<path");
+  });
+
+  it("남은 용사 아이콘은 공통 24x24 SVG 계약을 따른다", () => {
+    const svg = readFileSync(
+      join(process.cwd(), "public", "assets", "u2", "status-adventurers.svg"),
       "utf8",
     );
     expect(svg).toContain('viewBox="0 0 24 24"');

@@ -4,6 +4,7 @@ import type { BoardOffer, CampaignEnding, CampaignState, Character, CharacterId 
 import { createBoardOffers, createOfferReward } from "./board";
 import { initializeCampaign } from "./campaign-init";
 import {
+  countEmergencyEligibleAdventurers,
   countLivingZeroTrust,
   evaluateCampaignEnding,
   evaluateImmediateDistrustEnding,
@@ -30,6 +31,20 @@ function campaignWith(
       gravelyWounded: entry.gravelyWounded ?? false,
     };
   }
+  return { ...campaign, pool: { ...campaign.pool, byId } };
+}
+
+function campaignWithThreeLivingWarriors(): CampaignState {
+  const campaign = initializeCampaign("ending-three-warriors-test");
+  const warriorIds = campaign.pool.order.filter((id) => campaign.pool.byId[id]?.classId === "warrior").slice(0, 3);
+  if (warriorIds.length !== 3) throw new Error("missing three warriors");
+  const livingWarriors = new Set(warriorIds);
+  const byId = Object.fromEntries(Object.entries(campaign.pool.byId).map(([id, member]) => [
+    id,
+    livingWarriors.has(member.id)
+      ? { ...member, alive: true, hp: member.maxHp, trust: 50 }
+      : { ...member, alive: false, hp: 0, trust: 0 },
+  ])) as Record<string, Character>;
   return { ...campaign, pool: { ...campaign.pool, byId } };
 }
 
@@ -63,6 +78,26 @@ describe("isPersonnelExhausted", () => {
       { classId: "mage", alive: false },
       { classId: "cleric", trust: 0 },
     ]))).toBe(true);
+  });
+});
+
+describe("countEmergencyEligibleAdventurers", () => {
+  it("중상자는 포함하고 사망자와 신뢰 0은 제외한다", () => {
+    const campaign = campaignWith([
+      { classId: "warrior" },
+      { classId: "rogue", gravelyWounded: true },
+      { classId: "mage", alive: false },
+      { classId: "cleric", trust: 0 },
+    ]);
+
+    expect(countEmergencyEligibleAdventurers(campaign)).toBe(2);
+  });
+
+  it("표시 인원이 셋이어도 직업이 겹치면 인력 소진일 수 있다", () => {
+    const campaign = campaignWithThreeLivingWarriors();
+
+    expect(countEmergencyEligibleAdventurers(campaign)).toBe(3);
+    expect(isPersonnelExhausted(campaign)).toBe(true);
   });
 });
 
