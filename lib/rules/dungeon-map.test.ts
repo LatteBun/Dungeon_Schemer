@@ -157,25 +157,36 @@ describe("결정적 지도 생성", () => {
   }, 30000);
 
   it("named seam에서 안전 간선은 채택하고 교차 후보는 거부한다", () => {
+    const input = { campaignSeed: "seam", dungeonId: "seam" as never, initialRiskLevel: 1 as const, attempt: 0 };
+    __setDungeonMapGenerationTestSeam({ candidatePairs: [], passesRandomGate: () => false });
+    const baseline = generateDungeonMap(input);
+    __setDungeonMapGenerationTestSeam(undefined);
+    const pairIndex = baseline.layers.findIndex((layer, index) => layer.nodeIds.length === 2 && baseline.layers[index + 1]?.nodeIds.length === 2);
+    expect(pairIndex).toBeGreaterThanOrEqual(0);
+    const left = baseline.layers[pairIndex]!.nodeIds;
+    const right = baseline.layers[pairIndex + 1]!.nodeIds;
+    const [safe1, rejected] = [[left[0]!, right[1]!], [left[1]!, right[0]!]] as const;
+    const next = baseline.layers[pairIndex + 2]!.nodeIds;
+    const laterSafe = [right[0]!, next[0]!] as const;
     const attempted: Array<readonly [NodeId, NodeId]> = [];
+    const rank = new Map([safe1, rejected, laterSafe].map((edge, index) => [`${edge[0]}:${edge[1]}`, index]));
     __setDungeonMapGenerationTestSeam({
-      candidateOrder: (from, to) => `${from}:${to}`.localeCompare(`${from}:${to}`),
+      candidatePairs: [safe1, rejected, laterSafe],
+      candidateOrder: (from, to) => rank.get(`${from}:${to}`) ?? 99,
       passesRandomGate: (from, to) => { attempted.push([from, to]); return true; },
     });
     try {
-      const result = generateDungeonMapWithDiagnostics({ campaignSeed: "seam", dungeonId: "seam" as never, initialRiskLevel: 1, attempt: 0 });
+      const result = generateDungeonMapWithDiagnostics(input);
+      expect(attempted).toContainEqual(safe1);
+      expect(attempted).toContainEqual(rejected);
+      expect(attempted.length).toBeGreaterThanOrEqual(1);
       expect(result.diagnostics.evaluatedOptionalCandidateCount).toBeGreaterThan(0);
       expect(result.diagnostics.acceptedOptionalEdgeCount).toBeGreaterThan(0);
       expect(result.diagnostics.rejectedForCrossingCount).toBeGreaterThanOrEqual(1);
       const adjacency = new Set(result.map.nodes.flatMap((node) => node.nextNodeIds.map((to) => `${node.id}:${to}`)));
-      const rejectedIndex = attempted.findIndex(([from, to]) => !adjacency.has(`${from}:${to}`));
-      expect(rejectedIndex).toBeGreaterThanOrEqual(0);
-      const [rejectedFrom, rejectedTo] = attempted[rejectedIndex]!;
-      expect(result.map.nodes.find((node) => node.id === rejectedFrom)!.nextNodeIds).not.toContain(rejectedTo);
-      const laterSafe = attempted.slice(rejectedIndex + 1).find(([from, to]) => adjacency.has(`${from}:${to}`));
-      expect(laterSafe).toBeDefined();
-      expect(result.map.nodes.find((node) => node.id === rejectedFrom)!.nextNodeIds.length).toBeLessThanOrEqual(2);
-      expect(result.map.nodes.filter((node) => node.nextNodeIds.includes(rejectedTo)).length).toBeLessThanOrEqual(2);
+      expect(adjacency.has(`${safe1[0]}:${safe1[1]}`)).toBe(true);
+      expect(adjacency.has(`${rejected[0]}:${rejected[1]}`)).toBe(false);
+      expect(adjacency.has(`${laterSafe[0]}:${laterSafe[1]}`)).toBe(true);
     } finally { __setDungeonMapGenerationTestSeam(undefined); }
   });
   it.each([1, 2, 3, 4, 5] as const)("위험도 %s의 여러 시드가 모든 구조 계약을 만족한다", (riskLevel) => {
