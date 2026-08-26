@@ -47,18 +47,19 @@ export function MainMenuScreen({ canResume = false }: MainMenuScreenProps) {
           </a>
 
           {/*
-            * 이어할 판이 없으면 누를 수 없게 둔다. 감추지 않는 이유는 자리가
-            * 흔들리면 세 번째 단추를 매번 다시 찾게 되기 때문이다.
+            * 이어할 판이 없으면 아예 두지 않는다.
+            *
+            * 잠긴 단추를 남겨 두면 「왜 안 눌리지」를 먼저 겪게 된다. 처음 온
+            * 사람에게는 고를 수 있는 것만 보이는 편이 낫다.
+            *
+            * 서버는 브라우저 저장을 볼 수 없어 언제나 없는 쪽으로 그린다. 이어할
+            * 판이 있는 사람은 붙는 순간 단추가 하나 늘어난다.
             */}
           {canResume ? (
             <a className="main-menu-screen__action" href="/campaign">
               이어하기
             </a>
-          ) : (
-            <button className="main-menu-screen__action" type="button" disabled>
-              이어하기
-            </button>
-          )}
+          ) : null}
 
           <Link
             className="main-menu-screen__action"

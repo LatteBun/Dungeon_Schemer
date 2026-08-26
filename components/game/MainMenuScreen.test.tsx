@@ -28,8 +28,8 @@ const render = (canResume?: boolean) =>
   renderToStaticMarkup(createElement(MainMenuScreen, canResume === undefined ? {} : { canResume }));
 
 describe("메인 메뉴 화면", () => {
-  it("승인 일러스트 위에 접근 가능한 제목과 세 메뉴를 표시한다", () => {
-    const html = render();
+  it("승인 일러스트 위에 접근 가능한 제목과 메뉴를 표시한다", () => {
+    const html = render(true);
 
     expect(html).toContain('src="/assets/main-menu/hero-this-way-main-menu.jpeg"');
     expect(html).toContain('class="main-menu-screen__accessible-title"');
@@ -67,17 +67,22 @@ describe("메인 메뉴 화면", () => {
   });
 
   describe("이어하기", () => {
-    it("이어할 판이 없으면 누를 수 없다", () => {
+    /*
+     * 잠긴 단추를 남기지 않는다. 처음 온 사람에게는 고를 수 있는 것만 보인다.
+     */
+    it("이어할 판이 없으면 단추를 두지 않는다", () => {
       const html = render(false);
-      expect(html).toMatch(/<button[^>]*disabled[^>]*>이어하기<\/button>/);
+      expect(html).not.toContain("이어하기");
     });
 
-    /*
-     * 감추지 않고 잠근다. 자리가 사라졌다 나타나면 세 번째 단추를 매번 다시
-     * 찾게 된다.
-     */
-    it("누를 수 없을 때도 자리를 지킨다", () => {
-      expect(render(false)).toContain("이어하기");
+    it("이어할 판이 없으면 단추가 둘이다", () => {
+      const html = render(false);
+      expect(html.match(/main-menu-screen__action[" ]/g) ?? []).toHaveLength(2);
+    });
+
+    it("이어할 판이 있으면 단추가 셋이다", () => {
+      const html = render(true);
+      expect(html.match(/main-menu-screen__action[" ]/g) ?? []).toHaveLength(3);
     });
 
     it("이어할 판이 있으면 캠페인으로 가는 링크가 된다", () => {
