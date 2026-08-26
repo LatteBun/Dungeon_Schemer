@@ -83,6 +83,26 @@ function startedWith(seed: string): CampaignTransitionResult {
   });
 }
 
+function startedWithCleric(): CampaignTransitionResult {
+  for (let index = 0; index < 40; index += 1) {
+    const { campaign, context } = boardedCampaign(`ability-chain-${index}`);
+    const offer = campaign.offers.find((candidate) =>
+      candidate.lockReason === null
+      && candidate.party.memberIds.some((id) => campaign.pool.byId[id]?.classId === "cleric"));
+    if (offer === undefined) continue;
+    const selected = transitionCampaign(campaign, context, {
+      type: "SELECT_CONTRACT",
+      offerId: offer.id,
+    });
+    return transitionCampaign(selected.campaign, selected.context, {
+      type: "START_EXPEDITION",
+      expeditionId: "exp-ability-chain",
+      ...createExpeditionForOffer(selected.campaign, offer),
+    });
+  }
+  throw new Error("성직자가 든 원정 fixture를 찾지 못했다");
+}
+
 function firstStep(result: CampaignTransitionResult): NodeId {
   const active = result.context.activeExpedition!;
   const current = active.expedition.map.nodes.find((node) => node.id === active.expedition.currentNodeId)!;
@@ -309,6 +329,141 @@ describe("원정 안쪽 전이", () => {
 
     expect(JSON.stringify(run().context.activeExpedition!.expedition))
       .toBe(JSON.stringify(run().context.activeExpedition!.expedition));
+  });
+
+  it("일반전의 1회가 보스 입력으로 이어져 0이 되고 새 재도전은 2회로 시작한다", () => {
+    const begun = startedWithCleric();
+    const initialActive = begun.context.activeExpedition!;
+    const cleric = initialActive.partyMembers.find((member) => member.classId === "cleric")!;
+    const dungeon = begun.campaign.dungeons.find((candidate) =>
+      candidate.id === initialActive.expedition.dungeonId)!;
+    const themeEvents = eventsForTheme(dungeon.theme);
+    const baseEvent = themeEvents.find((candidate) => candidate.kind === "monster");
+    if (baseEvent?.kind !== "monster") throw new Error("monster 사건 fixture가 없다");
+    const monsterId = dungeon.activeMonsterIds[0];
+    if (monsterId === undefined) throw new Error("활성 monster fixture가 없다");
+    const forcedEvent = {
+      ...baseEvent,
+      encounter: { enemies: [{ monsterId, count: 3 }] },
+      defaultEncounterModifier: {},
+      advice: baseEvent.advice.map((option) => ({ ...option, encounterModifier: {} })),
+    };
+    const woundedId = initialActive.partyMembers.find((member) => member.id !== cleric.id)?.id
+      ?? cleric.id;
+    const beforeGeneralMap = initialActive.expedition.battleAbilityUsesRemainingByCharacterId;
+    const generalContext = {
+      ...begun.context,
+      activeExpedition: {
+        ...initialActive,
+        pendingEvent: forcedEvent,
+        partyMembers: initialActive.partyMembers.map((member) => ({
+          ...member,
+          hp: member.id === woundedId ? 1 : member.maxHp,
+          alive: true,
+        })),
+      },
+    };
+
+    const afterGeneral = transitionCampaign(begun.campaign, generalContext, {
+      type: "CHOOSE_ADVICE",
+      adviceId: forcedEvent.advice[0]!.id,
+    });
+    const generalActive = afterGeneral.context.activeExpedition!;
+    expect(generalActive.pendingOutcome?.battle?.actions.some((action) =>
+      action.kind === "heal" && action.actorId === cleric.id)).toBe(true);
+    expect(generalActive.expedition.battleAbilityUsesRemainingByCharacterId).toEqual({
+      [cleric.id]: 1,
+    });
+    expect(generalActive.expedition.battleAbilityUsesRemainingByCharacterId).not.toBe(beforeGeneralMap);
+    expect(beforeGeneralMap).toEqual({ [cleric.id]: 2 });
+
+    const acknowledged = transitionCampaign(afterGeneral.campaign, afterGeneral.context, {
+      type: "ACKNOWLEDGE_OUTCOME",
+    });
+    const beforeBoss = acknowledged.context.activeExpedition!;
+    const bossReadyContext = {
+      ...acknowledged.context,
+      activeExpedition: {
+        ...beforeBoss,
+        expedition: {
+          ...beforeBoss.expedition,
+          currentNodeId: beforeBoss.expedition.map.bossNodeId,
+          visitedNodeIds: [...beforeBoss.expedition.visitedNodeIds, beforeBoss.expedition.map.bossNodeId],
+          result: null,
+        },
+        partyMembers: beforeBoss.partyMembers.map((member) => ({
+          ...member,
+          hp: member.id === woundedId ? 1 : member.maxHp,
+          alive: true,
+        })),
+      },
+    };
+    const afterBoss = transitionCampaign(acknowledged.campaign, bossReadyContext, {
+      type: "ENTER_BOSS",
+    });
+    const bossActive = afterBoss.context.activeExpedition!;
+
+    expect(bossActive.expedition.bossResult?.battle.actions.some((action) =>
+      action.kind === "heal" && action.actorId === cleric.id)).toBe(true);
+    expect(bossActive.expedition.battleAbilityUsesRemainingByCharacterId).toEqual({
+      [cleric.id]: 0,
+    });
+
+    const retryCampaign = {
+      ...afterBoss.campaign,
+      dungeons: afterBoss.campaign.dungeons.map((candidate) => candidate.id === dungeon.id
+        ? { ...candidate, attempts: candidate.attempts + 1 }
+        : candidate),
+    };
+    const retried = createExpeditionForOffer(retryCampaign, bossActive.offer);
+    expect(retried.expedition.battleAbilityUsesRemainingByCharacterId).toEqual({
+      [cleric.id]: 2,
+    });
+  });
+
+  it("최종 HP가 같으면 전투 중 피해가 없었다고 단정하지 않는다", () => {
+    const begun = started();
+    const active = begun.context.activeExpedition!;
+    const snapshot = createSettlementSnapshotFor(begun.campaign, {
+      ...active,
+      expedition: {
+        ...active.expedition,
+        result: { status: "cleared", survivorIds: active.partyMembers.map((member) => member.id) },
+      },
+      records: [{
+        observation: "피해와 치유가 상쇄됐다",
+        choice: "전투를 마쳤다",
+        reactions: [],
+        damage: [],
+        trustChanges: [],
+        battle: null,
+      }],
+    });
+
+    expect(snapshot.causeInputs.damage).toBe("최종 HP 변화 없음");
+  });
+
+  it("정산 HP 문장은 회복도 이전 값에서 이후 값으로 표현한다", () => {
+    const begun = started();
+    const active = begun.context.activeExpedition!;
+    const healed = active.partyMembers[0]!;
+    const snapshot = createSettlementSnapshotFor(begun.campaign, {
+      ...active,
+      expedition: {
+        ...active.expedition,
+        result: { status: "cleared", survivorIds: active.partyMembers.map((member) => member.id) },
+      },
+      records: [{
+        observation: "회복했다",
+        choice: "전투를 마쳤다",
+        reactions: [],
+        damage: [{ characterId: healed.id, before: 5, after: 10 }],
+        trustChanges: [],
+        battle: null,
+      }],
+    });
+
+    expect(snapshot.causeInputs.damage).toBe(`${healed.name} HP 5 → 10`);
   });
 });
 

@@ -8,7 +8,7 @@ import { CAMPAIGN_BALANCE } from "@/lib/balance/campaign-balance";
 import { balancedBossStats } from "@/lib/rules/boss-battle-adapter";
 import { RuleError } from "@/lib/domain";
 import type { ChoiceId, ClueId, DungeonId, GeneratedMap, MonsterId, NodeId, PreparedExpeditionEvents, PreparedNodePlan, RuleId, SituationEvent, StrongLinkPlan } from "@/lib/domain";
-import type { CharacterId, ClassId } from "@/lib/domain";
+import type { BattleAbilityUsesRemaining, Character, CharacterId, ClassId } from "@/lib/domain";
 
 describe("E3 원정 사건 준비와 물질화", () => {
   it("위험도별 모든 실제 선택 경로에 monster 최소치를 보장한다", () => {
@@ -187,11 +187,22 @@ describe("E3 원정 사건 준비와 물질화", () => {
       members: [member],
       classDefs,
       seed: "battle-adapter-pressure",
+      battleAbilityUsesRemainingByCharacterId: {},
     };
     const safe = resolveMonsterEventBattle({ ...base, advicePressure: 0, pendingMerchantEffect: null });
     const pressured = resolveMonsterEventBattle({ ...base, advicePressure: 3, pendingMerchantEffect: null });
-    const firstPartyDamage = (result: typeof safe) => result.battle!.actions.find((action) => action.actorSide === "party")!.damage;
-    const firstEnemyDamage = (result: typeof safe) => result.battle!.actions.find((action) => action.actorSide === "enemy")!.damage;
+    const firstPartyDamage = (result: typeof safe) => {
+      const action = result.battle!.actions.find((candidate) =>
+        candidate.kind === "attack" && candidate.actorSide === "party");
+      if (action?.kind !== "attack") throw new Error("party attack 없음");
+      return action.damage;
+    };
+    const firstEnemyDamage = (result: typeof safe) => {
+      const action = result.battle!.actions.find((candidate) =>
+        candidate.kind === "attack" && candidate.actorSide === "enemy");
+      if (action?.kind !== "attack") throw new Error("enemy attack 없음");
+      return action.damage;
+    };
 
     expect(firstPartyDamage(pressured)).toBeLessThan(firstPartyDamage(safe));
     expect(firstEnemyDamage(pressured)).toBeGreaterThan(firstEnemyDamage(safe));
@@ -227,7 +238,7 @@ describe("E3 원정 사건 준비와 물질화", () => {
     if (event?.kind !== "monster" || event.encounter === undefined) throw new Error("monster encounter 없음");
     const member = { id: "member-1" as CharacterId, name: "전사", classId: "warrior" as ClassId, personality: "prudent" as const, maxHp: 45, hp: 45, trust: 50, gold: 10, alive: true, gravelyWounded: false };
     const pending = { adviceId: "merchant-1" as ChoiceId, nextBattle: { partyDamageMultiplier: 0.5 } };
-    const base = { event: event as typeof event & { readonly kind: "monster" }, activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id), monsterDefs: THEMES[0].monsters, members: [member], classDefs: CLASSES, seed: "battle-adapter", advicePressure: 0 as const };
+    const base = { event: event as typeof event & { readonly kind: "monster" }, activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id), monsterDefs: THEMES[0].monsters, members: [member], classDefs: CLASSES, seed: "battle-adapter", advicePressure: 0 as const, battleAbilityUsesRemainingByCharacterId: {} };
     const avoided = resolveMonsterEventBattle({ ...base, modifier: { avoidCombat: true }, pendingMerchantEffect: pending });
     expect(avoided.battle).toBeNull();
     expect(avoided.pendingMerchantEffect).toBe(pending);
@@ -241,7 +252,7 @@ describe("E3 원정 사건 준비와 물질화", () => {
     if (event?.kind !== "monster" || event.encounter === undefined) throw new Error("monster encounter 없음");
     const monsterDefs = THEMES[0].monsters.map((monster, index) => index === 0 ? { ...monster, targetWeightMultipliers: { mage: 3 } } : monster);
     const member = { id: "member-1" as CharacterId, name: "전사", classId: "warrior" as ClassId, personality: "prudent" as const, maxHp: 45, hp: 45, trust: 50, gold: 10, alive: true, gravelyWounded: false };
-    const result = resolveMonsterEventBattle({ event: event as typeof event & { readonly kind: "monster" }, activeMonsterIds: monsterDefs.map((monster) => monster.id), monsterDefs, members: [member], classDefs: CLASSES, seed: "battle-adapter-weight", modifier: {}, pendingMerchantEffect: null, advicePressure: 0 });
+    const result = resolveMonsterEventBattle({ event: event as typeof event & { readonly kind: "monster" }, activeMonsterIds: monsterDefs.map((monster) => monster.id), monsterDefs, members: [member], classDefs: CLASSES, seed: "battle-adapter-weight", modifier: {}, pendingMerchantEffect: null, advicePressure: 0, battleAbilityUsesRemainingByCharacterId: {} });
     expect(result.battle?.enemies[0]?.targetWeightMultipliers).toEqual({ mage: 3 });
   });
 
@@ -268,6 +279,7 @@ describe("E3 원정 사건 준비와 물질화", () => {
         seed: "general-monster-calibration",
         advicePressure: 0,
         pendingMerchantEffect: null,
+        battleAbilityUsesRemainingByCharacterId: {},
       });
 
       expect(result.battle?.enemies).toEqual(expect.arrayContaining([
@@ -279,6 +291,159 @@ describe("E3 원정 사건 준비와 물질화", () => {
     } finally {
       balance.generalMonsterBaseStatMultiplier = originalMultiplier;
     }
+  });
+
+  it("일반전 치유는 2회를 1회로 줄이고 전투에 빠진 사망자의 횟수는 보존한다", () => {
+    const event = eventsForTheme("spider").find((candidate) => candidate.kind === "monster");
+    if (event?.kind !== "monster" || event.encounter === undefined) throw new Error("monster encounter 없음");
+    const cleric: Character = {
+      id: "cleric-alive" as CharacterId,
+      name: "생존 성직자",
+      classId: "cleric" as ClassId,
+      personality: "prudent",
+      maxHp: 28,
+      hp: 10,
+      trust: 50,
+      gold: 10,
+      alive: true,
+      gravelyWounded: false,
+    };
+    const deadCleric: Character = {
+      ...cleric,
+      id: "cleric-dead" as CharacterId,
+      name: "사망 성직자",
+      hp: 0,
+      alive: false,
+    };
+    const before: BattleAbilityUsesRemaining = {
+      [cleric.id]: 2,
+      [deadCleric.id]: 2,
+    };
+
+    const result = resolveMonsterEventBattle({
+      event: event as typeof event & { readonly kind: "monster" },
+      modifier: {},
+      activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id),
+      monsterDefs: THEMES[0].monsters,
+      members: [cleric, deadCleric],
+      classDefs: CLASSES,
+      seed: "general-heal-consumption",
+      advicePressure: 0,
+      pendingMerchantEffect: null,
+      battleAbilityUsesRemainingByCharacterId: before,
+    });
+
+    expect(result.battle?.actions[0]).toMatchObject({
+      kind: "heal",
+      actorId: cleric.id,
+      targetId: cleric.id,
+    });
+    expect(result.battleAbilityUsesRemainingByCharacterId).toEqual({
+      [cleric.id]: 1,
+      [deadCleric.id]: 2,
+    });
+    expect(result.battleAbilityUsesRemainingByCharacterId).not.toBe(before);
+    expect(before).toEqual({ [cleric.id]: 2, [deadCleric.id]: 2 });
+  });
+
+  it("치유가 발동하지 않은 일반전은 잔여 횟수를 유지한다", () => {
+    const event = eventsForTheme("spider").find((candidate) => candidate.kind === "monster");
+    if (event?.kind !== "monster" || event.encounter === undefined) throw new Error("monster encounter 없음");
+    const cleric: Character = {
+      id: "cleric-full" as CharacterId,
+      name: "성직자",
+      classId: "cleric" as ClassId,
+      personality: "prudent",
+      maxHp: 28,
+      hp: 28,
+      trust: 50,
+      gold: 10,
+      alive: true,
+      gravelyWounded: false,
+    };
+
+    const result = resolveMonsterEventBattle({
+      event: event as typeof event & { readonly kind: "monster" },
+      modifier: {},
+      activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id),
+      monsterDefs: THEMES[0].monsters,
+      members: [cleric],
+      classDefs: CLASSES,
+      seed: "general-heal-not-triggered",
+      advicePressure: 0,
+      pendingMerchantEffect: null,
+      battleAbilityUsesRemainingByCharacterId: { [cleric.id]: 2 },
+    });
+
+    expect(result.battle?.actions[0]?.kind).toBe("attack");
+    expect(result.battleAbilityUsesRemainingByCharacterId).toEqual({ [cleric.id]: 2 });
+  });
+
+  it("회피한 일반전은 잔여 횟수 맵을 정확히 그대로 반환한다", () => {
+    const event = eventsForTheme("spider").find((candidate) => candidate.kind === "monster");
+    if (event?.kind !== "monster") throw new Error("monster 사건 없음");
+    const cleric = {
+      id: "cleric-avoided" as CharacterId,
+      name: "성직자",
+      classId: "cleric" as ClassId,
+      personality: "prudent" as const,
+      maxHp: 28,
+      hp: 10,
+      trust: 50,
+      gold: 10,
+      alive: true,
+      gravelyWounded: false,
+    };
+    const before: BattleAbilityUsesRemaining = { [cleric.id]: 2 };
+
+    const result = resolveMonsterEventBattle({
+      event: event as typeof event & { readonly kind: "monster" },
+      modifier: { avoidCombat: true },
+      activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id),
+      monsterDefs: THEMES[0].monsters,
+      members: [cleric],
+      classDefs: CLASSES,
+      seed: "general-heal-avoided",
+      advicePressure: 0,
+      pendingMerchantEffect: null,
+      battleAbilityUsesRemainingByCharacterId: before,
+    });
+
+    expect(result.battle).toBeNull();
+    expect(result.battleAbilityUsesRemainingByCharacterId).toBe(before);
+  });
+
+  it("회피 전투도 잘못 주입된 직업 정의를 전투원 변환 전에 거부한다", () => {
+    const event = eventsForTheme("spider").find((candidate) => candidate.kind === "monster");
+    if (event?.kind !== "monster") throw new Error("monster 사건 없음");
+    const cleric = {
+      id: "cleric-invalid-content" as CharacterId,
+      name: "성직자",
+      classId: "cleric" as ClassId,
+      personality: "prudent" as const,
+      maxHp: 28,
+      hp: 10,
+      trust: 50,
+      gold: 10,
+      alive: true,
+      gravelyWounded: false,
+    };
+    const invalidClasses = CLASSES.map((classDef) => classDef.id === "cleric"
+      ? { ...classDef, battleAbility: { ...classDef.battleAbility!, healAmount: 0 } }
+      : classDef);
+
+    expect(() => resolveMonsterEventBattle({
+      event: event as typeof event & { readonly kind: "monster" },
+      modifier: { avoidCombat: true },
+      activeMonsterIds: THEMES[0].monsters.map((monster) => monster.id),
+      monsterDefs: THEMES[0].monsters,
+      members: [cleric],
+      classDefs: invalidClasses,
+      seed: "general-invalid-class-content",
+      advicePressure: 0,
+      pendingMerchantEffect: null,
+      battleAbilityUsesRemainingByCharacterId: { [cleric.id]: 2 },
+    })).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
   });
 });
 

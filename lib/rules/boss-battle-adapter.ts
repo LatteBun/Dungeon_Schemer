@@ -5,6 +5,11 @@ import { consumePendingMerchantEffect } from "@/lib/rules/merchant";
 import { evaluateTrust } from "@/lib/rules/trust";
 import { resolveBattle } from "@/lib/rules/battle-engine";
 import {
+  extractBattleAbilityUsesAfterBattle,
+  hydrateBattlePartyAbility,
+  validateBattleAbilityUses,
+} from "@/lib/rules/battle-ability-state";
+import {
   BOSS_INFO_CUE_AXIS_PRIORITY,
   bossTraitForRule,
   clampBossInfoMultiplier,
@@ -26,6 +31,7 @@ import type {
   Character,
   ClassDef,
   AdvicePressure,
+  BattleAbilityUsesRemaining,
   InfoRecord,
   PendingMerchantEffect,
   RiskLevel,
@@ -42,6 +48,7 @@ export interface BossBattleInput {
   readonly seed: string;
   readonly pendingMerchantEffect: PendingMerchantEffect | null;
   readonly advicePressure: AdvicePressure;
+  readonly battleAbilityUsesRemainingByCharacterId: BattleAbilityUsesRemaining;
 }
 
 export interface BossBattleResolution {
@@ -49,6 +56,7 @@ export interface BossBattleResolution {
   readonly members: readonly Character[];
   readonly trustChanges: readonly TrustChange[];
   readonly pendingMerchantEffect: null;
+  readonly battleAbilityUsesRemainingByCharacterId: BattleAbilityUsesRemaining;
 }
 
 function invalid(message: string, details: Record<string, unknown> = {}): never {
@@ -90,6 +98,7 @@ function timingFor(axis: BossInfoAxis): BossInfoTiming {
 }
 
 function appliesToAction(application: BossInfoApplication, action: BattleActionRecord): boolean {
+  if (action.kind !== "attack") return false;
   return application.axis === "outgoingDamage"
     ? action.actorSide === "party" && action.actorId === application.characterId
     : action.actorSide === "enemy" && action.targetId === application.characterId;
@@ -129,6 +138,13 @@ function finalAxisValue(map: ReadonlyMap<string, number>, memberId: string, axis
 }
 
 export function resolveBossBattle(input: BossBattleInput): BossBattleResolution {
+  validateBattleAbilityUses({
+    members: input.members,
+    classDefs: input.classDefs,
+    usesRemaining: input.battleAbilityUsesRemainingByCharacterId,
+    phase: "active",
+    errorCode: "INVALID_GENERATION",
+  });
   if (input.dungeon.theme !== input.theme.id) {
     invalid("보스전 던전과 테마가 다르다", { dungeonTheme: input.dungeon.theme, theme: input.theme.id });
   }
@@ -185,7 +201,19 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
   const party = aliveMembers.map((member) => {
     const classDef = classById.get(member.classId);
     if (classDef === undefined) invalid("보스전 파티의 직업 정의가 없다", { classId: member.classId });
-    return { id: member.id, classId: member.classId, hp: member.hp, maxHp: member.maxHp, attack: classDef.attack, hitWeight: classDef.hitWeight };
+    return {
+      id: member.id,
+      classId: member.classId,
+      hp: member.hp,
+      maxHp: member.maxHp,
+      attack: classDef.attack,
+      hitWeight: classDef.hitWeight,
+      battleAbility: hydrateBattlePartyAbility({
+        member,
+        classDef,
+        usesRemaining: input.battleAbilityUsesRemainingByCharacterId,
+      }),
+    };
   });
   if (party.length === 0) invalid("보스전에 살아 있는 파티원이 없다");
 
@@ -283,5 +311,16 @@ export function resolveBossBattle(input: BossBattleInput): BossBattleResolution 
     verifications: [...verificationByRecord.values()],
     cues,
   };
-  return { bossResult, members: finalMembers, trustChanges, pendingMerchantEffect: consumed.pendingMerchantEffect };
+  return {
+    bossResult,
+    members: finalMembers,
+    trustChanges,
+    pendingMerchantEffect: consumed.pendingMerchantEffect,
+    battleAbilityUsesRemainingByCharacterId: extractBattleAbilityUsesAfterBattle({
+      before: input.battleAbilityUsesRemainingByCharacterId,
+      members: input.members,
+      classDefs: input.classDefs,
+      battleParty: battle.party,
+    }),
+  };
 }

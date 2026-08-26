@@ -512,6 +512,8 @@ function transitionChooseAdvice(
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/${active.expedition.currentNodeId}`,
     pendingMerchantEffect: purchased?.pendingMerchantEffect ?? active.expedition.pendingMerchantEffect,
     advicePressure,
+    battleAbilityUsesRemainingByCharacterId:
+      active.expedition.battleAbilityUsesRemainingByCharacterId,
   });
 
   /*
@@ -541,6 +543,9 @@ function transitionChooseAdvice(
   const nextExpedition: ExpeditionState = {
     ...active.expedition,
     advicePressure,
+    battleAbilityUsesRemainingByCharacterId: battle
+      ?.battleAbilityUsesRemainingByCharacterId
+      ?? active.expedition.battleAbilityUsesRemainingByCharacterId,
     infoRecords: [...active.expedition.infoRecords, ...resolution.decision.delayedRecords],
     pendingMerchantEffect: battle?.pendingMerchantEffect
       ?? purchased?.pendingMerchantEffect
@@ -666,6 +671,8 @@ function transitionEnterBoss(
     seed: `${campaign.seed}/${dungeon.id}/${dungeon.attempts}/boss`,
     pendingMerchantEffect: expedition.pendingMerchantEffect,
     advicePressure: expedition.advicePressure,
+    battleAbilityUsesRemainingByCharacterId:
+      expedition.battleAbilityUsesRemainingByCharacterId,
   });
 
   const withTrust = resolved.members.map((member) => {
@@ -677,6 +684,8 @@ function transitionEnterBoss(
   const nextExpedition: ExpeditionState = {
     ...expedition,
     bossResult: resolved.bossResult,
+    battleAbilityUsesRemainingByCharacterId:
+      resolved.battleAbilityUsesRemainingByCharacterId,
     pendingMerchantEffect: resolved.pendingMerchantEffect,
     result: { status: resolved.bossResult.status, survivorIds: resolved.bossResult.survivorIds },
   };
@@ -792,7 +801,7 @@ export function createSettlementSnapshotFor(
         ? "반응한 사람이 없다"
         : cause.reactions.map((one) => `${nameOf(one.characterId)} ${word[one.reaction] ?? one.reaction}`).join(" · "),
       damage: cause === undefined || cause === null || cause.damage.length === 0
-        ? "피해 없이 지나갔다"
+        ? "최종 HP 변화 없음"
         : cause.damage.map((one) => `${nameOf(one.characterId)} HP ${one.before} → ${one.after}`).join(" · "),
     },
   };
