@@ -193,7 +193,7 @@ E1이 같은 판단을 해야 하므로 이 알고리즘을 UI에서 복사하�
 
 교차 계산과 최적 행 순서 탐색을 UI와 규칙 계층이 함께 사용할 수 있는 순수 모듈로 분리한다.
 
-권장 위치:
+위치:
 
 ```text
 lib/rules/layered-map-crossing.ts
@@ -205,20 +205,20 @@ lib/rules/layered-map-crossing.ts
 
 E1은 간선을 만드는 도중 후보를 임시 평가해야 하기 때문이다.
 
-권장 경계:
+공용 경계:
 
 ```ts
-interface LayeredEdge {
+export interface LayeredEdge {
   readonly from: NodeId;
   readonly to: NodeId;
 }
 
-interface LayeredOrderResult {
+export interface LayeredOrderResult {
   readonly rows: readonly (readonly NodeId[])[];
   readonly crossingCount: number;
 }
 
-interface LayeredOrderSolver {
+export interface LayeredOrderSolver {
   solve(edges: readonly LayeredEdge[]): LayeredOrderResult;
 }
 
@@ -227,9 +227,36 @@ createLayeredOrderSolver(
 ): LayeredOrderSolver;
 ```
 
-필요하면 완성 지도용 편의 함수나 U4 adapter를 추가할 수 있다.
+완성 지도용 편의 함수와 U4 adapter는 이 공용 경계를 감싸는 thin adapter로만 둔다.
 
-### 6-2. 계산 방식
+### 6-2. 입력 무결성 계약
+
+공용 solver는 낮은 수준의 입력을 받지만 잘못된 행이나 간선을 조용히 무시하지 않는다.
+
+`createLayeredOrderSolver(rows)`는 생성 시 다음을 검증한다.
+
+- 행이 하나 이상 있다.
+- 모든 행은 비어 있지 않다.
+- 하나의 행 안에 같은 `NodeId`가 중복되지 않는다.
+- 하나의 `NodeId`가 서로 다른 행에 중복되지 않는다.
+- 한 행의 폭은 최대 5다.
+
+`solve(edges)`는 호출마다 다음을 검증한다.
+
+- 모든 `from`과 `to`가 `rows`에 존재한다.
+- 모든 간선은 정확히 다음 행으로만 진행한다.
+- self edge가 없다.
+- 같은 `(from, to)` 간선이 중복되지 않는다.
+
+위반은 `RuleError("INVALID_GENERATION", ...)`으로 실패시킨다. E1과 U4가 같은
+잘못된 입력을 서로 다르게 해석하거나, 행에 없는 간선을 crossing 계산에서
+조용히 제외해서는 안 된다.
+
+solver는 모든 행이 서로 연결되어 있는지나 노드 차수가 유효한지는 검사하지 않는다.
+그 책임은 `validateGeneratedMap`에 있다. 따라서 E1이 optional edge를 조립하는 중간
+간선 집합처럼 아직 완성되지 않은 그래프도, 간선 자체가 유효하면 계산할 수 있다.
+
+### 6-3. 계산 방식
 
 현재 U4와 같은 정확한 전역 최적화를 사용한다.
 
@@ -243,13 +270,25 @@ Depth 폭 최대가 5이므로 한 행의 후보는 최대 `5! = 120`개다.
 
 휴리스틱이나 greedy row ordering으로 대체하지 않는다. 생성 계약 자체를 판단하므로 **정확한 최소값**이 필요하다.
 
-### 6-3. 계산기 재사용
+### 6-4. 계산기 재사용과 의존 방향
 
 E1은 추가 간선 후보마다 행 순열을 새로 만들지 않는다.
 
 한 지도의 행 구성은 간선 추가 중 변하지 않으므로 `createLayeredOrderSolver(rows)`를 한 번 만들고, 후보별로 `solve(edges)`만 반복한다.
 
 순열과 displacement처럼 행에만 의존하는 값은 solver 생성 시 캐시한다.
+
+각 `solve(edges)` 호출은 먼저 간선을 인접 row pair별로 한 번 분류한다. DP의 각
+순열 transition에서 전체 지도 노드나 전체 간선 집합을 다시 순회하지 않는다.
+
+의존 방향은 다음으로 고정한다.
+
+```text
+components/game/u4-dungeon-map-order.ts
+  -> lib/rules/layered-map-crossing.ts
+```
+
+공용 solver가 `components` 파일을 import하는 역방향 의존은 금지한다.
 
 ---
 
@@ -269,6 +308,12 @@ E1은 추가 간선 후보마다 행 순열을 새로 만들지 않는다.
 ### 7-2. 새 흐름
 
 위 조건 뒤에 zero-crossing 조건을 추가한다.
+
+Entry 연결, 모든 일반 Depth 사이의 기본 연결, 마지막 Depth에서 Boss로 가는 연결을
+먼저 모두 만든다. 현재 구현은 Boss 연결을 optional edge 처리 뒤에 추가하지만,
+변경 후에는 RNG를 소비하지 않는 Boss 기본 연결을 먼저 완성해 solver가 매번 동일한
+전체 필수 topology를 평가하게 한다. 이 순서 변경은 일반 Depth의 optional 후보 풀이나
+차수 판정에는 영향을 주지 않는다.
 
 개념 흐름:
 
@@ -339,6 +384,41 @@ campaignSeed + dungeonId + initialRiskLevel + attempt
 
 별도 재추첨이나 성공할 때까지 attempt를 내부 증가시키는 방식은 사용하지 않는다.
 
+### 7-5. 테스트 가능한 생성 경계와 진단
+
+optional edge 채택을 seed 우연에만 의존해 테스트하지 않는다. 생성기는 다음처럼
+완성 지도와 생성 진단을 함께 얻을 수 있는 내부용 경계를 제공한다.
+
+```ts
+export interface DungeonMapGenerationDiagnostics {
+  readonly baseEdgeCount: number;
+  readonly evaluatedOptionalCandidateCount: number;
+  readonly acceptedOptionalEdgeCount: number;
+  readonly rejectedForCrossingCount: number;
+  readonly maximumRowCandidateCount: number;
+}
+
+export interface DungeonMapGenerationResult {
+  readonly map: GeneratedMap;
+  readonly diagnostics: DungeonMapGenerationDiagnostics;
+}
+
+export function generateDungeonMapWithDiagnostics(
+  input: GenerateDungeonMapInput,
+): DungeonMapGenerationResult;
+```
+
+기존 `generateDungeonMap(input): GeneratedMap`은 이 내부용 생성 경계를 호출하고
+`map`만 반환하는 호환 API로 유지한다. 이 진단 함수와 타입은
+`lib/rules/dungeon-map.ts`의 named export로 테스트와 구현 PR 진단에서만 사용하고,
+domain barrel이나 UI에서 re-export하지 않는다. 진단은 `GeneratedMap`, Store,
+저장 데이터에 넣지 않는다.
+
+degree/RNG/zero-crossing 판정 순서를 담당하는 작은 내부 helper에는 결정적인 후보
+목록과 RNG gate callback을 주입할 수 있게 한다. 집중 테스트는 이를 사용해 안전한
+후보 채택, crossing 후보 거절, 거절 후 차수 미소비를 직접 검증한다. 이 helper는
+domain barrel이나 UI API로 re-export하지 않는다.
+
 ---
 
 ## 8. 최종 E1 validator 계약
@@ -363,7 +443,11 @@ campaignSeed + dungeonId + initialRiskLevel + attempt
 RuleError("INVALID_GENERATION", ...)
 ```
 
-세부 정보에는 최소 교차 수와 dungeon/attempt를 추적할 수 있는 정보를 포함할 수 있다.
+세부 정보의 `minimumCrossingCount`에는 최소 교차 수를 반드시 포함한다.
+`validateGeneratedMap`은 별도 생성
+입력을 받지 않으므로 dungeon/attempt를 새 매개변수나 `GeneratedMap` 필드로 추가하지
+않는다. 생성 경로의 상위 오류 문맥은 기존 결정적 NodeId와
+`generateDungeonMapWithDiagnostics` 입력으로 추적한다.
 
 검증 실패를 숨기기 위해 자동 재추첨하지 않는다.
 
@@ -385,10 +469,9 @@ U4는 E1이 보장한 0 교차 embedding 중 실제 표시 순서를 결정해�
 
 ### 9-1. `u4-dungeon-map-order.ts`
 
-이 파일은 다음 중 한 형태로 축소한다.
-
-- 공용 solver를 `GeneratedMap` 형태로 감싸는 thin adapter
-- 기존 공개 함수명을 유지하는 re-export/adapter
+이 파일은 기존 공개 함수명인 `countU4LayerCrossings`와
+`createU4OptimizedLayerOrder`를 유지하면서, `GeneratedMap`을 공용 rows/edges로
+변환해 solver를 호출하는 thin adapter로 축소한다.
 
 U4와 E1에 교차 계산 로직을 복제하지 않는다.
 
@@ -424,7 +507,22 @@ U4와 E1에 교차 계산 로직을 복제하지 않는다.
 
 ### 10-1. 최종 corridor 중심선 검사
 
-표준 wobble 좌표로 corridor를 만든 뒤, source와 target을 공유하지 않는 corridor 쌍의 실제 선분 교차를 검사한다.
+표준 wobble 좌표로 corridor를 만든 뒤 실제 렌더에 사용하는 4자리 정규화 좌표를
+검사한다. 부동소수점 epsilon에 결과가 흔들리지 않도록 각 좌표에 `10_000`을 곱해
+정수로 바꾼 뒤 orientation 기반 닫힌 선분 교차를 계산한다.
+
+검사 대상 corridor 쌍은 어떤 endpoint `NodeId`도 공유하지 않는 두 corridor다.
+즉 `A -> B`와 `B -> C`처럼 한 방에서 이어지는 두 corridor도 제외한다. 논리 crossing의
+같은 source/같은 target 제외보다 범위가 넓은 이유는, 기하 검사는 서로 다른 row pair의
+corridor도 함께 비교하기 때문이다.
+
+다음은 실제 교차로 센다.
+
+- 두 선분 내부가 X자로 만나는 proper intersection
+- 한 선분이 endpoint를 공유하지 않는 다른 corridor의 endpoint에 닿는 경우
+- endpoint를 공유하지 않는 두 선분이 일부라도 일직선으로 겹치는 경우
+
+같은 방을 endpoint로 공유하는 corridor끼리 방 중심에서 닿는 것은 교차로 세지 않는다.
 
 - 실제 교차 0: 기존 wobble 좌표 유지
 - 실제 교차 1 이상: deterministic fallback 적용
@@ -448,7 +546,14 @@ fallback 지도에서는 다음을 유지한다.
 
 행 자체가 zero-crossing 순서이므로 같은 Depth를 동일 Y에 놓으면 non-shared 직선 corridor의 X자 교차가 다시 생겨서는 안 된다.
 
-fallback 결과에서도 실제 선분 교차가 남으면 조용히 렌더하지 않고 명시적 레이아웃 오류로 처리한다.
+fallback 결과에서도 실제 선분 교차가 남으면 조용히 렌더하지 않고
+`U4MapLayoutError` 전용 오류로 실패시킨다. 오류에는 fallback 뒤 남은
+`geometricCrossingCount`를 포함한다. 이는 유효한 E1 지도에서 도달해서는 안 되는
+invariant violation이다.
+
+현재 캠페인 화면은 layout을 render 중 순수 계산하고 별도 U4 error boundary를 두지
+않는다. 이번 작업은 사용자 복구 UI나 재추첨을 추가하지 않는다. 자동 테스트에서
+전용 오류 타입/메시지를 검증하고, 개발 및 운영 오류 수집에서 원인이 드러나게 한다.
 
 ### 10-3. 이 설계가 보장하지 않는 것
 
@@ -456,6 +561,7 @@ fallback 결과에서도 실제 선분 교차가 남으면 조용히 렌더하�
 
 - 같은 방에서 갈라지는 corridor 이미지의 시작 부분이 시각적으로 닿는 현상
 - 같은 방으로 합류하는 corridor 이미지가 방 근처에서 닿는 현상
+- 한 방에서 다음 방으로 이어지는 연속 corridor가 그 공유 방에서 닿는 현상
 - corridor PNG 두께 때문에 평행한 길의 외곽 픽셀이 가까워지는 현상
 
 이들은 topology 교차가 아니라 corridor 시각 라우팅 문제다.
@@ -528,6 +634,14 @@ zero-crossing을 가장 쉽게 만드는 방법은 선택적 추가 간선을 �
 
 solver는 행 후보를 한 번 준비하고 간선 집합만 바꿔 반복 계산한다.
 
+추가로 다음 구조를 유지한다.
+
+- solver 생성 시 순열과 displacement를 한 번만 준비한다.
+- `solve` 시작 시 edge를 인접 row pair별로 한 번만 분류한다.
+- DP transition은 해당 row pair의 작은 edge 목록만 사용한다.
+- E1 incoming 차수는 후보마다 전체 edge map을 합산하지 않고 카운터로 유지한다.
+- trial edge 하나를 평가하기 위해 `GeneratedMap` 전체를 매번 재구성하지 않는다.
+
 구현 시 불필요하게 다음을 하지 않는다.
 
 - 모든 추가 간선 부분집합 완전 탐색
@@ -545,7 +659,7 @@ solver는 행 후보를 한 번 준비하고 간선 집합만 바꿔 반복 계�
 
 ### 새 파일
 
-권장:
+다음 파일을 만든다.
 
 ```text
 lib/rules/layered-map-crossing.ts
@@ -571,9 +685,12 @@ components/game/u4-dungeon-map-layout.ts
 components/game/u4-dungeon-map-layout.test.ts
 components/game/u4-preview-data.test.ts
 docs/experience/U4_DUNGEON_MAP.md
+docs/systems/DUNGEON_EVENTS_AND_BOSSES.md
 ```
 
-필요하면 현재 공식 지도 규칙을 설명하는 시스템 문서도 새 zero-crossing 계약에 맞춰 갱신한다.
+`docs/systems/DUNGEON_EVENTS_AND_BOSSES.md`는 공식 지도 규칙의 소유 문서이므로 반드시
+새 E1 zero-crossing topology 계약을 반영한다. `docs/experience/U4_DUNGEON_MAP.md`에는
+공용 solver 사용과 실제 corridor fallback 책임을 반영한다.
 
 ### 변경하지 않는 핵심 영역
 
@@ -629,6 +746,19 @@ B -> D
 5. 같은 rows + edges
    - 항상 같은 결과
 
+6. 잘못된 rows
+   - 빈 rows, 빈 행, 행 내부 중복 NodeId, 행 사이 중복 NodeId, 폭 6을 각각
+     `INVALID_GENERATION`으로 거부
+
+7. 잘못된 edges
+   - rows에 없는 endpoint, 행 건너뛰기, 역방향, self edge, 중복 edge를 각각
+     `INVALID_GENERATION`으로 거부
+
+8. solver 재사용
+   - 같은 solver instance에 서로 다른 edge 집합을 순서대로 넣어도 각각 독립적인
+     정확한 결과를 반환
+   - 행별 후보 수가 최대 120이고 solve마다 permutations를 재생성하지 않음
+
 ### 15-2. E1 추가 간선
 
 - 안전한 후보는 채택 가능
@@ -646,11 +776,39 @@ B -> D
 
 CI에서 고정 seed 문자열을 사용해 다음 행렬을 검사한다.
 
-- 20개 seed
+- 아래 20개 seed
 - 위험도 1~5
 - attempt 0, 1, 2
 
 총 300개 지도를 생성한다.
+
+seed 목록은 다음으로 고정한다.
+
+```text
+e1-zero-crossing-00
+e1-zero-crossing-01
+e1-zero-crossing-02
+e1-zero-crossing-03
+e1-zero-crossing-04
+e1-zero-crossing-05
+e1-zero-crossing-06
+e1-zero-crossing-07
+e1-zero-crossing-08
+e1-zero-crossing-09
+e1-zero-crossing-10
+e1-zero-crossing-11
+e1-zero-crossing-12
+e1-zero-crossing-13
+e1-zero-crossing-14
+e1-zero-crossing-15
+e1-zero-crossing-16
+e1-zero-crossing-17
+e1-zero-crossing-18
+e1-zero-crossing-19
+```
+
+각 조합의 `dungeonId`는 `e1-zero-crossing-risk-{riskLevel}`로 고정한다. seed,
+riskLevel, attempt 외에 현재 날짜나 Git SHA처럼 실행마다 달라지는 값을 입력에 넣지 않는다.
 
 모든 지도에서 확인:
 
@@ -661,13 +819,18 @@ CI에서 고정 seed 문자열을 사용해 다음 행렬을 검사한다.
 - 차수 계약 유지
 - 같은 입력 결정성
 
-추가로 위험도별 accepted optional edge 수를 집계해 진단 가능하게 한다.
+추가로 `generateDungeonMapWithDiagnostics`를 사용해 위험도별
+`acceptedOptionalEdgeCount`, `rejectedForCrossingCount`,
+`maximumRowCandidateCount`를 집계한다.
 
 ### 15-5. U4
 
 - 정상 E1 지도에서 optimized `crossingCount === 0`
 - 최종 corridor 중심선 실제 교차 0
 - wobble로 교차 fixture를 만들면 Y-wobble fallback 후 0
+- endpoint NodeId를 공유하는 연속/분기/합류 corridor는 기하 교차에서 제외
+- endpoint를 공유하지 않는 proper intersection, endpoint touch, collinear overlap은 교차로 검출
+- fallback 뒤에도 교차하는 잘못된 fixture는 전용 `U4MapLayoutError`로 실패
 - X order와 X safe range 유지
 - Entry/Boss 위치 유지
 - 모든 E1 간선을 corridor에 정확히 한 번 렌더링
@@ -689,7 +852,33 @@ zero-crossing 때문에 E3 규칙을 완화하는 테스트 수정은 허용하�
 
 ## 16. 진단 및 검수
 
-구현 PR에는 최소 다음 진단을 남긴다.
+### 16-1. optional edge 계산 정의
+
+한 지도의 기본 간선 수는 다음 합으로 정의한다.
+
+```text
+Entry -> Depth 1 간선 수
++ 각 일반 Depth 쌍의 max(currentWidth, nextWidth)
++ 마지막 Depth -> Boss 간선 수
+```
+
+현재 기본 연결 알고리즘은 이 수만큼 중복 없는 간선을 만든다. 따라서 완성 지도의
+optional edge 수는 다음 두 방식이 같아야 한다.
+
+```text
+전체 edge 수 - baseEdgeCount
+=== diagnostics.acceptedOptionalEdgeCount
+```
+
+두 값이 다르면 진단 또는 기본 연결 구현의 회귀로 실패시킨다.
+
+### 16-2. 변경 전/후 기준선
+
+변경 전 기준선은 이 spec의 기준 SHA
+`226085835516fe5487e6dce681db76e9c6dbb06d`에서 위 300-map 고정 행렬을 실행해
+기록한다. 구현 뒤에는 동일 seed, dungeonId, 위험도, attempt로 다시 측정한다.
+
+구현 PR 설명 또는 첨부 진단에는 위험도별 표로 다음을 함께 남긴다.
 
 - 위험도별 생성 샘플 수
 - 변경 전 평균 optional edge 수
@@ -697,7 +886,23 @@ zero-crossing 때문에 E3 규칙을 완화하는 테스트 수정은 허용하�
 - zero-crossing 때문에 거절된 평균 후보 수
 - 최종 crossing 최대값
 
+변경 전 구현에는 crossing 거절 개념이 없으므로 변경 전
+`rejectedForCrossingCount`는 비교값 `해당 없음`으로 기록한다. 변경 후 수치는
+`generateDungeonMapWithDiagnostics`에서 직접 집계한다. 측정만을 위해
+`GeneratedMap`이나 저장 shape를 바꾸지 않는다.
+
 최종 crossing 최대값은 반드시 `0`이어야 한다.
+
+고정 밸런스 임계값은 두지 않지만 다음은 구현 실패다.
+
+- 300개 지도 전체의 accepted optional edge 합이 0
+- 진단의 optional edge 수와 실제 edge 차분이 불일치
+
+위험도별 accepted optional edge 합이 0인 구간은 자동 실패로 고정하지 않고 진단 표에서
+명시해 수동 검토한다. 실제 플레이 다양성 부족이 확인되기 전에는 새 위험도별 밸런스
+임계값으로 승격하지 않는다.
+
+### 16-3. 브라우저 검수
 
 브라우저 검증은 기존 U4 viewport를 유지한다.
 
@@ -720,6 +925,11 @@ zero-crossing 때문에 E3 규칙을 완화하는 테스트 수정은 허용하�
 
 ## 17. 오류 처리
 
+### 공용 solver 입력
+
+행 또는 간선 무결성 위반은 `RuleError("INVALID_GENERATION", ...)`이다. 잘못된
+endpoint나 비인접 간선을 무시하고 부분 그래프만 계산하지 않는다.
+
 ### 추가 후보
 
 교차를 만드는 선택적 추가 간선은 정상적인 거절 후보다.
@@ -736,13 +946,17 @@ zero-crossing 때문에 E3 규칙을 완화하는 테스트 수정은 허용하�
 
 `validateGeneratedMap`에서 최소 교차 수가 0이 아니면 `INVALID_GENERATION`이다.
 
+오류 details의 `minimumCrossingCount`에 정확한 최소값을 넣는다.
+
 자동 재추첨으로 숨기지 않는다.
 
 ### U4
 
 E1 validator를 통과한 지도가 U4 logical optimizer에서 0을 찾지 못하면 E1/U4의 crossing 정의가 갈라진 버그다.
 
-실제 좌표 fallback 뒤에도 corridor 중심선 교차가 남으면 렌더 결과를 조용히 허용하지 않고 명시적 오류로 드러낸다.
+실제 좌표 fallback 뒤에도 corridor 중심선 교차가 남으면 렌더 결과를 조용히 허용하지
+않고 `U4MapLayoutError`를 던진다. 이 오류 때문에 자동으로 Y/X 좌표를 다시 뽑거나
+지도를 재생성하지 않는다. 별도 사용자 복구 UI는 이번 범위 밖이다.
 
 ---
 
@@ -822,6 +1036,11 @@ E1 validator를 통과한 지도가 U4 logical optimizer에서 0을 찾지 못�
 - 필요한 경우 Y wobble만 deterministic fallback되고 X 배치와 방 variation은 유지된다.
 - 같은 입력은 같은 지도를 만든다.
 - 300-map 고정 회귀 행렬이 모두 통과한다.
+- 고정 seed/dungeonId 기준선에서 optional edge 진단 전후 표가 남는다.
+- 공용 solver가 잘못된 rows/edges를 조용히 무시하지 않는다.
+- 기하 교차는 4자리 렌더 좌표를 정수화한 닫힌 선분 교차 정의를 사용한다.
+- `GeneratedMap`, Store, 저장 데이터 shape에 진단이나 표시 순서를 추가하지 않는다.
+- 공식 지도 문서와 U4 경험 문서가 새 책임 경계로 갱신된다.
 - 기존 전체 lint, typecheck, test, build가 통과한다.
 - 네 기준 viewport에서 지도 교차와 레이아웃을 수동 확인한다.
 
@@ -842,6 +1061,8 @@ E1 validator를 통과한 지도가 U4 logical optimizer에서 0을 찾지 못�
 
 - 가능한 행 순서 전체에서 정확한 최소 crossing 계산
 - deterministic 최적 행 순서 반환
+- rows/edges 입력 무결성 검증
+- 행 후보 캐시와 row-pair edge 분류 재사용
 
 ### E3
 
@@ -852,6 +1073,7 @@ E1 validator를 통과한 지도가 U4 logical optimizer에서 0을 찾지 못�
 - 공용 solver가 선택한 zero-crossing 행 순서를 실제 X 좌표에 반영
 - 화면의 불규칙한 방 배치 유지
 - Y wobble이 실제 선분 교차를 만들면 deterministic fallback
+- fallback 뒤 invariant violation은 `U4MapLayoutError`로 노출
 - corridor/room 시각 표현
 
 이 경계로 지도 생성 단계에서 교차 문제를 막고, U4는 이미 안전한 topology를 읽기 좋은 화면으로 표현하는 역할에 집중한다.
