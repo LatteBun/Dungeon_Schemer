@@ -57,7 +57,6 @@ export interface B1BAcceptanceGate {
 export interface HealingStructuralGate {
   readonly id:
     | "healing-expedition-use-limit"
-    | "healing-battle-use-limit"
     | "healing-amount-and-hp"
     | "healing-live-target-and-turn"
     | "healing-after-victory"
@@ -119,9 +118,14 @@ export function evaluateHealingStructuralGates(aggregate: BacktestAggregate): re
         const expeditionKey = `${entry.expeditionId}\u0000${action.actorId}`;
         expeditionUses.set(expeditionKey, (expeditionUses.get(expeditionKey) ?? 0) + 1);
         battleUses.set(action.actorId, (battleUses.get(action.actorId) ?? 0) + 1);
-        if (!Number.isInteger(action.healing) || action.healing < 1 || action.healing > 5
+        const target = partyById.get(action.targetId);
+        const expectedHealing = target === undefined ? Number.NaN : Math.min(
+          Math.round(target.maxHp * 25 / 100),
+          target.maxHp - action.targetHpBefore,
+        );
+        if (!Number.isInteger(action.healing) || action.healing !== expectedHealing
           || action.targetHpAfter !== action.targetHpBefore + action.healing
-          || action.targetHpAfter > (partyById.get(action.targetId)?.maxHp ?? Number.NEGATIVE_INFINITY)) {
+          || action.targetHpAfter > (target?.maxHp ?? Number.NEGATIVE_INFINITY)) {
           fail("healing-amount-and-hp");
         }
         const sameTurnAttack = entry.battle.actions.some((candidate) => candidate.kind === "attack"
@@ -139,7 +143,6 @@ export function evaluateHealingStructuralGates(aggregate: BacktestAggregate): re
         }
         partyHpById.set(action.targetId, action.targetHpAfter);
       }
-      for (const count of battleUses.values()) if (count > 1) fail("healing-battle-use-limit");
       for (const member of entry.party) {
         const before = member.abilityUsesRemainingBefore;
         const after = member.abilityUsesRemainingAfter;
@@ -163,7 +166,7 @@ export function evaluateHealingStructuralGates(aggregate: BacktestAggregate): re
   }
   if (aggregate.errorCount > 0) fail("reproducible-valid-runs");
   const ids: readonly HealingStructuralGate["id"][] = [
-    "healing-expedition-use-limit", "healing-battle-use-limit", "healing-amount-and-hp",
+    "healing-expedition-use-limit", "healing-amount-and-hp",
     "healing-live-target-and-turn", "healing-after-victory", "healing-use-chain",
     "healing-holder-only", "reproducible-valid-runs", "no-round-limit",
   ];

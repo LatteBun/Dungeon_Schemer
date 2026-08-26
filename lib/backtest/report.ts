@@ -492,7 +492,7 @@ export function renderBacktestReport(input: BacktestReportInput): string {
     `- 클래스 구성 미확정 원정(분모 제외): ${healing.expeditions.unknownComposition}`,
     `- 성직자 포함 일반전/보스전: ${healing.clericBattles.general}/${healing.clericBattles.boss}`,
     `- 원정당 치유 0·1·2회/초과: ${healing.healUsesPerExpedition[0]}·${healing.healUsesPerExpedition[1]}·${healing.healUsesPerExpedition[2]}/${healing.healUsesPerExpedition.overLimit}`,
-    `- 전투당 치유 0·1회/초과: ${healing.healUsesPerBattle[0]}·${healing.healUsesPerBattle[1]}/${healing.healUsesPerBattle.overLimit}`,
+    `- 전투당 치유 0·1·2회/초과: ${healing.healUsesPerBattle[0]}·${healing.healUsesPerBattle[1]}·${healing.healUsesPerBattle[2]}/${healing.healUsesPerBattle.overLimit}`,
     `- 총 치유 행동/유효 치유/실제 회복량: ${healing.healActions}/${healing.effectiveHealActions}/${healing.actualHealing}`,
     `- 평균 전투 라운드/roundLimit: ${nullable(healing.meanBattleRounds)}/${healing.roundLimitCount}`,
     "",

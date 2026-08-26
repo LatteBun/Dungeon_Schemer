@@ -203,6 +203,7 @@ describe("백테스트 gate와 보고서", () => {
     expect(first).toContain("## 성직자 치유 trace 지표");
     expect(first).toContain("성직자 포함 원정");
     expect(first).toContain("원정당 치유 0·1·2회");
+    expect(first).toContain("전투당 치유 0·1·2회/초과");
     expect(first).toContain("### 성직자 유무·초기 위험도별 첫 시도 클리어율");
     expect(first).toContain("| 성직자 포함 | 1 |");
     expect(first).toContain("## 구현 전후 paired 전투 비교");
@@ -217,6 +218,7 @@ describe("백테스트 gate와 보고서", () => {
     expect(first).toContain("| 구성 변경 | ");
     expect(first).toContain("| 층 | paired 전투 | 전투 승리율 Δ |");
     expect(first).toContain("| healing-use-chain | PASS |");
+    expect(first).not.toContain("healing-battle-use-limit");
     expect(first).not.toContain("조정 가능한 기준");
     expect(first).not.toMatch(/duration|elapsed|실행 시간/i);
   });

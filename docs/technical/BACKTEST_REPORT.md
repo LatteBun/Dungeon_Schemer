@@ -3,7 +3,7 @@
 - 모드: calibration
 - focus: risk-curve
 - namespace: b1-risk-curve-v2-calibration
-- source revision: cleric-heal-after
+- source revision: cleric-heal-rebalance-after
 - 전략: survival, opportunist, selective-betrayal
 - 정확도: 0.4, 0.7
 - 조합당 표본: 200
@@ -34,20 +34,19 @@
 
 | 조합당 시드 | 손실 판정 | Gate 상태 | 실패 ID |
 | ---: | --- | --- | --- |
-| 50 | dominant (expedition-boss): 사망 1095/1103 (99.3%) | PASS | accuracy-has-effect, betrayal-can-complete, completed-wipe-mean:selective-betrayal@0.4, completed-wipe-mean:selective-betrayal@0.7, completed-wipe-mean:survival@0.4, completed-wipe-mean:survival@0.7, completion-rate:opportunist@0.4, completion-rate:opportunist@0.7, completion-rate:selective-betrayal@0.4, completion-rate:selective-betrayal@0.7, completion-rate:survival@0.4, completion-rate:survival@0.7, first-attempt-clear-rate:opportunist@0.7:monotonic, first-attempt-clear-rate:opportunist@0.7:risk-1, first-attempt-clear-rate:opportunist@0.7:risk-4, first-attempt-clear-rate:opportunist@0.7:risk-5 |
-| 100 | dominant (expedition-boss): 사망 2232/2247 (99.3%) | PASS | accuracy-has-effect, betrayal-can-complete, completed-wipe-mean:selective-betrayal@0.4, completed-wipe-mean:selective-betrayal@0.7, completed-wipe-mean:survival@0.4, completed-wipe-mean:survival@0.7, completion-rate:opportunist@0.4, completion-rate:opportunist@0.7, completion-rate:selective-betrayal@0.4, completion-rate:selective-betrayal@0.7, completion-rate:survival@0.4, completion-rate:survival@0.7, first-attempt-clear-rate:opportunist@0.7:monotonic, first-attempt-clear-rate:opportunist@0.7:risk-1, first-attempt-clear-rate:opportunist@0.7:risk-4, first-attempt-clear-rate:opportunist@0.7:risk-5 |
-| 200 | dominant (expedition-boss): 사망 4387/4414 (99.4%) | FAIL | accuracy-has-effect, accuracy-interval, betrayal-can-complete, completed-wipe-mean:selective-betrayal@0.4, completed-wipe-mean:selective-betrayal@0.7, completed-wipe-mean:survival@0.4, completed-wipe-mean:survival@0.7, completion-rate:opportunist@0.4, completion-rate:opportunist@0.7, completion-rate:selective-betrayal@0.4, completion-rate:selective-betrayal@0.7, completion-rate:survival@0.4, completion-rate:survival@0.7, first-attempt-clear-rate:opportunist@0.7:monotonic, first-attempt-clear-rate:opportunist@0.7:risk-1, first-attempt-clear-rate:opportunist@0.7:risk-4, first-attempt-clear-rate:opportunist@0.7:risk-5 |
+| 50 | dominant (expedition-boss): 사망 890/895 (99.4%) | PASS | accuracy-has-effect, betrayal-can-complete, completed-wipe-mean:selective-betrayal@0.4, completed-wipe-mean:selective-betrayal@0.7, completed-wipe-mean:survival@0.4, completed-wipe-mean:survival@0.7, completion-rate:opportunist@0.4, completion-rate:opportunist@0.7, completion-rate:selective-betrayal@0.4, completion-rate:selective-betrayal@0.7, completion-rate:survival@0.4, completion-rate:survival@0.7, first-attempt-clear-rate:opportunist@0.7:monotonic, first-attempt-clear-rate:opportunist@0.7:risk-2, first-attempt-clear-rate:opportunist@0.7:risk-3, first-attempt-clear-rate:opportunist@0.7:risk-5 |
+| 100 | dominant (expedition-boss): 사망 1831/1839 (99.6%) | PASS | accuracy-has-effect, betrayal-can-complete, completed-wipe-mean:selective-betrayal@0.4, completed-wipe-mean:selective-betrayal@0.7, completed-wipe-mean:survival@0.4, completed-wipe-mean:survival@0.7, completion-rate:opportunist@0.4, completion-rate:opportunist@0.7, completion-rate:selective-betrayal@0.4, completion-rate:selective-betrayal@0.7, completion-rate:survival@0.4, completion-rate:survival@0.7, first-attempt-clear-rate:opportunist@0.7:monotonic, first-attempt-clear-rate:opportunist@0.7:risk-2, first-attempt-clear-rate:opportunist@0.7:risk-5 |
+| 200 | dominant (expedition-boss): 사망 3654/3669 (99.6%) | FAIL | accuracy-has-effect, accuracy-interval, betrayal-can-complete, completed-wipe-mean:selective-betrayal@0.4, completed-wipe-mean:selective-betrayal@0.7, completed-wipe-mean:survival@0.4, completed-wipe-mean:survival@0.7, completion-rate:opportunist@0.4, completion-rate:opportunist@0.7, completion-rate:selective-betrayal@0.4, completion-rate:selective-betrayal@0.7, completion-rate:survival@0.4, completion-rate:survival@0.7, first-attempt-clear-rate:opportunist@0.7:monotonic, first-attempt-clear-rate:opportunist@0.7:risk-2, first-attempt-clear-rate:opportunist@0.7:risk-5 |
 
 ## 고정 무결성 gate
 
 | Gate | 결과 | 근거 |
 | --- | --- | --- |
-| accuracy-has-effect | OBSERVE | 최소 실질 차이 0.050; survival: 0.130 (0.079–0.181, 0 제외); opportunist: 0.135 (0.088–0.182, 0 제외); selective-betrayal: 0.000 (0.000–0.000, 0 포함) |
-| accuracy-interval | OBSERVE | survival@0.4 0.3868–0.4092 포함; survival@0.7 0.6756–0.6971 이탈; opportunist@0.4 0.3854–0.4083 포함; opportunist@0.7 0.6902–0.7105 포함; selective-betrayal@0.4 0.3865–0.4111 포함; selective-betrayal@0.7 0.6869–0.7115 포함 |
+| accuracy-has-effect | OBSERVE | 최소 실질 차이 0.050; survival: 0.125 (0.071–0.179, 0 제외); opportunist: 0.210 (0.153–0.267, 0 제외); selective-betrayal: 0.000 (0.000–0.000, 0 포함) |
+| accuracy-interval | OBSERVE | survival@0.4 0.3874–0.4091 포함; survival@0.7 0.6776–0.6994 이탈; opportunist@0.4 0.3886–0.4108 포함; opportunist@0.7 0.6866–0.7072 포함; selective-betrayal@0.4 0.3865–0.4101 포함; selective-betrayal@0.7 0.6881–0.7121 포함 |
 | betrayal-can-complete | OBSERVE | 캠페인 정상 완주 0건 |
 | healing-after-victory | PASS | 위반 0건 |
 | healing-amount-and-hp | PASS | 위반 0건 |
-| healing-battle-use-limit | PASS | 위반 0건 |
 | healing-expedition-use-limit | PASS | 위반 0건 |
 | healing-holder-only | PASS | 위반 0건 |
 | healing-live-target-and-turn | PASS | 위반 0건 |
@@ -63,141 +62,141 @@
 
 | Gate | 결과 | 근거 |
 | --- | --- | --- |
-| boss-axis-guard:opportunist@0.7:risk-1 | PASS | 보스 전 실패 0건, 보스 실패 95건, 평균 보스 진입 HP 0.8290 (보스 전 실패≤보스 실패, HP≥0.70) |
-| boss-axis-guard:opportunist@0.7:risk-2 | PASS | 보스 전 실패 0건, 보스 실패 149건, 평균 보스 진입 HP 0.8905 (보스 전 실패≤보스 실패, HP≥0.70) |
-| boss-axis-guard:opportunist@0.7:risk-3 | PASS | 보스 전 실패 0건, 보스 실패 226건, 평균 보스 진입 HP 0.8001 (보스 전 실패≤보스 실패, HP≥0.70) |
-| boss-axis-guard:opportunist@0.7:risk-4 | PASS | 보스 전 실패 1건, 보스 실패 182건, 평균 보스 진입 HP 0.7711 (보스 전 실패≤보스 실패, HP≥0.70) |
-| boss-axis-guard:opportunist@0.7:risk-5 | PASS | 보스 전 실패 0건, 보스 실패 16건, 평균 보스 진입 HP 0.7735 (보스 전 실패≤보스 실패, HP≥0.70) |
+| boss-axis-guard:opportunist@0.7:risk-1 | PASS | 보스 전 실패 0건, 보스 실패 71건, 평균 보스 진입 HP 0.8294 (보스 전 실패≤보스 실패, HP≥0.70) |
+| boss-axis-guard:opportunist@0.7:risk-2 | PASS | 보스 전 실패 0건, 보스 실패 107건, 평균 보스 진입 HP 0.8918 (보스 전 실패≤보스 실패, HP≥0.70) |
+| boss-axis-guard:opportunist@0.7:risk-3 | PASS | 보스 전 실패 0건, 보스 실패 176건, 평균 보스 진입 HP 0.8177 (보스 전 실패≤보스 실패, HP≥0.70) |
+| boss-axis-guard:opportunist@0.7:risk-4 | PASS | 보스 전 실패 1건, 보스 실패 145건, 평균 보스 진입 HP 0.7786 (보스 전 실패≤보스 실패, HP≥0.70) |
+| boss-axis-guard:opportunist@0.7:risk-5 | PASS | 보스 전 실패 0건, 보스 실패 13건, 평균 보스 진입 HP 0.7968 (보스 전 실패≤보스 실패, HP≥0.70) |
 | completed-wipe-mean:selective-betrayal@0.4 | OBSERVE | 완주 전멸 평균 표본 없음 (기준 3.00–4.00) |
 | completed-wipe-mean:selective-betrayal@0.7 | OBSERVE | 완주 전멸 평균 표본 없음 (기준 3.00–4.00) |
-| completed-wipe-mean:survival@0.4 | OBSERVE | 완주 전멸 평균 4.5000 (기준 3.00–4.00) |
-| completed-wipe-mean:survival@0.7 | OBSERVE | 완주 전멸 평균 4.5357 (기준 2.00–3.00) |
+| completed-wipe-mean:survival@0.4 | OBSERVE | 완주 전멸 평균 5.1667 (기준 3.00–4.00) |
+| completed-wipe-mean:survival@0.7 | OBSERVE | 완주 전멸 평균 4.2258 (기준 2.00–3.00) |
 | completion-rate:opportunist@0.4 | OBSERVE | 완주율 0.0000 (기준 0.20–0.30) |
-| completion-rate:opportunist@0.7 | OBSERVE | 완주율 0.1350 (기준 0.40–0.60) |
+| completion-rate:opportunist@0.7 | OBSERVE | 완주율 0.2100 (기준 0.40–0.60) |
 | completion-rate:selective-betrayal@0.4 | OBSERVE | 완주율 0.0000 (기준 0.05–0.15) |
 | completion-rate:selective-betrayal@0.7 | OBSERVE | 완주율 0.0000 (기준 0.20–0.40) |
-| completion-rate:survival@0.4 | OBSERVE | 완주율 0.0100 (기준 0.30–0.40) |
-| completion-rate:survival@0.7 | OBSERVE | 완주율 0.1400 (기준 0.60–0.80) |
-| first-attempt-clear-rate:opportunist@0.7:monotonic | FAIL | 위험도별 첫 시도 클리어율 0.8301 > 0.8137 > 0.7117 > 0.6039 > 0.7377 (표본 559, 800, 784, 462, 61/최소 30) |
-| first-attempt-clear-rate:opportunist@0.7:risk-1 | FAIL | 첫 시도 클리어율 0.8301 (표본 559/최소 30, 기준 0.85–0.90) |
-| first-attempt-clear-rate:opportunist@0.7:risk-2 | PASS | 첫 시도 클리어율 0.8137 (표본 800/최소 30, 기준 0.78–0.85) |
-| first-attempt-clear-rate:opportunist@0.7:risk-3 | PASS | 첫 시도 클리어율 0.7117 (표본 784/최소 30, 기준 0.70–0.78) |
-| first-attempt-clear-rate:opportunist@0.7:risk-4 | FAIL | 첫 시도 클리어율 0.6039 (표본 462/최소 30, 기준 0.62–0.70) |
-| first-attempt-clear-rate:opportunist@0.7:risk-5 | FAIL | 첫 시도 클리어율 0.7377 (표본 61/최소 30, 기준 0.55–0.65) |
+| completion-rate:survival@0.4 | OBSERVE | 완주율 0.0300 (기준 0.30–0.40) |
+| completion-rate:survival@0.7 | OBSERVE | 완주율 0.1550 (기준 0.60–0.80) |
+| first-attempt-clear-rate:opportunist@0.7:monotonic | FAIL | 위험도별 첫 시도 클리어율 0.8778 > 0.8662 > 0.7800 > 0.6805 > 0.8030 (표본 581, 800, 800, 457, 66/최소 30) |
+| first-attempt-clear-rate:opportunist@0.7:risk-1 | PASS | 첫 시도 클리어율 0.8778 (표본 581/최소 30, 기준 0.85–0.90) |
+| first-attempt-clear-rate:opportunist@0.7:risk-2 | FAIL | 첫 시도 클리어율 0.8662 (표본 800/최소 30, 기준 0.78–0.85) |
+| first-attempt-clear-rate:opportunist@0.7:risk-3 | PASS | 첫 시도 클리어율 0.7800 (표본 800/최소 30, 기준 0.70–0.78) |
+| first-attempt-clear-rate:opportunist@0.7:risk-4 | PASS | 첫 시도 클리어율 0.6805 (표본 457/최소 30, 기준 0.62–0.70) |
+| first-attempt-clear-rate:opportunist@0.7:risk-5 | FAIL | 첫 시도 클리어율 0.8030 (표본 66/최소 30, 기준 0.55–0.65) |
 
 ## 조합별 완주율·완주 전멸 평균·5+ 비율·압력·보스 진입 HP
 
 | 전략 | 정확도 | 표본 | 완주율 | 완주 전멸 평균 | 5+ 전멸 비율 | 평균 최대 압력 | 보스 진입 HP 비율 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| survival | 0.4 | 200 | 0.0100 | 4.5000 | 0.5000 | 1.2517 | 0.8267 |
-| survival | 0.7 | 200 | 0.1400 | 4.5357 | 0.5000 | 0.6950 | 0.8736 |
-| opportunist | 0.4 | 200 | 0.0000 | — | — | 1.2486 | 0.7995 |
-| opportunist | 0.7 | 200 | 0.1350 | 4.7778 | 0.5926 | 0.6997 | 0.8191 |
-| selective-betrayal | 0.4 | 200 | 0.0000 | — | — | 1.5013 | 0.7784 |
-| selective-betrayal | 0.7 | 200 | 0.0000 | — | — | 1.8429 | 0.7543 |
+| survival | 0.4 | 200 | 0.0300 | 5.1667 | 0.6667 | 1.2506 | 0.8330 |
+| survival | 0.7 | 200 | 0.1550 | 4.2258 | 0.4194 | 0.7033 | 0.8791 |
+| opportunist | 0.4 | 200 | 0.0000 | — | — | 1.2606 | 0.8012 |
+| opportunist | 0.7 | 200 | 0.2100 | 4.4524 | 0.5476 | 0.6874 | 0.8280 |
+| selective-betrayal | 0.4 | 200 | 0.0000 | — | — | 1.4846 | 0.7759 |
+| selective-betrayal | 0.7 | 200 | 0.0000 | — | — | 1.8174 | 0.7582 |
 
 ## 캠페인 손실 원인 판정
 
 | 전략 | 정확도 | source | HP 손실 | HP 회복 | 사망 | 중상 시작 | 중상 해제 | 신뢰 0 | 판정 | 근거 |
 | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| survival | 0.4 | expedition-general | 24314 | 5194 | 50 | 0 | 2 | 459 | dominant (expedition-boss) | 사망 5125/5175 (99.0%) |
-| survival | 0.4 | expedition-boss | 185559 | 35 | 5125 | 856 | 12 | 16 | dominant (expedition-boss) | 사망 5125/5175 (99.0%) |
-| survival | 0.4 | world-turn-background | 55545 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 5125/5175 (99.0%) |
-| survival | 0.4 | world-turn-rest | 0 | 88779 | 0 | 0 | 817 | 0 | dominant (expedition-boss) | 사망 5125/5175 (99.0%) |
-| survival | 0.7 | expedition-general | 11490 | 6644 | 15 | 0 | 0 | 70 | dominant (expedition-boss) | 사망 3215/3230 (99.5%) |
-| survival | 0.7 | expedition-boss | 160982 | 45 | 3215 | 968 | 2 | 2 | dominant (expedition-boss) | 사망 3215/3230 (99.5%) |
-| survival | 0.7 | world-turn-background | 64991 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 3215/3230 (99.5%) |
-| survival | 0.7 | world-turn-rest | 0 | 106762 | 0 | 0 | 901 | 0 | dominant (expedition-boss) | 사망 3215/3230 (99.5%) |
-| opportunist | 0.4 | expedition-general | 22765 | 5542 | 74 | 0 | 0 | 463 | dominant (expedition-boss) | 사망 5177/5251 (98.6%) |
-| opportunist | 0.4 | expedition-boss | 174886 | 25 | 5177 | 767 | 16 | 11 | dominant (expedition-boss) | 사망 5177/5251 (98.6%) |
-| opportunist | 0.4 | world-turn-background | 51074 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 5177/5251 (98.6%) |
-| opportunist | 0.4 | world-turn-rest | 0 | 69868 | 0 | 0 | 720 | 0 | dominant (expedition-boss) | 사망 5177/5251 (98.6%) |
-| opportunist | 0.7 | expedition-general | 13451 | 5564 | 27 | 0 | 0 | 76 | dominant (expedition-boss) | 사망 4387/4414 (99.4%) |
-| opportunist | 0.7 | expedition-boss | 176690 | 130 | 4387 | 1051 | 15 | 0 | dominant (expedition-boss) | 사망 4387/4414 (99.4%) |
-| opportunist | 0.7 | world-turn-background | 59634 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 4387/4414 (99.4%) |
-| opportunist | 0.7 | world-turn-rest | 0 | 90076 | 0 | 0 | 993 | 0 | dominant (expedition-boss) | 사망 4387/4414 (99.4%) |
-| selective-betrayal | 0.4 | expedition-general | 27369 | 4074 | 117 | 0 | 1 | 675 | dominant (expedition-boss) | 사망 5261/5378 (97.8%) |
-| selective-betrayal | 0.4 | expedition-boss | 161063 | 20 | 5261 | 583 | 10 | 30 | dominant (expedition-boss) | 사망 5261/5378 (97.8%) |
-| selective-betrayal | 0.4 | world-turn-background | 45293 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 5261/5378 (97.8%) |
-| selective-betrayal | 0.4 | world-turn-rest | 0 | 53327 | 0 | 0 | 557 | 0 | dominant (expedition-boss) | 사망 5261/5378 (97.8%) |
-| selective-betrayal | 0.7 | expedition-general | 31854 | 3062 | 100 | 0 | 0 | 1110 | dominant (expedition-boss) | 사망 5232/5332 (98.1%) |
-| selective-betrayal | 0.7 | expedition-boss | 146546 | 40 | 5232 | 422 | 24 | 35 | dominant (expedition-boss) | 사망 5232/5332 (98.1%) |
-| selective-betrayal | 0.7 | world-turn-background | 37876 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 5232/5332 (98.1%) |
-| selective-betrayal | 0.7 | world-turn-rest | 0 | 37828 | 0 | 0 | 365 | 0 | dominant (expedition-boss) | 사망 5232/5332 (98.1%) |
+| survival | 0.4 | expedition-general | 24478 | 6285 | 42 | 0 | 0 | 485 | dominant (expedition-boss) | 사망 5005/5047 (99.2%) |
+| survival | 0.4 | expedition-boss | 188672 | 86 | 5005 | 879 | 13 | 23 | dominant (expedition-boss) | 사망 5005/5047 (99.2%) |
+| survival | 0.4 | world-turn-background | 59474 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 5005/5047 (99.2%) |
+| survival | 0.4 | world-turn-rest | 0 | 97625 | 0 | 0 | 840 | 0 | dominant (expedition-boss) | 사망 5005/5047 (99.2%) |
+| survival | 0.7 | expedition-general | 10826 | 6973 | 2 | 0 | 0 | 79 | dominant (expedition-boss) | 사망 2555/2557 (99.9%) |
+| survival | 0.7 | expedition-boss | 144368 | 88 | 2555 | 868 | 0 | 4 | dominant (expedition-boss) | 사망 2555/2557 (99.9%) |
+| survival | 0.7 | world-turn-background | 68055 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 2555/2557 (99.9%) |
+| survival | 0.7 | world-turn-rest | 0 | 110266 | 0 | 0 | 801 | 0 | dominant (expedition-boss) | 사망 2555/2557 (99.9%) |
+| opportunist | 0.4 | expedition-general | 23473 | 7172 | 59 | 0 | 1 | 470 | dominant (expedition-boss) | 사망 5118/5177 (98.9%) |
+| opportunist | 0.4 | expedition-boss | 178767 | 45 | 5118 | 854 | 30 | 14 | dominant (expedition-boss) | 사망 5118/5177 (98.9%) |
+| opportunist | 0.4 | world-turn-background | 54715 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 5118/5177 (98.9%) |
+| opportunist | 0.4 | world-turn-rest | 0 | 78129 | 0 | 0 | 798 | 0 | dominant (expedition-boss) | 사망 5118/5177 (98.9%) |
+| opportunist | 0.7 | expedition-general | 12512 | 5880 | 15 | 0 | 0 | 77 | dominant (expedition-boss) | 사망 3654/3669 (99.6%) |
+| opportunist | 0.7 | expedition-boss | 164171 | 184 | 3654 | 1026 | 3 | 2 | dominant (expedition-boss) | 사망 3654/3669 (99.6%) |
+| opportunist | 0.7 | world-turn-background | 63802 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 3654/3669 (99.6%) |
+| opportunist | 0.7 | world-turn-rest | 0 | 98869 | 0 | 0 | 951 | 0 | dominant (expedition-boss) | 사망 3654/3669 (99.6%) |
+| selective-betrayal | 0.4 | expedition-general | 27710 | 5841 | 85 | 0 | 2 | 710 | dominant (expedition-boss) | 사망 5340/5425 (98.4%) |
+| selective-betrayal | 0.4 | expedition-boss | 167763 | 78 | 5340 | 706 | 19 | 19 | dominant (expedition-boss) | 사망 5340/5425 (98.4%) |
+| selective-betrayal | 0.4 | world-turn-background | 48413 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 5340/5425 (98.4%) |
+| selective-betrayal | 0.4 | world-turn-rest | 0 | 60502 | 0 | 0 | 667 | 0 | dominant (expedition-boss) | 사망 5340/5425 (98.4%) |
+| selective-betrayal | 0.7 | expedition-general | 30978 | 4199 | 85 | 0 | 0 | 1113 | dominant (expedition-boss) | 사망 5178/5263 (98.4%) |
+| selective-betrayal | 0.7 | expedition-boss | 149000 | 85 | 5178 | 499 | 30 | 53 | dominant (expedition-boss) | 사망 5178/5263 (98.4%) |
+| selective-betrayal | 0.7 | world-turn-background | 38938 | 0 | 0 | 0 | 0 | 0 | dominant (expedition-boss) | 사망 5178/5263 (98.4%) |
+| selective-betrayal | 0.7 | world-turn-rest | 0 | 41171 | 0 | 0 | 447 | 0 | dominant (expedition-boss) | 사망 5178/5263 (98.4%) |
 
 ## 종료 사유와 최종 풀 상태
 
 | 전략 | 정확도 | 완료 | 풀 소진 | 출전 불가 | 불신 | 고발 | 실행 오류 | 평균 사망 | 평균 생존 | 평균 출전 가능 | 평균 신뢰 0 | 평균 중상 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| survival | 0.4 | 2 | 174 | 24 | 0 | 0 | 0 | 25.8750 | 4.1250 | 3.2800 | 2.3750 | 0.1250 |
-| survival | 0.7 | 28 | 24 | 148 | 0 | 0 | 0 | 16.1500 | 13.8500 | 13.3400 | 0.3600 | 0.3250 |
-| opportunist | 0.4 | 0 | 182 | 17 | 0 | 1 | 0 | 26.2550 | 3.7450 | 2.8750 | 2.3700 | 0.1550 |
-| opportunist | 0.7 | 27 | 86 | 87 | 0 | 0 | 0 | 22.0700 | 7.9300 | 7.6100 | 0.3800 | 0.2150 |
-| selective-betrayal | 0.4 | 0 | 193 | 2 | 0 | 5 | 0 | 26.8900 | 3.1100 | 2.0200 | 3.5250 | 0.0750 |
-| selective-betrayal | 0.7 | 0 | 192 | 0 | 0 | 8 | 0 | 26.6600 | 3.3400 | 1.9600 | 5.7250 | 0.1650 |
+| survival | 0.4 | 6 | 159 | 35 | 0 | 0 | 0 | 25.2350 | 4.7650 | 3.7900 | 2.5400 | 0.1300 |
+| survival | 0.7 | 31 | 6 | 163 | 0 | 0 | 0 | 12.7850 | 17.2150 | 16.6850 | 0.4150 | 0.3350 |
+| opportunist | 0.4 | 0 | 173 | 27 | 0 | 0 | 0 | 25.8850 | 4.1150 | 3.1900 | 2.4200 | 0.1250 |
+| opportunist | 0.7 | 42 | 38 | 120 | 0 | 0 | 0 | 18.3450 | 11.6550 | 11.1150 | 0.3950 | 0.3600 |
+| selective-betrayal | 0.4 | 0 | 194 | 1 | 0 | 5 | 0 | 27.1250 | 2.8750 | 1.7450 | 3.6450 | 0.0900 |
+| selective-betrayal | 0.7 | 0 | 193 | 0 | 0 | 7 | 0 | 26.3150 | 3.6850 | 2.1100 | 5.8300 | 0.1100 |
 
 ## opportunist@0.7 초기 위험도·테마별 첫 시도 손실
 
 | 초기 위험도 | 테마 | source | HP 손실 | HP 회복 | 사망 | 중상 시작 | 중상 해제 | 신뢰 0 |
 | ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | desert | expedition-general | 441 | 464 | 0 | 0 | 0 | 4 |
-| 1 | desert | expedition-boss | 9110 | 10 | 189 | 54 | 0 | 0 |
-| 1 | spider | expedition-general | 1259 | 799 | 2 | 0 | 0 | 5 |
-| 1 | spider | expedition-boss | 17602 | 20 | 394 | 121 | 2 | 0 |
-| 2 | desert | expedition-general | 2062 | 263 | 0 | 0 | 0 | 9 |
-| 2 | desert | expedition-boss | 23049 | 0 | 489 | 111 | 0 | 0 |
-| 2 | graveyard | expedition-general | 733 | 169 | 0 | 0 | 0 | 3 |
-| 2 | graveyard | expedition-boss | 11692 | 0 | 239 | 68 | 0 | 0 |
-| 2 | spider | expedition-general | 701 | 98 | 2 | 0 | 0 | 4 |
-| 2 | spider | expedition-boss | 11296 | 15 | 218 | 57 | 0 | 0 |
-| 3 | desert | expedition-general | 553 | 337 | 0 | 0 | 0 | 8 |
-| 3 | desert | expedition-boss | 10531 | 20 | 247 | 83 | 0 | 0 |
-| 3 | graveyard | expedition-general | 1817 | 542 | 1 | 0 | 0 | 11 |
-| 3 | graveyard | expedition-boss | 22675 | 20 | 640 | 129 | 0 | 0 |
-| 3 | spider | expedition-general | 701 | 282 | 0 | 0 | 0 | 5 |
-| 3 | spider | expedition-boss | 10219 | 5 | 245 | 70 | 0 | 0 |
-| 4 | desert | expedition-general | 1377 | 170 | 6 | 0 | 0 | 3 |
-| 4 | desert | expedition-boss | 8118 | 0 | 267 | 39 | 0 | 0 |
-| 4 | graveyard | expedition-general | 866 | 307 | 4 | 0 | 0 | 4 |
-| 4 | graveyard | expedition-boss | 8786 | 0 | 278 | 35 | 1 | 0 |
-| 4 | spider | expedition-general | 133 | 279 | 0 | 0 | 0 | 2 |
-| 4 | spider | expedition-boss | 8237 | 5 | 219 | 51 | 1 | 0 |
-| 5 | graveyard | expedition-general | 267 | 268 | 2 | 0 | 0 | 1 |
-| 5 | graveyard | expedition-boss | 3017 | 5 | 83 | 22 | 2 | 0 |
+| 1 | desert | expedition-general | 483 | 356 | 0 | 0 | 0 | 3 |
+| 1 | desert | expedition-boss | 8535 | 15 | 150 | 56 | 0 | 0 |
+| 1 | spider | expedition-general | 1002 | 779 | 0 | 0 | 0 | 6 |
+| 1 | spider | expedition-boss | 18105 | 39 | 356 | 120 | 1 | 1 |
+| 2 | desert | expedition-general | 1902 | 248 | 0 | 0 | 0 | 9 |
+| 2 | desert | expedition-boss | 21662 | 25 | 409 | 122 | 0 | 0 |
+| 2 | graveyard | expedition-general | 743 | 194 | 0 | 0 | 0 | 1 |
+| 2 | graveyard | expedition-boss | 10561 | 0 | 169 | 63 | 0 | 0 |
+| 2 | spider | expedition-general | 664 | 144 | 1 | 0 | 0 | 4 |
+| 2 | spider | expedition-boss | 10703 | 22 | 187 | 61 | 0 | 0 |
+| 3 | desert | expedition-general | 421 | 355 | 1 | 0 | 0 | 4 |
+| 3 | desert | expedition-boss | 9814 | 18 | 204 | 59 | 0 | 0 |
+| 3 | graveyard | expedition-general | 1873 | 714 | 1 | 0 | 0 | 15 |
+| 3 | graveyard | expedition-boss | 22462 | 6 | 590 | 125 | 0 | 0 |
+| 3 | spider | expedition-general | 624 | 360 | 0 | 0 | 0 | 7 |
+| 3 | spider | expedition-boss | 9548 | 14 | 196 | 66 | 0 | 0 |
+| 4 | desert | expedition-general | 1417 | 326 | 4 | 0 | 0 | 5 |
+| 4 | desert | expedition-boss | 7739 | 0 | 225 | 47 | 0 | 0 |
+| 4 | graveyard | expedition-general | 970 | 338 | 4 | 0 | 0 | 5 |
+| 4 | graveyard | expedition-boss | 8645 | 8 | 275 | 53 | 0 | 0 |
+| 4 | spider | expedition-general | 160 | 343 | 0 | 0 | 0 | 5 |
+| 4 | spider | expedition-boss | 8141 | 12 | 181 | 56 | 0 | 0 |
+| 5 | graveyard | expedition-general | 233 | 308 | 1 | 0 | 0 | 0 |
+| 5 | graveyard | expedition-boss | 3176 | 0 | 78 | 25 | 0 | 0 |
 
 ## 초기 위험도별 첫 시도 던전 funnel
 
 | 전략 | 정확도 | 초기 위험도 | 첫 시도 표본 | 보스 진입 | 클리어 | 전멸 | 중단 | 보스 전 실패 | 보스 실패 | 클리어율 | 보스 도달률 | 보스 전환율 | 평균 보스 진입 HP 비율 | 평균 보스 진입 생존 인원 | Wilson 95% |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| survival | 0.4 | 1 | 600 | 600 | 500 | 100 | 0 | 0 | 100 | 0.8333 | 1.0000 | 0.8333 | 0.9033 | 2.9917 | 0.8014–0.8610 |
-| survival | 0.4 | 2 | 799 | 799 | 516 | 283 | 0 | 0 | 283 | 0.6458 | 1.0000 | 0.6458 | 0.8561 | 2.9962 | 0.6120–0.6782 |
-| survival | 0.4 | 3 | 757 | 757 | 437 | 320 | 0 | 0 | 320 | 0.5773 | 1.0000 | 0.5773 | 0.8167 | 2.9974 | 0.5418–0.6120 |
-| survival | 0.4 | 4 | 339 | 339 | 131 | 208 | 0 | 0 | 208 | 0.3864 | 1.0000 | 0.3864 | 0.7218 | 2.9440 | 0.3361–0.4393 |
-| survival | 0.4 | 5 | 16 | 16 | 6 | 10 | 0 | 0 | 10 | 0.3750 | 1.0000 | 0.3750 | 0.7024 | 3.0000 | 0.1848–0.6136 |
-| survival | 0.7 | 1 | 600 | 600 | 561 | 39 | 0 | 0 | 39 | 0.9350 | 1.0000 | 0.9350 | 0.9293 | 3.0000 | 0.9124–0.9521 |
-| survival | 0.7 | 2 | 800 | 800 | 676 | 124 | 0 | 0 | 124 | 0.8450 | 1.0000 | 0.8450 | 0.8967 | 3.0000 | 0.8183–0.8684 |
-| survival | 0.7 | 3 | 792 | 792 | 633 | 159 | 0 | 0 | 159 | 0.7992 | 1.0000 | 0.7992 | 0.8564 | 2.9987 | 0.7699–0.8257 |
-| survival | 0.7 | 4 | 401 | 401 | 277 | 124 | 0 | 0 | 124 | 0.6908 | 1.0000 | 0.6908 | 0.8332 | 2.9800 | 0.6439–0.7340 |
-| survival | 0.7 | 5 | 43 | 43 | 36 | 7 | 0 | 0 | 7 | 0.8372 | 1.0000 | 0.8372 | 0.7866 | 2.9767 | 0.7003–0.9188 |
-| opportunist | 0.4 | 1 | 488 | 488 | 371 | 117 | 0 | 0 | 117 | 0.7602 | 1.0000 | 0.7602 | 0.8363 | 2.9898 | 0.7204–0.7960 |
-| opportunist | 0.4 | 2 | 800 | 799 | 532 | 268 | 0 | 1 | 267 | 0.6650 | 0.9988 | 0.6658 | 0.8706 | 2.9850 | 0.6316–0.6968 |
-| opportunist | 0.4 | 3 | 773 | 770 | 418 | 355 | 0 | 3 | 352 | 0.5408 | 0.9961 | 0.5429 | 0.7765 | 2.9909 | 0.5055–0.5756 |
-| opportunist | 0.4 | 4 | 316 | 313 | 117 | 199 | 0 | 3 | 196 | 0.3703 | 0.9905 | 0.3738 | 0.7122 | 2.9712 | 0.3189–0.4248 |
-| opportunist | 0.4 | 5 | 10 | 10 | 3 | 7 | 0 | 0 | 7 | 0.3000 | 1.0000 | 0.3000 | 0.6607 | 3.0000 | 0.1078–0.6032 |
-| opportunist | 0.7 | 1 | 559 | 559 | 464 | 95 | 0 | 0 | 95 | 0.8301 | 1.0000 | 0.8301 | 0.8290 | 2.9964 | 0.7967–0.8589 |
-| opportunist | 0.7 | 2 | 800 | 800 | 651 | 149 | 0 | 0 | 149 | 0.8137 | 1.0000 | 0.8137 | 0.8905 | 2.9975 | 0.7853–0.8392 |
-| opportunist | 0.7 | 3 | 784 | 784 | 558 | 226 | 0 | 0 | 226 | 0.7117 | 1.0000 | 0.7117 | 0.8001 | 2.9987 | 0.6791–0.7423 |
-| opportunist | 0.7 | 4 | 462 | 461 | 279 | 183 | 0 | 1 | 182 | 0.6039 | 0.9978 | 0.6052 | 0.7711 | 2.9848 | 0.5586–0.6475 |
-| opportunist | 0.7 | 5 | 61 | 61 | 45 | 16 | 0 | 0 | 16 | 0.7377 | 1.0000 | 0.7377 | 0.7735 | 2.9672 | 0.6156–0.8316 |
-| selective-betrayal | 0.4 | 1 | 570 | 568 | 374 | 196 | 0 | 2 | 194 | 0.6561 | 0.9965 | 0.6585 | 0.8233 | 2.9965 | 0.6162–0.6940 |
-| selective-betrayal | 0.4 | 2 | 788 | 786 | 378 | 410 | 0 | 2 | 408 | 0.4797 | 0.9975 | 0.4809 | 0.8034 | 2.9873 | 0.4450–0.5146 |
-| selective-betrayal | 0.4 | 3 | 683 | 677 | 250 | 433 | 0 | 6 | 427 | 0.3660 | 0.9912 | 0.3693 | 0.7462 | 2.9527 | 0.3307–0.4028 |
-| selective-betrayal | 0.4 | 4 | 68 | 66 | 18 | 50 | 0 | 2 | 48 | 0.2647 | 0.9706 | 0.2727 | 0.6677 | 2.9394 | 0.1745–0.3801 |
-| selective-betrayal | 0.4 | 5 | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0.0000 | 1.0000 | 0.0000 | 0.7143 | 3.0000 | 0.0000–0.7935 |
-| selective-betrayal | 0.7 | 1 | 543 | 541 | 190 | 353 | 0 | 2 | 351 | 0.3499 | 0.9963 | 0.3512 | 0.7716 | 2.9760 | 0.3110–0.3910 |
-| selective-betrayal | 0.7 | 2 | 770 | 764 | 203 | 567 | 0 | 6 | 561 | 0.2636 | 0.9922 | 0.2657 | 0.7496 | 2.9699 | 0.2337–0.2959 |
-| selective-betrayal | 0.7 | 3 | 429 | 426 | 201 | 228 | 0 | 3 | 225 | 0.4685 | 0.9930 | 0.4718 | 0.7352 | 2.9812 | 0.4218–0.5158 |
-| selective-betrayal | 0.7 | 4 | 4 | 4 | 3 | 1 | 0 | 0 | 1 | 0.7500 | 1.0000 | 0.7500 | 0.6239 | 3.0000 | 0.3006–0.9544 |
+| survival | 0.4 | 1 | 600 | 600 | 502 | 98 | 0 | 0 | 98 | 0.8367 | 1.0000 | 0.8367 | 0.9047 | 2.9967 | 0.8050–0.8641 |
+| survival | 0.4 | 2 | 799 | 799 | 564 | 235 | 0 | 0 | 235 | 0.7059 | 1.0000 | 0.7059 | 0.8661 | 2.9962 | 0.6734–0.7364 |
+| survival | 0.4 | 3 | 776 | 776 | 471 | 305 | 0 | 0 | 305 | 0.6070 | 1.0000 | 0.6070 | 0.8248 | 2.9910 | 0.5721–0.6407 |
+| survival | 0.4 | 4 | 429 | 426 | 212 | 217 | 0 | 3 | 214 | 0.4942 | 0.9930 | 0.4977 | 0.7580 | 2.9765 | 0.4471–0.5413 |
+| survival | 0.4 | 5 | 34 | 34 | 12 | 22 | 0 | 0 | 22 | 0.3529 | 1.0000 | 0.3529 | 0.7223 | 2.9706 | 0.2149–0.5209 |
+| survival | 0.7 | 1 | 600 | 600 | 575 | 25 | 0 | 0 | 25 | 0.9583 | 1.0000 | 0.9583 | 0.9310 | 3.0000 | 0.9392–0.9716 |
+| survival | 0.7 | 2 | 800 | 800 | 706 | 94 | 0 | 0 | 94 | 0.8825 | 1.0000 | 0.8825 | 0.8944 | 3.0000 | 0.8583–0.9030 |
+| survival | 0.7 | 3 | 796 | 796 | 674 | 122 | 0 | 0 | 122 | 0.8467 | 1.0000 | 0.8467 | 0.8605 | 2.9987 | 0.8200–0.8701 |
+| survival | 0.7 | 4 | 399 | 399 | 300 | 99 | 0 | 0 | 99 | 0.7519 | 1.0000 | 0.7519 | 0.8315 | 2.9975 | 0.7072–0.7917 |
+| survival | 0.7 | 5 | 34 | 34 | 27 | 7 | 0 | 0 | 7 | 0.7941 | 1.0000 | 0.7941 | 0.8022 | 3.0000 | 0.6320–0.8965 |
+| opportunist | 0.4 | 1 | 498 | 498 | 385 | 113 | 0 | 0 | 113 | 0.7731 | 1.0000 | 0.7731 | 0.8228 | 3.0000 | 0.7343–0.8077 |
+| opportunist | 0.4 | 2 | 800 | 799 | 582 | 218 | 0 | 1 | 217 | 0.7275 | 0.9988 | 0.7284 | 0.8728 | 2.9937 | 0.6956–0.7572 |
+| opportunist | 0.4 | 3 | 773 | 773 | 445 | 328 | 0 | 0 | 328 | 0.5757 | 1.0000 | 0.5757 | 0.7860 | 2.9884 | 0.5405–0.6101 |
+| opportunist | 0.4 | 4 | 416 | 413 | 175 | 241 | 0 | 3 | 238 | 0.4207 | 0.9928 | 0.4237 | 0.7449 | 2.9734 | 0.3742–0.4686 |
+| opportunist | 0.4 | 5 | 30 | 30 | 9 | 21 | 0 | 0 | 21 | 0.3000 | 1.0000 | 0.3000 | 0.6000 | 3.0000 | 0.1666–0.4788 |
+| opportunist | 0.7 | 1 | 581 | 581 | 510 | 71 | 0 | 0 | 71 | 0.8778 | 1.0000 | 0.8778 | 0.8294 | 3.0000 | 0.8487–0.9020 |
+| opportunist | 0.7 | 2 | 800 | 800 | 693 | 107 | 0 | 0 | 107 | 0.8662 | 1.0000 | 0.8662 | 0.8918 | 2.9987 | 0.8409–0.8881 |
+| opportunist | 0.7 | 3 | 800 | 800 | 624 | 176 | 0 | 0 | 176 | 0.7800 | 1.0000 | 0.7800 | 0.8177 | 2.9975 | 0.7500–0.8073 |
+| opportunist | 0.7 | 4 | 457 | 456 | 311 | 146 | 0 | 1 | 145 | 0.6805 | 0.9978 | 0.6820 | 0.7786 | 2.9890 | 0.6364–0.7216 |
+| opportunist | 0.7 | 5 | 66 | 66 | 53 | 13 | 0 | 0 | 13 | 0.8030 | 1.0000 | 0.8030 | 0.7968 | 2.9848 | 0.6916–0.8811 |
+| selective-betrayal | 0.4 | 1 | 582 | 582 | 402 | 180 | 0 | 0 | 180 | 0.6907 | 1.0000 | 0.6907 | 0.8224 | 2.9966 | 0.6520–0.7269 |
+| selective-betrayal | 0.4 | 2 | 785 | 782 | 411 | 374 | 0 | 3 | 371 | 0.5236 | 0.9962 | 0.5256 | 0.8119 | 2.9949 | 0.4886–0.5583 |
+| selective-betrayal | 0.4 | 3 | 713 | 705 | 296 | 417 | 0 | 8 | 409 | 0.4151 | 0.9888 | 0.4199 | 0.7390 | 2.9773 | 0.3795–0.4517 |
+| selective-betrayal | 0.4 | 4 | 166 | 165 | 67 | 99 | 0 | 1 | 98 | 0.4036 | 0.9940 | 0.4061 | 0.7015 | 2.9515 | 0.3320–0.4796 |
+| selective-betrayal | 0.4 | 5 | 2 | 2 | 0 | 2 | 0 | 0 | 2 | 0.0000 | 1.0000 | 0.0000 | 0.6221 | 3.0000 | 0.0000–0.6576 |
+| selective-betrayal | 0.7 | 1 | 554 | 553 | 210 | 344 | 0 | 1 | 343 | 0.3791 | 0.9982 | 0.3797 | 0.7831 | 2.9729 | 0.3396–0.4202 |
+| selective-betrayal | 0.7 | 2 | 769 | 766 | 228 | 541 | 0 | 3 | 538 | 0.2965 | 0.9961 | 0.2977 | 0.7556 | 2.9648 | 0.2653–0.3297 |
+| selective-betrayal | 0.7 | 3 | 481 | 481 | 251 | 230 | 0 | 0 | 230 | 0.5218 | 1.0000 | 0.5218 | 0.7330 | 2.9771 | 0.4772–0.5661 |
+| selective-betrayal | 0.7 | 4 | 12 | 12 | 5 | 7 | 0 | 0 | 7 | 0.4167 | 1.0000 | 0.4167 | 0.6165 | 3.0000 | 0.1933–0.6805 |
 | selective-betrayal | 0.7 | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | — | — | — | — | — |
 
 ## 현재 위험도별 전체 시도와 최종 통과
@@ -206,35 +205,35 @@
 
 | 전략 | 정확도 | 현재 위험도 | 전체 시도 표본 | 보스 진입 | 클리어 | 전멸 | 중단 | 보스 전 실패 | 보스 실패 | 클리어율 | 보스 도달률 | 보스 전환율 | 평균 보스 진입 HP 비율 | 평균 보스 진입 생존 인원 | Wilson 95% |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| survival | 0.4 | 1 | 600 | 600 | 500 | 100 | 0 | 0 | 100 | 0.8333 | 1.0000 | 0.8333 | 0.9033 | 2.9917 | 0.8014–0.8610 |
-| survival | 0.4 | 2 | 897 | 897 | 596 | 301 | 0 | 0 | 301 | 0.6644 | 1.0000 | 0.6644 | 0.8573 | 2.9967 | 0.6329–0.6946 |
-| survival | 0.4 | 3 | 1038 | 1037 | 603 | 435 | 0 | 1 | 434 | 0.5809 | 0.9990 | 0.5815 | 0.8087 | 2.9923 | 0.5507–0.6106 |
-| survival | 0.4 | 4 | 565 | 564 | 253 | 312 | 0 | 1 | 311 | 0.4478 | 0.9982 | 0.4486 | 0.7435 | 2.9574 | 0.4073–0.4890 |
-| survival | 0.4 | 5 | 62 | 62 | 23 | 39 | 0 | 0 | 39 | 0.3710 | 1.0000 | 0.3710 | 0.6991 | 2.9355 | 0.2616–0.4954 |
-| survival | 0.7 | 1 | 600 | 600 | 561 | 39 | 0 | 0 | 39 | 0.9350 | 1.0000 | 0.9350 | 0.9293 | 3.0000 | 0.9124–0.9521 |
-| survival | 0.7 | 2 | 839 | 839 | 710 | 129 | 0 | 0 | 129 | 0.8462 | 1.0000 | 0.8462 | 0.8960 | 3.0000 | 0.8203–0.8691 |
-| survival | 0.7 | 3 | 918 | 918 | 743 | 175 | 0 | 0 | 175 | 0.8094 | 1.0000 | 0.8094 | 0.8563 | 2.9978 | 0.7827–0.8335 |
-| survival | 0.7 | 4 | 555 | 555 | 401 | 154 | 0 | 0 | 154 | 0.7225 | 1.0000 | 0.7225 | 0.8315 | 2.9856 | 0.6838–0.7581 |
-| survival | 0.7 | 5 | 134 | 134 | 92 | 42 | 0 | 0 | 42 | 0.6866 | 1.0000 | 0.6866 | 0.7776 | 2.9627 | 0.6038–0.7590 |
-| opportunist | 0.4 | 1 | 488 | 488 | 371 | 117 | 0 | 0 | 117 | 0.7602 | 1.0000 | 0.7602 | 0.8363 | 2.9898 | 0.7204–0.7960 |
-| opportunist | 0.4 | 2 | 898 | 897 | 609 | 289 | 0 | 1 | 288 | 0.6782 | 0.9989 | 0.6789 | 0.8671 | 2.9866 | 0.6469–0.7079 |
-| opportunist | 0.4 | 3 | 1050 | 1046 | 573 | 477 | 0 | 4 | 473 | 0.5457 | 0.9962 | 0.5478 | 0.7701 | 2.9876 | 0.5155–0.5756 |
-| opportunist | 0.4 | 4 | 545 | 542 | 217 | 328 | 0 | 3 | 325 | 0.3982 | 0.9945 | 0.4004 | 0.7204 | 2.9686 | 0.3579–0.4398 |
-| opportunist | 0.4 | 5 | 36 | 36 | 13 | 23 | 0 | 0 | 23 | 0.3611 | 1.0000 | 0.3611 | 0.6568 | 2.9167 | 0.2248–0.5242 |
-| opportunist | 0.7 | 1 | 559 | 559 | 464 | 95 | 0 | 0 | 95 | 0.8301 | 1.0000 | 0.8301 | 0.8290 | 2.9964 | 0.7967–0.8589 |
-| opportunist | 0.7 | 2 | 878 | 878 | 719 | 159 | 0 | 0 | 159 | 0.8189 | 1.0000 | 0.8189 | 0.8854 | 2.9966 | 0.7921–0.8430 |
-| opportunist | 0.7 | 3 | 936 | 936 | 673 | 263 | 0 | 0 | 263 | 0.7190 | 1.0000 | 0.7190 | 0.7981 | 2.9957 | 0.6894–0.7469 |
-| opportunist | 0.7 | 4 | 690 | 689 | 432 | 258 | 0 | 1 | 257 | 0.6261 | 0.9986 | 0.6270 | 0.7759 | 2.9869 | 0.5894–0.6614 |
-| opportunist | 0.7 | 5 | 224 | 224 | 140 | 84 | 0 | 0 | 84 | 0.6250 | 1.0000 | 0.6250 | 0.7553 | 2.9732 | 0.5600–0.6858 |
-| selective-betrayal | 0.4 | 1 | 570 | 568 | 374 | 196 | 0 | 2 | 194 | 0.6561 | 0.9965 | 0.6585 | 0.8233 | 2.9965 | 0.6162–0.6940 |
-| selective-betrayal | 0.4 | 2 | 964 | 962 | 486 | 478 | 0 | 2 | 476 | 0.5041 | 0.9979 | 0.5052 | 0.8020 | 2.9865 | 0.4726–0.5356 |
-| selective-betrayal | 0.4 | 3 | 1059 | 1050 | 430 | 629 | 0 | 9 | 620 | 0.4060 | 0.9915 | 0.4095 | 0.7439 | 2.9562 | 0.3769–0.4359 |
-| selective-betrayal | 0.4 | 4 | 122 | 118 | 38 | 84 | 0 | 4 | 80 | 0.3115 | 0.9672 | 0.3220 | 0.6797 | 2.9576 | 0.2361–0.3983 |
-| selective-betrayal | 0.4 | 5 | 2 | 2 | 0 | 2 | 0 | 0 | 2 | 0.0000 | 1.0000 | 0.0000 | 0.6742 | 3.0000 | 0.0000–0.6576 |
-| selective-betrayal | 0.7 | 1 | 543 | 541 | 190 | 353 | 0 | 2 | 351 | 0.3499 | 0.9963 | 0.3512 | 0.7716 | 2.9760 | 0.3110–0.3910 |
-| selective-betrayal | 0.7 | 2 | 1085 | 1079 | 333 | 752 | 0 | 6 | 746 | 0.3069 | 0.9945 | 0.3086 | 0.7557 | 2.9731 | 0.2802–0.3350 |
-| selective-betrayal | 0.7 | 3 | 811 | 806 | 419 | 392 | 0 | 5 | 387 | 0.5166 | 0.9938 | 0.5199 | 0.7427 | 2.9777 | 0.4823–0.5509 |
-| selective-betrayal | 0.7 | 4 | 11 | 11 | 6 | 5 | 0 | 0 | 5 | 0.5455 | 1.0000 | 0.5455 | 0.6208 | 2.9091 | 0.2801–0.7873 |
+| survival | 0.4 | 1 | 600 | 600 | 502 | 98 | 0 | 0 | 98 | 0.8367 | 1.0000 | 0.8367 | 0.9047 | 2.9967 | 0.8050–0.8641 |
+| survival | 0.4 | 2 | 896 | 895 | 640 | 256 | 0 | 1 | 255 | 0.7143 | 0.9989 | 0.7151 | 0.8659 | 2.9955 | 0.6838–0.7429 |
+| survival | 0.4 | 3 | 1017 | 1017 | 631 | 386 | 0 | 0 | 386 | 0.6205 | 1.0000 | 0.6205 | 0.8208 | 2.9921 | 0.5902–0.6498 |
+| survival | 0.4 | 4 | 696 | 693 | 357 | 339 | 0 | 3 | 336 | 0.5129 | 0.9957 | 0.5152 | 0.7658 | 2.9812 | 0.4758–0.5499 |
+| survival | 0.4 | 5 | 123 | 123 | 54 | 69 | 0 | 0 | 69 | 0.4390 | 1.0000 | 0.4390 | 0.7250 | 2.9756 | 0.3545–0.5273 |
+| survival | 0.7 | 1 | 600 | 600 | 575 | 25 | 0 | 0 | 25 | 0.9583 | 1.0000 | 0.9583 | 0.9310 | 3.0000 | 0.9392–0.9716 |
+| survival | 0.7 | 2 | 825 | 825 | 729 | 96 | 0 | 0 | 96 | 0.8836 | 1.0000 | 0.8836 | 0.8940 | 3.0000 | 0.8600–0.9038 |
+| survival | 0.7 | 3 | 891 | 891 | 761 | 130 | 0 | 0 | 130 | 0.8541 | 1.0000 | 0.8541 | 0.8629 | 2.9989 | 0.8294–0.8758 |
+| survival | 0.7 | 4 | 513 | 513 | 403 | 110 | 0 | 0 | 110 | 0.7856 | 1.0000 | 0.7856 | 0.8373 | 2.9981 | 0.7480–0.8189 |
+| survival | 0.7 | 5 | 107 | 107 | 80 | 27 | 0 | 0 | 27 | 0.7477 | 1.0000 | 0.7477 | 0.8076 | 3.0000 | 0.6578–0.8204 |
+| opportunist | 0.4 | 1 | 498 | 498 | 385 | 113 | 0 | 0 | 113 | 0.7731 | 1.0000 | 0.7731 | 0.8228 | 3.0000 | 0.7343–0.8077 |
+| opportunist | 0.4 | 2 | 890 | 889 | 654 | 236 | 0 | 1 | 235 | 0.7348 | 0.9989 | 0.7357 | 0.8686 | 2.9944 | 0.7049–0.7628 |
+| opportunist | 0.4 | 3 | 998 | 997 | 589 | 409 | 0 | 1 | 408 | 0.5902 | 0.9990 | 0.5908 | 0.7844 | 2.9890 | 0.5594–0.6203 |
+| opportunist | 0.4 | 4 | 674 | 671 | 295 | 379 | 0 | 3 | 376 | 0.4377 | 0.9955 | 0.4396 | 0.7463 | 2.9762 | 0.4007–0.4754 |
+| opportunist | 0.4 | 5 | 106 | 104 | 33 | 73 | 0 | 2 | 71 | 0.3113 | 0.9811 | 0.3173 | 0.6373 | 2.9423 | 0.2311–0.4048 |
+| opportunist | 0.7 | 1 | 581 | 581 | 510 | 71 | 0 | 0 | 71 | 0.8778 | 1.0000 | 0.8778 | 0.8294 | 3.0000 | 0.8487–0.9020 |
+| opportunist | 0.7 | 2 | 868 | 868 | 752 | 116 | 0 | 0 | 116 | 0.8664 | 1.0000 | 0.8664 | 0.8860 | 2.9988 | 0.8421–0.8874 |
+| opportunist | 0.7 | 3 | 915 | 915 | 722 | 193 | 0 | 0 | 193 | 0.7891 | 1.0000 | 0.7891 | 0.8150 | 2.9967 | 0.7615–0.8143 |
+| opportunist | 0.7 | 4 | 627 | 626 | 433 | 194 | 0 | 1 | 193 | 0.6906 | 0.9984 | 0.6917 | 0.7798 | 2.9904 | 0.6533–0.7255 |
+| opportunist | 0.7 | 5 | 214 | 214 | 152 | 62 | 0 | 0 | 62 | 0.7103 | 1.0000 | 0.7103 | 0.7855 | 2.9907 | 0.6462–0.7669 |
+| selective-betrayal | 0.4 | 1 | 582 | 582 | 402 | 180 | 0 | 0 | 180 | 0.6907 | 1.0000 | 0.6907 | 0.8224 | 2.9966 | 0.6520–0.7269 |
+| selective-betrayal | 0.4 | 2 | 941 | 938 | 508 | 433 | 0 | 3 | 430 | 0.5399 | 0.9968 | 0.5416 | 0.8080 | 2.9936 | 0.5079–0.5715 |
+| selective-betrayal | 0.4 | 3 | 1078 | 1069 | 504 | 574 | 0 | 9 | 565 | 0.4675 | 0.9917 | 0.4715 | 0.7438 | 2.9785 | 0.4379–0.4974 |
+| selective-betrayal | 0.4 | 4 | 307 | 306 | 130 | 177 | 0 | 1 | 176 | 0.4235 | 0.9967 | 0.4248 | 0.7044 | 2.9510 | 0.3695–0.4793 |
+| selective-betrayal | 0.4 | 5 | 8 | 8 | 3 | 5 | 0 | 0 | 5 | 0.3750 | 1.0000 | 0.3750 | 0.6563 | 3.0000 | 0.1368–0.6943 |
+| selective-betrayal | 0.7 | 1 | 554 | 553 | 210 | 344 | 0 | 1 | 343 | 0.3791 | 0.9982 | 0.3797 | 0.7831 | 2.9729 | 0.3396–0.4202 |
+| selective-betrayal | 0.7 | 2 | 1080 | 1077 | 356 | 724 | 0 | 3 | 721 | 0.3296 | 0.9972 | 0.3305 | 0.7601 | 2.9703 | 0.3022–0.3582 |
+| selective-betrayal | 0.7 | 3 | 889 | 889 | 515 | 374 | 0 | 0 | 374 | 0.5793 | 1.0000 | 0.5793 | 0.7439 | 2.9708 | 0.5466–0.6113 |
+| selective-betrayal | 0.7 | 4 | 23 | 23 | 9 | 14 | 0 | 0 | 14 | 0.3913 | 1.0000 | 0.3913 | 0.6273 | 3.0000 | 0.2216–0.5921 |
 | selective-betrayal | 0.7 | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | — | — | — | — | — |
 
 ### 초기 위험도별 최종 통과
@@ -242,208 +241,209 @@
 | 전략 | 정확도 | 초기 위험도 | 시도 던전 | 최종 통과 던전 | 최종 통과율 | Wilson 95% |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | survival | 0.4 | 1 | 600 | 592 | 0.9867 | 0.9739–0.9932 |
-| survival | 0.4 | 2 | 799 | 694 | 0.8686 | 0.8434–0.8903 |
-| survival | 0.4 | 3 | 757 | 536 | 0.7081 | 0.6747–0.7393 |
-| survival | 0.4 | 4 | 339 | 146 | 0.4307 | 0.3790–0.4839 |
-| survival | 0.4 | 5 | 16 | 7 | 0.4375 | 0.2310–0.6682 |
-| survival | 0.7 | 1 | 600 | 599 | 0.9983 | 0.9906–0.9997 |
-| survival | 0.7 | 2 | 800 | 794 | 0.9925 | 0.9837–0.9966 |
-| survival | 0.7 | 3 | 792 | 757 | 0.9558 | 0.9392–0.9681 |
-| survival | 0.7 | 4 | 401 | 320 | 0.7980 | 0.7560–0.8344 |
-| survival | 0.7 | 5 | 43 | 37 | 0.8605 | 0.7274–0.9344 |
-| opportunist | 0.4 | 1 | 488 | 460 | 0.9426 | 0.9183–0.9600 |
-| opportunist | 0.4 | 2 | 800 | 700 | 0.8750 | 0.8503–0.8961 |
-| opportunist | 0.4 | 3 | 773 | 497 | 0.6429 | 0.6085–0.6759 |
-| opportunist | 0.4 | 4 | 316 | 121 | 0.3829 | 0.3310–0.4376 |
-| opportunist | 0.4 | 5 | 10 | 5 | 0.5000 | 0.2366–0.7634 |
-| opportunist | 0.7 | 1 | 559 | 537 | 0.9606 | 0.9411–0.9739 |
-| opportunist | 0.7 | 2 | 800 | 786 | 0.9825 | 0.9708–0.9895 |
-| opportunist | 0.7 | 3 | 784 | 711 | 0.9069 | 0.8845–0.9253 |
-| opportunist | 0.7 | 4 | 462 | 343 | 0.7424 | 0.7007–0.7802 |
-| opportunist | 0.7 | 5 | 61 | 51 | 0.8361 | 0.7239–0.9084 |
-| selective-betrayal | 0.4 | 1 | 570 | 511 | 0.8965 | 0.8688–0.9189 |
-| selective-betrayal | 0.4 | 2 | 788 | 535 | 0.6789 | 0.6455–0.7106 |
-| selective-betrayal | 0.4 | 3 | 683 | 264 | 0.3865 | 0.3507–0.4236 |
-| selective-betrayal | 0.4 | 4 | 68 | 18 | 0.2647 | 0.1745–0.3801 |
-| selective-betrayal | 0.4 | 5 | 1 | 0 | 0.0000 | 0.0000–0.7935 |
-| selective-betrayal | 0.7 | 1 | 543 | 369 | 0.6796 | 0.6392–0.7174 |
-| selective-betrayal | 0.7 | 2 | 770 | 372 | 0.4831 | 0.4480–0.5184 |
-| selective-betrayal | 0.7 | 3 | 429 | 204 | 0.4755 | 0.4287–0.5228 |
-| selective-betrayal | 0.7 | 4 | 4 | 3 | 0.7500 | 0.3006–0.9544 |
+| survival | 0.4 | 2 | 799 | 729 | 0.9124 | 0.8908–0.9301 |
+| survival | 0.4 | 3 | 776 | 610 | 0.7861 | 0.7559–0.8135 |
+| survival | 0.4 | 4 | 429 | 236 | 0.5501 | 0.5028–0.5965 |
+| survival | 0.4 | 5 | 34 | 17 | 0.5000 | 0.3407–0.6593 |
+| survival | 0.7 | 1 | 600 | 600 | 1.0000 | 0.9936–1.0000 |
+| survival | 0.7 | 2 | 800 | 798 | 0.9975 | 0.9909–0.9993 |
+| survival | 0.7 | 3 | 796 | 778 | 0.9774 | 0.9645–0.9856 |
+| survival | 0.7 | 4 | 399 | 338 | 0.8471 | 0.8085–0.8791 |
+| survival | 0.7 | 5 | 34 | 34 | 1.0000 | 0.8985–1.0000 |
+| opportunist | 0.4 | 1 | 498 | 469 | 0.9418 | 0.9176–0.9592 |
+| opportunist | 0.4 | 2 | 800 | 729 | 0.9113 | 0.8895–0.9290 |
+| opportunist | 0.4 | 3 | 773 | 554 | 0.7167 | 0.6839–0.7473 |
+| opportunist | 0.4 | 4 | 416 | 193 | 0.4639 | 0.4166–0.5120 |
+| opportunist | 0.4 | 5 | 30 | 11 | 0.3667 | 0.2187–0.5449 |
+| opportunist | 0.7 | 1 | 581 | 577 | 0.9931 | 0.9824–0.9973 |
+| opportunist | 0.7 | 2 | 800 | 793 | 0.9912 | 0.9820–0.9958 |
+| opportunist | 0.7 | 3 | 800 | 759 | 0.9487 | 0.9312–0.9620 |
+| opportunist | 0.7 | 4 | 457 | 379 | 0.8293 | 0.7921–0.8610 |
+| opportunist | 0.7 | 5 | 66 | 61 | 0.9242 | 0.8346–0.9672 |
+| selective-betrayal | 0.4 | 1 | 582 | 526 | 0.9038 | 0.8771–0.9252 |
+| selective-betrayal | 0.4 | 2 | 785 | 603 | 0.7682 | 0.7374–0.7963 |
+| selective-betrayal | 0.4 | 3 | 713 | 348 | 0.4881 | 0.4516–0.5247 |
+| selective-betrayal | 0.4 | 4 | 166 | 70 | 0.4217 | 0.3492–0.4977 |
+| selective-betrayal | 0.4 | 5 | 2 | 0 | 0.0000 | 0.0000–0.6576 |
+| selective-betrayal | 0.7 | 1 | 554 | 409 | 0.7383 | 0.7001–0.7731 |
+| selective-betrayal | 0.7 | 2 | 769 | 422 | 0.5488 | 0.5134–0.5836 |
+| selective-betrayal | 0.7 | 3 | 481 | 254 | 0.5281 | 0.4834–0.5723 |
+| selective-betrayal | 0.7 | 4 | 12 | 5 | 0.4167 | 0.1933–0.6805 |
 | selective-betrayal | 0.7 | 5 | 0 | 0 | — | — |
 
 ## 초기 위험도·테마별 첫 시도 funnel
 
 | 전략 | 정확도 | 초기 위험도 | 테마 | 첫 시도 표본 | 보스 진입 | 클리어 | 전멸 | 중단 | 보스 전 실패 | 보스 실패 | 클리어율 | 보스 도달률 | 보스 전환율 | 평균 보스 진입 HP 비율 | 평균 보스 진입 생존 인원 | Wilson 95% |
 | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| survival | 0.4 | 1 | desert | 200 | 200 | 165 | 35 | 0 | 0 | 35 | 0.8250 | 1.0000 | 0.8250 | 0.9026 | 2.9950 | 0.7664–0.8714 |
-| survival | 0.4 | 1 | spider | 400 | 400 | 335 | 65 | 0 | 0 | 65 | 0.8375 | 1.0000 | 0.8375 | 0.9036 | 2.9900 | 0.7982–0.8704 |
-| survival | 0.4 | 2 | desert | 399 | 399 | 255 | 144 | 0 | 0 | 144 | 0.6391 | 1.0000 | 0.6391 | 0.8435 | 2.9975 | 0.5909–0.6847 |
-| survival | 0.4 | 2 | graveyard | 200 | 200 | 137 | 63 | 0 | 0 | 63 | 0.6850 | 1.0000 | 0.6850 | 0.8673 | 3.0000 | 0.6177–0.7454 |
-| survival | 0.4 | 2 | spider | 200 | 200 | 124 | 76 | 0 | 0 | 76 | 0.6200 | 1.0000 | 0.6200 | 0.8701 | 2.9900 | 0.5511–0.6844 |
-| survival | 0.4 | 3 | desert | 187 | 187 | 119 | 68 | 0 | 0 | 68 | 0.6364 | 1.0000 | 0.6364 | 0.8552 | 3.0000 | 0.5653–0.7019 |
-| survival | 0.4 | 3 | graveyard | 379 | 379 | 198 | 181 | 0 | 0 | 181 | 0.5224 | 1.0000 | 0.5224 | 0.7819 | 2.9974 | 0.4722–0.5722 |
-| survival | 0.4 | 3 | spider | 191 | 191 | 120 | 71 | 0 | 0 | 71 | 0.6283 | 1.0000 | 0.6283 | 0.8482 | 2.9948 | 0.5578–0.6936 |
-| survival | 0.4 | 4 | desert | 116 | 116 | 36 | 80 | 0 | 0 | 80 | 0.3103 | 1.0000 | 0.3103 | 0.6303 | 2.8879 | 0.2334–0.3995 |
-| survival | 0.4 | 4 | graveyard | 110 | 110 | 36 | 74 | 0 | 0 | 74 | 0.3273 | 1.0000 | 0.3273 | 0.7087 | 2.9455 | 0.2467–0.4195 |
-| survival | 0.4 | 4 | spider | 113 | 113 | 59 | 54 | 0 | 0 | 54 | 0.5221 | 1.0000 | 0.5221 | 0.8284 | 3.0000 | 0.4308–0.6120 |
-| survival | 0.4 | 5 | graveyard | 16 | 16 | 6 | 10 | 0 | 0 | 10 | 0.3750 | 1.0000 | 0.3750 | 0.7024 | 3.0000 | 0.1848–0.6136 |
-| survival | 0.7 | 1 | desert | 200 | 200 | 188 | 12 | 0 | 0 | 12 | 0.9400 | 1.0000 | 0.9400 | 0.9385 | 3.0000 | 0.8981–0.9653 |
-| survival | 0.7 | 1 | spider | 400 | 400 | 373 | 27 | 0 | 0 | 27 | 0.9325 | 1.0000 | 0.9325 | 0.9247 | 3.0000 | 0.9036–0.9532 |
-| survival | 0.7 | 2 | desert | 400 | 400 | 333 | 67 | 0 | 0 | 67 | 0.8325 | 1.0000 | 0.8325 | 0.8926 | 3.0000 | 0.7928–0.8659 |
-| survival | 0.7 | 2 | graveyard | 200 | 200 | 169 | 31 | 0 | 0 | 31 | 0.8450 | 1.0000 | 0.8450 | 0.8964 | 3.0000 | 0.7884–0.8886 |
-| survival | 0.7 | 2 | spider | 200 | 200 | 174 | 26 | 0 | 0 | 26 | 0.8700 | 1.0000 | 0.8700 | 0.9051 | 3.0000 | 0.8163–0.9097 |
-| survival | 0.7 | 3 | desert | 198 | 198 | 170 | 28 | 0 | 0 | 28 | 0.8586 | 1.0000 | 0.8586 | 0.8713 | 3.0000 | 0.8032–0.9003 |
-| survival | 0.7 | 3 | graveyard | 396 | 396 | 295 | 101 | 0 | 0 | 101 | 0.7449 | 1.0000 | 0.7449 | 0.8445 | 2.9975 | 0.6998–0.7854 |
-| survival | 0.7 | 3 | spider | 198 | 198 | 168 | 30 | 0 | 0 | 30 | 0.8485 | 1.0000 | 0.8485 | 0.8650 | 3.0000 | 0.7919–0.8918 |
-| survival | 0.7 | 4 | desert | 134 | 134 | 88 | 46 | 0 | 0 | 46 | 0.6567 | 1.0000 | 0.6567 | 0.7969 | 2.9478 | 0.5730–0.7317 |
-| survival | 0.7 | 4 | graveyard | 133 | 133 | 83 | 50 | 0 | 0 | 50 | 0.6241 | 1.0000 | 0.6241 | 0.8308 | 2.9925 | 0.5393–0.7018 |
-| survival | 0.7 | 4 | spider | 134 | 134 | 106 | 28 | 0 | 0 | 28 | 0.7910 | 1.0000 | 0.7910 | 0.8718 | 3.0000 | 0.7146–0.8513 |
-| survival | 0.7 | 5 | graveyard | 43 | 43 | 36 | 7 | 0 | 0 | 7 | 0.8372 | 1.0000 | 0.8372 | 0.7866 | 2.9767 | 0.7003–0.9188 |
-| opportunist | 0.4 | 1 | desert | 172 | 172 | 131 | 41 | 0 | 0 | 41 | 0.7616 | 1.0000 | 0.7616 | 0.8355 | 2.9942 | 0.6927–0.8191 |
-| opportunist | 0.4 | 1 | spider | 316 | 316 | 240 | 76 | 0 | 0 | 76 | 0.7595 | 1.0000 | 0.7595 | 0.8368 | 2.9873 | 0.7094–0.8033 |
-| opportunist | 0.4 | 2 | desert | 400 | 399 | 261 | 139 | 0 | 1 | 138 | 0.6525 | 0.9975 | 0.6541 | 0.8619 | 2.9749 | 0.6046–0.6975 |
-| opportunist | 0.4 | 2 | graveyard | 200 | 200 | 130 | 70 | 0 | 0 | 70 | 0.6500 | 1.0000 | 0.6500 | 0.8723 | 2.9950 | 0.5816–0.7127 |
-| opportunist | 0.4 | 2 | spider | 200 | 200 | 141 | 59 | 0 | 0 | 59 | 0.7050 | 1.0000 | 0.7050 | 0.8864 | 2.9950 | 0.6384–0.7639 |
-| opportunist | 0.4 | 3 | desert | 194 | 194 | 114 | 80 | 0 | 0 | 80 | 0.5876 | 1.0000 | 0.5876 | 0.8040 | 3.0000 | 0.5173–0.6545 |
-| opportunist | 0.4 | 3 | graveyard | 386 | 384 | 198 | 188 | 0 | 2 | 186 | 0.5130 | 0.9948 | 0.5156 | 0.7499 | 2.9818 | 0.4632–0.5624 |
-| opportunist | 0.4 | 3 | spider | 193 | 192 | 106 | 87 | 0 | 1 | 86 | 0.5492 | 0.9948 | 0.5521 | 0.8020 | 3.0000 | 0.4787–0.6178 |
-| opportunist | 0.4 | 4 | desert | 100 | 97 | 30 | 70 | 0 | 3 | 67 | 0.3000 | 0.9700 | 0.3093 | 0.6388 | 2.9381 | 0.2189–0.3958 |
-| opportunist | 0.4 | 4 | graveyard | 111 | 111 | 34 | 77 | 0 | 0 | 77 | 0.3063 | 1.0000 | 0.3063 | 0.7056 | 2.9730 | 0.2282–0.3973 |
-| opportunist | 0.4 | 4 | spider | 105 | 105 | 53 | 52 | 0 | 0 | 52 | 0.5048 | 1.0000 | 0.5048 | 0.7870 | 3.0000 | 0.4107–0.5985 |
-| opportunist | 0.4 | 5 | graveyard | 10 | 10 | 3 | 7 | 0 | 0 | 7 | 0.3000 | 1.0000 | 0.3000 | 0.6607 | 3.0000 | 0.1078–0.6032 |
-| opportunist | 0.7 | 1 | desert | 191 | 191 | 165 | 26 | 0 | 0 | 26 | 0.8639 | 1.0000 | 0.8639 | 0.8486 | 3.0000 | 0.8080–0.9054 |
-| opportunist | 0.7 | 1 | spider | 368 | 368 | 299 | 69 | 0 | 0 | 69 | 0.8125 | 1.0000 | 0.8125 | 0.8189 | 2.9946 | 0.7695–0.8491 |
-| opportunist | 0.7 | 2 | desert | 400 | 400 | 320 | 80 | 0 | 0 | 80 | 0.8000 | 1.0000 | 0.8000 | 0.8816 | 3.0000 | 0.7580–0.8363 |
-| opportunist | 0.7 | 2 | graveyard | 200 | 200 | 161 | 39 | 0 | 0 | 39 | 0.8050 | 1.0000 | 0.8050 | 0.8868 | 3.0000 | 0.7446–0.8539 |
-| opportunist | 0.7 | 2 | spider | 200 | 200 | 170 | 30 | 0 | 0 | 30 | 0.8500 | 1.0000 | 0.8500 | 0.9119 | 2.9900 | 0.7939–0.8929 |
-| opportunist | 0.7 | 3 | desert | 196 | 196 | 147 | 49 | 0 | 0 | 49 | 0.7500 | 1.0000 | 0.7500 | 0.8123 | 3.0000 | 0.6850–0.8054 |
-| opportunist | 0.7 | 3 | graveyard | 392 | 392 | 255 | 137 | 0 | 0 | 137 | 0.6505 | 1.0000 | 0.6505 | 0.7882 | 2.9974 | 0.6021–0.6960 |
-| opportunist | 0.7 | 3 | spider | 196 | 196 | 156 | 40 | 0 | 0 | 40 | 0.7959 | 1.0000 | 0.7959 | 0.8116 | 3.0000 | 0.7341–0.8464 |
-| opportunist | 0.7 | 4 | desert | 155 | 154 | 89 | 66 | 0 | 1 | 65 | 0.5742 | 0.9935 | 0.5779 | 0.7323 | 2.9805 | 0.4955–0.6493 |
-| opportunist | 0.7 | 4 | graveyard | 154 | 154 | 85 | 69 | 0 | 0 | 69 | 0.5519 | 1.0000 | 0.5519 | 0.7673 | 2.9740 | 0.4731–0.6283 |
-| opportunist | 0.7 | 4 | spider | 153 | 153 | 105 | 48 | 0 | 0 | 48 | 0.6863 | 1.0000 | 0.6863 | 0.8138 | 3.0000 | 0.6090–0.7545 |
-| opportunist | 0.7 | 5 | graveyard | 61 | 61 | 45 | 16 | 0 | 0 | 16 | 0.7377 | 1.0000 | 0.7377 | 0.7735 | 2.9672 | 0.6156–0.8316 |
-| selective-betrayal | 0.4 | 1 | desert | 188 | 188 | 119 | 69 | 0 | 0 | 69 | 0.6330 | 1.0000 | 0.6330 | 0.8272 | 3.0000 | 0.5621–0.6986 |
-| selective-betrayal | 0.4 | 1 | spider | 382 | 380 | 255 | 127 | 0 | 2 | 125 | 0.6675 | 0.9948 | 0.6711 | 0.8214 | 2.9947 | 0.6188–0.7129 |
-| selective-betrayal | 0.4 | 2 | desert | 396 | 394 | 180 | 216 | 0 | 2 | 214 | 0.4545 | 0.9949 | 0.4569 | 0.7886 | 2.9797 | 0.4062–0.5038 |
-| selective-betrayal | 0.4 | 2 | graveyard | 196 | 196 | 99 | 97 | 0 | 0 | 97 | 0.5051 | 1.0000 | 0.5051 | 0.8253 | 3.0000 | 0.4357–0.5743 |
-| selective-betrayal | 0.4 | 2 | spider | 196 | 196 | 99 | 97 | 0 | 0 | 97 | 0.5051 | 1.0000 | 0.5051 | 0.8114 | 2.9898 | 0.4357–0.5743 |
-| selective-betrayal | 0.4 | 3 | desert | 179 | 178 | 78 | 101 | 0 | 1 | 100 | 0.4358 | 0.9944 | 0.4382 | 0.7772 | 2.9831 | 0.3652–0.5090 |
-| selective-betrayal | 0.4 | 3 | graveyard | 332 | 328 | 108 | 224 | 0 | 4 | 220 | 0.3253 | 0.9880 | 0.3293 | 0.7239 | 2.9329 | 0.2772–0.3774 |
-| selective-betrayal | 0.4 | 3 | spider | 172 | 171 | 64 | 108 | 0 | 1 | 107 | 0.3721 | 0.9942 | 0.3743 | 0.7570 | 2.9591 | 0.3034–0.4464 |
-| selective-betrayal | 0.4 | 4 | desert | 22 | 20 | 3 | 19 | 0 | 2 | 17 | 0.1364 | 0.9091 | 0.1500 | 0.5545 | 2.9000 | 0.0475–0.3333 |
-| selective-betrayal | 0.4 | 4 | graveyard | 24 | 24 | 2 | 22 | 0 | 0 | 22 | 0.0833 | 1.0000 | 0.0833 | 0.6246 | 2.9167 | 0.0232–0.2585 |
-| selective-betrayal | 0.4 | 4 | spider | 22 | 22 | 13 | 9 | 0 | 0 | 9 | 0.5909 | 1.0000 | 0.5909 | 0.8174 | 3.0000 | 0.3873–0.7674 |
-| selective-betrayal | 0.4 | 5 | graveyard | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0.0000 | 1.0000 | 0.0000 | 0.7143 | 3.0000 | 0.0000–0.7935 |
-| selective-betrayal | 0.7 | 1 | desert | 186 | 186 | 62 | 124 | 0 | 0 | 124 | 0.3333 | 1.0000 | 0.3333 | 0.7876 | 2.9892 | 0.2696–0.4038 |
-| selective-betrayal | 0.7 | 1 | spider | 357 | 355 | 128 | 229 | 0 | 2 | 227 | 0.3585 | 0.9944 | 0.3606 | 0.7632 | 2.9690 | 0.3105–0.4096 |
-| selective-betrayal | 0.7 | 2 | desert | 388 | 382 | 102 | 286 | 0 | 6 | 280 | 0.2629 | 0.9845 | 0.2670 | 0.7384 | 2.9503 | 0.2216–0.3089 |
-| selective-betrayal | 0.7 | 2 | graveyard | 191 | 191 | 52 | 139 | 0 | 0 | 139 | 0.2723 | 1.0000 | 0.2723 | 0.7515 | 2.9948 | 0.2141–0.3394 |
-| selective-betrayal | 0.7 | 2 | spider | 191 | 191 | 49 | 142 | 0 | 0 | 142 | 0.2565 | 1.0000 | 0.2565 | 0.7702 | 2.9843 | 0.1998–0.3229 |
-| selective-betrayal | 0.7 | 3 | desert | 104 | 104 | 55 | 49 | 0 | 0 | 49 | 0.5288 | 1.0000 | 0.5288 | 0.7677 | 3.0000 | 0.4336–0.6220 |
-| selective-betrayal | 0.7 | 3 | graveyard | 221 | 218 | 93 | 128 | 0 | 3 | 125 | 0.4208 | 0.9864 | 0.4266 | 0.7117 | 2.9725 | 0.3576–0.4867 |
-| selective-betrayal | 0.7 | 3 | spider | 104 | 104 | 53 | 51 | 0 | 0 | 51 | 0.5096 | 1.0000 | 0.5096 | 0.7518 | 2.9808 | 0.4149–0.6036 |
-| selective-betrayal | 0.7 | 4 | graveyard | 2 | 2 | 1 | 1 | 0 | 0 | 1 | 0.5000 | 1.0000 | 0.5000 | 0.6686 | 3.0000 | 0.0945–0.9055 |
-| selective-betrayal | 0.7 | 4 | spider | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 | 0.5792 | 3.0000 | 0.3424–1.0000 |
+| survival | 0.4 | 1 | desert | 200 | 200 | 168 | 32 | 0 | 0 | 32 | 0.8400 | 1.0000 | 0.8400 | 0.9057 | 2.9950 | 0.7829–0.8843 |
+| survival | 0.4 | 1 | spider | 400 | 400 | 334 | 66 | 0 | 0 | 66 | 0.8350 | 1.0000 | 0.8350 | 0.9042 | 2.9975 | 0.7955–0.8682 |
+| survival | 0.4 | 2 | desert | 400 | 400 | 275 | 125 | 0 | 0 | 125 | 0.6875 | 1.0000 | 0.6875 | 0.8594 | 2.9950 | 0.6405–0.7310 |
+| survival | 0.4 | 2 | graveyard | 199 | 199 | 155 | 44 | 0 | 0 | 44 | 0.7789 | 1.0000 | 0.7789 | 0.8845 | 3.0000 | 0.7163–0.8310 |
+| survival | 0.4 | 2 | spider | 200 | 200 | 134 | 66 | 0 | 0 | 66 | 0.6700 | 1.0000 | 0.6700 | 0.8612 | 2.9950 | 0.6022–0.7314 |
+| survival | 0.4 | 3 | desert | 195 | 195 | 127 | 68 | 0 | 0 | 68 | 0.6513 | 1.0000 | 0.6513 | 0.8494 | 2.9949 | 0.5821–0.7147 |
+| survival | 0.4 | 3 | graveyard | 390 | 390 | 221 | 169 | 0 | 0 | 169 | 0.5667 | 1.0000 | 0.5667 | 0.8075 | 2.9897 | 0.5171–0.6150 |
+| survival | 0.4 | 3 | spider | 191 | 191 | 123 | 68 | 0 | 0 | 68 | 0.6440 | 1.0000 | 0.6440 | 0.8349 | 2.9895 | 0.5738–0.7084 |
+| survival | 0.4 | 4 | desert | 143 | 140 | 66 | 77 | 0 | 3 | 74 | 0.4615 | 0.9790 | 0.4714 | 0.6989 | 2.9357 | 0.3819–0.5432 |
+| survival | 0.4 | 4 | graveyard | 144 | 144 | 68 | 76 | 0 | 0 | 76 | 0.4722 | 1.0000 | 0.4722 | 0.7577 | 2.9931 | 0.3925–0.5534 |
+| survival | 0.4 | 4 | spider | 142 | 142 | 78 | 64 | 0 | 0 | 64 | 0.5493 | 1.0000 | 0.5493 | 0.8166 | 3.0000 | 0.4672–0.6288 |
+| survival | 0.4 | 5 | graveyard | 34 | 34 | 12 | 22 | 0 | 0 | 22 | 0.3529 | 1.0000 | 0.3529 | 0.7223 | 2.9706 | 0.2149–0.5209 |
+| survival | 0.7 | 1 | desert | 200 | 200 | 194 | 6 | 0 | 0 | 6 | 0.9700 | 1.0000 | 0.9700 | 0.9377 | 3.0000 | 0.9361–0.9862 |
+| survival | 0.7 | 1 | spider | 400 | 400 | 381 | 19 | 0 | 0 | 19 | 0.9525 | 1.0000 | 0.9525 | 0.9276 | 3.0000 | 0.9270–0.9694 |
+| survival | 0.7 | 2 | desert | 400 | 400 | 348 | 52 | 0 | 0 | 52 | 0.8700 | 1.0000 | 0.8700 | 0.8863 | 3.0000 | 0.8335–0.8995 |
+| survival | 0.7 | 2 | graveyard | 200 | 200 | 174 | 26 | 0 | 0 | 26 | 0.8700 | 1.0000 | 0.8700 | 0.8889 | 3.0000 | 0.8163–0.9097 |
+| survival | 0.7 | 2 | spider | 200 | 200 | 184 | 16 | 0 | 0 | 16 | 0.9200 | 1.0000 | 0.9200 | 0.9159 | 3.0000 | 0.8740–0.9502 |
+| survival | 0.7 | 3 | desert | 199 | 199 | 167 | 32 | 0 | 0 | 32 | 0.8392 | 1.0000 | 0.8392 | 0.8685 | 3.0000 | 0.7818–0.8837 |
+| survival | 0.7 | 3 | graveyard | 398 | 398 | 330 | 68 | 0 | 0 | 68 | 0.8291 | 1.0000 | 0.8291 | 0.8485 | 2.9975 | 0.7891–0.8629 |
+| survival | 0.7 | 3 | spider | 199 | 199 | 177 | 22 | 0 | 0 | 22 | 0.8894 | 1.0000 | 0.8894 | 0.8765 | 3.0000 | 0.8383–0.9259 |
+| survival | 0.7 | 4 | desert | 133 | 133 | 95 | 38 | 0 | 0 | 38 | 0.7143 | 1.0000 | 0.7143 | 0.8124 | 2.9925 | 0.6323–0.7842 |
+| survival | 0.7 | 4 | graveyard | 133 | 133 | 94 | 39 | 0 | 0 | 39 | 0.7068 | 1.0000 | 0.7068 | 0.8171 | 3.0000 | 0.6245–0.7775 |
+| survival | 0.7 | 4 | spider | 133 | 133 | 111 | 22 | 0 | 0 | 22 | 0.8346 | 1.0000 | 0.8346 | 0.8651 | 3.0000 | 0.7622–0.8882 |
+| survival | 0.7 | 5 | graveyard | 34 | 34 | 27 | 7 | 0 | 0 | 7 | 0.7941 | 1.0000 | 0.7941 | 0.8022 | 3.0000 | 0.6320–0.8965 |
+| opportunist | 0.4 | 1 | desert | 169 | 169 | 132 | 37 | 0 | 0 | 37 | 0.7811 | 1.0000 | 0.7811 | 0.8332 | 3.0000 | 0.7129–0.8368 |
+| opportunist | 0.4 | 1 | spider | 329 | 329 | 253 | 76 | 0 | 0 | 76 | 0.7690 | 1.0000 | 0.7690 | 0.8174 | 3.0000 | 0.7205–0.8113 |
+| opportunist | 0.4 | 2 | desert | 400 | 399 | 286 | 114 | 0 | 1 | 113 | 0.7150 | 0.9975 | 0.7168 | 0.8648 | 2.9925 | 0.6689–0.7570 |
+| opportunist | 0.4 | 2 | graveyard | 200 | 200 | 148 | 52 | 0 | 0 | 52 | 0.7400 | 1.0000 | 0.7400 | 0.8749 | 3.0000 | 0.6751–0.7959 |
+| opportunist | 0.4 | 2 | spider | 200 | 200 | 148 | 52 | 0 | 0 | 52 | 0.7400 | 1.0000 | 0.7400 | 0.8865 | 2.9900 | 0.6751–0.7959 |
+| opportunist | 0.4 | 3 | desert | 192 | 192 | 120 | 72 | 0 | 0 | 72 | 0.6250 | 1.0000 | 0.6250 | 0.8046 | 3.0000 | 0.5547–0.6904 |
+| opportunist | 0.4 | 3 | graveyard | 388 | 388 | 193 | 195 | 0 | 0 | 195 | 0.4974 | 1.0000 | 0.4974 | 0.7604 | 2.9820 | 0.4479–0.5470 |
+| opportunist | 0.4 | 3 | spider | 193 | 193 | 132 | 61 | 0 | 0 | 61 | 0.6839 | 1.0000 | 0.6839 | 0.8189 | 2.9896 | 0.6153–0.7454 |
+| opportunist | 0.4 | 4 | desert | 138 | 136 | 48 | 90 | 0 | 2 | 88 | 0.3478 | 0.9855 | 0.3529 | 0.6744 | 2.9412 | 0.2735–0.4304 |
+| opportunist | 0.4 | 4 | graveyard | 138 | 137 | 51 | 87 | 0 | 1 | 86 | 0.3696 | 0.9928 | 0.3723 | 0.7371 | 2.9781 | 0.2936–0.4526 |
+| opportunist | 0.4 | 4 | spider | 140 | 140 | 76 | 64 | 0 | 0 | 64 | 0.5429 | 1.0000 | 0.5429 | 0.8210 | 3.0000 | 0.4603–0.6231 |
+| opportunist | 0.4 | 5 | graveyard | 30 | 30 | 9 | 21 | 0 | 0 | 21 | 0.3000 | 1.0000 | 0.3000 | 0.6000 | 3.0000 | 0.1666–0.4788 |
+| opportunist | 0.7 | 1 | desert | 193 | 193 | 170 | 23 | 0 | 0 | 23 | 0.8808 | 1.0000 | 0.8808 | 0.8353 | 3.0000 | 0.8275–0.9193 |
+| opportunist | 0.7 | 1 | spider | 388 | 388 | 340 | 48 | 0 | 0 | 48 | 0.8763 | 1.0000 | 0.8763 | 0.8265 | 3.0000 | 0.8398–0.9054 |
+| opportunist | 0.7 | 2 | desert | 400 | 400 | 337 | 63 | 0 | 0 | 63 | 0.8425 | 1.0000 | 0.8425 | 0.8850 | 3.0000 | 0.8036–0.8749 |
+| opportunist | 0.7 | 2 | graveyard | 200 | 200 | 184 | 16 | 0 | 0 | 16 | 0.9200 | 1.0000 | 0.9200 | 0.8969 | 3.0000 | 0.8740–0.9502 |
+| opportunist | 0.7 | 2 | spider | 200 | 200 | 172 | 28 | 0 | 0 | 28 | 0.8600 | 1.0000 | 0.8600 | 0.9005 | 2.9950 | 0.8051–0.9013 |
+| opportunist | 0.7 | 3 | desert | 200 | 200 | 169 | 31 | 0 | 0 | 31 | 0.8450 | 1.0000 | 0.8450 | 0.8405 | 2.9950 | 0.7884–0.8886 |
+| opportunist | 0.7 | 3 | graveyard | 400 | 400 | 288 | 112 | 0 | 0 | 112 | 0.7200 | 1.0000 | 0.7200 | 0.8044 | 2.9975 | 0.6741–0.7617 |
+| opportunist | 0.7 | 3 | spider | 200 | 200 | 167 | 33 | 0 | 0 | 33 | 0.8350 | 1.0000 | 0.8350 | 0.8216 | 3.0000 | 0.7773–0.8800 |
+| opportunist | 0.7 | 4 | desert | 153 | 152 | 100 | 53 | 0 | 1 | 52 | 0.6536 | 0.9935 | 0.6579 | 0.7486 | 2.9934 | 0.5753–0.7244 |
+| opportunist | 0.7 | 4 | graveyard | 152 | 152 | 90 | 62 | 0 | 0 | 62 | 0.5921 | 1.0000 | 0.5921 | 0.7476 | 2.9737 | 0.5126–0.6670 |
+| opportunist | 0.7 | 4 | spider | 152 | 152 | 121 | 31 | 0 | 0 | 31 | 0.7961 | 1.0000 | 0.7961 | 0.8396 | 3.0000 | 0.7251–0.8524 |
+| opportunist | 0.7 | 5 | graveyard | 66 | 66 | 53 | 13 | 0 | 0 | 13 | 0.8030 | 1.0000 | 0.8030 | 0.7968 | 2.9848 | 0.6916–0.8811 |
+| selective-betrayal | 0.4 | 1 | desert | 196 | 196 | 142 | 54 | 0 | 0 | 54 | 0.7245 | 1.0000 | 0.7245 | 0.8340 | 2.9949 | 0.6581–0.7823 |
+| selective-betrayal | 0.4 | 1 | spider | 386 | 386 | 260 | 126 | 0 | 0 | 126 | 0.6736 | 1.0000 | 0.6736 | 0.8164 | 2.9974 | 0.6253–0.7184 |
+| selective-betrayal | 0.4 | 2 | desert | 390 | 388 | 205 | 185 | 0 | 2 | 183 | 0.5256 | 0.9949 | 0.5284 | 0.8052 | 2.9897 | 0.4761–0.5747 |
+| selective-betrayal | 0.4 | 2 | graveyard | 198 | 198 | 106 | 92 | 0 | 0 | 92 | 0.5354 | 1.0000 | 0.5354 | 0.8353 | 3.0000 | 0.4659–0.6035 |
+| selective-betrayal | 0.4 | 2 | spider | 197 | 196 | 100 | 97 | 0 | 1 | 96 | 0.5076 | 0.9949 | 0.5102 | 0.8017 | 3.0000 | 0.4383–0.5766 |
+| selective-betrayal | 0.4 | 3 | desert | 186 | 186 | 95 | 91 | 0 | 0 | 91 | 0.5108 | 1.0000 | 0.5108 | 0.7691 | 2.9839 | 0.4394–0.5816 |
+| selective-betrayal | 0.4 | 3 | graveyard | 354 | 347 | 127 | 227 | 0 | 7 | 220 | 0.3588 | 0.9802 | 0.3660 | 0.7164 | 2.9769 | 0.3106–0.4100 |
+| selective-betrayal | 0.4 | 3 | spider | 173 | 172 | 74 | 99 | 0 | 1 | 98 | 0.4277 | 0.9942 | 0.4302 | 0.7519 | 2.9709 | 0.3564–0.5023 |
+| selective-betrayal | 0.4 | 4 | desert | 59 | 58 | 21 | 38 | 0 | 1 | 37 | 0.3559 | 0.9831 | 0.3621 | 0.6288 | 2.8793 | 0.2460–0.4834 |
+| selective-betrayal | 0.4 | 4 | graveyard | 51 | 51 | 15 | 36 | 0 | 0 | 36 | 0.2941 | 1.0000 | 0.2941 | 0.7036 | 2.9804 | 0.1871–0.4300 |
+| selective-betrayal | 0.4 | 4 | spider | 56 | 56 | 31 | 25 | 0 | 0 | 25 | 0.5536 | 1.0000 | 0.5536 | 0.7749 | 3.0000 | 0.4241–0.6761 |
+| selective-betrayal | 0.4 | 5 | graveyard | 2 | 2 | 0 | 2 | 0 | 0 | 2 | 0.0000 | 1.0000 | 0.0000 | 0.6221 | 3.0000 | 0.0000–0.6576 |
+| selective-betrayal | 0.7 | 1 | desert | 185 | 185 | 66 | 119 | 0 | 0 | 119 | 0.3568 | 1.0000 | 0.3568 | 0.7971 | 2.9946 | 0.2913–0.4281 |
+| selective-betrayal | 0.7 | 1 | spider | 369 | 368 | 144 | 225 | 0 | 1 | 224 | 0.3902 | 0.9973 | 0.3913 | 0.7760 | 2.9620 | 0.3418–0.4409 |
+| selective-betrayal | 0.7 | 2 | desert | 388 | 386 | 114 | 274 | 0 | 2 | 272 | 0.2938 | 0.9948 | 0.2953 | 0.7396 | 2.9352 | 0.2507–0.3410 |
+| selective-betrayal | 0.7 | 2 | graveyard | 189 | 189 | 53 | 136 | 0 | 0 | 136 | 0.2804 | 1.0000 | 0.2804 | 0.7630 | 3.0000 | 0.2212–0.3483 |
+| selective-betrayal | 0.7 | 2 | spider | 192 | 191 | 61 | 131 | 0 | 1 | 130 | 0.3177 | 0.9948 | 0.3194 | 0.7807 | 2.9895 | 0.2560–0.3866 |
+| selective-betrayal | 0.7 | 3 | desert | 121 | 121 | 69 | 52 | 0 | 0 | 52 | 0.5702 | 1.0000 | 0.5702 | 0.7455 | 3.0000 | 0.4812–0.6550 |
+| selective-betrayal | 0.7 | 3 | graveyard | 248 | 248 | 117 | 131 | 0 | 0 | 131 | 0.4718 | 1.0000 | 0.4718 | 0.7197 | 2.9677 | 0.4105–0.5339 |
+| selective-betrayal | 0.7 | 3 | spider | 112 | 112 | 65 | 47 | 0 | 0 | 47 | 0.5804 | 1.0000 | 0.5804 | 0.7490 | 2.9732 | 0.4878–0.6676 |
+| selective-betrayal | 0.7 | 4 | desert | 1 | 1 | 0 | 1 | 0 | 0 | 1 | 0.0000 | 1.0000 | 0.0000 | 0.3960 | 3.0000 | 0.0000–0.7935 |
+| selective-betrayal | 0.7 | 4 | graveyard | 6 | 6 | 2 | 4 | 0 | 0 | 4 | 0.3333 | 1.0000 | 0.3333 | 0.6592 | 3.0000 | 0.0968–0.7000 |
+| selective-betrayal | 0.7 | 4 | spider | 5 | 5 | 3 | 2 | 0 | 0 | 2 | 0.6000 | 1.0000 | 0.6000 | 0.6094 | 3.0000 | 0.2307–0.8824 |
 
 ## 엔딩·최종 등급 분포
 
 | 전략 | 정확도 | 정상 완주 | 소진 | 실업 | 고발 | 불신 | 실행 오류 | S 도달률 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| survival | 0.4 | 2 | 174 | 24 | 0 | 0 | 0 | 0.1400 |
-| survival | 0.7 | 28 | 24 | 148 | 0 | 0 | 0 | 0.2400 |
-| opportunist | 0.4 | 0 | 182 | 17 | 1 | 0 | 0 | 0.1000 |
-| opportunist | 0.7 | 27 | 86 | 87 | 0 | 0 | 0 | 0.3750 |
-| selective-betrayal | 0.4 | 0 | 193 | 2 | 5 | 0 | 0 | 0.0100 |
-| selective-betrayal | 0.7 | 0 | 192 | 0 | 8 | 0 | 0 | 0.0000 |
+| survival | 0.4 | 6 | 159 | 35 | 0 | 0 | 0 | 0.2650 |
+| survival | 0.7 | 31 | 6 | 163 | 0 | 0 | 0 | 0.1700 |
+| opportunist | 0.4 | 0 | 173 | 27 | 0 | 0 | 0 | 0.2350 |
+| opportunist | 0.7 | 42 | 38 | 120 | 0 | 0 | 0 | 0.3650 |
+| selective-betrayal | 0.4 | 0 | 194 | 1 | 5 | 0 | 0 | 0.0250 |
+| selective-betrayal | 0.7 | 0 | 193 | 0 | 7 | 0 | 0 | 0.0000 |
 
 ## 승급 도달과 평균 최초 도달 원정
 
 | 전략 | 정확도 | B 도달률 | B 평균 원정 | A 도달률 | A 평균 원정 | S 도달률 | S 평균 원정 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| survival | 0.4 | 0.9800 | 6.4541 | 0.7900 | 11.9177 | 0.1400 | 15.8571 |
-| survival | 0.7 | 0.9900 | 5.8788 | 0.6700 | 11.2836 | 0.2400 | 16.0417 |
-| opportunist | 0.4 | 0.9800 | 6.3214 | 0.7300 | 11.8014 | 0.1000 | 16.5000 |
-| opportunist | 0.7 | 0.9800 | 5.7398 | 0.8000 | 11.2813 | 0.3750 | 16.0000 |
-| selective-betrayal | 0.4 | 0.9900 | 6.8788 | 0.2650 | 12.4528 | 0.0100 | 16.0000 |
-| selective-betrayal | 0.7 | 0.9700 | 7.7629 | 0.0400 | 13.6250 | 0.0000 | — |
+| survival | 0.4 | 0.9950 | 6.3819 | 0.8850 | 11.8305 | 0.2650 | 16.0566 |
+| survival | 0.7 | 0.9950 | 5.6633 | 0.6650 | 11.1128 | 0.1700 | 15.7647 |
+| opportunist | 0.4 | 0.9750 | 5.9538 | 0.8250 | 11.5879 | 0.2350 | 16.1064 |
+| opportunist | 0.7 | 1.0000 | 5.2550 | 0.7650 | 10.9869 | 0.3650 | 15.6438 |
+| selective-betrayal | 0.4 | 0.9950 | 6.7286 | 0.5250 | 12.2381 | 0.0250 | 16.4000 |
+| selective-betrayal | 0.7 | 0.9700 | 7.7062 | 0.0600 | 13.0000 | 0.0000 | — |
 
 ## 자원과 승급 방식
 
 | 전략 | 정확도 | 평균 최종 명성 | 평균 최종 골드 | 평균 계약 골드 | 평균 유물 골드 | 평균 누적 골드 | 평균 명성 승급 | 평균 골드 승급 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| survival | 0.4 | 26.0200 | 936.0750 | 164.8400 | 1256.5750 | 1421.4150 | 0.2450 | 1.6650 |
-| survival | 0.7 | 105.1150 | 391.2750 | 249.6300 | 578.0550 | 827.6850 | 0.7600 | 1.1400 |
-| opportunist | 0.4 | 19.2350 | 936.8900 | 151.2400 | 1235.3950 | 1386.6350 | 0.1700 | 1.6400 |
-| opportunist | 0.7 | 79.1850 | 570.4150 | 245.3150 | 916.6700 | 1161.9850 | 0.4200 | 1.7350 |
-| selective-betrayal | 0.4 | 7.9300 | 1144.8000 | 94.2500 | 1307.9400 | 1402.1900 | 0.0150 | 1.2500 |
-| selective-betrayal | 0.7 | 12.2600 | 1168.2000 | 75.5700 | 1273.5850 | 1349.1550 | 0.0000 | 1.0100 |
+| survival | 0.4 | 40.3600 | 872.9350 | 202.0400 | 1255.3850 | 1457.4250 | 0.3200 | 1.8250 |
+| survival | 0.7 | 125.1450 | 343.0250 | 266.1450 | 412.5000 | 678.6450 | 0.9800 | 0.8500 |
+| opportunist | 0.4 | 26.7150 | 905.3250 | 177.8600 | 1270.8800 | 1448.7400 | 0.2950 | 1.7400 |
+| opportunist | 0.7 | 106.7600 | 425.7150 | 265.5400 | 677.5400 | 943.0800 | 0.6950 | 1.4350 |
+| selective-betrayal | 0.4 | 12.8550 | 1097.2050 | 119.9300 | 1328.2750 | 1448.2050 | 0.0300 | 1.5150 |
+| selective-betrayal | 0.7 | 18.8700 | 1139.6900 | 90.5650 | 1235.9000 | 1326.4650 | 0.0050 | 1.0250 |
 
 ## 종료 시 평균 잔여 던전 위험도
 
 | 전략 | 정확도 | ★1 | ★2 | ★3 | ★4 | ★5 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| survival | 0.4 | 0.0000 | 0.0150 | 0.3150 | 2.3500 | 2.4450 |
-| survival | 0.7 | 0.0000 | 0.0000 | 0.0550 | 1.1000 | 1.3100 |
-| opportunist | 0.4 | 0.5600 | 0.0950 | 0.1950 | 2.6600 | 2.5750 |
-| opportunist | 0.7 | 0.2050 | 0.0850 | 0.1150 | 0.8650 | 1.5900 |
-| selective-betrayal | 0.4 | 0.1500 | 0.1600 | 1.0950 | 5.5350 | 1.4200 |
-| selective-betrayal | 0.7 | 0.2850 | 0.3400 | 3.7050 | 4.9050 | 1.0250 |
+| survival | 0.4 | 0.0000 | 0.0100 | 0.1950 | 1.4500 | 2.4250 |
+| survival | 0.7 | 0.0000 | 0.0000 | 0.0250 | 1.0850 | 1.1500 |
+| opportunist | 0.4 | 0.5100 | 0.1150 | 0.1900 | 1.6750 | 2.7300 |
+| opportunist | 0.7 | 0.0950 | 0.0150 | 0.0050 | 0.8300 | 1.2100 |
+| selective-betrayal | 0.4 | 0.0900 | 0.1950 | 0.7750 | 4.3350 | 1.8700 |
+| selective-betrayal | 0.7 | 0.2300 | 0.3200 | 3.1750 | 4.7550 | 1.0700 |
 
 ## paired 정확도 비교
 
 | 전략 | 0.7−0.4 평균 | 95% CI 하한 | 95% CI 상한 |
 | --- | ---: | ---: | ---: |
-| survival | 0.130 | 0.079 | 0.181 |
-| opportunist | 0.135 | 0.088 | 0.182 |
+| survival | 0.125 | 0.071 | 0.179 |
+| opportunist | 0.210 | 0.153 | 0.267 |
 | selective-betrayal | 0.000 | 0.000 | 0.000 |
 
 ## 성직자 치유 trace 지표
 
-- 성직자 포함 원정: 10141
-- 성직자 미포함 원정: 7538
+- 성직자 포함 원정: 10723
+- 성직자 미포함 원정: 7378
 - 클래스 구성 미확정 원정(분모 제외): 0
-- 성직자 포함 일반전/보스전: 14949/10115
-- 원정당 치유 0·1·2회/초과: 126·7725·2290/0
-- 전투당 치유 0·1회/초과: 12759·12305/0
-- 총 치유 행동/유효 치유/실제 회복량: 12305/12305/61525
-- 평균 전투 라운드/roundLimit: 3.0660/0
+- 성직자 포함 일반전/보스전: 15934/10705
+- 원정당 치유 0·1·2회/초과: 132·563·10028/0
+- 전투당 치유 0·1·2회/초과: 14166·4327·8146/0
+- 총 치유 행동/유효 치유/실제 회복량: 20619/20619/169010
+- 평균 전투 라운드/roundLimit: 3.1175/0
 
 | 층 | 원정 | 첫 시도 | 첫 시도 클리어 | 클리어율 | 보스 진입 HP 비율 | 보스 사망 | 전체 사망 | 평균 라운드 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 성직자 포함 | 10141 | 8168 | 4525 | 0.5540 | 0.8134 | 18317 | 18526 | 3.2527 |
-| 성직자 미포함 | 7538 | 5888 | 4303 | 0.7308 | 0.8086 | 10080 | 10254 | 2.8156 |
+| 성직자 포함 | 10723 | 8676 | 5409 | 0.6234 | 0.8178 | 16933 | 17076 | 3.3291 |
+| 성직자 미포함 | 7378 | 5876 | 4291 | 0.7303 | 0.8094 | 9917 | 10062 | 2.8128 |
 
 ### 성직자 유무·초기 위험도별 첫 시도 클리어율
 
 | 층 | 초기 위험도 | 첫 시도 | 클리어 | 클리어율 |
 | --- | ---: | ---: | ---: | ---: |
-| 성직자 포함 | 1 | 1958 | 1317 | 0.6726 |
-| 성직자 포함 | 2 | 2868 | 1583 | 0.5520 |
-| 성직자 포함 | 3 | 2418 | 1228 | 0.5079 |
-| 성직자 포함 | 4 | 853 | 355 | 0.4162 |
-| 성직자 포함 | 5 | 71 | 42 | 0.5915 |
-| 성직자 미포함 | 1 | 1402 | 1143 | 0.8153 |
-| 성직자 미포함 | 2 | 1889 | 1373 | 0.7268 |
-| 성직자 미포함 | 3 | 1800 | 1269 | 0.7050 |
-| 성직자 미포함 | 4 | 737 | 470 | 0.6377 |
-| 성직자 미포함 | 5 | 60 | 48 | 0.8000 |
+| 성직자 포함 | 1 | 2055 | 1485 | 0.7226 |
+| 성직자 포함 | 2 | 2885 | 1805 | 0.6256 |
+| 성직자 포함 | 3 | 2540 | 1497 | 0.5894 |
+| 성직자 포함 | 4 | 1100 | 565 | 0.5136 |
+| 성직자 포함 | 5 | 96 | 57 | 0.5938 |
+| 성직자 미포함 | 1 | 1360 | 1099 | 0.8081 |
+| 성직자 미포함 | 2 | 1868 | 1379 | 0.7382 |
+| 성직자 미포함 | 3 | 1799 | 1264 | 0.7026 |
+| 성직자 미포함 | 4 | 779 | 505 | 0.6483 |
+| 성직자 미포함 | 5 | 70 | 44 | 0.6286 |
 
 ## 구현 전후 paired 전투 비교
 
 ### 50 seed paired 결과
 
-- before snapshot: `/private/tmp/dungeon-schemer-cleric-heal/baseline-50.json`
-- after snapshot: `/private/tmp/dungeon-schemer-cleric-heal/after-50.json`
-- source revision: cleric-heal-baseline → cleric-heal-after
+- before snapshot: `/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-50.json`
+- after snapshot: `/private/tmp/dungeon-schemer-cleric-heal-rebalance/after-50.json`
+- source revision: cleric-heal-baseline → cleric-heal-rebalance-after
 - paired key 수: 300
 
 | 층 | paired 전투 | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 성직자 포함 | 3207 | 0.0265 | 0.0145 | -242 | 0.1060 | 1574 | 7870 | 950 |
-| 성직자 미포함 | 2235 | 0.0000 | -0.0013 | -13 | -0.0121 | 0 | 0 | 1327 |
-| 구성 변경 | 1495 | -0.0154 | -0.0009 | 14 | 0.1104 | 407 | 2035 | 0 |
+| 성직자 포함 | 3232 | 0.0337 | 0.0305 | -364 | 0.0702 | 987 | 13172 | 809 |
+| 성직자 미포함 | 2083 | 0.0043 | -0.0017 | -3 | -0.0048 | 0 | 0 | 1131 |
+| 구성 변경 | 1660 | 0.0223 | 0.0163 | -92 | 0.0729 | 303 | 3783 | 0 |
 
 | 구조 gate | 결과 | 근거 |
 | --- | --- | --- |
@@ -452,16 +452,16 @@
 
 ### 100 seed paired 결과
 
-- before snapshot: `/private/tmp/dungeon-schemer-cleric-heal/baseline-100.json`
-- after snapshot: `/private/tmp/dungeon-schemer-cleric-heal/after-100.json`
-- source revision: cleric-heal-baseline → cleric-heal-after
+- before snapshot: `/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-100.json`
+- after snapshot: `/private/tmp/dungeon-schemer-cleric-heal-rebalance/after-100.json`
+- source revision: cleric-heal-baseline → cleric-heal-rebalance-after
 - paired key 수: 600
 
 | 층 | paired 전투 | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 성직자 포함 | 6567 | 0.0262 | 0.0158 | -489 | 0.0949 | 3182 | 15910 | 1887 |
-| 성직자 미포함 | 4386 | -0.0018 | -0.0026 | 13 | -0.0107 | 0 | 0 | 2670 |
-| 구성 변경 | 2913 | -0.0031 | 0.0025 | -20 | 0.0920 | 801 | 4005 | 0 |
+| 성직자 포함 | 6449 | 0.0312 | 0.0325 | -722 | 0.0561 | 1993 | 26252 | 1598 |
+| 성직자 미포함 | 3998 | 0.0010 | -0.0029 | 14 | -0.0070 | 0 | 0 | 2190 |
+| 구성 변경 | 3195 | 0.0228 | 0.0158 | -215 | 0.0792 | 579 | 7260 | 0 |
 
 | 구조 gate | 결과 | 근거 |
 | --- | --- | --- |
@@ -470,16 +470,16 @@
 
 ### 200 seed paired 결과
 
-- before snapshot: `/private/tmp/dungeon-schemer-cleric-heal/baseline-200.json`
-- after snapshot: `/private/tmp/dungeon-schemer-cleric-heal/after-200.json`
-- source revision: cleric-heal-baseline → cleric-heal-after
+- before snapshot: `/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-200.json`
+- after snapshot: `/private/tmp/dungeon-schemer-cleric-heal-rebalance/after-200.json`
+- source revision: cleric-heal-baseline → cleric-heal-rebalance-after
 - paired key 수: 1200
 
 | 층 | paired 전투 | 전투 승리율 Δ | 전투 후 HP 비율 Δ | 사망 Δ | 평균 라운드 Δ | 치유 행동 Δ | 실제 회복 Δ | 완전 불변 pair |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 성직자 포함 | 13344 | 0.0251 | 0.0161 | -1062 | 0.0849 | 6475 | 32375 | 3850 |
-| 성직자 미포함 | 8806 | -0.0010 | -0.0025 | 6 | -0.0014 | 0 | 0 | 5287 |
-| 구성 변경 | 5923 | -0.0022 | 0.0008 | -46 | 0.0827 | 1642 | 8210 | 0 |
+| 성직자 포함 | 12929 | 0.0326 | 0.0325 | -1482 | 0.0699 | 4012 | 53069 | 3305 |
+| 성직자 미포함 | 7823 | 0.0010 | 0.0007 | -22 | -0.0024 | 0 | 0 | 4395 |
+| 구성 변경 | 6455 | 0.0167 | 0.0136 | -331 | 0.0700 | 1150 | 14733 | 0 |
 
 | 구조 gate | 결과 | 근거 |
 | --- | --- | --- |

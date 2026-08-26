@@ -162,7 +162,7 @@ export interface HealingBacktestMetrics {
   };
   readonly clericBattles: { readonly general: number; readonly boss: number };
   readonly healUsesPerExpedition: Readonly<Record<0 | 1 | 2, number>> & { readonly overLimit: number };
-  readonly healUsesPerBattle: Readonly<Record<0 | 1, number>> & { readonly overLimit: number };
+  readonly healUsesPerBattle: Readonly<Record<0 | 1 | 2, number>> & { readonly overLimit: number };
   readonly healActions: number;
   readonly effectiveHealActions: number;
   readonly actualHealing: number;
@@ -354,7 +354,7 @@ export function aggregateHealingMetrics(runs: readonly CampaignRunMetrics[]): He
   let general = 0;
   let boss = 0;
   const expeditionDistribution = { 0: 0, 1: 0, 2: 0, overLimit: 0 };
-  const battleDistribution = { 0: 0, 1: 0, overLimit: 0 };
+  const battleDistribution = { 0: 0, 1: 0, 2: 0, overLimit: 0 };
   let healActions = 0;
   let effectiveHealActions = 0;
   let actualHealing = 0;
@@ -425,7 +425,7 @@ export function aggregateHealingMetrics(runs: readonly CampaignRunMetrics[]): He
       if (entry.kind === "general") general += 1;
       else boss += 1;
       const heals = entry.battle.actions.filter((action) => action.kind === "heal");
-      if (heals.length <= 1) battleDistribution[heals.length as 0 | 1] += 1;
+      if (heals.length <= 2) battleDistribution[heals.length as 0 | 1 | 2] += 1;
       else battleDistribution.overLimit += 1;
       healActions += heals.length;
       for (const action of heals) {

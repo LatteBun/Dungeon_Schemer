@@ -110,6 +110,37 @@ describe("B1-B 승인 gate", () => {
     expect(gates.find((gate) => gate.id === "reproducible-valid-runs")).toMatchObject({ passed: false });
   });
 
+  it("대상 최대 HP의 25%만 회복하고 전투당 두 번은 허용하되 원정당 세 번은 거절한다", () => {
+    const run = metric("survival", 0.7, false, 0, "proportional-heal");
+    const battle = (healing: 11 | 5 | 12, uses = 1) => ({
+      kind: "general" as const, expeditionId: "proportional-heal",
+      party: [
+        { characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 20, hpAfter: 20, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: Math.max(0, 2 - uses) },
+        { characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 1, hpAfter: 1 + healing * uses, maxHp: 45 },
+      ],
+      battle: {
+        status: "victory" as const, termination: "defeatedEnemies" as const, rounds: uses,
+        actions: Array.from({ length: uses }, (_, index) => ({
+          kind: "heal" as const, round: index + 1, actorSide: "party" as const, actorId: "cleric", targetId: "warrior",
+          abilityKind: "emergencyHeal" as const, healing, targetHpBefore: 1 + healing * index, targetHpAfter: 1 + healing * (index + 1),
+        })),
+        party: [], enemies: [{ id: "enemy", monsterId: "one", hp: 1, maxHp: 1, baseDamage: 1 }],
+      },
+    });
+
+    const valid = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(11, 2)] }]));
+    const under = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(5)] }]));
+    const over = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(12)] }]));
+    const threeUses = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(11, 3)] }]));
+
+    expect(valid.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: true });
+    expect(valid.find((gate) => gate.id === "healing-battle-use-limit")).toBeUndefined();
+    expect(under.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: false });
+    expect(over.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: false });
+    expect(threeUses.find((gate) => gate.id === "healing-expedition-use-limit")).toMatchObject({ passed: false });
+    expect(threeUses.find((gate) => gate.id === "healing-use-chain")).toMatchObject({ passed: false });
+  });
+
   it("능력 미보유·미발동 control의 라운드가 달라지면 불변 gate를 실패시킨다", () => {
     const base = metric("survival", 0.7, false, 0, "unchanged");
     const controls = { ...base, battles: [{

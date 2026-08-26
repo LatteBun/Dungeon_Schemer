@@ -157,6 +157,7 @@ describe("백테스트 통계", () => {
           status: "victory", termination: "defeatedEnemies", rounds: 1,
           actions: [
             { kind: "heal", round: 1, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 10, targetHpAfter: 15 },
+            { kind: "heal", round: 2, actorSide: "party", actorId: "c", targetId: "c", abilityKind: "emergencyHeal", healing: 5, targetHpBefore: 15, targetHpAfter: 20 },
             { kind: "attack", round: 1, actorSide: "party", actorId: "c", targetId: "e", damage: 999, defeated: true, targetHpBefore: 10, targetHpAfter: 0 },
           ], party: [], enemies: [],
         },
@@ -166,11 +167,11 @@ describe("백테스트 통계", () => {
     expect(aggregateHealingMetrics([run])).toMatchObject({
       expeditions: { withCleric: 1, withoutCleric: 1, unknownComposition: 1 },
       clericBattles: { general: 1, boss: 0 },
-      healUsesPerExpedition: { 0: 0, 1: 1, 2: 0, overLimit: 0 },
-      healUsesPerBattle: { 0: 0, 1: 1, overLimit: 0 },
-      healActions: 1,
-      effectiveHealActions: 1,
-      actualHealing: 5,
+      healUsesPerExpedition: { 0: 0, 1: 0, 2: 1, overLimit: 0 },
+      healUsesPerBattle: { 0: 0, 1: 0, 2: 1, overLimit: 0 },
+      healActions: 2,
+      effectiveHealActions: 2,
+      actualHealing: 10,
       byCleric: {
         withCleric: { expeditions: 1, firstAttemptStarts: 1, firstAttemptClears: 0, totalDeaths: 0 },
         withoutCleric: { expeditions: 1, firstAttemptStarts: 1, firstAttemptClears: 0, totalDeaths: 0 },
