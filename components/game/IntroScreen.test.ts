@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -14,6 +15,8 @@ const status = {
   zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
   nextPromotion: { rank: "B", reputationRequired: 60 },
 };
+
+const css = readFileSync("app/u2-intro.css", "utf8");
 
 describe("IntroScreen", () => {
   it("인트로 전용 전체 폭 스테이지에서 정적 전략 가이드를 전달한다", () => {
@@ -77,5 +80,17 @@ describe("IntroScreen", () => {
 
     expect(html).toContain('<button class="u2-intro__cta" type="button">');
     expect(html).not.toContain('<a class="u2-intro__cta"');
+  });
+
+  it("고정 캔버스 안에서 도움과 배신 전략 및 원정 정보를 배치한다", () => {
+    expect(css).toMatch(/\.u2-intro\s*\{[\s\S]*?grid-template-rows:/);
+    expect(css).toMatch(/\.u2-intro__strategy\s*\{[\s\S]*?grid-template-columns:/);
+    expect(css).toMatch(/\.u2-intro__facts\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3,/);
+    expect(css).toMatch(/\.u2-intro__strategy-card--help/);
+    expect(css).toMatch(/\.u2-intro__strategy-card--betray/);
+    expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?overflow:\s*hidden/);
+    expect(css).toMatch(/\.u2-intro__cta:focus-visible\s*\{/);
+    expect(css).not.toMatch(/@media/);
+    expect(css).not.toMatch(/--status-(?:bar|label|value)/);
   });
 });
