@@ -64,11 +64,11 @@ describe("IntroScreen", () => {
   });
 
   it("원본 비율로 이미지를 담고 CTA를 이미지 프레임 좌표에 배치한다", () => {
-    expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?container-type:\s*size/);
+    expect(css).not.toMatch(/container-(type|name)\s*:/);
     expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?place-items:\s*center/);
     expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?overflow:\s*hidden/);
     expect(css).toMatch(/\.u2-intro__guide\s*\{[\s\S]*?aspect-ratio:\s*1672\s*\/\s*941/);
-    expect(css).toMatch(/\.u2-intro__guide\s*\{[\s\S]*?100cqh/);
+    expect(css).toMatch(/\.u2-intro__guide\s*\{[\s\S]*?width:\s*92%/);
     expect(css).toMatch(/\.u2-intro__guide-image\s*\{[\s\S]*?object-fit:\s*contain/);
     expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?position:\s*absolute/);
     expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?left:\s*28\.2%/);

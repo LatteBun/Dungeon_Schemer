@@ -208,11 +208,11 @@ git commit -m "화면: U2를 단일 이미지 가이드로 교체한다" -m "승
 기존 strategy/facts grid 단언을 다음 계약으로 교체한다.
 
 ```ts
-expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?container-type:\s*size/);
+expect(css).not.toMatch(/container-(type|name)\s*:/);
 expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?place-items:\s*center/);
 expect(css).toMatch(/\.u2-intro-stage\s*\{[\s\S]*?overflow:\s*hidden/);
 expect(css).toMatch(/\.u2-intro__guide\s*\{[\s\S]*?aspect-ratio:\s*1672\s*\/\s*941/);
-expect(css).toMatch(/\.u2-intro__guide\s*\{[\s\S]*?100cqh/);
+expect(css).toMatch(/\.u2-intro__guide\s*\{[\s\S]*?width:\s*92%/);
 expect(css).toMatch(/\.u2-intro__guide-image\s*\{[\s\S]*?object-fit:\s*contain/);
 expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?position:\s*absolute/);
 expect(css).toMatch(/\.u2-intro__cta\s*\{[\s\S]*?left:\s*28\.2%/);
@@ -234,7 +234,7 @@ Run:
 pnpm test components/game/IntroScreen.test.ts
 ```
 
-Expected: `.u2-intro__guide`, `aspect-ratio`, `container-type`, CTA absolute percentage 좌표가 없어 FAIL한다.
+Expected: `.u2-intro__guide`, `aspect-ratio`, stage-relative width, CTA absolute percentage 좌표가 없어 FAIL한다.
 
 - [ ] **Step 3: 기존 카드 CSS를 contain 이미지 stage로 교체한다**
 
@@ -253,7 +253,6 @@ Expected: `.u2-intro__guide`, `aspect-ratio`, `container-type`, CTA absolute per
 }
 
 .u2-intro-stage {
-  container-type: size;
   display: grid;
   position: relative;
   flex: 1 1 auto;
@@ -265,9 +264,8 @@ Expected: `.u2-intro__guide`, `aspect-ratio`, `container-type`, CTA absolute per
 
 .u2-intro__guide {
   position: relative;
-  width: min(100%, calc(100cqh * 1672 / 941));
+  width: 92%;
   aspect-ratio: 1672 / 941;
-  max-height: 100%;
 }
 
 .u2-intro__guide-image {
