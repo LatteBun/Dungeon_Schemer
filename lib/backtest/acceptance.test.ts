@@ -134,7 +134,7 @@ describe("B1-B 승인 gate", () => {
     const threeUses = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(11, 3)] }]));
 
     expect(valid.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: true });
-    expect(valid.find((gate) => gate.id === "healing-battle-use-limit")).toBeUndefined();
+    expect(valid).toHaveLength(8);
     expect(under.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: false });
     expect(over.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: false });
     expect(threeUses.find((gate) => gate.id === "healing-expedition-use-limit")).toMatchObject({ passed: false });

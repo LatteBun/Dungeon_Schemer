@@ -76,9 +76,9 @@ test.describe("U5-2 전투 프리뷰", () => {
     const action = page.locator(".u5-battle-heal-action");
     await expect(action).toContainText("치유 기도", { timeout: 10_000 });
     await expect(action).toContainText("남은 횟수 2");
-    const recovery = page.locator('.u5-battle-healing[aria-label="5 회복"]');
+    const recovery = page.locator('.u5-battle-healing[aria-label="6 회복"]');
     await expect(recovery).toBeVisible();
-    await expect(recovery).toHaveText("+5");
+    await expect(recovery).toHaveText("+6");
     expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
     expect(await recovery.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBe(0.00001);
     await expect(page.getByTestId("u5-battle-scene")).not.toContainText("피해를 받습니다");

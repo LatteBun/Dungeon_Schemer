@@ -64,8 +64,7 @@ describe("백테스트 캠페인 driver", () => {
     expect(result.trace.nodeCategoryChoices.monster).toBeGreaterThan(0);
     expect(result.trace.nodeCategoryChoices.rest + result.trace.nodeCategoryChoices.merchant + result.trace.nodeCategoryChoices.special)
       .toBeGreaterThan(0);
-    expect(battles).toHaveLength(result.campaign.statistics.totalExpeditions);
-    expect(battles.every((entry) => entry.kind === "boss")).toBe(true);
+    expect(battles.filter((entry) => entry.kind === "boss")).toHaveLength(result.campaign.statistics.totalExpeditions);
     expect(battles.every((entry) => entry.battle.party.every((member) => {
       const partyMember = entry.party.find((candidate) => candidate.characterId === member.id);
       return partyMember !== undefined && partyMember.hpAfter === member.hp;
@@ -155,18 +154,16 @@ describe("백테스트 캠페인 driver", () => {
      * 잡힌다 — 게시판이 다른 던전을 걸기 시작하자 실제로 그렇게 됐다. 여기서
      * 보려는 것은 전멸이 원장에 남는가이므로 그 조건을 밖으로 드러낸다.
      */
-    const result = Array.from({ length: 40 }, (_, index) => runCampaign({
-      seed: `b1b-calibration-v1/${String(index).padStart(6, "0")}`,
+    const result = runCampaign({
+      seed: "b1b-calibration-v1/000078",
       strategy: createStrategy("survival"),
       accuracy: 0.7,
-    })).find((candidate) => candidate.ok
-      && candidate.campaign.ending?.kind === "exhausted"
-      && candidate.trace.terminationEvidence?.wipeSource != null);
+    });
 
-    expect(result).toBeDefined();
-    if (result === undefined || !result.ok) throw new Error("인력 소진 실행을 찾지 못했다");
+    if (!result.ok) throw new Error("인력 소진 실행을 찾지 못했다");
 
     expect(result.campaign.ending?.kind).toBe("exhausted");
+    expect(result.trace.terminationEvidence?.wipeSource).toBeDefined();
     expect(result.trace.terminationEvidence).toMatchObject({
       sourceLosses: expect.arrayContaining([
         expect.objectContaining({ source: "expedition-boss", deaths: expect.any(Number) }),

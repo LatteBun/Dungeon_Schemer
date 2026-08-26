@@ -331,7 +331,7 @@ describe("원정 안쪽 전이", () => {
       .toBe(JSON.stringify(run().context.activeExpedition!.expedition));
   });
 
-  it("일반전의 1회가 보스 입력으로 이어져 0이 되고 새 재도전은 2회로 시작한다", () => {
+  it("일반전의 2회가 보스 입력으로 이어지고 새 재도전은 2회로 시작한다", () => {
     const begun = startedWithCleric();
     const initialActive = begun.context.activeExpedition!;
     const cleric = initialActive.partyMembers.find((member) => member.classId === "cleric")!;
@@ -369,10 +369,10 @@ describe("원정 안쪽 전이", () => {
       adviceId: forcedEvent.advice[0]!.id,
     });
     const generalActive = afterGeneral.context.activeExpedition!;
-    expect(generalActive.pendingOutcome?.battle?.actions.some((action) =>
-      action.kind === "heal" && action.actorId === cleric.id)).toBe(true);
+    expect(generalActive.pendingOutcome?.battle?.actions.filter((action) =>
+      action.kind === "heal" && action.actorId === cleric.id)).toHaveLength(2);
     expect(generalActive.expedition.battleAbilityUsesRemainingByCharacterId).toEqual({
-      [cleric.id]: 1,
+      [cleric.id]: 0,
     });
     expect(generalActive.expedition.battleAbilityUsesRemainingByCharacterId).not.toBe(beforeGeneralMap);
     expect(beforeGeneralMap).toEqual({ [cleric.id]: 2 });
@@ -404,7 +404,7 @@ describe("원정 안쪽 전이", () => {
     const bossActive = afterBoss.context.activeExpedition!;
 
     expect(bossActive.expedition.bossResult?.battle.actions.some((action) =>
-      action.kind === "heal" && action.actorId === cleric.id)).toBe(true);
+      action.kind === "heal" && action.actorId === cleric.id)).toBe(false);
     expect(bossActive.expedition.battleAbilityUsesRemainingByCharacterId).toEqual({
       [cleric.id]: 0,
     });
