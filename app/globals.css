@@ -173,6 +173,21 @@ body {
   min-width: 0;
 }
 
+.game-shell__zero-trust-dialog {
+  width: min(34rem, 70cqw);
+  border: 1px solid #a77b3c;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  color: #f4ead2;
+  background: #171008;
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 72%);
+}
+
+.game-shell__zero-trust-dialog::backdrop { background: rgb(0 0 0 / 65%); }
+.game-shell__zero-trust-dialog h2 { margin: 0 0 0.75rem; color: #e8c27a; }
+.game-shell__zero-trust-dialog p { margin: 0 0 0.8rem; line-height: 1.6; }
+.game-shell__zero-trust-dialog button { float: right; }
+
 .game-shell__status-item {
   display: flex;
   min-width: 0;

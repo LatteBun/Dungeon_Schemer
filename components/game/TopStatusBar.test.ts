@@ -109,7 +109,7 @@ describe("TopStatusBar U2/U3", () => {
     expect(html).not.toContain('disabled=""');
   });
 
-  it("신뢰 0 인원과 기준을 승급 뒤 남은 던전 앞에 표시한다", () => {
+  it("의심 인원과 기준을 승급 뒤 남은 던전 앞에 표시한다", () => {
     const html = renderToStaticMarkup(createElement(TopStatusBar, {
       status: {
         ...baseStatus,
@@ -117,14 +117,14 @@ describe("TopStatusBar U2/U3", () => {
       },
     }));
 
-    expect(html).toContain("신뢰 0");
+    expect(html).toContain("의심 인원");
     expect(html).toContain("2 / 5");
-    expect(html.indexOf("승급")).toBeLessThan(html.indexOf("신뢰 0"));
-    expect(html.indexOf("신뢰 0")).toBeLessThan(html.indexOf("남은 던전"));
+    expect(html.indexOf("승급")).toBeLessThan(html.indexOf("의심 인원"));
+    expect(html.indexOf("의심 인원")).toBeLessThan(html.indexOf("남은 던전"));
     expect(html).toContain("/assets/u2/status-trust.svg");
   });
 
-  it("기준 초과 값을 제한하지 않고 읽기 전용으로 표시한다", () => {
+  it("기준 초과 값을 제한하지 않고 의심 인원 팝업을 여는 버튼으로 표시한다", () => {
     const html = renderToStaticMarkup(createElement(TopStatusBar, {
       status: {
         ...baseStatus,
@@ -133,10 +133,12 @@ describe("TopStatusBar U2/U3", () => {
       onOpenPromotion: () => undefined,
     }));
 
-    const trust = chip(html, "신뢰 0");
+    const trust = chip(html, "의심 인원");
     expect(trust).toContain("7 / 5");
-    expect(trust.startsWith("<button")).toBe(false);
-    expect(trust).not.toContain("u3-promotion-trigger");
+    expect(trust.startsWith("<button")).toBe(true);
+    expect(trust).toContain('data-testid="zero-trust-info-trigger"');
+    expect(trust).toContain('aria-label="의심 인원: 7 / 5"');
+    expect(html).toContain("이번 던전이 끝난 뒤 누적 고발이 시작됩니다.");
   });
 
   it("신뢰 상태 아이콘은 공통 24x24 SVG 계약을 따른다", () => {
