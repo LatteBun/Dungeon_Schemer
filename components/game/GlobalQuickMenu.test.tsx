@@ -105,7 +105,7 @@ describe("전역 퀵 메뉴", () => {
     const css = readFileSync(join(process.cwd(), "app", "app-frame.css"), "utf8");
     const hiddenRule = css.match(/\.global-quick-menu__trigger--hidden\s*\{([^}]*)\}/)?.[1] ?? "";
 
-    expect(hiddenRule).toMatch(/display:\s*none/);
+    expect(hiddenRule).toMatch(/visibility:\s*hidden/);
   });
 
   it("visible global trigger를 누르면 그 trigger를 focus 복귀 출발점으로 쓴다", () => {

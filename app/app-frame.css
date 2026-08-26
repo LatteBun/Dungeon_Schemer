@@ -62,7 +62,7 @@
 }
 
 .global-quick-menu__trigger--hidden {
-  display: none;
+  visibility: hidden;
 }
 
 .global-quick-menu__dots {

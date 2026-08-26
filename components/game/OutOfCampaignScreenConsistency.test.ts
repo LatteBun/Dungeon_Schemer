@@ -16,10 +16,8 @@ const css = (name: string) => readFileSync(root("app", name), "utf8");
 const tsx = (name: string) => readFileSync(root("components", "game", name), "utf8");
 
 describe("캠페인 바깥 화면의 통일성", () => {
-  it("버튼은 공용 CTA 를 쓴다", () => {
-    for (const name of ["MainMenuScreen.tsx", "AchievementScreen.tsx"]) {
-      expect(tsx(name), name).toContain("shell-cta");
-    }
+  it("업적 화면의 버튼은 공용 CTA 를 쓴다", () => {
+    expect(tsx("AchievementScreen.tsx")).toContain("shell-cta");
   });
 
   it("공용 CTA 규칙이 두 화면을 함께 정의한다", () => {
@@ -64,10 +62,10 @@ describe("캠페인 바깥 화면의 통일성", () => {
     expect(rule).not.toMatch(/background:/);
   });
 
-  it("업적 총 개수를 글자로 박지 않는다", () => {
-    // 업적을 늘리면 메뉴의 숫자가 조용히 어긋난다.
-    expect(tsx("MainMenuScreen.tsx")).toContain("ACHIEVEMENT_CATALOG.length");
-    expect(tsx("MainMenuScreen.tsx")).not.toMatch(/달성 [^`"]*\/ \d/);
+  it("일러스트 메인 메뉴는 업적 저장 요약을 별도로 그리지 않는다", () => {
+    // 승인된 명패 구도에는 저장값을 표시할 자리가 없다.
+    expect(tsx("MainMenuScreen.tsx")).not.toContain("ACHIEVEMENT_CATALOG.length");
+    expect(tsx("MainMenuScreen.tsx")).not.toContain("unlockedCount");
   });
 });
 

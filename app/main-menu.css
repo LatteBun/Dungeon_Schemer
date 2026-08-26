@@ -1,166 +1,70 @@
 .main-menu-screen {
-  position: relative;
-  isolation: isolate;
   display: grid;
-  grid-template-rows: 1fr auto 1fr;
   width: 100%;
   height: 100%;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: clamp(1.5rem, 4cqh, 3.5rem) clamp(1.5rem, 5cqw, 5rem);
-  background: #0b0805;
-  color: #f2dfb4;
-  text-align: center;
+  place-items: center;
+  background: #050403;
 }
 
-.main-menu-screen::before {
+.main-menu-screen__canvas {
+  position: relative;
+  width: min(100%, calc(100cqh * 1672 / 941));
+  max-height: 100%;
+  aspect-ratio: 1672 / 941;
+}
+
+.main-menu-screen__art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.main-menu-screen__accessible-title {
   position: absolute;
-  inset: 0;
-  z-index: -2;
-  content: "";
-  background-image: url("/assets/u2/intro-background-full.png");
-  background-position: center 46%;
-  background-repeat: no-repeat;
-  background-size: cover;
-  transform: scale(1.015);
-}
-
-.main-menu-screen__shade {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 50% 38%, rgb(8 6 3 / 18%) 0%, rgb(8 6 3 / 56%) 58%, rgb(4 3 2 / 88%) 100%),
-    linear-gradient(180deg, rgb(3 2 1 / 48%) 0%, transparent 38%, rgb(3 2 1 / 64%) 100%);
-  box-shadow: inset 0 0 6rem rgb(0 0 0 / 54%);
-}
-
-.main-menu-screen__title {
-  align-self: end;
-  max-width: 56rem;
-  margin: 0 auto clamp(1.5rem, 4cqh, 3rem);
-  /*
-   * 어둠은 `text-shadow` 로 주지 않는다.
-   *
-   * 제목은 `background-clip: text` 로 글자 속을 채우므로 글자 자체는 투명하다.
-   * `text-shadow` 는 그 배경보다 위에 글자 모양대로 덧칠되어서, 넣는 순간 채워
-   * 둔 금색을 검게 덮는다. 실제로 재 보면 획의 최대 밝기가 229 에서 150 까지
-   * 눌렸다 — 색을 아무리 올려도 밝아지지 않는 이유가 이것이었다.
-   *
-   * 대신 아래 h1 의 `drop-shadow` 가 어둠을 맡는다. 그쪽은 글자 바깥에 그려지
-   * 므로 배경과 갈라 주면서 글자는 건드리지 않는다.
-   */
-}
-
-
-/*
- * 제목은 배경에서 튀지 않는다.
- *
- * `#e5c77f` 를 그대로 쓰니 어두운 서재 위에서 혼자 형광처럼 밝았다. 이 화면의
- * 다른 금색은 모두 촛불에 비친 놋쇠인데 제목만 재질이 달라 보였다. 위에서
- * 아래로 옅어지는 금색을 글자에 입혀, 촛불이 위에서 닿은 것처럼 만든다.
- */
-.main-menu-screen__title h1 {
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(3rem, 6cqw, 6.2rem);
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 0.95;
-
-  /*
-   * 내려긋는 획이 잘리지 않게 상자를 아래로 늘린다.
-   *
-   * `background-clip: text` 는 요소 상자 안에서만 칠한다. `line-height: 0.95` 는
-   * 글자보다 짧은 상자를 만들어서, `g` 처럼 기준선 아래로 내려가는 획이 상자
-   * 밖으로 나가 색을 못 받고 사라졌다. 상자만 늘리고 같은 만큼 당겨 두어
-   * 배치는 그대로 둔다.
-   */
-  padding-bottom: 0.2em;
-  margin-bottom: -0.2em;
-
-  /* 글자 안을 금속처럼 채운다. 배경 클립을 못 읽는 곳에서는 아래 color 가 선다. */
-  color: #a88c53;
-  background: linear-gradient(180deg, #c1a975 0%, #a88c53 48%, #866a35 84%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-
-  /* 새긴 것처럼 보이게 아래에 어두운 선을 하나 둔다. */
-  filter:
-    drop-shadow(0 0.03em 0 rgb(16 10 4 / 95%))
-    drop-shadow(0 0.08em 0.16em rgb(0 0 0 / 88%))
-    drop-shadow(0 0 0.5em rgb(0 0 0 / 80%));
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .main-menu-screen__actions {
-  align-self: start;
-  display: grid;
-  gap: clamp(0.75rem, 1.8cqh, 1.35rem);
-  width: min(42cqw, 38rem);
-  margin: clamp(1.25rem, 3cqh, 2.5rem) auto 0;
-}
-
-/*
- * 버튼의 살결은 공용 `.shell-cta` 가 준다.
- *
- * 예전에는 밝은 금색 판과 회색 판을 따로 그렸는데, 게임 안의 어느 버튼과도
- * 닮지 않아 이 화면만 다른 게임처럼 보였다. 여기서는 자리와 크기만 정한다.
- */
-.main-menu-screen__start,
-.main-menu-screen__achievements {
-  /*
-   * 공용 CTA 는 화면 구석에 놓이는 버튼이라 `justify-self: start` 로 내용 폭만
-   * 차지한다. 메뉴에서는 두 버튼이 같은 폭으로 가운데 서야 하므로 되돌린다.
-   */
-  justify-self: stretch;
-  min-height: clamp(3.4rem, 7cqh, 4.6rem);
-  box-shadow: inset 0 0 0 2px #0e0906, inset 0 0 0 3px rgb(189 147 69 / 58%), 0 0.6rem 1.4rem rgb(0 0 0 / 52%);
-  text-shadow: 0 0.1rem 0.14rem rgb(0 0 0 / 70%);
-  transition: filter 140ms ease, border-color 140ms ease, transform 140ms ease;
-}
-
-.main-menu-screen__start {
-  font-size: clamp(1.15rem, 1.7cqw, 1.65rem);
-  box-shadow:
-    inset 0 0 0 2px #0e0906,
-    inset 0 0 0 3px rgb(224 187 102 / 78%),
-    0 0 1.4rem rgb(216 170 67 / 22%),
-    0 0.6rem 1.4rem rgb(0 0 0 / 52%);
-}
-
-/*
- * 이름은 가운데, 달성 수는 오른쪽 끝.
- *
- * 두 칸 격자로 나누면 이름이 왼쪽으로 밀려 위의 「캠페인 시작」 과 축이
- * 어긋난다. 이름은 버튼 한가운데 두고 숫자만 따로 띄운다.
- */
-.main-menu-screen__achievements {
-  position: relative;
-  padding: 0 clamp(1.25rem, 2.8cqw, 2.2rem);
-  font-size: clamp(0.98rem, 1.35cqw, 1.3rem);
-}
-
-.main-menu-screen__achievements small {
   position: absolute;
-  right: clamp(1.25rem, 2.8cqw, 2.2rem);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--color-muted);
+  top: 52.55%;
+  left: 35.15%;
+  display: grid;
+  width: 29.95%;
+  gap: 2.15%;
+}
+
+.main-menu-screen__action {
+  display: grid;
+  min-height: max(44px, 7.2cqh);
+  padding: 0.3rem 0.75rem;
+  place-items: center;
+  cursor: pointer;
+  border: 1px solid #a98445;
+  color: #e7c98b;
+  background: linear-gradient(180deg, #171315 0%, #090708 100%);
+  box-shadow: inset 0 0 0 2px rgb(5 4 3 / 82%);
+  font: inherit;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(0.72rem, 0.95cqw, 0.92rem);
-  letter-spacing: 0.04em;
+  font-size: clamp(0.8rem, 2.35cqh, 1.45rem);
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  text-shadow: 0 0.1rem 0.14rem rgb(0 0 0 / 70%);
 }
 
-.main-menu-screen__start:is(:hover, :focus-visible),
-.main-menu-screen__achievements:is(:hover, :focus-visible) {
-  transform: translateY(-0.14rem);
+.main-menu-screen__action:is(:hover, :focus-visible) {
+  border-color: #e7c579;
+  color: #fff0b6;
+  filter: brightness(1.15);
 }
 
-.main-menu-screen__start:focus-visible,
-.main-menu-screen__achievements:focus-visible {
+.main-menu-screen__action:focus-visible {
   outline: 0.2rem solid #fff0ab;
-  outline-offset: 0.3rem;
+  outline-offset: 0.2rem;
 }

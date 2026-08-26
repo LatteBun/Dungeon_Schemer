@@ -12,7 +12,8 @@ describe("루트 메인 메뉴", () => {
 
     expect(html).toContain('href="/campaign"');
     expect(html).toContain('href="/achievements?returnTo=%2F"');
-    expect(html).toContain("— / 12");
+    expect(html).toContain('src="/assets/main-menu/hero-this-way-main-menu.jpeg"');
+    expect(html).toContain('aria-haspopup="menu"');
     expect(html).not.toContain("캠페인 개편 진행 중");
     expect(html).toContain('<div class="game-canvas"><div class="app-frame">');
     expect(html).toContain('aria-label="빠른 메뉴 열기"');
