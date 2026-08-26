@@ -17,6 +17,7 @@ import {
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import { createU5BattleReplay, type U5BattleReplay } from "./u5-battle-replay";
 import type { U5EcologyView, U5LogEntry } from "./u5-log";
+import { U5_PREVIEW_MEMBERS } from "./u5-preview-data";
 import type { U5ProgressView } from "./u5-progress-model";
 import type { U5CombatFeedbackView } from "./u5-combat-feedback";
 
@@ -36,18 +37,18 @@ export interface U5BattlePreviewEntry {
 }
 
 const campaign = initializeCampaign("u5-dungeon-progress-preview-fixed-roster");
-const aliveMembers = Object.values(campaign.pool.byId)
-  .filter((member): member is Character => member !== undefined && member.alive);
-const cleric = aliveMembers.find((member) => member.classId === "cleric");
+const cleric = U5_PREVIEW_MEMBERS.find((member) => member.classId === "cleric");
 if (cleric === undefined) throw new Error("U5-2 치유 프리뷰에 쓸 성직자가 없다");
 const clericId = cleric.id;
-const companions = aliveMembers.filter((member) => member.id !== clericId).slice(0, 2);
+const companions = U5_PREVIEW_MEMBERS.filter((member) => member.id !== clericId);
 if (companions.length !== 2) throw new Error("U5-2 치유 프리뷰에 쓸 동료 둘이 없다");
 const injuredCompanion = {
   ...companions[0]!,
   hp: Math.max(1, Math.floor(companions[0]!.maxHp / 2)),
 };
-const members: readonly Character[] = [cleric, injuredCompanion, companions[1]!];
+const members: readonly Character[] = U5_PREVIEW_MEMBERS.map((member) =>
+  member.id === injuredCompanion.id ? injuredCompanion : member,
+);
 const battleAbilityUsesRemainingByCharacterId = { [clericId]: 2 } as const;
 const bossCandidate = SPIDER_THEME.bosses.find((candidate) => candidate.id === "boss-spider-2");
 

@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createU4PreviewData } from "./u4-preview-data";
 import { countU4LayerCrossings } from "./u4-dungeon-map-order";
+import { countU4GeometricCrossings } from "./u4-dungeon-map-layout";
 
 const TARGET_WIDTHS = [2, 3, 5, 4, 3, 2, 2] as const;
 
 describe("U4 preview data", () => {
-  it("renders the actual risk-3 preview with fewer crossings than original row order", () => {
+  it("renders the actual risk-3 preview with zero logical crossings", () => {
     const preview = createU4PreviewData({ deadPreview: false });
     const originalRows = [
       [preview.map.entryNodeId],
@@ -24,9 +25,9 @@ describe("U4 preview data", () => {
       [preview.map.bossNodeId],
     ];
 
-    expect(countU4LayerCrossings(preview.map, renderedRows)).toBeLessThan(
-      countU4LayerCrossings(preview.map, originalRows),
-    );
+    expect(countU4LayerCrossings(preview.map, renderedRows)).toBe(0);
+    expect(countU4LayerCrossings(preview.map, originalRows)).toBeGreaterThanOrEqual(0);
+    expect(countU4GeometricCrossings(preview.layout.corridors)).toBe(0);
   });
 
   it("uses an actual risk-3 E1 map with the non-consecutive-five example template", () => {

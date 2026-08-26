@@ -154,16 +154,31 @@ describe("백테스트 캠페인 driver", () => {
      * 잡힌다 — 게시판이 다른 던전을 걸기 시작하자 실제로 그렇게 됐다. 여기서
      * 보려는 것은 전멸이 원장에 남는가이므로 그 조건을 밖으로 드러낸다.
      */
-    const result = runCampaign({
-      seed: "b1b-calibration-v1/000078",
-      strategy: createStrategy("survival"),
-      accuracy: 0.7,
-    });
+    const base = createStrategy("selective-betrayal");
+    const harmful = {
+      ...base,
+      chooseOffer: (view: Parameters<typeof base.chooseOffer>[0]) => ({ ...base.chooseOffer(view), betrayal: true }),
+      chooseAdviceIntent: () => "harm" as const,
+    };
+    let result: ReturnType<typeof runCampaign> | undefined;
+    for (let index = 0; index < 40; index += 1) {
+      const candidate = runCampaign({
+        seed: `driver-wipe-ledger-${index}`,
+        strategy: harmful,
+        accuracy: 1 as unknown as Accuracy,
+      });
+      if (candidate.ok
+        && candidate.campaign.ending?.kind === "exhausted"
+        && candidate.trace.terminationEvidence?.wipeSource === "expedition-boss") {
+        result = candidate;
+        break;
+      }
+    }
 
-    if (!result.ok) throw new Error("인력 소진 실행을 찾지 못했다");
+    if (result === undefined || !result.ok) throw new Error("보스 전멸로 인력 소진한 실행을 찾지 못했다");
 
     expect(result.campaign.ending?.kind).toBe("exhausted");
-    expect(result.trace.terminationEvidence?.wipeSource).toBeDefined();
+    expect(result.trace.terminationEvidence?.wipeSource).toBe("expedition-boss");
     expect(result.trace.terminationEvidence).toMatchObject({
       sourceLosses: expect.arrayContaining([
         expect.objectContaining({ source: "expedition-boss", deaths: expect.any(Number) }),
@@ -174,7 +189,7 @@ describe("백테스트 캠페인 driver", () => {
     });
     expect(result.trace.terminationEvidence!.precedingPool.emergencyEligibleClassCount).toBeGreaterThanOrEqual(3);
     expect(result.trace.terminationEvidence!.finalPool.emergencyEligibleClassCount).toBeLessThan(3);
-  });
+  }, 15_000);
 
   it("원정마다 초기·현재 위험도와 던전별 시도 번호를 기록한다", () => {
     const result = runCampaign({

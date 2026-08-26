@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  useEffect,
   useRef,
+  useState,
   type CSSProperties,
   type KeyboardEvent,
 } from "react";
@@ -162,6 +164,21 @@ function roomPositionStyle(x: number, y: number): CSSProperties {
   };
 }
 
+export function corridorDisplayGeometry(
+  corridor: U4MapLayout["corridors"][number],
+  surfaceWidth: number,
+  surfaceHeight: number,
+): { widthPercent: number; angleDeg: number } {
+  const width = surfaceWidth > 0 ? surfaceWidth : 1;
+  const height = surfaceHeight > 0 ? surfaceHeight : 1;
+  const dx = (corridor.end.x - corridor.start.x) * width;
+  const dy = (corridor.end.y - corridor.start.y) * height;
+  return {
+    widthPercent: (Math.hypot(dx, dy) / width) * 100,
+    angleDeg: (Math.atan2(dy, dx) * 180) / Math.PI,
+  };
+}
+
 function RoomVisual({ node, selected = false }: { node: U4MapNodeView; selected?: boolean }) {
   /* 같은 분류의 방이 도장 찍은 것처럼 보이지 않게 틀만 조금 흐트러뜨린다. */
   const variation = roomVariationFor(node.id);
@@ -254,7 +271,19 @@ function DungeonMap({
     ? "/assets/u4/map/map_background_base.png"
     : U4_MAP_BACKGROUND_BY_THEME[themeId];
   const roomRefs = useRef(new Map<NodeId, HTMLButtonElement>());
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  const [surfaceSize, setSurfaceSize] = useState({ width: 1, height: 1 });
   const byId = new Map(nodes.map((node) => [node.id, node] as const));
+
+  useEffect(() => {
+    const surface = surfaceRef.current;
+    if (surface === null) return;
+    const update = () => setSurfaceSize({ width: surface.clientWidth, height: surface.clientHeight });
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(surface);
+    return () => observer.disconnect();
+  }, []);
 
   const handleArrow = (
     event: KeyboardEvent<HTMLButtonElement>,
@@ -282,7 +311,7 @@ function DungeonMap({
         <RiskStars riskLevel={riskLevel} />
       </header>
 
-      <div className="u4-map-surface" data-testid="u4-map-surface">
+      <div ref={surfaceRef} className="u4-map-surface" data-testid="u4-map-surface">
         {/*
           * 배경은 던전의 테마를 따른다.
           *
@@ -317,8 +346,8 @@ function DungeonMap({
               style={{
                 left: `${corridor.start.x * 100}%`,
                 top: `${corridor.start.y * 100}%`,
-                width: `${corridor.length * 100}%`,
-                transform: `rotate(${corridor.angleDeg}deg)`,
+                width: `${corridorDisplayGeometry(corridor, surfaceSize.width, surfaceSize.height).widthPercent}%`,
+                transform: `rotate(${corridorDisplayGeometry(corridor, surfaceSize.width, surfaceSize.height).angleDeg}deg)`,
               }}
             >
               <img

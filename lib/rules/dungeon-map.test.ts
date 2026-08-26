@@ -4,6 +4,8 @@ import { RuleError } from "@/lib/domain/errors";
 import {
   MAP_TEMPLATES,
   generateDungeonMap,
+  generateDungeonMapWithDiagnostics,
+  __setDungeonMapGenerationTestSeam,
   validateGeneratedMap,
   validateMapTemplate,
   validateMapTemplates,
@@ -38,6 +40,48 @@ describe("위험도별 지도 템플릿 계약", () => {
 });
 
 describe("생성 지도 구조 검증", () => {
+  it("인접 행의 불가피한 교차를 INVALID_GENERATION으로 거부한다", () => {
+    const layers = Array.from({ length: 6 }, (_, index) => ({
+      depth: index + 1,
+      nodeIds: [0, 1].map((nodeIndex) => `normal-${index}-${nodeIndex}` as NodeId),
+    }));
+    const nodes: GeneratedMap["nodes"] = [
+      { id: "entry" as NodeId, kind: "entry", nextNodeIds: layers[0]!.nodeIds },
+      ...layers.flatMap((layer, index) => layer.nodeIds.map((id) => ({
+        id,
+        kind: "normal" as const,
+        nextNodeIds: index === 0
+          ? layers[1]!.nodeIds
+          : index === layers.length - 1 ? ["boss" as NodeId] : layers[index + 1]!.nodeIds,
+      }))),
+      { id: "boss" as NodeId, kind: "boss", nextNodeIds: [] },
+    ];
+    const error = (() => {
+      try { validateGeneratedMap({
+      entryNodeId: "entry" as NodeId,
+      bossNodeId: "boss" as NodeId,
+      layers,
+      nodes,
+      }, 1); return undefined;
+      } catch (caught) { return caught as RuleError; }
+    })();
+    expect(error).toBeInstanceOf(RuleError);
+    expect(error?.code).toBe("INVALID_GENERATION");
+    expect(error?.details.minimumCrossingCount).toBeGreaterThan(0);
+    expect(error?.message).toContain("minimumCrossingCount");
+  });
+
+  it("진단 생성기는 지도와 선택 간선 산식을 함께 반환한다", () => {
+    const input = { campaignSeed: "diagnostics", dungeonId: "dungeon-map-test" as never, initialRiskLevel: 3 as const, attempt: 0 };
+    const result = generateDungeonMapWithDiagnostics(input);
+    expect(result.map).toEqual(generateDungeonMap(input));
+    expect(result.diagnostics.acceptedOptionalEdgeCount).toBeGreaterThanOrEqual(0);
+    expect(result.diagnostics.baseEdgeCount).toBe(
+      result.map.nodes.reduce((sum, node) => sum + node.nextNodeIds.length, 0)
+        - result.diagnostics.acceptedOptionalEdgeCount,
+    );
+  });
+
   it("유령 NodeId를 참조하는 그래프를 거부한다", () => {
     const map: GeneratedMap = {
       entryNodeId: "entry" as NodeId,
@@ -85,6 +129,84 @@ describe("생성 지도 구조 검증", () => {
 });
 
 describe("결정적 지도 생성", () => {
+  it("고정 20 시드·5 위험도·3 시도에서 300개 지도가 계약을 만족한다", () => {
+    for (let seedIndex = 0; seedIndex < 20; seedIndex += 1) {
+      for (const riskLevel of [1, 2, 3, 4, 5] as const) {
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const input = { campaignSeed: `fixed-seed-${seedIndex}`, dungeonId: "dungeon-300" as never, initialRiskLevel: riskLevel, attempt };
+          const result = generateDungeonMapWithDiagnostics(input);
+          expect(() => validateGeneratedMap(result.map, riskLevel)).not.toThrow();
+          expect(generateDungeonMapWithDiagnostics(input)).toEqual(result);
+          const byId = new Map(result.map.nodes.map((node) => [node.id, node]));
+          const forward = new Set<NodeId>([result.map.entryNodeId]);
+          for (const nodeId of forward) for (const next of byId.get(nodeId)!.nextNodeIds) forward.add(next);
+          const reverse = new Map<NodeId, NodeId[]>();
+          for (const node of result.map.nodes) reverse.set(node.id, []);
+          for (const node of result.map.nodes) for (const next of node.nextNodeIds) reverse.get(next)!.push(node.id);
+          const backward = new Set<NodeId>([result.map.bossNodeId]);
+          for (const nodeId of backward) for (const previous of reverse.get(nodeId)!) backward.add(previous);
+          expect(forward.size).toBe(result.map.nodes.length);
+          expect(backward.size).toBe(result.map.nodes.length);
+          expect(result.map.nodes.every((node) => node.nextNodeIds.length <= 2)).toBe(true);
+          expect(result.diagnostics.baseEdgeCount + result.diagnostics.acceptedOptionalEdgeCount)
+            .toBe(result.map.nodes.reduce((sum, node) => sum + node.nextNodeIds.length, 0));
+          expect(result.diagnostics.evaluatedOptionalCandidateCount).toBeGreaterThanOrEqual(result.diagnostics.acceptedOptionalEdgeCount);
+        }
+      }
+    }
+  }, 30000);
+
+  it("named seam에서 안전 간선은 채택하고 교차 후보는 거부한다", () => {
+    const input = { campaignSeed: "seam", dungeonId: "seam" as never, initialRiskLevel: 1 as const, attempt: 0 };
+    let baseline: GeneratedMap;
+    try {
+      __setDungeonMapGenerationTestSeam({ candidatePairs: [], passesRandomGate: () => false });
+      baseline = generateDungeonMap(input);
+    } finally { __setDungeonMapGenerationTestSeam(undefined); }
+    const pairIndex = baseline.layers.findIndex((layer, index) => layer.nodeIds.length === 2 && baseline.layers[index + 1]?.nodeIds.length === 2);
+    expect(pairIndex).toBeGreaterThanOrEqual(0);
+    const left = baseline.layers[pairIndex]!.nodeIds;
+    const right = baseline.layers[pairIndex + 1]!.nodeIds;
+    expect(baseline.nodes.find((node) => node.id === left[0])!.nextNodeIds).toContain(right[0]);
+    expect(baseline.nodes.find((node) => node.id === left[1])!.nextNodeIds).toContain(right[1]);
+    const [safe1, rejected] = [[left[0]!, right[1]!], [left[1]!, right[0]!]] as const;
+    const next = baseline.layers[pairIndex + 2]!.nodeIds;
+    expect(next).toHaveLength(2);
+    const laterSafe = [right[0]!, next[1]!] as const;
+    const baselineLeftOneOutgoing = [...baseline.nodes.find((node) => node.id === left[1])!.nextNodeIds];
+    const baselineRightZeroIncomingParents = baseline.nodes
+      .filter((node) => node.nextNodeIds.includes(right[0]!))
+      .map((node) => node.id);
+    expect(baselineLeftOneOutgoing).toEqual([right[1]]);
+    expect(baselineRightZeroIncomingParents).toEqual([left[0]]);
+    expect(baselineRightZeroIncomingParents).toHaveLength(1);
+    const attempted: Array<readonly [NodeId, NodeId]> = [];
+    const rank = new Map([safe1, rejected, laterSafe].map((edge, index) => [`${edge[0]}:${edge[1]}`, index]));
+    __setDungeonMapGenerationTestSeam({
+      candidatePairs: [safe1, rejected, laterSafe],
+      candidateOrder: (from, to) => rank.get(`${from}:${to}`) ?? 99,
+      passesRandomGate: (from, to) => { attempted.push([from, to]); return true; },
+    });
+    try {
+      const result = generateDungeonMapWithDiagnostics(input);
+      expect(attempted).toEqual([safe1, rejected, laterSafe]);
+      expect(result.diagnostics.evaluatedOptionalCandidateCount).toBeGreaterThan(0);
+      expect(result.diagnostics.acceptedOptionalEdgeCount).toBeGreaterThan(0);
+      expect(result.diagnostics.rejectedForCrossingCount).toBeGreaterThanOrEqual(1);
+      const adjacency = new Set(result.map.nodes.flatMap((node) => node.nextNodeIds.map((to) => `${node.id}:${to}`)));
+      expect(adjacency.has(`${safe1[0]}:${safe1[1]}`)).toBe(true);
+      expect(adjacency.has(`${rejected[0]}:${rejected[1]}`)).toBe(false);
+      expect(adjacency.has(`${laterSafe[0]}:${laterSafe[1]}`)).toBe(true);
+      expect(result.map.nodes.find((node) => node.id === left[1])!.nextNodeIds).toEqual(baselineLeftOneOutgoing);
+      const rightZeroIncomingParents = result.map.nodes
+        .filter((node) => node.nextNodeIds.includes(right[0]!))
+        .map((node) => node.id);
+      expect(rightZeroIncomingParents).toEqual(baselineRightZeroIncomingParents);
+      expect(rightZeroIncomingParents).toEqual([left[0]]);
+      expect(rightZeroIncomingParents).toHaveLength(1);
+      expect(result.map.nodes.find((node) => node.id === right[0])!.nextNodeIds).toEqual([next[0], next[1]]);
+    } finally { __setDungeonMapGenerationTestSeam(undefined); }
+  });
   it.each([1, 2, 3, 4, 5] as const)("위험도 %s의 여러 시드가 모든 구조 계약을 만족한다", (riskLevel) => {
     for (const campaignSeed of ["seed-a", "seed-b", "seed-c"]) {
       const map = generateDungeonMap({

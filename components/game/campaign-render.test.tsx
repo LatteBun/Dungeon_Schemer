@@ -764,7 +764,7 @@ function reachBossWithOneHeal(run: ReturnType<typeof driven>, clericId: Characte
 
 describe("치유 자원이 실제 화면 경계를 지난다", () => {
   it("U3 2/2 → 일반전 U5 1/2 → U4 1/2 → 보스 U5 0/2를 실제 캠페인으로 그린다", () => {
-    for (let index = 0; index < 80; index += 1) {
+    for (let index = 0; index < 240; index += 1) {
       const run = driven(`cleric-render-flow-${index}`);
       run.act({ type: "OPEN_BOARD" });
       const board = createU3BoardView(run.state().campaign, run.state().campaign.offers);

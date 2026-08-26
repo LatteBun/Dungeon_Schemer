@@ -54,20 +54,18 @@ const PREVIEW_ATTEMPT = 0;
 
 const campaign = initializeCampaign(PREVIEW_SEED);
 
-/** 성직자와 서로 다른 동료 둘. 실제 캠페인 풀에서 결정적으로 고른다. */
-const aliveMembers = Object.values(campaign.pool.byId)
+/** 살아 있는 파티원. 성직자 한 명과 동료 둘로 실제 비수용 상태를 찾는다. */
+const livingMembers: readonly Character[] = Object.values(campaign.pool.byId)
   .filter((member): member is Character => member !== undefined && member.alive);
-const cleric = aliveMembers.find((member) => member.classId === "cleric");
-if (cleric === undefined) throw new Error("U5 프리뷰에 쓸 성직자가 없다");
-const companions = aliveMembers
-  .filter((member) => member.id !== cleric.id && member.classId !== "cleric")
-  .slice(0, 2);
-if (companions.length !== 2) throw new Error("U5 프리뷰에 쓸 성직자 동료 둘이 없다");
-const members: readonly Character[] = [cleric, ...companions];
-const battleAbilityUsesRemainingByCharacterId = createBattleAbilityUsesForParty({
-  members,
-  classDefs: CLASSES,
-});
+
+if (livingMembers.length < 3) {
+  throw new Error("U5 프리뷰에 쓸 살아 있는 파티원 셋이 없다");
+}
+const clerics = livingMembers.filter((member) => member.classId === "cleric");
+const nonClericMembers = livingMembers.filter((member) => member.classId !== "cleric");
+
+if (clerics.length === 0) throw new Error("U5 프리뷰에 쓸 성직자가 없다");
+if (nonClericMembers.length < 2) throw new Error("U5 프리뷰에 쓸 성직자 동료 둘이 없다");
 
 /* 좁힌 타입을 돌려준다. 아래 함수들이 hoisting 때문에 좁힘을 물려받지 못한다. */
 function previewDungeon(): CampaignDungeon {
@@ -156,32 +154,52 @@ const samples = materializeSamples();
  * 신뢰가 낮거나 의심 많은 파티원이 모이면 좋은 조언도 통하지 않는다는 것이
  * 이 화면이 말하려는 바다. 그것을 지어내면 말이 되지 않는다.
  */
-function findUnacceptedCase(): { readonly sample: Sample; readonly slot: 0 | 1 | 2 } {
-  for (const sample of [samples.monster, samples.special, samples.rest, samples.merchant]) {
-    const presented = presentShuffledAdvice({
-      campaignSeed: PREVIEW_SEED,
-      dungeonId: PREVIEW_DUNGEON,
-      attempt: PREVIEW_ATTEMPT,
-      depth: sample.depth,
-      event: sample.event,
-    });
-    for (const slot of [0, 1, 2] as const) {
-      const decision = decideImmediateAdvice({
-        campaignSeed: PREVIEW_SEED,
-        dungeonId: PREVIEW_DUNGEON,
-        attempt: PREVIEW_ATTEMPT,
-        depth: sample.depth,
-        event: sample.event,
-        adviceId: adviceIdForSlot(presented, slot),
-        members,
-      });
-      if (!decision.executed) return { sample, slot };
+interface UnacceptedCase {
+  readonly members: readonly Character[];
+  readonly sample: Sample;
+  readonly slot: 0 | 1 | 2;
+}
+
+function findUnacceptedCase(): UnacceptedCase {
+  for (const cleric of clerics) {
+    for (let first = 0; first < nonClericMembers.length - 1; first += 1) {
+      for (let second = first + 1; second < nonClericMembers.length; second += 1) {
+        const members = [cleric, nonClericMembers[first]!, nonClericMembers[second]!];
+        for (const sample of [samples.monster, samples.special, samples.rest, samples.merchant]) {
+          const presented = presentShuffledAdvice({
+            campaignSeed: PREVIEW_SEED,
+            dungeonId: PREVIEW_DUNGEON,
+            attempt: PREVIEW_ATTEMPT,
+            depth: sample.depth,
+            event: sample.event,
+          });
+          for (const slot of [0, 1, 2] as const) {
+            const decision = decideImmediateAdvice({
+              campaignSeed: PREVIEW_SEED,
+              dungeonId: PREVIEW_DUNGEON,
+              attempt: PREVIEW_ATTEMPT,
+              depth: sample.depth,
+              event: sample.event,
+              adviceId: adviceIdForSlot(presented, slot),
+              members,
+            });
+            if (!decision.executed) return { members, sample, slot };
+          }
+        }
+      }
     }
   }
-  throw new Error("아무도 수용하지 않는 경우를 프리뷰 파티에서 찾지 못했다");
+  throw new Error("프리뷰 파티에서 아무도 수용하지 않는 경우를 찾지 못했다");
 }
 
 const unaccepted = findUnacceptedCase();
+/** U5 진행·전투 프리뷰가 공통으로 쓰는 실제 비수용 파티다. */
+export const U5_PREVIEW_MEMBERS: readonly Character[] = unaccepted.members;
+const members = U5_PREVIEW_MEMBERS;
+const battleAbilityUsesRemainingByCharacterId = createBattleAbilityUsesForParty({
+  members,
+  classDefs: CLASSES,
+});
 
 /*
  * 프리뷰가 무엇을 근거로 그렸는지 밝힌다.

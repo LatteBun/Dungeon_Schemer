@@ -21,6 +21,8 @@
 
 지도는 여러 Depth에서 갈라지고 합쳐질 수 있으며 Boss 외의 공통 일반 지점을 요구하지 않는다. 보장 사건은 특정 공통 노드가 아니라 Depth 예약으로 다룬다.
 
+E1은 기본 연결을 만든 뒤 선택(optional) 간선을 후보 순서대로 평가한다. 후보는 공용 exact layered solver가 계산한 전체 지도의 최소 논리 교차 수가 정확히 0일 때만 채택하며, 그렇지 않으면 차수를 소비하지 않고 버린다. 따라서 최종 `GeneratedMap`은 각 Depth의 좌우 순서를 선택해 직선 간선 교차를 0으로 만들 수 있는 topology를 보장한다. 표시 순서 선택은 U4가 담당한다.
+
 - **E2**: 공개 생태와 조언 판정·반응·신뢰 기록을 소유한다.
 - **E3**: 공개 category, 숨은 `special` exact-once cut, strong link, 실제 방문 사건 ID 물질화와 공통 BattleEngine을 소유한다.
 
