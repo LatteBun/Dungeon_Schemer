@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   discardSavedCampaignRun,
@@ -72,19 +72,31 @@ export function MainMenuScreen({ canResume = false }: MainMenuScreenProps) {
   );
 }
 
-export function MainMenu() {
-  /*
-   * 저장은 붙은 뒤에 본다.
-   *
-   * 서버가 그린 것과 클라이언트의 첫 그림이 같아야 hydration 이 어긋나지 않는다.
-   * 서버는 저장을 볼 수 없으므로 양쪽 모두 「이어할 판 없음」으로 시작하고, 붙은
-   * 뒤 한 번 더 그린다.
-   */
-  const [canResume, setCanResume] = useState(false);
+/*
+ * 이어할 판이 있는지는 브라우저 밖의 상태다.
+ *
+ * effect 안에서 `setState` 로 읽으면 붙자마자 한 번 더 그리게 되고, 그 방식은
+ * 이 저장소에서 이미 lint 에 걸려 `ScreenFit` 이 같은 자리로 옮겨 왔다.
+ * `useSyncExternalStore` 는 서버 몫과 클라이언트 몫을 따로 받으므로 hydration
+ * 이 어긋나지 않는다 — 서버는 저장을 볼 수 없어 언제나 「없음」이다.
+ */
+function subscribeSavedRun(onChange: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  /* 다른 탭에서 시작하거나 버린 판이 이 화면에도 반영된다. */
+  window.addEventListener("storage", onChange);
+  return () => { window.removeEventListener("storage", onChange); };
+}
 
-  useEffect(() => {
-    setCanResume(hasSavedCampaignRun());
-  }, []);
+/* 불리언이라 값으로 비교된다. 매번 새 객체를 내주면 React 가 무한히 다시 그린다. */
+const savedRunSnapshot = (): boolean => hasSavedCampaignRun();
+const savedRunServerSnapshot = (): boolean => false;
+
+export function MainMenu() {
+  const canResume = useSyncExternalStore(
+    subscribeSavedRun,
+    savedRunSnapshot,
+    savedRunServerSnapshot,
+  );
 
   return <MainMenuScreen canResume={canResume} />;
 }
