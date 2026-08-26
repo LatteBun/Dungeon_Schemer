@@ -56,6 +56,7 @@ describe("U4 assets", () => {
   it("reuses existing U2/U3 assets and provides every official live portrait", () => {
     expect(existsSync("public/assets/u2/status-gold.svg")).toBe(true);
     expect(existsSync("public/assets/u3/extracted/risk-star.png")).toBe(true);
+    expect(existsSync("public/assets/characters/dead")).toBe(false);
     for (const entry of CHARACTER_ROSTER) {
       expect(
         existsSync(

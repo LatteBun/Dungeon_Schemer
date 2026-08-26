@@ -306,3 +306,90 @@ test("현재 상황 패널은 FHD에서 카드 바로 위까지 늘어나고 글
   expect(outcomeGap.hasOutcome).toBe("true");
   expectNoBrowserErrors(failures, "U5 현재 상황 패널 확장");
 });
+
+test("긴 진행 기록은 필터를 고정한 채 마지막 항목까지 내부 스크롤된다", async ({ page }) => {
+  const failures = watchBrowserErrors(page);
+  await useFhd(page);
+  await page.getByRole("button", { name: "진행 기록", exact: true }).click();
+
+  const metrics = await page.locator(".u5-log").evaluate((log) => {
+    const filters = log.querySelector<HTMLElement>(".u5-log__filters");
+    const entries = log.querySelector<HTMLOListElement>(".u5-log__entries");
+    if (filters === null || entries === null) throw new Error("진행 기록 fixture가 없다");
+    for (let index = 0; index < 80; index += 1) {
+      const item = document.createElement("li");
+      item.innerHTML = `<span class="u5-log__order">${index + 10}</span><strong>긴 기록 ${index}</strong><span>끝까지 읽어야 하는 관찰 기록 ${index}</span>`;
+      entries.append(item);
+    }
+    const filterTop = filters.getBoundingClientRect().top;
+    entries.scrollTop = entries.scrollHeight;
+    const last = entries.lastElementChild?.getBoundingClientRect();
+    const entriesBox = entries.getBoundingClientRect();
+    return {
+      overflowY: getComputedStyle(entries).overflowY,
+      scrollHeight: entries.scrollHeight,
+      clientHeight: entries.clientHeight,
+      scrollTop: entries.scrollTop,
+      filterTop,
+      filterTopAfterScroll: filters.getBoundingClientRect().top,
+      lastBottom: last?.bottom ?? 0,
+      entriesBottom: entriesBox.bottom,
+    };
+  });
+
+  expect(metrics.overflowY).toBe("auto");
+  expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
+  expect(metrics.scrollTop).toBeGreaterThan(0);
+  expect(metrics.filterTopAfterScroll).toBeCloseTo(metrics.filterTop, 1);
+  expect(metrics.lastBottom).toBeLessThanOrEqual(metrics.entriesBottom + 1);
+  expectNoBrowserErrors(failures, "긴 U5 진행 기록 내부 스크롤");
+});
+
+test("생태 기록은 hover와 키보드 초점에서 scrollbar를 드러내고 마지막 단서까지 이동한다", async ({ page }) => {
+  const failures = watchBrowserErrors(page);
+  await useFhd(page);
+  await page.getByRole("button", { name: "진행 기록", exact: true }).click();
+  await page.getByRole("button", { name: "생태", exact: true }).click();
+  const ecology = page.getByTestId("u5-ecology");
+
+  await ecology.evaluate((element) => {
+    const list = element.querySelector("section:last-child ul");
+    if (list === null) throw new Error("생태 단서 fixture가 없다");
+    for (let index = 0; index < 80; index += 1) {
+      const item = document.createElement("li");
+      item.textContent = `긴 관찰 단서 ${index}`;
+      list.append(item);
+    }
+  });
+  await ecology.focus();
+  await expect(ecology).toBeFocused();
+  for (let index = 0; index < 300; index += 1) await ecology.press("ArrowDown");
+  await expect(ecology).toBeFocused();
+
+  const focusMetrics = await ecology.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const thumb = getComputedStyle(element, "::-webkit-scrollbar-thumb");
+    const last = element.querySelector("section:last-child li:last-child")?.getBoundingClientRect();
+    const box = element.getBoundingClientRect();
+    return {
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+      scrollTop: element.scrollTop,
+      scrollbarColor: style.scrollbarColor,
+      thumbColor: thumb.backgroundColor,
+      lastBottom: last?.bottom ?? 0,
+      boxBottom: box.bottom,
+    };
+  });
+
+  expect(focusMetrics.scrollHeight).toBeGreaterThan(focusMetrics.clientHeight);
+  expect(focusMetrics.scrollTop).toBeGreaterThan(0);
+  expect(focusMetrics.scrollbarColor).toContain("rgb(90, 70, 48)");
+  expect(focusMetrics.thumbColor).toBe("rgb(90, 70, 48)");
+  expect(focusMetrics.lastBottom).toBeLessThanOrEqual(focusMetrics.boxBottom + 1);
+  await ecology.evaluate((element) => element.blur());
+  await expect(ecology).not.toBeFocused();
+  await ecology.hover();
+  await expect(ecology).toHaveCSS("scrollbar-color", "rgb(90, 70, 48) rgba(0, 0, 0, 0)");
+  expectNoBrowserErrors(failures, "긴 U5 생태 기록 내부 스크롤");
+});

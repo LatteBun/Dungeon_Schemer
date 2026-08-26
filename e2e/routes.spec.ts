@@ -8,6 +8,7 @@ interface RouteCase {
 
 const ROUTES: readonly RouteCase[] = [
   { path: "/", marker: (page) => page.getByRole("heading", { level: 1, name: "Dungeon Schemer" }) },
+  { path: "/achievements", marker: (page) => page.getByRole("heading", { level: 1, name: "길잡이 업적 기록" }) },
   { path: "/campaign", marker: (page) => page.getByRole("main", { name: /던전은 검보다 먼저 말을 건넨다/ }) },
   { path: "/u1-test", marker: (page) => page.getByRole("heading", { level: 1, name: "인트로" }) },
   { path: "/u2-test", marker: (page) => page.getByRole("main", { name: /던전은 검보다 먼저 말을 건넨다/ }) },
@@ -27,6 +28,12 @@ for (const route of ROUTES) {
     await expect(route.marker(page)).toBeVisible();
     await expect(page.locator("body")).not.toHaveText("");
     await expect(page.locator("[data-nextjs-dialog]")).toHaveCount(0);
+    const quickMenu = page.getByRole("button", { name: "빠른 메뉴 열기" });
+    if (route.path === "/achievements") {
+      await expect(quickMenu).toBeHidden();
+    } else {
+      await expect(quickMenu).toBeVisible();
+    }
     expectNoBrowserErrors(failures, route.path);
   });
 }
