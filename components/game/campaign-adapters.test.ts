@@ -3,6 +3,7 @@ import { DENOUNCE_THRESHOLD, type CampaignState, type Character, type ClassId } 
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import { firstChoosableAdvice } from "@/lib/store/legal-advice";
 import { createExpeditionForOffer } from "@/lib/rules/campaign-transition";
+import { countEmergencyEligibleAdventurers } from "@/lib/rules/ending";
 import {
   adviceIdForSlotIn,
   ecologyViewFor,
@@ -42,6 +43,24 @@ function withZeroTrust(
   return { ...campaign, pool: { ...campaign.pool, byId } };
 }
 
+function withEmergencyEligibility(
+  campaign: CampaignState,
+  affected: { wounded: number; dead: number; zeroTrust: number },
+): CampaignState {
+  const byId = { ...campaign.pool.byId } as Record<string, Character>;
+  let cursor = 0;
+  const update = (changes: Partial<Character>) => {
+    const id = campaign.pool.order[cursor++];
+    const member = id === undefined ? undefined : byId[id];
+    if (member === undefined) throw new Error("missing character");
+    byId[id] = { ...member, ...changes };
+  };
+  for (let index = 0; index < affected.wounded; index++) update({ gravelyWounded: true });
+  for (let index = 0; index < affected.dead; index++) update({ alive: false, hp: 0 });
+  for (let index = 0; index < affected.zeroTrust; index++) update({ trust: 0 });
+  return { ...campaign, pool: { ...campaign.pool, byId } };
+}
+
 function inExpedition() {
   const store = createCampaignStore(SEED);
   store.getState().dispatch({ type: "OPEN_BOARD" });
@@ -61,6 +80,18 @@ function atEvent() {
 }
 
 describe("상태 바", () => {
+  it("응급 편성 가능한 남은 용사 수를 전달한다", () => {
+    const initial = createCampaignStore(SEED).getState().campaign;
+    const campaign = withEmergencyEligibility(initial, {
+      wounded: 1,
+      dead: 1,
+      zeroTrust: 1,
+    });
+
+    expect(statusFor(campaign, null).remainingAdventurers)
+      .toBe(countEmergencyEligibleAdventurers(campaign));
+  });
+
   it("초기 캠페인은 살아 있는 신뢰 0 인원과 도메인 기준을 함께 낸다", () => {
     const campaign = createCampaignStore(SEED).getState().campaign;
 

@@ -9,6 +9,7 @@ const U2_START_STATUS: TopStatusView = {
   reputation: 30,
   gold: 10,
   canPromote: false,
+  remainingAdventurers: 30,
   remainingDungeons: 15,
   zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
   nextPromotion: { rank: "B", reputationRequired: 60 },

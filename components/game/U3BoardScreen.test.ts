@@ -12,6 +12,7 @@ const status: TopStatusView = {
   reputation: 30,
   gold: 10,
   canPromote: false,
+  remainingAdventurers: 12,
   remainingDungeons: 15,
   zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
   nextPromotion: { rank: "B", reputationRequired: 60 },

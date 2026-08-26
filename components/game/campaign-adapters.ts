@@ -13,7 +13,7 @@ import type {
   ThemeContent,
 } from "@/lib/domain";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
-import { countLivingZeroTrust } from "@/lib/rules/ending";
+import { countEmergencyEligibleAdventurers, countLivingZeroTrust } from "@/lib/rules/ending";
 import { presentShuffledAdvice } from "@/lib/rules/advice-evaluation";
 import { PERSONALITY_LABEL, classLabel, portraitSrcForCharacterId } from "./character-labels";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
@@ -42,6 +42,7 @@ export function statusFor(campaign: CampaignState, active: ActiveExpeditionConte
     reputation: campaign.reputation,
     gold: campaign.gold,
     canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
+    remainingAdventurers: countEmergencyEligibleAdventurers(campaign),
     remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
     zeroTrust: {
       livingCount: countLivingZeroTrust(campaign),

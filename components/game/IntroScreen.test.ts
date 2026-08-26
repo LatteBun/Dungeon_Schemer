@@ -11,6 +11,7 @@ const status = {
   reputation: 30,
   gold: 10,
   canPromote: false,
+  remainingAdventurers: 12,
   remainingDungeons: 15,
   zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
   nextPromotion: { rank: "B", reputationRequired: 60 },
@@ -35,7 +36,7 @@ describe("IntroScreen", () => {
     expect(html).toContain("S급 길잡이");
     expect(html).toContain("길드 게시판으로");
     expect(html).toContain("<a class=\"u2-intro__cta\" href=\"/u1-test?screen=board\">");
-    expect(html).not.toContain("<button class=\"u2-intro__cta\"");
+    expect(html).not.toContain('<button class="u2-intro__cta"');
   });
 
   it("제목은 강제 줄바꿈 없이 렌더링하고 소개문은 의미 단위 두 줄로 묶는다", () => {

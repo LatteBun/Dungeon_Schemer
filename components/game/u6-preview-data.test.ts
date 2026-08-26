@@ -19,6 +19,8 @@ describe("U6 프리뷰 데이터", () => {
       expect(entry.status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
       expect(Number.isInteger(entry.status.zeroTrust.livingCount)).toBe(true);
       expect(entry.status.zeroTrust.livingCount).toBeGreaterThanOrEqual(0);
+      expect(Number.isInteger(entry.status.remainingAdventurers)).toBe(true);
+      expect(entry.status.remainingAdventurers).toBeGreaterThanOrEqual(0);
     }
   });
 

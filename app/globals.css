@@ -126,8 +126,8 @@ body {
 :root {
   --status-bar-padding-block: clamp(0.65rem, 0.6cqw, 1rem);
   --status-bar-padding-inline: clamp(0.8rem, 2cqw, 1.5rem);
-  --status-list-gap: clamp(0.45rem, 1.1cqw, 0.75rem);
-  --status-chip-min-width: clamp(8.7rem, 14cqw, 11.3rem);
+  --status-list-gap: clamp(0.35rem, 0.65cqw, 0.45rem);
+  --status-chip-min-width: clamp(8.7rem, 12cqw, 9.85rem);
   --status-chip-min-height: clamp(3rem, 3cqw, 4.35rem);
   --status-chip-gap: clamp(0.5rem, 0.5cqw, 0.8rem);
   --status-chip-padding-inline: clamp(0.65rem, 0.75cqw, 1.2rem);
@@ -173,7 +173,18 @@ body {
   min-width: 0;
 }
 
-.game-shell__zero-trust-popover {
+.game-shell__status-info-anchor {
+  position: relative;
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.game-shell__status-info-anchor > .game-shell__status-chip {
+  width: 100%;
+}
+
+.game-shell__status-info-popover {
   position: absolute;
   z-index: 20;
   top: calc(100% + 0.5rem);
@@ -188,9 +199,9 @@ body {
   box-shadow: 0 1rem 3rem rgb(0 0 0 / 72%);
 }
 
-.game-shell__zero-trust-popover h2 { margin: 0 0 0.75rem; color: #e8c27a; }
-.game-shell__zero-trust-popover p { margin: 0 0 0.8rem; line-height: 1.6; }
-.game-shell__zero-trust-popover button { float: right; }
+.game-shell__status-info-popover h2 { margin: 0 0 0.75rem; color: #e8c27a; }
+.game-shell__status-info-popover p { margin: 0 0 0.8rem; line-height: 1.6; }
+.game-shell__status-info-popover button { float: right; }
 
 .game-shell__status-item {
   display: flex;

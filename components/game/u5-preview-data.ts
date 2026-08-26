@@ -17,7 +17,7 @@ import {
 } from "@/lib/rules/expedition-events";
 import { SPIDER_THEME } from "@/lib/content/themes";
 import { DENOUNCE_THRESHOLD } from "@/lib/domain";
-import { countLivingZeroTrust } from "@/lib/rules/ending";
+import { countEmergencyEligibleAdventurers, countLivingZeroTrust } from "@/lib/rules/ending";
 import type {
   CampaignDungeon,
   Character,
@@ -196,6 +196,7 @@ export const U5_PREVIEW_SOURCE = {
   dungeon,
   members,
   battleAbilityUsesRemainingByCharacterId,
+  campaign,
   samples,
 } as const;
 
@@ -234,6 +235,7 @@ function status(over: Partial<TopStatusView> = {}): TopStatusView {
     reputation: campaign.reputation,
     gold: campaign.gold,
     canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
+    remainingAdventurers: countEmergencyEligibleAdventurers(campaign),
     remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
     zeroTrust: {
       livingCount: countLivingZeroTrust(campaign),

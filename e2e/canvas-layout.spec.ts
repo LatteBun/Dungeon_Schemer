@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { expectNoBrowserErrors, watchBrowserErrors } from "./browser-errors";
 
 const VIEWPORTS = [
@@ -20,6 +21,36 @@ interface Box {
 
 function overlaps(a: Box, b: Box): boolean {
   return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+async function expectAnchoredPopover(
+  page: Page,
+  triggerTestId: string,
+  dialogName: string,
+  expectedCopy: string,
+) {
+  const trigger = page.getByTestId(triggerTestId);
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: dialogName });
+  await expect(dialog).toContainText(expectedCopy);
+  const [triggerBox, dialogBox] = await Promise.all([
+    trigger.boundingBox(),
+    dialog.boundingBox(),
+  ]);
+  expect(triggerBox).not.toBeNull();
+  expect(dialogBox).not.toBeNull();
+  expect(dialogBox!.y).toBeGreaterThanOrEqual(triggerBox!.y + triggerBox!.height - 1);
+  expect(Math.abs(
+    (dialogBox!.x + dialogBox!.width / 2) - (triggerBox!.x + triggerBox!.width / 2),
+  )).toBeLessThanOrEqual(2);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await dialog.getByRole("button", { name: "닫기" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
 }
 
 for (const viewport of VIEWPORTS) {
@@ -116,24 +147,69 @@ const STATUS_VIEWPORTS = [
 ] as const;
 
 for (const viewport of STATUS_VIEWPORTS) {
-  test(`상태 칩 7개 ${viewport.name} 한 줄·퀵 메뉴 비겹침`, async ({ page }) => {
+  test(`상태 칩 8개 ${viewport.name} 한 줄·퀵 메뉴 비겹침`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     const failures = watchBrowserErrors(page);
     await page.goto("/u1-test?screen=board");
 
     const list = page.locator(".game-shell__status-list");
     const chips = page.locator(".game-shell__status-chip");
-    await expect(chips).toHaveCount(7);
+    await expect(chips).toHaveCount(8);
     const zeroTrustChip = chips.filter({ has: page.getByText("의심 인원", { exact: true }) });
     await expect(zeroTrustChip).toHaveCount(1);
     await expect(zeroTrustChip.getByText("7 / 5", { exact: true })).toBeVisible();
+    const remainingAdventurersChip = chips.filter({ has: page.getByText("남은 용사", { exact: true }) });
+    await expect(remainingAdventurersChip).toHaveCount(1);
+    await expect(remainingAdventurersChip.getByText("12명", { exact: true })).toBeVisible();
 
-    await zeroTrustChip.click();
-    const dialog = page.getByRole("dialog", { name: "의심 인원" });
-    await expect(dialog).toContainText("이번 던전이 끝난 뒤 누적 고발이 시작됩니다.");
+    const popovers = [
+      {
+        triggerTestId: "zero-trust-info-trigger",
+        dialogName: "의심 인원",
+        expectedCopy: "신뢰를 완전히 잃은 용사가 다섯 명 이상이면, 이번 던전이 끝난 뒤 누적 고발이 시작됩니다.",
+      },
+      {
+        triggerTestId: "remaining-adventurers-info-trigger",
+        dialogName: "남은 용사",
+        expectedCopy: "서로 다른 직업의 용사 세 명을 더는 모을 수 없으면, 이번 던전이 끝난 뒤 원정대를 꾸리지 못해 길잡이 일도 끝납니다.",
+      },
+    ] as const;
+    for (const popover of popovers) {
+      await expectAnchoredPopover(
+        page,
+        popover.triggerTestId,
+        popover.dialogName,
+        popover.expectedCopy,
+      );
+    }
+
+    const zeroTrustTrigger = page.getByTestId("zero-trust-info-trigger");
+    const remainingAdventurersTrigger = page.getByTestId("remaining-adventurers-info-trigger");
+    await remainingAdventurersTrigger.click();
+    const quickMenuTrigger = page.locator(".global-quick-menu__trigger");
+    await expect(quickMenuTrigger).toHaveAccessibleName("빠른 메뉴 열기");
+    await quickMenuTrigger.click();
+    await expect(page.getByRole("dialog", { name: "남은 용사" })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "빠른 메뉴" })).toBeVisible();
+    await expect(quickMenuTrigger).toBeFocused();
     await page.keyboard.press("Escape");
-    await expect(dialog).toHaveCount(0);
-    await expect(page.getByTestId("zero-trust-info-trigger")).toBeFocused();
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    }));
+    await expect(page.getByRole("region", { name: "빠른 메뉴" })).toHaveCount(0);
+    await expect(quickMenuTrigger).toBeFocused();
+
+    await remainingAdventurersTrigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog", { name: "남은 용사" })).toBeVisible();
+    await zeroTrustTrigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog")).toHaveCount(1);
+    await expect(page.getByRole("dialog", { name: "남은 용사" })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "의심 인원" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(zeroTrustTrigger).toBeFocused();
 
     const metrics = await list.evaluate((element) => ({
       clientWidth: element.clientWidth,
@@ -162,13 +238,35 @@ for (const viewport of STATUS_VIEWPORTS) {
     });
     expect(boxes.some((box) => overlaps(box, triggerBox))).toBe(false);
 
-    await trigger.click();
-    const panel = page.getByRole("region", { name: "빠른 메뉴" });
-    const panelBox = await panel.evaluate((element) => {
-      const rect = element.getBoundingClientRect();
-      return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
-    });
-    expect(boxes.some((box) => overlaps(box, panelBox))).toBe(false);
-    expectNoBrowserErrors(failures, `상태 칩 7개 ${viewport.name}`);
+    for (const popover of popovers) {
+      await trigger.click();
+      const panel = page.getByRole("region", { name: "빠른 메뉴" });
+      await page.getByTestId(popover.triggerTestId).focus();
+      await page.keyboard.press("Enter");
+      const dialog = page.getByRole("dialog", { name: popover.dialogName });
+      const [panelBox, dialogBox] = await Promise.all([
+        panel.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+        }),
+        dialog.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+        }),
+      ]);
+      expect(
+        boxes.filter((box) => overlaps(box, panelBox)),
+        `${viewport.name} ${popover.dialogName} 열린 퀵 메뉴 panel ${JSON.stringify(panelBox)}과 겹친 상태 칩`,
+      ).toEqual([]);
+      expect(
+        overlaps(dialogBox, panelBox),
+        `${viewport.name} ${popover.dialogName} popover ${JSON.stringify(dialogBox)}와 퀵 메뉴 panel ${JSON.stringify(panelBox)} 겹침`,
+      ).toBe(false);
+      expect(overlaps(dialogBox, triggerBox)).toBe(false);
+      await page.keyboard.press("Escape");
+      await expect(dialog).toHaveCount(0);
+      await expect(panel).toHaveCount(0);
+    }
+    expectNoBrowserErrors(failures, `상태 칩 8개 ${viewport.name}`);
   });
 }
