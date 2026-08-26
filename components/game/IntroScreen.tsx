@@ -13,27 +13,6 @@ export interface IntroScreenProps {
   onEnterBoard?: () => void;
 }
 
-const introCards = [
-  {
-    id: "guide",
-    icon: "/assets/u2/intro-role-observer.svg",
-    title: "역할",
-    body: "던전 편에 선 길잡이로서, 앞서 본 길과 숨은 사정을 읽는다.",
-  },
-  {
-    id: "advice",
-    icon: "/assets/u2/intro-means-map-quill.svg",
-    title: "수단",
-    body: "직접 싸우지 않고, 길과 징후를 해석해 용사들에게 조언을 건넨다.",
-  },
-  {
-    id: "goal",
-    icon: "/assets/u2/intro-goal-rank-crest.svg",
-    title: "목표",
-    body: "열다섯 던전을 정리하고 명성을 쌓아, 끝내 S급 길잡이에 오른다.",
-  },
-] as const;
-
 function CtaBody() {
   return (
     <>
@@ -50,25 +29,57 @@ function IntroMainContent({ boardHref, onEnterBoard }: { boardHref: string; onEn
       <div className="u2-intro" data-testid="u2-intro">
         <div className="u2-intro__copy">
           <p className="u2-intro__eyebrow">길잡이의 첫 기록</p>
-          <h1 id="u2-intro-title">던전은 검보다 먼저 말을 건넨다</h1>
-          <p className="u2-intro__lead">
-            <span>용사들은 앞으로 나아갑니다. 당신은 그보다 먼저 길을 읽고, 흔적을 기록합니다.</span>
-            <span>무엇을 믿게 할지 결정하는 이 기록이, 던전과 용사 사이의 첫 약속이 됩니다.</span>
-          </p>
+          <h1 id="u2-intro-title">당신은 용사들을 던전으로 안내하는 고블린 길잡이입니다.</h1>
+          <p className="u2-intro__lead">직접 싸우지 않습니다. 길을 읽고, 어떤 조언을 건넬지 결정하십시오.</p>
         </div>
 
-        <div className="u2-intro__cards" aria-label="길잡이 안내">
-          {introCards.map((card) => (
-            <article key={card.id} className="u2-intro__card">
-              <div className="u2-intro__card-icon" aria-hidden="true">
-                <img src={card.icon} alt="" width={72} height={72} />
-              </div>
-              <h2>{card.title}</h2>
-              <span className="u2-intro__card-rule" aria-hidden="true" />
-              <p>{card.body}</p>
-            </article>
-          ))}
-        </div>
+        <section className="u2-intro__strategy" aria-labelledby="u2-strategy-title">
+          <p id="u2-strategy-title">당신의 선택</p>
+          <article className="u2-intro__strategy-card u2-intro__strategy-card--help">
+            <p>전략 01</p>
+            <h2>용사를 돕는다</h2>
+            <p>안전 · 꾸준한 보상</p>
+            <p>올바른 길과 조언으로 용사들이 살아 돌아오도록 돕습니다.</p>
+            <ul>
+              <li>명성 ↑</li>
+              <li>계약금 ↑</li>
+              <li>신뢰 유지</li>
+            </ul>
+            <p>용사들이 살아야 다음 원정도 이어집니다.</p>
+          </article>
+          <article className="u2-intro__strategy-card u2-intro__strategy-card--betray">
+            <p>전략 02</p>
+            <h2>용사를 배신한다</h2>
+            <p>위험 · 막대한 보상</p>
+            <p>거짓된 조언으로 용사들을 위험에 빠뜨리고 전멸을 노릴 수도 있습니다.</p>
+            <ul>
+              <li>대량 골드 ↑↑</li>
+              <li>명성 ↓</li>
+              <li>신뢰 ↓</li>
+              <li>남은 인력 ↓</li>
+            </ul>
+            <p>경고: 한 번 잃은 신뢰와 인력은 쉽게 돌아오지 않습니다.</p>
+          </article>
+          <p>안전하게 명성을 쌓을 것인가, 위험을 감수하고 큰돈을 노릴 것인가.</p>
+        </section>
+
+        <section className="u2-intro__facts" aria-label="원정 안내">
+          <article>
+            <h2>S급으로 가는 두 길</h2>
+            <p>명성으로 인정받아 정식 승급</p>
+            <p>골드로 뒷거래 승급</p>
+            <p>C → B → A → S</p>
+          </article>
+          <article>
+            <h2>원정의 목표</h2>
+            <p>15개의 던전을 돌파하십시오.</p>
+            <p>최고의 목표는 S급 길잡이</p>
+          </article>
+          <article>
+            <h2>길잡이에게도 끝은 찾아옵니다</h2>
+            <p>신뢰, 인력, 승급을 관리하지 못하면 원정은 일찍 끝날 수 있습니다.</p>
+          </article>
+        </section>
 
         {onEnterBoard === undefined ? (
           <a className="u2-intro__cta" href={boardHref}>

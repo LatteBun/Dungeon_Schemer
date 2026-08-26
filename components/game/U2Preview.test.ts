@@ -15,6 +15,6 @@ describe("U2Preview", () => {
     expect(html).toContain("B · 30 남음");
     expect(html).toContain("남은 던전");
     expect(html).toContain("15");
-    expect(html).toContain("href=\"/u3-test\"");
+    expect(html).toContain('<a class="u2-intro__cta" href="/u3-test">');
   });
 });
