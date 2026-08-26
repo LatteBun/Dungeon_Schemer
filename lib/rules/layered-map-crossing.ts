@@ -81,8 +81,8 @@ export function createLayeredOrderSolver(
 
   const rowIndex = new Map<NodeId, number>();
   const cachedPermutations = rows.map((row, index) => {
-    if (row.length === 0 || row.length > 6) {
-      invalid("Layered row width must be between 1 and 6", { row: index });
+    if (row.length === 0 || row.length > 5) {
+      invalid("Layered row width must be between 1 and 5", { row: index });
     }
     for (const node of row) {
       if (rowIndex.has(node)) invalid("Layered node must be unique", { node });

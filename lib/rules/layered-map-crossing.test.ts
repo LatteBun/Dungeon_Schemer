@@ -45,7 +45,8 @@ describe("layered map crossing solver", () => {
     expect(() => createLayeredOrderSolver([[]])).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
     expect(() => createLayeredOrderSolver([[A, A]])).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
     expect(() => createLayeredOrderSolver([[A, B, C, D, ENTRY, BOSS, id("x")]])).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
-    expect(() => createLayeredOrderSolver([[A, B, C, D, ENTRY, BOSS]])).not.toThrow();
+    expect(() => createLayeredOrderSolver([[A, B, C, D, ENTRY]])).not.toThrow();
+    expect(() => createLayeredOrderSolver([[A, B, C, D, ENTRY, BOSS]])).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
     expect(() => createLayeredOrderSolver([[A], [A]])).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
   });
 
