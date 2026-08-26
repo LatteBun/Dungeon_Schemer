@@ -4,6 +4,7 @@ import {
   CAMPAIGN_RUN_STORAGE_KEY,
   CAMPAIGN_RUN_VERSION,
   clearCampaignRun,
+  clearSavedCampaignRun,
   loadCampaignRun,
   saveCampaignRun,
   type StringStorage,
@@ -26,6 +27,14 @@ function failingStorage(error: Error): StringStorage {
     getItem() { throw error; },
     setItem() { throw error; },
     removeItem() { throw error; },
+  };
+}
+
+function stickyStorage(key: string, value: string): StringStorage {
+  return {
+    getItem: (candidate) => candidate === key ? value : null,
+    setItem() {},
+    removeItem() {},
   };
 }
 
@@ -54,6 +63,31 @@ describe("캠페인 저장 읽고 쓰기", () => {
     saveCampaignRun(storage, { version: CAMPAIGN_RUN_VERSION, seed: "s", actions: [] });
     clearCampaignRun(storage);
     expect(loadCampaignRun(storage).status).toBe("empty");
+  });
+
+  it("캠페인 저장만 지우고 삭제 성공을 반환한다", () => {
+    const storage = memoryStorage({
+      [CAMPAIGN_RUN_STORAGE_KEY]: JSON.stringify({ version: 1, seed: "old", actions: [] }),
+      "dungeon-schemer.player-progress.v1": "achievement",
+    });
+
+    expect(clearSavedCampaignRun(storage)).toEqual({ ok: true });
+    expect(storage.getItem(CAMPAIGN_RUN_STORAGE_KEY)).toBeNull();
+    expect(storage.getItem("dungeon-schemer.player-progress.v1")).toBe("achievement");
+  });
+
+  it("remove 뒤 캠페인 키가 남으면 삭제 실패를 반환한다", () => {
+    expect(clearSavedCampaignRun(stickyStorage(CAMPAIGN_RUN_STORAGE_KEY, "saved"))).toEqual({
+      ok: false,
+      reason: "캠페인 저장이 남아 있다",
+    });
+  });
+
+  it("캠페인 삭제 접근이 막히면 이유를 반환한다", () => {
+    expect(clearSavedCampaignRun(failingStorage(new Error("거부됨")))).toEqual({
+      ok: false,
+      reason: "거부됨",
+    });
   });
 
   /*
