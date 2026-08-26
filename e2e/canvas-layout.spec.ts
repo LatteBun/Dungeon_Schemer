@@ -124,7 +124,9 @@ for (const viewport of STATUS_VIEWPORTS) {
     const list = page.locator(".game-shell__status-list");
     const chips = page.locator(".game-shell__status-chip");
     await expect(chips).toHaveCount(7);
-    await expect(page.getByText("7 / 5", { exact: true })).toBeVisible();
+    const zeroTrustChip = chips.filter({ has: page.getByText("신뢰 0", { exact: true }) });
+    await expect(zeroTrustChip).toHaveCount(1);
+    await expect(zeroTrustChip.getByText("7 / 5", { exact: true })).toBeVisible();
 
     const metrics = await list.evaluate((element) => ({
       clientWidth: element.clientWidth,
