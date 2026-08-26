@@ -555,6 +555,15 @@
   min-height: 0;
 }
 
+/* 공용 카드의 native 스크롤은 유지하고 U5에서만 밝은 기본 막대를 감춘다. */
+.u5-progress-screen .party-card__back {
+  scrollbar-width: none;
+}
+
+.u5-progress-screen .party-card__back::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── /u5-test 프리뷰 전환 ──
  * 화면 위에 겹친다. 아홉 상태를 오가는 도구일 뿐이라 세로 공간을 빼앗지 않는다. */
 
