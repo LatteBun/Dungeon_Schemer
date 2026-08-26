@@ -1,3 +1,9 @@
+import type { EmergencyHealAbilityDef } from "./character";
+
+export interface BattlePartyMemberAbilityState extends EmergencyHealAbilityDef {
+  readonly remainingUses: number;
+}
+
 export interface BattlePartyMember {
   readonly id: string;
   readonly classId: string;
@@ -5,6 +11,7 @@ export interface BattlePartyMember {
   readonly maxHp: number;
   readonly attack: number;
   readonly hitWeight: number;
+  readonly battleAbility?: BattlePartyMemberAbilityState;
 }
 
 export interface BattleEnemyInput {
@@ -16,16 +23,29 @@ export interface BattleEnemyInput {
   readonly targetWeightMultipliers?: Readonly<Record<string, number>>;
 }
 
-export interface BattleActionRecord {
+interface BattleActionRecordBase {
   readonly round: number;
-  readonly actorSide: "party" | "enemy";
   readonly actorId: string;
   readonly targetId: string;
-  readonly damage: number;
   readonly targetHpBefore: number;
   readonly targetHpAfter: number;
+}
+
+export interface BattleAttackActionRecord extends BattleActionRecordBase {
+  readonly kind: "attack";
+  readonly actorSide: "party" | "enemy";
+  readonly damage: number;
   readonly defeated: boolean;
 }
+
+export interface BattleHealActionRecord extends BattleActionRecordBase {
+  readonly kind: "heal";
+  readonly actorSide: "party";
+  readonly abilityKind: "emergencyHeal";
+  readonly healing: number;
+}
+
+export type BattleActionRecord = BattleAttackActionRecord | BattleHealActionRecord;
 
 export interface BattleResolution {
   readonly status: "victory" | "wipe";
