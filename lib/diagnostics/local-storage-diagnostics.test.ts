@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { CAMPAIGN_RUN_STORAGE_KEY } from "@/lib/store/campaign-run-storage";
+import {
+  CAMPAIGN_RUN_CORRUPT_BACKUP_KEY,
+  CAMPAIGN_RUN_STORAGE_KEY,
+} from "@/lib/store/campaign-run-storage";
 import {
   collectStorageDiagnostics,
   formatStorageDiagnostics,
@@ -34,6 +37,7 @@ describe("브라우저 저장 진단", () => {
     const snapshot = collectStorageDiagnostics(memoryStorage({
       unrelated: "secret",
       "dungeon-schemer.player-progress.v1": "{broken",
+      [CAMPAIGN_RUN_CORRUPT_BACKUP_KEY]: JSON.stringify({ version: 1, raw: "{broken}" }),
       [CAMPAIGN_RUN_STORAGE_KEY]: JSON.stringify({
         version: 1,
         seed: "report-seed",
@@ -42,10 +46,11 @@ describe("브라우저 저장 진단", () => {
     }), context);
 
     expect(snapshot.entries.map(({ key }) => key)).toEqual([
+      CAMPAIGN_RUN_CORRUPT_BACKUP_KEY,
       CAMPAIGN_RUN_STORAGE_KEY,
       "dungeon-schemer.player-progress.v1",
     ]);
-    expect(snapshot.entries[1]).toMatchObject({ format: "invalid-json", raw: "{broken", display: "{broken" });
+    expect(snapshot.entries[2]).toMatchObject({ format: "invalid-json", raw: "{broken", display: "{broken" });
     expect(snapshot.campaign).toEqual({
       seed: "report-seed",
       actionCount: 2,

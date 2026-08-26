@@ -23,6 +23,8 @@ import type { CampaignTransition } from "@/lib/domain";
 
 export const CAMPAIGN_RUN_STORAGE_KEY = "dungeon-schemer.campaign-run.v1";
 
+export const CAMPAIGN_RUN_CORRUPT_BACKUP_KEY = "dungeon-schemer.campaign-run.corrupt-backup";
+
 export const CAMPAIGN_RUN_VERSION = 1;
 
 export interface StringStorage {
@@ -45,7 +47,7 @@ export type LoadResult =
   /** 저장이 없다. 새 캠페인으로 시작한다. */
   | { readonly status: "empty" }
   /** 되살릴 수 있다. */
-  | { readonly status: "ready"; readonly run: SavedCampaignRun }
+  | { readonly status: "ready"; readonly run: SavedCampaignRun; readonly raw: string }
   /** 읽었지만 쓸 수 없다. 원문을 남겨 무엇이 문제였는지 말할 수 있게 한다. */
   | { readonly status: "unusable"; readonly reason: string; readonly raw?: string };
 
@@ -97,6 +99,7 @@ function parseRun(raw: string): LoadResult {
   return {
     status: "ready",
     run: { version: CAMPAIGN_RUN_VERSION, seed: run.seed, actions: run.actions },
+    raw,
   };
 }
 
@@ -124,6 +127,29 @@ export function saveCampaignRun(storage: StringStorage, run: SavedCampaignRun): 
      */
     return { ok: false, reason: reasonFor(error) };
   }
+}
+
+/** 복원 실패 원문을 보존하고 다음 진입이 새 캠페인으로 시작하도록 진행 키를 지운다. */
+export function quarantineCampaignRun(storage: StringStorage, input: {
+  readonly raw: string;
+  readonly reason: string;
+  readonly failedAt: number | null;
+  readonly capturedAt?: string;
+}): { readonly backup: SaveResult; readonly clear: SaveResult } {
+  let backup: SaveResult;
+  try {
+    storage.setItem(CAMPAIGN_RUN_CORRUPT_BACKUP_KEY, JSON.stringify({
+      version: 1,
+      capturedAt: input.capturedAt ?? new Date().toISOString(),
+      reason: input.reason,
+      failedAt: input.failedAt,
+      raw: input.raw,
+    }));
+    backup = { ok: true };
+  } catch (error) {
+    backup = { ok: false, reason: reasonFor(error) };
+  }
+  return { backup, clear: clearSavedCampaignRun(storage) };
 }
 
 export function clearCampaignRun(storage: StringStorage): void {

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { CampaignTransition } from "@/lib/domain";
 import {
+  CAMPAIGN_RUN_CORRUPT_BACKUP_KEY,
   CAMPAIGN_RUN_STORAGE_KEY,
   CAMPAIGN_RUN_VERSION,
   clearCampaignRun,
   clearSavedCampaignRun,
   loadCampaignRun,
+  quarantineCampaignRun,
   saveCampaignRun,
   type StringStorage,
 } from "./campaign-run-storage";
@@ -35,6 +37,28 @@ function stickyStorage(key: string, value: string): StringStorage {
     getItem: (candidate) => candidate === key ? value : null,
     setItem() {},
     removeItem() {},
+  };
+}
+
+function backupFailingStorage(seed: Record<string, string>): StringStorage & { readonly map: Map<string, string> } {
+  const storage = memoryStorage(seed);
+  return {
+    ...storage,
+    setItem(key, value) {
+      if (key === CAMPAIGN_RUN_CORRUPT_BACKUP_KEY) throw new Error("백업 거부됨");
+      storage.setItem(key, value);
+    },
+  };
+}
+
+function clearFailingStorage(seed: Record<string, string>): StringStorage & { readonly map: Map<string, string> } {
+  const storage = memoryStorage(seed);
+  return {
+    ...storage,
+    removeItem(key) {
+      if (key === CAMPAIGN_RUN_STORAGE_KEY) throw new Error("삭제 거부됨");
+      storage.removeItem(key);
+    },
   };
 }
 
@@ -142,6 +166,70 @@ describe("캠페인 저장 읽고 쓰기", () => {
 
   it("지우기가 막혀도 던지지 않는다", () => {
     expect(() => { clearCampaignRun(failingStorage(new Error("거부됨"))); }).not.toThrow();
+  });
+
+  it("ready 저장도 복원할 원문을 함께 반환한다", () => {
+    const raw = JSON.stringify({ version: CAMPAIGN_RUN_VERSION, seed: "saved", actions: [OPEN_BOARD] });
+
+    expect(loadCampaignRun(memoryStorage({ [CAMPAIGN_RUN_STORAGE_KEY]: raw }))).toMatchObject({
+      status: "ready",
+      raw,
+    });
+  });
+
+  it("복원 실패 원문을 최신 백업으로 격리하고 캠페인 진행만 지운다", () => {
+    const raw = "{damaged}";
+    const storage = memoryStorage({
+      [CAMPAIGN_RUN_STORAGE_KEY]: raw,
+      [CAMPAIGN_RUN_CORRUPT_BACKUP_KEY]: "old backup",
+      "dungeon-schemer.player-progress.v1": "achievement",
+      "dungeon-schemer.player-progress.corrupt-backup": "achievement backup",
+      "dungeon-schemer.audio-settings.v1": "audio",
+      "outside-app": "outside",
+    });
+
+    expect(quarantineCampaignRun(storage, {
+      raw,
+      reason: "Cannot read properties of undefined",
+      failedAt: 2,
+      capturedAt: "2026-08-26T13:00:00.000Z",
+    })).toEqual({ backup: { ok: true }, clear: { ok: true } });
+    expect(JSON.parse(storage.map.get(CAMPAIGN_RUN_CORRUPT_BACKUP_KEY)!)).toEqual({
+      version: 1,
+      capturedAt: "2026-08-26T13:00:00.000Z",
+      reason: "Cannot read properties of undefined",
+      failedAt: 2,
+      raw,
+    });
+    expect(storage.map.has(CAMPAIGN_RUN_STORAGE_KEY)).toBe(false);
+    expect(Object.fromEntries(storage.map)).toMatchObject({
+      "dungeon-schemer.player-progress.v1": "achievement",
+      "dungeon-schemer.player-progress.corrupt-backup": "achievement backup",
+      "dungeon-schemer.audio-settings.v1": "audio",
+      "outside-app": "outside",
+    });
+  });
+
+  it("백업 저장이 막혀도 캠페인 진행 삭제를 계속 시도한다", () => {
+    const storage = backupFailingStorage({ [CAMPAIGN_RUN_STORAGE_KEY]: "{damaged}" });
+
+    expect(quarantineCampaignRun(storage, { raw: "{damaged}", reason: "broken", failedAt: null })).toEqual({
+      backup: { ok: false, reason: "백업 거부됨" },
+      clear: { ok: true },
+    });
+    expect(storage.map.has(CAMPAIGN_RUN_STORAGE_KEY)).toBe(false);
+  });
+
+  it("캠페인 진행 삭제가 막혀도 격리 결과만 반환한다", () => {
+    const storage = clearFailingStorage({ [CAMPAIGN_RUN_STORAGE_KEY]: "{damaged}" });
+
+    expect(quarantineCampaignRun(storage, {
+      raw: "{damaged}", reason: "broken", failedAt: null, capturedAt: "2026-08-26T13:00:00.000Z",
+    })).toEqual({
+      backup: { ok: true },
+      clear: { ok: false, reason: "삭제 거부됨" },
+    });
+    expect(storage.map.get(CAMPAIGN_RUN_STORAGE_KEY)).toBe("{damaged}");
   });
 });
 
