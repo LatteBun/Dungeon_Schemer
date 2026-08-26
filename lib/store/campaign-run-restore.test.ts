@@ -71,4 +71,36 @@ describe("캠페인 저장 복원", () => {
       raw: "{broken",
     });
   });
+
+  it("미래 버전 저장은 진행과 기존 손상 백업을 그대로 보존한다", () => {
+    const raw = JSON.stringify({
+      version: CAMPAIGN_RUN_VERSION + 1,
+      seed: "future-save",
+      actions: [{ type: "OPEN_BOARD" }],
+    });
+    const previousBackup = "previous corruption backup";
+    const storage = memoryStorage({
+      [CAMPAIGN_RUN_STORAGE_KEY]: raw,
+      [CAMPAIGN_RUN_CORRUPT_BACKUP_KEY]: previousBackup,
+    });
+
+    expect(restoreCampaignRun(storage)).toEqual({
+      status: "unsupported",
+      version: CAMPAIGN_RUN_VERSION + 1,
+    });
+    expect(storage.map.get(CAMPAIGN_RUN_STORAGE_KEY)).toBe(raw);
+    expect(storage.map.get(CAMPAIGN_RUN_CORRUPT_BACKUP_KEY)).toBe(previousBackup);
+  });
+
+  it("과거 버전 저장은 미래 버전과 달리 손상 저장으로 격리한다", () => {
+    const raw = JSON.stringify({ version: CAMPAIGN_RUN_VERSION - 1, seed: "legacy-save", actions: [] });
+    const storage = memoryStorage({ [CAMPAIGN_RUN_STORAGE_KEY]: raw });
+
+    expect(restoreCampaignRun(storage)).toEqual({ status: "recovered" });
+    expect(storage.map.has(CAMPAIGN_RUN_STORAGE_KEY)).toBe(false);
+    expect(JSON.parse(storage.map.get(CAMPAIGN_RUN_CORRUPT_BACKUP_KEY)!)).toMatchObject({
+      failedAt: null,
+      raw,
+    });
+  });
 });

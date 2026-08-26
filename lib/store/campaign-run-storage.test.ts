@@ -141,11 +141,15 @@ describe("캠페인 저장 읽고 쓰기", () => {
    * 미래 버전을 덮어쓰지 않는다. 새 코드가 쓴 저장을 옛 코드가 열었을 때
    * 지워 버리면 브라우저를 되돌린 사람이 진행을 잃는다.
    */
-  it("모르는 버전을 덮어쓰지 않고 쓸 수 없다고만 본다", () => {
+  it("미래 버전을 지원하지 않는 저장으로 구분하고 원문을 보존한다", () => {
     const raw = JSON.stringify({ version: CAMPAIGN_RUN_VERSION + 1, seed: "s", actions: [] });
     const storage = memoryStorage({ [CAMPAIGN_RUN_STORAGE_KEY]: raw });
 
-    expect(loadCampaignRun(storage).status).toBe("unusable");
+    expect(loadCampaignRun(storage)).toEqual({
+      status: "unsupported",
+      version: CAMPAIGN_RUN_VERSION + 1,
+      raw,
+    });
     expect(storage.map.get(CAMPAIGN_RUN_STORAGE_KEY)).toBe(raw);
   });
 

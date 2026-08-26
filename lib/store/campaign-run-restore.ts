@@ -9,6 +9,7 @@ import {
 export type RestoreCampaignRunResult =
   | { readonly status: "empty" }
   | { readonly status: "recovered" }
+  | { readonly status: "unsupported"; readonly version: number }
   | { readonly status: "restored"; readonly run: SavedCampaignRun; readonly state: CampaignRunState };
 
 /**
@@ -20,6 +21,9 @@ export type RestoreCampaignRunResult =
 export function restoreCampaignRun(storage: StringStorage): RestoreCampaignRunResult {
   const loaded = loadCampaignRun(storage);
   if (loaded.status === "empty") return { status: "empty" };
+  if (loaded.status === "unsupported") {
+    return { status: "unsupported", version: loaded.version };
+  }
 
   if (loaded.status === "unusable") {
     if (loaded.raw !== undefined) {

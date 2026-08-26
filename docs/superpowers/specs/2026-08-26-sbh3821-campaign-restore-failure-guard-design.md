@@ -126,4 +126,3 @@ interface CampaignRunCorruptBackup {
 - 손상되거나 과거 형식인 캠페인 저장 때문에 `/campaign`이 오류 화면에 갇히지 않는다.
 - 최신 손상 원문 한 건을 히든 저장 진단으로 복사할 수 있다.
 - 정상 replay의 결정성과 다른 앱 저장의 보존 계약이 유지된다.
-
