@@ -1,5 +1,4 @@
 import { createStore } from "zustand/vanilla";
-import { RuleError, createCampaignTransitionContext } from "@/lib/domain";
 import type {
   CampaignPhase,
   CampaignState,
@@ -7,9 +6,8 @@ import type {
   CampaignTransitionContext,
   CampaignTransitionResult,
 } from "@/lib/domain";
-import { initializeCampaign } from "@/lib/rules/campaign-init";
-import { recordSettlementStatistics } from "@/lib/rules/campaign-statistics";
-import { transitionCampaign } from "@/lib/rules/campaign-transition";
+import { advanceRun, initialRunState } from "./campaign-run";
+import type { CampaignRunState } from "./campaign-run";
 
 /**
  * 캠페인 스토어.
@@ -40,38 +38,30 @@ export interface CampaignStoreState {
   clearRejected(): void;
   /** 뒤로가기로 되살아난 화면이 현재 상태를 다시 읽을 때 쓴다. */
   snapshot(): Pick<CampaignStoreState, "campaign" | "context" | "last">;
+  /** 지금까지 성공한 조작. 저장이 이것만 적는다. */
+  recordedActions(): readonly CampaignTransition[];
+  /** 저장에서 되살린 판으로 갈아 끼운다. */
+  restore(seed: string, state: CampaignRunState, actions: readonly CampaignTransition[]): void;
 }
 
-/**
- * 정산 한 번을 `C8-A` 가 누적한다.
- *
- * `C7` 은 통계를 건드리지 않는다 — 정산 결과를 내주고 소유권은 넘긴다. 그 결과를
- * 「재계산하지 않고 단 한 번 소비」하는 것이 여기의 몫이라고 `C8-A` 가 적어 두었고,
- * 그동안 아무도 부르지 않아 누적 통계가 전부 0 이었다. 엔딩 보고서가 「원정 0회 ·
- * 사망 0명」을 내놓는다.
- *
- * 다시 계산하지 않는다. 두 번 세면 두 곳이 갈라진다.
- */
-function accumulate(result: CampaignTransitionResult): CampaignState {
-  const settlement = result.settlement;
-  if (settlement == null) return result.campaign;
-
-  const dungeon = result.campaign.dungeons.find((one) => one.id === settlement.dungeonId);
-  if (dungeon === undefined) return result.campaign;
-
-  return {
-    ...result.campaign,
-    statistics: recordSettlementStatistics(result.campaign.statistics, settlement, dungeon),
-  };
-}
+/** 성공한 조작이 하나 늘 때마다 불린다. 저장이 여기에 붙는다. */
+export type CampaignRunListener = (seed: string, actions: readonly CampaignTransition[]) => void;
 
 export type CampaignStore = ReturnType<typeof createCampaignStore>;
 
-export function createCampaignStore(seed: string) {
+export function createCampaignStore(seed: string, onChange?: CampaignRunListener) {
+  /*
+   * 성공한 조작만 모은다.
+   *
+   * 거부된 조작은 상태를 바꾸지 않으므로 기록하면 안 된다. 되살릴 때 그것까지
+   * 다시 넣으면 같은 자리에서 또 거부될 뿐이고, 기록이 실제로 일어난 일과
+   * 어긋난다.
+   */
+  let actions: CampaignTransition[] = [];
+  let runSeed = seed;
+
   return createStore<CampaignStoreState>((set, get) => ({
-    campaign: initializeCampaign(seed),
-    context: createCampaignTransitionContext(),
-    last: null,
+    ...initialRunState(seed),
     rejected: null,
 
     /*
@@ -82,25 +72,15 @@ export function createCampaignStore(seed: string) {
      * 바로 이 자리로 온다.
      */
     dispatch(action) {
-      const { campaign, context } = get();
-      try {
-        const result = transitionCampaign(campaign, context, action);
-        set({
-          campaign: accumulate(result),
-          context: result.context,
-          last: result,
-          rejected: null,
-        });
-      } catch (error) {
-        if (!(error instanceof RuleError)) throw error;
-        set({
-          rejected: {
-            type: action.type,
-            reason: error.message,
-            details: error.details ?? {},
-          },
-        });
+      const { campaign, context, last } = get();
+      const step = advanceRun({ campaign, context, last }, action);
+      if (!step.ok) {
+        set({ rejected: { type: action.type, reason: step.reason, details: step.details } });
+        return;
       }
+      actions = [...actions, action];
+      set({ ...step.state, rejected: null });
+      onChange?.(runSeed, actions);
     },
 
     clearRejected() {
@@ -110,6 +90,24 @@ export function createCampaignStore(seed: string) {
     snapshot() {
       const { campaign, context, last } = get();
       return { campaign, context, last };
+    },
+
+    recordedActions() {
+      return actions;
+    },
+
+    /*
+     * 되살린 판으로 갈아 끼운다.
+     *
+     * 시드도 함께 바꾼다. `/campaign` 은 들어올 때마다 새 시드를 뽑으므로, 저장을
+     * 되살리면 스토어가 만들어질 때 받은 시드는 버려야 한다. 그것을 남겨 두면
+     * 이후 저장이 판과 다른 시드를 적어, 다음 새로고침에서 아주 다른 캠페인이
+     * 선다.
+     */
+    restore(seed, state, restoredActions) {
+      runSeed = seed;
+      actions = [...restoredActions];
+      set({ ...state, rejected: null });
     },
   }));
 }
