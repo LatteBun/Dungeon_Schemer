@@ -173,3 +173,31 @@ export function clearSavedCampaignRun(storage: StringStorage): SaveResult {
     return { ok: false, reason: reasonFor(error) };
   }
 }
+
+/**
+ * 이 브라우저의 저장소. 없으면 `null` 이다.
+ *
+ * 서버에는 `localStorage` 가 없고, 사생활 보호 모드에서는 접근 자체가 던진다.
+ * 둘 다 저장 없이 노는 것으로 물러선다 — 이어할 수 없을 뿐 게임은 시작된다.
+ */
+export function browserCampaignStorage(): StringStorage | null {
+  try {
+    if (typeof window === "undefined") return null;
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** 이어할 판이 있는가. 메인 메뉴의 「이어하기」가 이것으로 갈린다. */
+export function hasSavedCampaignRun(): boolean {
+  const storage = browserCampaignStorage();
+  if (storage === null) return false;
+  return loadCampaignRun(storage).status === "ready";
+}
+
+/** 이어하기를 버린다. 「새 캠페인 시작」이 나가기 전에 부른다. */
+export function discardSavedCampaignRun(): void {
+  const storage = browserCampaignStorage();
+  if (storage !== null) clearCampaignRun(storage);
+}
