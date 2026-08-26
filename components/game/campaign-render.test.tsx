@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { CampaignTransition, NodeId } from "@/lib/domain";
+import { DENOUNCE_THRESHOLD, type CampaignTransition, type NodeId } from "@/lib/domain";
 import { createExpeditionForOffer, createSettlementSnapshotFor } from "@/lib/rules/campaign-transition";
 import { countLivingZeroTrust } from "@/lib/rules/ending";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
@@ -292,13 +292,16 @@ describe("정산이 실제 결과로 그려진다", () => {
     const dungeon = campaign.dungeons.find((one) => one.id === settlement.dungeonId);
 
     const view = createU6SettlementView(campaign, settlement, dungeon?.name ?? "", dungeon?.theme ?? "spider");
+    const status = statusFor(campaign, null);
     const markup = renderToStaticMarkup(createElement(U6SettlementScreen, {
-      status: statusFor(campaign, null),
+      status,
       settlement: view,
       onContinue: noop,
     }));
 
     assertClean(markup, "정산");
+    expect(status.zeroTrust.livingCount).toBe(countLivingZeroTrust(campaign));
+    expect(status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
     expect(view.trustPressure?.afterCount ?? 0).toBe(countLivingZeroTrust(campaign));
     expect(markup).toContain(settlement.causeInputs.choice);
     expect(markup).toContain(settlement.causeInputs.reactions);
