@@ -137,6 +137,11 @@
   filter: brightness(0.58) saturate(1.1) blur(0.05rem);
 }
 
+.u4-map-surface__background.is-parchment {
+  filter: none;
+  object-position: 50% 50%;
+}
+
 .u4-map-surface__atmosphere {
   z-index: 1;
   object-fit: cover;

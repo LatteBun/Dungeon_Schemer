@@ -117,6 +117,27 @@ describe("U4 fixed 16:9 canvas contract", () => {
     expect(corridors).toBeLessThan(rooms);
   });
 
+  it("owns the parchment modifier only in the base map stylesheet", () => {
+    const base = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const fixes = readFileSync("app/u4-dungeon-map-fixes.css", "utf8");
+    const parchment = base.match(
+      /\.u4-map-surface__background\.is-parchment\s*\{([^}]*)\}/,
+    )?.[1] ?? "";
+
+    expect(parchment).toMatch(/filter:\s*none/);
+    expect(parchment).toMatch(/object-position:\s*50%\s+50%/);
+    expect(fixes).not.toContain(".u4-map-surface__background.is-parchment");
+  });
+
+  it("keeps map decorations pointer-inert", () => {
+    const base = readFileSync("app/u4-dungeon-map.css", "utf8");
+    const decorations = base.match(
+      /\.u4-map-surface__background,[\s\S]*?\.u4-map-surface__frame\s*\{([^}]*)\}/,
+    )?.[1] ?? "";
+
+    expect(decorations).toMatch(/pointer-events:\s*none/);
+  });
+
   /*
    * 우측 패널은 파티를 자동 높이 행에 두고, 답사 기록을 내부 스크롤이 가능한
    * 유연한 가운데 행에 배치하며, 다음 지점과 CTA를 자동 높이의 마지막 행에 둔다.

@@ -7,6 +7,7 @@ import type { U4MapLayout } from "./u4-dungeon-map-layout";
 import type { U4MapNodeView, U4PartyMemberView } from "./u4-dungeon-map-model";
 import {
   U4DungeonMapScreen,
+  U4_MAP_BACKGROUND_BY_THEME,
   nextSelectableNodeId,
 } from "./U4DungeonMapScreen";
 
@@ -263,18 +264,37 @@ describe("선택한 다음 지점", () => {
  * 이름표에만 남았다.
  */
 describe("U4DungeonMapScreen 배경", () => {
-  it("던전의 테마마다 다른 배경을 깐다", () => {
-    const backgrounds = THEME_IDS.map((themeId) => {
-      const html = render(MONSTER, themeId);
-      const found = /class="u4-map-surface__background[^"]*" src="([^"]+)"/.exec(html);
-      expect(found, `${themeId} 배경`).not.toBeNull();
-      return found![1];
-    });
+  it("모든 ThemeId를 의도한 U4 배경으로 닫아 매핑한다", () => {
+    const expectedBackgroundByTheme: Readonly<Record<ThemeId, string>> = {
+      spider: "/assets/u4/map/map_background_spider_parchment.png",
+      desert: "/assets/u5/dungeon-progress-scenes/desert/entry.png",
+      graveyard: "/assets/u5/dungeon-progress-scenes/graveyard/entry.png",
+    };
 
-    for (const [index, themeId] of THEME_IDS.entries()) {
-      expect(backgrounds[index]).toContain(themeId);
+    expect(Object.keys(expectedBackgroundByTheme).sort()).toEqual([...THEME_IDS].sort());
+    expect(U4_MAP_BACKGROUND_BY_THEME).toEqual(expectedBackgroundByTheme);
+    for (const themeId of THEME_IDS) {
+      const html = render(MONSTER, themeId);
+      expect(html).toContain(`src="${expectedBackgroundByTheme[themeId]}"`);
     }
-    expect(new Set(backgrounds).size).toBe(THEME_IDS.length);
+  });
+
+  it("거미굴 양피지는 장면 필터나 폐허 atmosphere를 겹치지 않는다", () => {
+    const html = render(MONSTER, "spider");
+
+    expect(html).toContain(
+      'class="u4-map-surface__background is-parchment"',
+    );
+    expect(html).not.toContain(
+      'class="u4-map-surface__background is-themed"',
+    );
+    expect(html).not.toContain("map_atmosphere_ruins_props.png");
+  });
+
+  it("사막·묘지와 기본 배경은 기존 atmosphere 계약을 유지한다", () => {
+    for (const themeId of [undefined, "desert", "graveyard"] as const) {
+      expect(render(MONSTER, themeId)).toContain("map_atmosphere_ruins_props.png");
+    }
   });
 
   it("테마를 주지 않으면 예전 돌바닥을 그대로 쓴다", () => {
