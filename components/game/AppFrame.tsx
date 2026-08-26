@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AchievementOverlay } from "./AchievementOverlay";
+import { AppQuickMenuProvider } from "./AppQuickMenuContext";
 import { useAppBattlePlaybackRate } from "./AppBattlePlaybackRateProvider";
 import { GlobalQuickMenu } from "./GlobalQuickMenu";
 import { useAppAudioStore } from "./AppAudioProvider";
@@ -16,6 +18,7 @@ function soundKindFor(control: Element): UiSoundKind | null {
 }
 
 export function AppFrame({ children }: { readonly children: ReactNode }) {
+  const pathname = usePathname();
   const playbackRateControl = useAppBattlePlaybackRate();
   const settings = useAppAudioStore((state) => state.settings);
   const statusMessage = useAppAudioStore((state) => state.message);
@@ -26,6 +29,7 @@ export function AppFrame({ children }: { readonly children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   const handleAppClick = (event: ReactMouseEvent<HTMLDivElement>) => {
     void resumeBgmFromGesture();
@@ -40,6 +44,10 @@ export function AppFrame({ children }: { readonly children: ReactNode }) {
     void playUiSound("menu");
     setMenuOpen((open) => !open);
   };
+  const openQuickMenu = (trigger: HTMLElement) => {
+    restoreFocusRef.current = trigger;
+    setMenuOpen(true);
+  };
   const openAchievements = () => {
     void playUiSound("menu");
     setMenuOpen(false);
@@ -52,15 +60,19 @@ export function AppFrame({ children }: { readonly children: ReactNode }) {
 
   return (
     <div className="app-frame" onClick={handleAppClick}>
-      <div className="app-frame__screen" inert={achievementsOpen ? true : undefined}>
-        {children}
-      </div>
+      <AppQuickMenuProvider value={{ openQuickMenu }}>
+        <div className="app-frame__screen" inert={achievementsOpen ? true : undefined}>
+          {children}
+        </div>
+      </AppQuickMenuProvider>
       <GlobalQuickMenu
         open={menuOpen}
         bgmEnabled={settings.bgmEnabled}
         sfxEnabled={settings.sfxEnabled}
         statusMessage={statusMessage}
         buttonRef={menuButtonRef}
+        restoreFocusRef={restoreFocusRef}
+        triggerVisible={pathname !== "/"}
         onToggleOpen={toggleMenu}
         onRequestClose={() => setMenuOpen(false)}
         onToggleBgm={() => { void toggleBgm(); }}

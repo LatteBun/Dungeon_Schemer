@@ -16,10 +16,8 @@ const css = (name: string) => readFileSync(root("app", name), "utf8");
 const tsx = (name: string) => readFileSync(root("components", "game", name), "utf8");
 
 describe("캠페인 바깥 화면의 통일성", () => {
-  it("버튼은 공용 CTA 를 쓴다", () => {
-    for (const name of ["MainMenuScreen.tsx", "AchievementScreen.tsx"]) {
-      expect(tsx(name), name).toContain("shell-cta");
-    }
+  it("업적 화면의 버튼은 공용 CTA 를 쓴다", () => {
+    expect(tsx("AchievementScreen.tsx")).toContain("shell-cta");
   });
 
   it("공용 CTA 규칙이 두 화면을 함께 정의한다", () => {
@@ -31,23 +29,14 @@ describe("캠페인 바깥 화면의 통일성", () => {
     expect(rule).toContain(".shell-cta");
   });
 
-  it("두 화면이 버튼 살결을 다시 그리지 않는다", () => {
+  it("일러스트 메인 메뉴의 액션 버튼은 불투명한 어두운 판을 쓴다", () => {
     /*
-     * 자리와 크기는 화면이 정해도 되지만 배경 판을 다시 깔면 안 된다.
-     * 예전에는 밝은 금색 gradient 와 회색 gradient 를 각각 그려 두었다.
-     *
-     * 카드 액자와 진행 막대는 버튼이 아니므로 버튼 규칙만 본다.
+     * 승인된 명패 구도에서 버튼은 그림 위에 떠도 글자가 묻히지 않는 어두운 판이다.
+     * `.main-menu-screen__action`의 배경을 지우거나 투명하게 바꾸면 이 검사가 실패한다.
      */
-    const buttonRules = (name: string): readonly string[] => {
-      const sheet = css(name);
-      const selectors = /^\.(main-menu-screen__(start|achievements)|achievement-screen__actions[^{,]*)[^{]*\{([^}]*)\}/gm;
-      return [...sheet.matchAll(selectors)].map((one) => one[3] ?? "");
-    };
+    const rule = css("main-menu.css").match(/\.main-menu-screen__action\s*\{([^}]*)\}/)?.[1] ?? "";
 
-    for (const name of ["main-menu.css", "achievements.css"]) {
-      const redrawn = buttonRules(name).filter((rule) => /background:/.test(rule));
-      expect(redrawn, name).toEqual([]);
-    }
+    expect(rule).toMatch(/background:\s*linear-gradient\(180deg,\s*#171315\s+0%,\s*#090708\s+100%\)/);
   });
 
   it("업적 화면의 제목이 셸의 제목 토큰을 쓴다", () => {
@@ -64,10 +53,10 @@ describe("캠페인 바깥 화면의 통일성", () => {
     expect(rule).not.toMatch(/background:/);
   });
 
-  it("업적 총 개수를 글자로 박지 않는다", () => {
-    // 업적을 늘리면 메뉴의 숫자가 조용히 어긋난다.
-    expect(tsx("MainMenuScreen.tsx")).toContain("ACHIEVEMENT_CATALOG.length");
-    expect(tsx("MainMenuScreen.tsx")).not.toMatch(/달성 [^`"]*\/ \d/);
+  it("일러스트 메인 메뉴는 업적 저장 요약을 별도로 그리지 않는다", () => {
+    // 승인된 명패 구도에는 저장값을 표시할 자리가 없다.
+    expect(tsx("MainMenuScreen.tsx")).not.toContain("ACHIEVEMENT_CATALOG.length");
+    expect(tsx("MainMenuScreen.tsx")).not.toContain("unlockedCount");
   });
 });
 

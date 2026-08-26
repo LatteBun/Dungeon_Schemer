@@ -22,27 +22,50 @@ vi.mock("next/link", () => ({
   default: ({ prefetch, href, className, children }: { prefetch?: boolean; href: LinkHref; className?: string; children: ReactNode }) =>
     createElement("a", { href: hrefToString(href), className, "data-prefetch": String(prefetch) }, children),
 }));
-import { MainMenuScreen } from "./MainMenuScreen";
+
+const { openQuickMenu } = vi.hoisted(() => ({ openQuickMenu: vi.fn() }));
+
+vi.mock("./AppQuickMenuContext", () => ({
+  useAppQuickMenu: () => ({ openQuickMenu }),
+}));
+
+import { MainMenu, MainMenuScreen } from "./MainMenuScreen";
 
 describe("메인 메뉴 화면", () => {
+  it("승인 일러스트 위에 접근 가능한 제목과 세 메뉴를 표시한다", () => {
+    const onOpenSettings = vi.fn();
+    const html = renderToStaticMarkup(
+      createElement(MainMenuScreen, { onOpenSettings }),
+    );
+
+    expect(html).toContain('src="/assets/main-menu/hero-this-way-main-menu.jpeg"');
+    expect(html).toContain('class="main-menu-screen__accessible-title"');
+    expect(html).toContain("용사님, 이쪽입니다");
+    expect(html).not.toContain("Dungeon Schemer");
+    expect(html).toContain('aria-label="메인 메뉴"');
+    expect(html).toContain('aria-haspopup="menu"');
+    expect(html).toContain(">설정</button>");
+    expect(html).not.toContain("3 / 12");
+  });
+
   it("캠페인과 업적 기록으로 가는 실제 링크를 제공한다", () => {
     const html = renderToStaticMarkup(
-      createElement(MainMenuScreen, { unlockedCount: 3, loading: false }),
+      createElement(MainMenuScreen, { onOpenSettings: vi.fn() }),
     );
 
     expect(html).toContain('href="/campaign"');
     expect(html).toContain('data-prefetch="false"');
     expect(html).toContain("캠페인 시작");
     expect(html).toContain('href="/achievements?returnTo=%2F"');
-    expect(html).toContain("3 / 12");
     expect(html).not.toMatch(/<button[^>]*>[^]*<a/);
   });
 
-  it("저장값을 읽기 전에도 같은 요약 자리를 둔다", () => {
-    const html = renderToStaticMarkup(
-      createElement(MainMenuScreen, { unlockedCount: 0, loading: true }),
-    );
+  it("설정 click event의 currentTarget을 전역 메뉴 열기에 전달한다", () => {
+    openQuickMenu.mockClear();
+    const screen = MainMenu();
+    const trigger = {} as HTMLButtonElement;
+    screen.props.onOpenSettings({ currentTarget: trigger } as React.MouseEvent<HTMLButtonElement>);
 
-    expect(html).toContain("— / 12");
+    expect(openQuickMenu).toHaveBeenCalledWith(trigger);
   });
 });

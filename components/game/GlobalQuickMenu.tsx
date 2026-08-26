@@ -4,12 +4,21 @@ import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import type { U5BattlePlaybackRate } from "./use-u5-battle-playback";
 
+export function setGlobalQuickMenuRestoreOrigin(
+  buttonRef: { readonly current: HTMLButtonElement | null },
+  restoreFocusRef: { current: HTMLElement | null },
+) {
+  restoreFocusRef.current = buttonRef.current;
+}
+
 export interface GlobalQuickMenuProps {
   readonly open: boolean;
   readonly bgmEnabled: boolean;
   readonly sfxEnabled: boolean;
   readonly statusMessage: string | null;
   readonly buttonRef: RefObject<HTMLButtonElement | null>;
+  readonly restoreFocusRef: RefObject<HTMLElement | null>;
+  readonly triggerVisible: boolean;
   readonly onToggleOpen: () => void;
   readonly onRequestClose: () => void;
   readonly onToggleBgm: () => void;
@@ -25,6 +34,8 @@ export function GlobalQuickMenu({
   sfxEnabled,
   statusMessage,
   buttonRef,
+  restoreFocusRef,
+  triggerVisible,
   onToggleOpen,
   onRequestClose,
   onToggleBgm,
@@ -34,13 +45,17 @@ export function GlobalQuickMenu({
   onOpenAchievements,
 }: GlobalQuickMenuProps) {
   const panelRef = useRef<HTMLElement>(null);
+  const handleTriggerClick = () => {
+    if (triggerVisible) setGlobalQuickMenuRestoreOrigin(buttonRef, restoreFocusRef);
+    onToggleOpen();
+  };
 
   useEffect(() => {
     if (!open) return;
 
     const closeAndRestoreFocus = () => {
       onRequestClose();
-      requestAnimationFrame(() => { buttonRef.current?.focus(); });
+      requestAnimationFrame(() => { (restoreFocusRef.current ?? buttonRef.current)?.focus(); });
     };
     const handlePointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Node)) return;
@@ -59,19 +74,20 @@ export function GlobalQuickMenu({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [buttonRef, onRequestClose, open]);
+  }, [buttonRef, onRequestClose, open, restoreFocusRef]);
 
   return (
     <div className="global-quick-menu">
       <button
         ref={buttonRef}
-        className="global-quick-menu__trigger"
+        className={`global-quick-menu__trigger${triggerVisible ? "" : " global-quick-menu__trigger--hidden"}`}
         type="button"
         aria-label={open ? "빠른 메뉴 닫기" : "빠른 메뉴 열기"}
         aria-expanded={open}
         aria-controls="global-quick-menu-panel"
+        tabIndex={triggerVisible ? undefined : -1}
         data-ui-sound="none"
-        onClick={onToggleOpen}
+        onClick={handleTriggerClick}
       >
         <span className="global-quick-menu__dots" aria-hidden="true">
           <span className="global-quick-menu__dot" />

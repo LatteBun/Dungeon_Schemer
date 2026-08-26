@@ -9,9 +9,9 @@ interface RouteCase {
 const ROUTES: readonly RouteCase[] = [
   { path: "/", marker: (page) => page.getByRole("heading", { level: 1, name: "Dungeon Schemer" }) },
   { path: "/achievements", marker: (page) => page.getByRole("heading", { level: 1, name: "길잡이 업적 기록" }) },
-  { path: "/campaign", marker: (page) => page.getByRole("main", { name: /던전은 검보다 먼저 말을 건넨다/ }) },
+  { path: "/campaign", marker: (page) => page.getByRole("main", { name: /당신은 용사들을 던전으로 안내하는 고블린 길잡이입니다/ }) },
   { path: "/u1-test", marker: (page) => page.getByRole("heading", { level: 1, name: "인트로" }) },
-  { path: "/u2-test", marker: (page) => page.getByRole("main", { name: /던전은 검보다 먼저 말을 건넨다/ }) },
+  { path: "/u2-test", marker: (page) => page.getByRole("main", { name: /당신은 용사들을 던전으로 안내하는 고블린 길잡이입니다/ }) },
   { path: "/u3-test", marker: (page) => page.getByRole("heading", { level: 1, name: "길드 게시판" }) },
   { path: "/u4-test", marker: (page) => page.getByRole("region", { name: "던전 지도" }) },
   { path: "/u5-test", marker: (page) => page.getByTestId("u5-progress") },

@@ -8,7 +8,7 @@ import AchievementPage, { metadata } from "./page";
 describe("업적 기록 페이지", () => {
   it("길잡이 업적 기록을 설명하는 고유 메타데이터를 제공한다", () => {
     expect(metadata).toEqual({
-      title: "길잡이 업적 기록 | Dungeon Schemer",
+      title: "길잡이 업적 기록 | 용사님, 이쪽입니다",
       description: "캠페인 엔딩과 누적 통계로 해금한 길잡이 업적을 확인합니다.",
     });
   });

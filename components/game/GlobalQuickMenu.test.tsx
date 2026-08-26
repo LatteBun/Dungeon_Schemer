@@ -1,7 +1,9 @@
 import { createElement, createRef } from "react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { GlobalQuickMenu } from "./GlobalQuickMenu";
+import { GlobalQuickMenu, setGlobalQuickMenuRestoreOrigin } from "./GlobalQuickMenu";
 
 const noop = () => {};
 
@@ -10,11 +12,13 @@ function renderMenu({
   bgmEnabled,
   sfxEnabled,
   playbackRate = 1,
+  triggerVisible = true,
 }: {
   readonly open: boolean;
   readonly bgmEnabled: boolean;
   readonly sfxEnabled: boolean;
   readonly playbackRate?: 1 | 2;
+  readonly triggerVisible?: boolean;
 }) {
   return renderToStaticMarkup(createElement(GlobalQuickMenu, {
     open,
@@ -22,6 +26,8 @@ function renderMenu({
     sfxEnabled,
     statusMessage: null,
     buttonRef: createRef<HTMLButtonElement>(),
+    restoreFocusRef: createRef<HTMLElement>(),
+    triggerVisible,
     onToggleOpen: noop,
     onRequestClose: noop,
     onToggleBgm: noop,
@@ -81,5 +87,34 @@ describe("전역 퀵 메뉴", () => {
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('id="global-quick-menu-panel"');
     expect(html).not.toContain('role="switch"');
+  });
+
+  it("메인 화면에서는 trigger를 숨겨도 열린 panel은 유지한다", () => {
+    const html = renderMenu({
+      open: true,
+      bgmEnabled: false,
+      sfxEnabled: false,
+      triggerVisible: false,
+    });
+
+    expect(html).toContain('class="global-quick-menu__trigger global-quick-menu__trigger--hidden"');
+    expect(html).toContain('id="global-quick-menu-panel"');
+  });
+
+  it("숨김 modifier는 trigger만 감춰 열린 panel을 보존한다", () => {
+    const css = readFileSync(join(process.cwd(), "app", "app-frame.css"), "utf8");
+    const hiddenRule = css.match(/\.global-quick-menu__trigger--hidden\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(hiddenRule).toMatch(/visibility:\s*hidden/);
+  });
+
+  it("visible global trigger를 누르면 그 trigger를 focus 복귀 출발점으로 쓴다", () => {
+    const trigger = {} as HTMLButtonElement;
+    const buttonRef = { current: trigger };
+    const restoreFocusRef = { current: {} as HTMLElement | null };
+
+    setGlobalQuickMenuRestoreOrigin(buttonRef, restoreFocusRef);
+
+    expect(restoreFocusRef.current).toBe(trigger);
   });
 });

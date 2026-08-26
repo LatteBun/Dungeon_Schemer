@@ -72,6 +72,9 @@
 - [SESSION_PERSISTENCE_REVIEW.md](technical/SESSION_PERSISTENCE_REVIEW.md): 뒤로가기·bfcache 검토와 저장해야 할 상태 목록. I1 시작 전에 읽는다
 - [업적 화면 저장 진단 설계](superpowers/specs/2026-08-26-sbh3821-achievement-storage-diagnostics-design.md): 달성 수 5회 히든 진입, 앱 저장 제보 복사, 캠페인 진행만 초기화하는 경계
 - [캠페인 복원 실패 안전장치 설계](superpowers/specs/2026-08-26-sbh3821-campaign-restore-failure-guard-design.md): 손상 replay를 오류 화면 대신 원문 백업과 새 캠페인으로 격리하는 저장 경계
+- [사용자 노출 게임 제목 변경 설계](superpowers/specs/2026-08-26-sbh3821-visible-game-title-design.md): 화면·브라우저 탭·설치형 웹 앱의 제목만 `용사님, 이쪽입니다`로 통일하는 UI 계약
+- [일러스트 통합 메인 메뉴 설계](superpowers/specs/2026-08-26-sbh3821-illustrated-main-menu-design.md): 승인된 16:9 일러스트와 실제 캠페인·업적·설정 버튼을 하나의 반응형 메인 메뉴로 결합하는 UI 계약
+- [일러스트 통합 메인 메뉴 구현 계획](superpowers/plans/2026-08-26-sbh3821-illustrated-main-menu.md): 승인 이미지 크롭, 전역 설정 context, 실제 메뉴 배치와 데스크톱·모바일 좌표 검증의 테스트 우선 실행 순서
 - [TEAM_DEVELOPMENT_WORKFLOW.md](technical/TEAM_DEVELOPMENT_WORKFLOW.md): 브랜치, 리뷰, 병합 규약
 
 ## 회의 기록
@@ -103,6 +106,8 @@
 
 ## 이번 개편 설계
 
+- [U2 게임 가이드 재설계](superpowers/specs/2026-08-26-lattebun-u2-game-guide-redesign-design.md)
+- [U2 게임 가이드 재설계 구현 계획](superpowers/plans/2026-08-26-lattebun-u2-game-guide-redesign.md)
 - [E1 지도 경로 교차 0 보장 설계](superpowers/specs/2026-08-26-lattebun-e1-zero-crossing-map-design.md): 선택 간선을 exact minimum crossing 0 조건으로 필터하고 U4 표시에서 기하 교차를 검증하는 생성·렌더링 계약
 - [E1 지도 경로 교차 0 보장 구현 계획](superpowers/plans/2026-08-26-lattebun-e1-zero-crossing-map.md): 공용 solver, E1 진단, U4 fallback과 20×5×3 회귀·통합 검증 순서
 - [U4 거미굴 양피지 지도 배경 설계](superpowers/specs/2026-08-26-lattebun-u4-spider-parchment-map-background-design.md): 거미굴 U4의 전용 양피지 배경, 레이어와 슬롯 비율 계약
