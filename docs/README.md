@@ -101,7 +101,7 @@
 
 ## 이번 개편 설계
 
-- [성직자 응급 치유 설계](superpowers/specs/2026-08-26-lattebun-cleric-emergency-heal-design.md): HP 50% 이하 생존자를 공격 대신 자동 치유하고 원정당 2회 자원을 일반전부터 보스전까지 이어 가는 직업 능력 계약
+- [성직자 응급 치유 설계](superpowers/specs/2026-08-26-lattebun-cleric-emergency-heal-design.md): HP 50% 이하 생존자를 대상 최대 HP의 25%만큼 공격 대신 자동 치유하고, 전투별 추가 제한 없이 원정당 2회 자원을 이어 가는 직업 능력 계약
 - [성직자 응급 치유 구현 계획](superpowers/plans/2026-08-26-lattebun-cleric-emergency-heal.md): 변경 전 50·100·200시드 기준선부터 도메인·전투·원정 자원·U5·카드·paired 백테스트·공식 문서까지의 테스트 우선 실행 순서
 - [상단 상태 바 신뢰 0 인원 표시 설계](superpowers/specs/2026-08-26-lattebun-top-status-zero-trust-count-design.md): 살아 있는 신뢰 0 인원과 누적 고발 기준을 C6 selector에서 공통 상태 바로 전달하는 화면 계약
 - [상단 상태 바 신뢰 0 인원 표시 구현 계획](superpowers/plans/2026-08-26-lattebun-top-status-zero-trust-count.md): 필수 View 계약, 프리뷰 원본 구분, 읽기 전용 칩과 최대 7개 레이아웃 검증의 테스트 우선 실행 순서
