@@ -53,6 +53,7 @@
 
 **Files:**
 - Verify: `lib/backtest/backtest.run.ts`
+- Create outside repository: `.superpowers/sdd/2026-08-26-lattebun-cleric-emergency-heal-rebalance/write-baseline.test.ts`
 - Runtime artifacts outside repository: `/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-{50,100,200}.json`
 
 **Interfaces:**
@@ -70,23 +71,51 @@ git status --short
 
 Expected: 구현 파일 변경이 없고, plan/spec 문서 변경만 이미 커밋된 상태다.
 
-- [ ] **Step 2: 50시드 기준선을 생성한다**
+- [ ] **Step 2: plan-local 기준선 writer를 만든다**
+
+아래 Vitest 파일은 기존 순수 helper만 호출한다. production CLI는 snapshot 경로 하나만 받을 때도 paired 비교로 해석하고 `BACKTEST_REPORT.md`를 바꾸므로 기준선 생성에 사용하지 않는다.
+
+```ts
+import { describe, expect, it } from "vitest";
+import {
+  runBacktestSuite,
+  writeBacktestSnapshotIfRequested,
+} from "/Users/danny/MakeBun/Dungeon_Schemer/.worktrees/cleric-emergency-heal/lib/backtest/backtest.run";
+
+const seeds = Number(process.env.CLERIC_REBALANCE_SEEDS) as 50 | 100 | 200;
+const snapshotPath = process.env.CLERIC_REBALANCE_SNAPSHOT_PATH;
+
+describe("성직자 치유 재조정 기준선", () => {
+  it("현재 규칙의 snapshot을 기록한다", () => {
+    const aggregate = runBacktestSuite({
+      mode: "calibration",
+      focus: "risk-curve",
+      seedsPerCombination: seeds,
+      namespace: "b1-risk-curve-v2-calibration",
+    });
+    writeBacktestSnapshotIfRequested(snapshotPath, aggregate);
+    expect(snapshotPath).toBeDefined();
+  });
+});
+```
+
+- [ ] **Step 3: 50시드 기준선을 생성한다**
 
 Run:
 
 ```bash
-B1_SOURCE_REVISION=cleric-heal-rebalance-baseline B1_BACKTEST_MODE=calibration B1_BACKTEST_FOCUS=risk-curve B1_BACKTEST_SEEDS=50 B1_BACKTEST_SNAPSHOT_PATH=/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-50.json pnpm exec vitest run --config vitest.backtest.config.ts
+CLERIC_REBALANCE_SEEDS=50 CLERIC_REBALANCE_SNAPSHOT_PATH=/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-50.json pnpm exec vitest run .superpowers/sdd/2026-08-26-lattebun-cleric-emergency-heal-rebalance/write-baseline.test.ts
 ```
 
 Expected: PASS, snapshot의 `sourceRevision`이 `cleric-heal-rebalance-baseline`이다.
 
-- [ ] **Step 3: 100·200시드 기준선을 순서대로 생성한다**
+- [ ] **Step 4: 100·200시드 기준선을 순서대로 생성한다**
 
 Run:
 
 ```bash
-B1_SOURCE_REVISION=cleric-heal-rebalance-baseline B1_BACKTEST_MODE=calibration B1_BACKTEST_FOCUS=risk-curve B1_BACKTEST_SEEDS=100 B1_BACKTEST_SNAPSHOT_PATH=/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-100.json pnpm exec vitest run --config vitest.backtest.config.ts
-B1_SOURCE_REVISION=cleric-heal-rebalance-baseline B1_BACKTEST_MODE=calibration B1_BACKTEST_FOCUS=risk-curve B1_BACKTEST_SEEDS=200 B1_BACKTEST_SNAPSHOT_PATH=/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-200.json pnpm exec vitest run --config vitest.backtest.config.ts
+CLERIC_REBALANCE_SEEDS=100 CLERIC_REBALANCE_SNAPSHOT_PATH=/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-100.json pnpm exec vitest run .superpowers/sdd/2026-08-26-lattebun-cleric-emergency-heal-rebalance/write-baseline.test.ts
+CLERIC_REBALANCE_SEEDS=200 CLERIC_REBALANCE_SNAPSHOT_PATH=/private/tmp/dungeon-schemer-cleric-heal-rebalance/baseline-200.json pnpm exec vitest run .superpowers/sdd/2026-08-26-lattebun-cleric-emergency-heal-rebalance/write-baseline.test.ts
 ```
 
 Expected: 두 실행 모두 PASS하고 baseline 파일 세 개가 존재한다. 이 runtime artifact는 Git에 추가하지 않는다.
