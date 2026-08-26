@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DENOUNCE_THRESHOLD } from "@/lib/domain";
+import { countEmergencyEligibleAdventurers } from "@/lib/rules/ending";
+import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { enemyBattleAssetSrc } from "./u5-battle-assets";
 import {
   createU5BattlePreviewEntries,
@@ -18,6 +20,15 @@ describe("U5 battle preview data", () => {
     for (const entry of U5_BATTLE_PREVIEW_ENTRIES) {
       expect(entry.status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
       expect(entry.status.zeroTrust.livingCount).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("두 상태 모두 실제 캠페인에서 계산한 남은 용사 수를 제공한다", () => {
+    const campaign = initializeCampaign("u5-dungeon-progress-preview-fixed-roster");
+    const expected = countEmergencyEligibleAdventurers(campaign);
+
+    for (const entry of U5_BATTLE_PREVIEW_ENTRIES) {
+      expect(entry.status.remainingAdventurers).toBe(expected);
     }
   });
 
