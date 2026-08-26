@@ -193,6 +193,9 @@ for (const viewport of STATUS_VIEWPORTS) {
     await expect(page.getByRole("region", { name: "빠른 메뉴" })).toBeVisible();
     await expect(quickMenuTrigger).toBeFocused();
     await page.keyboard.press("Escape");
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    }));
     await expect(page.getByRole("region", { name: "빠른 메뉴" })).toHaveCount(0);
     await expect(quickMenuTrigger).toBeFocused();
 
