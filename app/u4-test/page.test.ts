@@ -11,6 +11,8 @@ describe("U4TestPage", () => {
     expect(html).toContain("파티 상태");
     expect(html).toContain("이 지점으로 이동");
     expect((html.match(/data-testid=\"u4-party-member\"/g) ?? [])).toHaveLength(3);
+    expect(html).toContain("/assets/u4/map/map_background_base.png");
+    expect(html).toContain("map_atmosphere_ruins_props.png");
   });
 
   it("dead=1 keeps the official live portrait for the deceased preview member", async () => {
@@ -24,15 +26,38 @@ describe("U4TestPage", () => {
     expect(html).toContain("사망");
   });
 
-  it("theme=spider renders the deterministic parchment-map preview", async () => {
+  for (const themeId of ["spider", "desert", "graveyard"] as const) {
+    it(`theme=${themeId} renders the shared parchment-map preview`, async () => {
+      const page = await U4TestPage({
+        searchParams: Promise.resolve({ theme: themeId }),
+      });
+      const html = renderToStaticMarkup(page);
+
+      expect(html).toContain(
+        "/assets/u4/map/map_background_spider_parchment.png",
+      );
+      expect(html).toContain("u4-map-surface__background is-parchment");
+      expect(html).not.toContain("map_atmosphere_ruins_props.png");
+    });
+  }
+
+  it("an unknown theme keeps the base-map fallback", async () => {
     const page = await U4TestPage({
-      searchParams: Promise.resolve({ theme: "spider" }),
+      searchParams: Promise.resolve({ theme: "lava" }),
     });
     const html = renderToStaticMarkup(page);
 
-    expect(html).toContain(
-      "/assets/u4/map/map_background_spider_parchment.png",
-    );
-    expect(html).not.toContain("map_atmosphere_ruins_props.png");
+    expect(html).toContain("/assets/u4/map/map_background_base.png");
+    expect(html).toContain("map_atmosphere_ruins_props.png");
+  });
+
+  it("an array theme keeps the base-map fallback", async () => {
+    const page = await U4TestPage({
+      searchParams: Promise.resolve({ theme: ["spider", "desert"] }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain("/assets/u4/map/map_background_base.png");
+    expect(html).toContain("map_atmosphere_ruins_props.png");
   });
 });

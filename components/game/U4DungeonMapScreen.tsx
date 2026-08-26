@@ -19,10 +19,13 @@ import type {
   U4RoomKind,
 } from "./u4-dungeon-map-model";
 
+const U4_PARCHMENT_MAP_BACKGROUND =
+  "/assets/u4/map/map_background_spider_parchment.png";
+
 export const U4_MAP_BACKGROUND_BY_THEME = {
-  spider: "/assets/u4/map/map_background_spider_parchment.png",
-  desert: "/assets/u5/dungeon-progress-scenes/desert/entry.png",
-  graveyard: "/assets/u5/dungeon-progress-scenes/graveyard/entry.png",
+  spider: U4_PARCHMENT_MAP_BACKGROUND,
+  desert: U4_PARCHMENT_MAP_BACKGROUND,
+  graveyard: U4_PARCHMENT_MAP_BACKGROUND,
 } as const satisfies Readonly<Record<ThemeId, string>>;
 
 export interface U4SurveyView {
@@ -262,11 +265,9 @@ function DungeonMap({
   U4DungeonMapScreenProps,
   "status" | "party" | "onMove"
 >) {
-  const backgroundClassName = themeId === "spider"
-    ? "u4-map-surface__background is-parchment"
-    : themeId === undefined
-      ? "u4-map-surface__background"
-      : "u4-map-surface__background is-themed";
+  const backgroundClassName = themeId === undefined
+    ? "u4-map-surface__background"
+    : "u4-map-surface__background is-parchment";
   const backgroundSrc = themeId === undefined
     ? "/assets/u4/map/map_background_base.png"
     : U4_MAP_BACKGROUND_BY_THEME[themeId];
@@ -323,7 +324,7 @@ function DungeonMap({
           alt=""
           aria-hidden="true"
         />
-        {themeId !== "spider" ? (
+        {themeId === undefined ? (
           <img
             className="u4-map-surface__atmosphere"
             src="/assets/u4/map/map_atmosphere_ruins_props.png"

@@ -105,6 +105,8 @@
 - [E1 지도 경로 교차 0 보장 구현 계획](superpowers/plans/2026-08-26-lattebun-e1-zero-crossing-map.md): 공용 solver, E1 진단, U4 fallback과 20×5×3 회귀·통합 검증 순서
 - [U4 거미굴 양피지 지도 배경 설계](superpowers/specs/2026-08-26-lattebun-u4-spider-parchment-map-background-design.md): 거미굴 U4의 전용 양피지 배경, 레이어와 슬롯 비율 계약
 - [U4 거미굴 양피지 지도 배경 구현 계획](superpowers/plans/2026-08-26-lattebun-u4-spider-parchment-map-background.md): 자산·테마 매핑·결정적 프리뷰·브라우저 검증의 테스트 우선 실행 순서
+- [U4 전 테마 공용 양피지 지도 배경 설계](superpowers/specs/2026-08-26-lattebun-u4-shared-parchment-map-background-design.md): 거미굴·사막·묘지 U4를 같은 양피지 PNG로 통일하고 기본 프리뷰 fallback을 보존하는 후속 계약
+- [U4 전 테마 공용 양피지 지도 배경 구현 계획](superpowers/plans/2026-08-26-lattebun-u4-shared-parchment-map-background.md): 닫힌 테마 매핑·query adapter·정적 및 브라우저 회귀의 테스트 우선 실행 순서
 - [성직자 응급 치유 설계](superpowers/specs/2026-08-26-lattebun-cleric-emergency-heal-design.md): HP 50% 이하 생존자를 대상 최대 HP의 25%만큼 공격 대신 자동 치유하고, 전투별 추가 제한 없이 원정당 2회 자원을 이어 가는 직업 능력 계약
 - [성직자 응급 치유 구현 계획](superpowers/plans/2026-08-26-lattebun-cleric-emergency-heal.md): 변경 전 50·100·200시드 기준선부터 도메인·전투·원정 자원·U5·카드·paired 백테스트·공식 문서까지의 테스트 우선 실행 순서
 - [성직자 응급 치유 재조정 구현 계획](superpowers/plans/2026-08-26-lattebun-cleric-emergency-heal-rebalance.md): 구현과 production build를 포함한 검증 완료. 전투당 제한 제거와 대상 최대 HP 25% 회복을 타입·전투·U5·paired 백테스트에 반영한 후속 테스트 우선 실행 기록
