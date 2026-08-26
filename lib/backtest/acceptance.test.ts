@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RiskLevel } from "@/lib/domain";
-import { B1_RISK_CURVE_V2_TARGETS, evaluateB1BAcceptance } from "./acceptance";
+import { B1_RISK_CURVE_V2_TARGETS, evaluateB1BAcceptance, evaluateHealingStructuralGates, evaluatePairedAbilityStructuralGates } from "./acceptance";
+import { compareBattleAbilitySnapshots, snapshotForBattleAbilityComparison } from "./battle-ability-comparison";
 import { aggregateRuns, type CampaignRunMetrics } from "./metrics";
 import type { Accuracy, StrategyId } from "./public-state";
 
@@ -19,6 +20,7 @@ function metric(strategyId: StrategyId, accuracy: Accuracy, completed: boolean, 
     adviceHits: 0, adviceTotal: 0, errorKind: null,
     termination: completed ? "completed" : "pool-exhausted",
     terminationEvidence: null,
+    battles: [],
     depletion: [],
     balanceExpeditions: [{
       expeditionId: seed, dungeonId: `dungeon-${seed}` as never, theme: "spider", initialRiskLevel: 1, currentRiskLevel: 1, attemptNumber: 1,
@@ -84,6 +86,199 @@ function isRiskGate(gate: { id: string }): boolean {
 }
 
 describe("B1-B 승인 gate", () => {
+  it("치유 action 구조 위반과 roundLimit을 모두 강제 실패로 보고한다", () => {
+    const bad = metric("survival", 0.7, false, 0, "bad-heal");
+    const battle = {
+      kind: "boss" as const, expeditionId: "bad-heal",
+      party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 5, hpAfter: 11, maxHp: 10, abilityUsesRemainingBefore: 1, abilityUsesRemainingAfter: 1 }],
+      battle: {
+        status: "wipe" as const, termination: "roundLimit" as const, rounds: 50,
+        actions: [
+          { kind: "heal" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "dead", abilityKind: "emergencyHeal" as const, healing: 6, targetHpBefore: 0, targetHpAfter: 6 },
+          { kind: "attack" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "enemy", damage: 1, defeated: false, targetHpBefore: 5, targetHpAfter: 4 },
+        ], party: [], enemies: [],
+      },
+    };
+    const aggregate = aggregateRuns([{ ...bad, battles: [battle], errorKind: "nondeterminism" }]);
+    const gates = evaluateHealingStructuralGates(aggregate);
+
+    expect(gates.every((gate) => gate.enforced)).toBe(true);
+    expect(gates.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: false });
+    expect(gates.find((gate) => gate.id === "healing-live-target-and-turn")).toMatchObject({ passed: false });
+    expect(gates.find((gate) => gate.id === "healing-use-chain")).toMatchObject({ passed: false });
+    expect(gates.find((gate) => gate.id === "no-round-limit")).toMatchObject({ passed: false });
+    expect(gates.find((gate) => gate.id === "reproducible-valid-runs")).toMatchObject({ passed: false });
+  });
+
+  it("대상 최대 HP의 25%만 회복하고 전투당 두 번은 허용하되 원정당 세 번은 거절한다", () => {
+    const run = metric("survival", 0.7, false, 0, "proportional-heal");
+    const battle = (healing: 11 | 5 | 12, uses = 1) => ({
+      kind: "general" as const, expeditionId: "proportional-heal",
+      party: [
+        { characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 20, hpAfter: 20, maxHp: 28, abilityUsesRemainingBefore: 2, abilityUsesRemainingAfter: Math.max(0, 2 - uses) },
+        { characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 1, hpAfter: 1 + healing * uses, maxHp: 45 },
+      ],
+      battle: {
+        status: "victory" as const, termination: "defeatedEnemies" as const, rounds: uses,
+        actions: Array.from({ length: uses }, (_, index) => ({
+          kind: "heal" as const, round: index + 1, actorSide: "party" as const, actorId: "cleric", targetId: "warrior",
+          abilityKind: "emergencyHeal" as const, healing, targetHpBefore: 1 + healing * index, targetHpAfter: 1 + healing * (index + 1),
+        })),
+        party: [], enemies: [{ id: "enemy", monsterId: "one", hp: 1, maxHp: 1, baseDamage: 1 }],
+      },
+    });
+
+    const valid = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(11, 2)] }]));
+    const under = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(5)] }]));
+    const over = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(12)] }]));
+    const threeUses = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(11, 3)] }]));
+
+    expect(valid.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: true });
+    expect(valid).toHaveLength(8);
+    expect(under.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: false });
+    expect(over.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: false });
+    expect(threeUses.find((gate) => gate.id === "healing-expedition-use-limit")).toMatchObject({ passed: false });
+    expect(threeUses.find((gate) => gate.id === "healing-use-chain")).toMatchObject({ passed: false });
+  });
+
+  it("대상이 거의 가득 찼으면 25% 명목값 대신 남은 HP만 회복해야 한다", () => {
+    const run = metric("survival", 0.7, false, 0, "near-full-proportional-heal");
+    const battle = (healing: 5 | 4) => ({
+      kind: "general" as const, expeditionId: "near-full-proportional-heal",
+      party: [
+        { characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 20, hpAfter: 20, maxHp: 28, abilityUsesRemainingBefore: 1, abilityUsesRemainingAfter: 0 },
+        { characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 40, hpAfter: 40 + healing, maxHp: 45 },
+      ],
+      battle: {
+        status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 1,
+        actions: [{
+          kind: "heal" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "warrior",
+          abilityKind: "emergencyHeal" as const, healing, targetHpBefore: 40, targetHpAfter: 40 + healing,
+        }], party: [], enemies: [{ id: "enemy", monsterId: "one", hp: 1, maxHp: 1, baseDamage: 1 }],
+      },
+    });
+
+    const capped = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(5)] }]));
+    const uncapped = evaluateHealingStructuralGates(aggregateRuns([{ ...run, battles: [battle(4)] }]));
+
+    expect(capped.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: true });
+    expect(uncapped.find((gate) => gate.id === "healing-amount-and-hp")).toMatchObject({ passed: false });
+  });
+
+  it("능력 미보유·미발동 control의 라운드가 달라지면 불변 gate를 실패시킨다", () => {
+    const base = metric("survival", 0.7, false, 0, "unchanged");
+    const controls = { ...base, battles: [{
+      kind: "boss" as const, expeditionId: "unchanged",
+      party: [{ characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 10, hpAfter: 5, maxHp: 20 }],
+      battle: { status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 2, actions: [], party: [], enemies: [] },
+    }, {
+      kind: "general" as const, expeditionId: "unchanged",
+      party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 10, hpAfter: 5, maxHp: 28 }],
+      battle: { status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 2, actions: [], party: [], enemies: [] },
+    }] };
+    const changed = { ...controls, battles: controls.battles.map((entry) => ({
+      ...entry,
+      battle: { ...entry.battle, rounds: 3 },
+    })) };
+    const comparison = compareBattleAbilitySnapshots(
+      snapshotForBattleAbilityComparison([controls]),
+      snapshotForBattleAbilityComparison([changed]),
+    );
+
+    expect(evaluatePairedAbilityStructuralGates(comparison)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "non-holder-unchanged", passed: false, evidence: "전투 control 불변 0/1", enforced: true }),
+      expect.objectContaining({ id: "non-trigger-unchanged", passed: false, evidence: "전투 control 불변 0/1", enforced: true }),
+    ]));
+  });
+
+  it("여러 적 중 첫 적을 쓰러뜨린 뒤의 치유를 승리 뒤 치유로 오인하지 않는다", () => {
+    const run = metric("survival", 0.7, false, 0, "multi-enemy-heal");
+    const aggregate = aggregateRuns([{ ...run, battles: [{
+      kind: "general" as const, expeditionId: "multi-enemy-heal",
+      party: [
+        { characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 5, hpAfter: 10, maxHp: 28, abilityUsesRemainingBefore: 1, abilityUsesRemainingAfter: 0 },
+        { characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 20, hpAfter: 20, maxHp: 45 },
+      ],
+      battle: {
+        status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 1,
+        actions: [
+          { kind: "attack" as const, round: 1, actorSide: "party" as const, actorId: "warrior", targetId: "enemy-1", damage: 5, defeated: true, targetHpBefore: 5, targetHpAfter: 0 },
+          { kind: "heal" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "cleric", abilityKind: "emergencyHeal" as const, healing: 5, targetHpBefore: 5, targetHpAfter: 10 },
+          { kind: "attack" as const, round: 1, actorSide: "party" as const, actorId: "warrior", targetId: "enemy-2", damage: 5, defeated: true, targetHpBefore: 5, targetHpAfter: 0 },
+        ], party: [], enemies: [
+          { id: "enemy-1", monsterId: "one", hp: 0, maxHp: 5, baseDamage: 1 },
+          { id: "enemy-2", monsterId: "two", hp: 0, maxHp: 5, baseDamage: 1 },
+        ],
+      },
+    }] }]);
+
+    expect(evaluateHealingStructuralGates(aggregate).find((gate) => gate.id === "healing-after-victory"))
+      .toMatchObject({ passed: true, evidence: "위반 0건" });
+  });
+
+  it("사망한 성직자의 치유 action을 구조 위반으로 거절한다", () => {
+    const run = metric("survival", 0.7, false, 0, "dead-cleric-heal");
+    const aggregate = aggregateRuns([{ ...run, battles: [{
+      kind: "general" as const, expeditionId: "dead-cleric-heal",
+      party: [
+        { characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 0, hpAfter: 0, maxHp: 28, abilityUsesRemainingBefore: 1, abilityUsesRemainingAfter: 0 },
+        { characterId: "warrior" as never, classId: "warrior" as never, hpBefore: 5, hpAfter: 10, maxHp: 45 },
+      ],
+      battle: {
+        status: "wipe" as const, termination: "partyWipe" as const, rounds: 1,
+        actions: [
+          { kind: "heal" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "warrior", abilityKind: "emergencyHeal" as const, healing: 5, targetHpBefore: 5, targetHpAfter: 10 },
+        ], party: [], enemies: [{ id: "enemy", monsterId: "one", hp: 5, maxHp: 5, baseDamage: 1 }],
+      },
+    }] }]);
+
+    expect(evaluateHealingStructuralGates(aggregate).find((gate) => gate.id === "healing-live-target-and-turn"))
+      .toMatchObject({ passed: false });
+  });
+
+  it("같은 원정의 다음 전투가 직전 치유 잔여 횟수를 되돌리거나 endpoint를 누락하면 거절한다", () => {
+    const run = metric("survival", 0.7, false, 0, "use-chain-across-battles");
+    const battle = (kind: "general" | "boss", before: number | null, after: number | null) => ({
+      kind, expeditionId: "use-chain-across-battles",
+      party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 5, hpAfter: 10, maxHp: 28, abilityUsesRemainingBefore: before, abilityUsesRemainingAfter: after }],
+      battle: {
+        status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 1,
+        actions: [{ kind: "heal" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "cleric", abilityKind: "emergencyHeal" as const, healing: 5, targetHpBefore: 5, targetHpAfter: 10 }],
+        party: [], enemies: [{ id: "enemy", monsterId: "one", hp: 1, maxHp: 1, baseDamage: 1 }],
+      },
+    });
+    const reset = aggregateRuns([{ ...run, battles: [battle("general", 2, 1), battle("boss", 2, 1)] }]);
+    const missing = aggregateRuns([{ ...run, battles: [battle("general", 2, 1), battle("boss", 1, null)] }]);
+
+    expect(evaluateHealingStructuralGates(reset).find((gate) => gate.id === "healing-use-chain"))
+      .toMatchObject({ passed: false });
+    expect(evaluateHealingStructuralGates(missing).find((gate) => gate.id === "healing-use-chain"))
+      .toMatchObject({ passed: false });
+  });
+
+  it("control pair가 0건이면 미보유·미발동 gate를 통과시키지 않는다", () => {
+    const base = metric("survival", 0.7, false, 0, "no-control-evidence");
+    const clericRun = {
+      ...base,
+      battles: [{
+        kind: "boss" as const, expeditionId: "no-control-evidence",
+        party: [{ characterId: "cleric" as never, classId: "cleric" as never, hpBefore: 5, hpAfter: 10, maxHp: 28 }],
+        battle: {
+          status: "victory" as const, termination: "defeatedEnemies" as const, rounds: 1,
+          actions: [{ kind: "heal" as const, round: 1, actorSide: "party" as const, actorId: "cleric", targetId: "cleric", abilityKind: "emergencyHeal" as const, healing: 5, targetHpBefore: 5, targetHpAfter: 10 }], party: [], enemies: [],
+        },
+      }],
+    };
+    const comparison = compareBattleAbilitySnapshots(
+      snapshotForBattleAbilityComparison([clericRun]),
+      snapshotForBattleAbilityComparison([clericRun]),
+    );
+
+    expect(evaluatePairedAbilityStructuralGates(comparison)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "non-holder-unchanged", passed: false }),
+      expect.objectContaining({ id: "non-trigger-unchanged", passed: false }),
+    ]));
+  });
   it("완주율과 완료 전멸 평균의 하한 경계를 통과시킨다", () => {
     const gates = evaluateB1BAcceptance(aggregateAtExactBandEdges("lower"));
     const legacyGates = gates.filter((gate) => gate.id.startsWith("completion-rate:") || gate.id.startsWith("completed-wipe-mean:"));

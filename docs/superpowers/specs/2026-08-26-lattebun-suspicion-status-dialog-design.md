@@ -9,7 +9,7 @@
 
 ## 목표
 
-공통 상단 상태 바의 `신뢰 0` 레이블을 플레이어 언어인 `의심 인원`으로 바꾸고, 칩을 누르면 누적 고발의 위험을 서사적으로 설명하는 modal dialog를 연다.
+공통 상단 상태 바의 `신뢰 0` 레이블을 플레이어 언어인 `의심 인원`으로 바꾸고, 칩을 누르면 누적 고발의 위험을 서사적으로 설명하는 비모달 팝오버를 연다.
 
 ## 규칙 경계
 
@@ -22,10 +22,10 @@
 
 - 모든 `GameShell` 화면에서 칩 레이블은 `의심 인원`이고 값은 기존처럼 `n / 5`다.
 - 칩은 버튼이며 `aria-label`에 레이블과 값이 포함된다.
-- 클릭하면 `role="dialog"`, 이름 `의심 인원`인 하나의 modal dialog가 열린다.
-- `Escape`, backdrop 클릭, `닫기` 버튼으로 닫히며, 닫은 뒤 초점은 칩으로 돌아간다.
-- 열려 있는 동안 배경은 조작·포커스를 받지 않는다. 다만 상태 수치와 게임 흐름은 멈추거나 변경하지 않는다.
-- 팝업은 새 전역 chrome이 아니라 `TopStatusBar`/`GameShell` 공통 경계의 화면 내 UI다. 화면별 CSS 재정의나 상태 바 내부 스크롤을 만들지 않는다.
+- 클릭하면 `role="dialog"`, 이름 `의심 인원`인 하나의 비모달 팝오버가 칩 바로 아래의 공용 앵커에서 열린다.
+- `Escape`, 바깥 클릭, `닫기` 버튼으로 닫히며, 닫은 뒤 초점은 칩으로 돌아간다.
+- 열린 동안에도 배경은 조작·포커스를 받으며, 상태 수치와 게임 흐름도 멈추거나 변경하지 않는다.
+- 팝오버는 새 전역 chrome이 아니라 `TopStatusBar`/`GameShell` 공통 경계의 화면 내 UI다. 같은 공용 앵커 동작을 쓰고, 화면별 CSS 재정의나 상태 바 내부 스크롤을 만들지 않는다.
 
 ## 고정 문구
 
@@ -40,7 +40,7 @@
 ## 구현과 검증
 
 - 기존 `StatusItem`의 action 경로를 재사용하되 승급 전용 test id·상태와 섞지 않는다.
-- 현재 dialog 구현(`AchievementOverlay`, `U3PromotionDialog`)의 native dialog·focus 복귀 패턴을 재사용한다.
-- `TopStatusBar` unit test는 새 레이블, 버튼/값/aria-label, dialog 문구와 닫기 동작을 검증한다.
-- `GameShell` 또는 browser test는 캠페인 화면에서 열기·Escape 닫기·focus 복귀를 검증한다.
+- `TopStatusBar`의 공용 앵커 팝오버 경로를 재사용하며, 배경 차단 처리나 focus trap을 두지 않는다.
+- `TopStatusBar` unit test는 새 레이블, 버튼/값/aria-label, 팝오버 문구와 바깥 클릭·Escape·닫기 동작을 검증한다.
+- `GameShell` 또는 browser test는 캠페인 화면에서 열기·Escape 닫기·focus 복귀와 비모달 배경 조작을 검증한다.
 - `docs/experience/SCREEN_LAYOUT.md`, `docs/experience/ONBOARDING_AND_INTERFACE.md`, `docs/technical/SCREEN_ADAPTER_CONTRACT.md`, `docs/README.md`에 상호작용과 규칙 경계를 갱신한다.

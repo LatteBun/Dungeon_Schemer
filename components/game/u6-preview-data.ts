@@ -1,5 +1,6 @@
 import { PROMOTION_GOLD, PROMOTION_REPUTATION } from "@/lib/domain";
 import { CLASSES } from "@/lib/content/classes";
+import { createBattleAbilityUsesForParty } from "@/lib/rules/battle-ability-state";
 import { SPIDER_THEME } from "@/lib/content/themes";
 import type {
   CampaignDungeon,
@@ -79,12 +80,15 @@ const dungeon = previewDungeon();
  * 자르면 같은 직업이 겹쳐 정산이 거부된다.
  */
 function previewParty(): readonly Character[] {
-  const picked: Character[] = [];
-  const usedClasses = new Set<string>();
+  const cleric = baseCampaign.pool.order
+    .map((id) => baseCampaign.pool.byId[id])
+    .find((member): member is Character => member !== undefined && member.alive && member.classId === "cleric");
+  if (cleric === undefined) throw new Error("정산 프리뷰에 쓸 성직자가 없다");
+  const picked: Character[] = [cleric];
+  const usedClasses = new Set<string>([cleric.classId]);
   for (const id of baseCampaign.pool.order) {
     const member = baseCampaign.pool.byId[id];
-    if (member === undefined || !member.alive) continue;
-    if (usedClasses.has(member.classId)) continue;
+    if (member === undefined || !member.alive || usedClasses.has(member.classId)) continue;
     usedClasses.add(member.classId);
     picked.push(member);
     if (picked.length === 3) break;
@@ -94,6 +98,15 @@ function previewParty(): readonly Character[] {
 }
 
 const party = previewParty();
+const battleAbilityUsesRemainingByCharacterId = createBattleAbilityUsesForParty({
+  members: party,
+  classDefs: CLASSES,
+});
+
+export const U6_PREVIEW_SOURCE = {
+  party,
+  battleAbilityUsesRemainingByCharacterId,
+} as const;
 
 /**
  * 정산이 보존할 `causeInputs` 원정 근거를 실제 원정에서 얻는다.
@@ -149,6 +162,7 @@ function causeInputsFromExpedition(): { choice: string; reactions: string; damag
       activeMonsterIds: dungeon.activeMonsterIds, monsterDefs: SPIDER_THEME.monsters,
       members: applied.members, classDefs: CLASSES,
       seed: `${PREVIEW_SEED}/${dungeon.id}/settlement`, pendingMerchantEffect: null, advicePressure: 0,
+      battleAbilityUsesRemainingByCharacterId,
     }).battle;
 
     const word = (reaction: string) => reaction === "accepted" ? "수용" : reaction === "suspected" ? "의심" : "적발";

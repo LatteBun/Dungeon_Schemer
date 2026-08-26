@@ -10,6 +10,7 @@ import type {
   BaseAdviceOption,
   CampaignState,
   CampaignTransition,
+  ClassId,
   CharacterId,
   DungeonId,
   EndingKind,
@@ -18,6 +19,7 @@ import type {
   RiskLevel,
   ThemeId,
 } from "@/lib/domain";
+import type { BattleResolution } from "@/lib/domain";
 import { selectAdviceByAccuracy, InvalidStrategyDecisionError, type AccuracySelection } from "./accuracy-selector";
 import { projectAdviceDecision, projectBoardDecision, projectMapDecision, type Accuracy, type PublicNodeCategory } from "./public-state";
 import type { StrategyPolicy } from "./strategies";
@@ -77,6 +79,25 @@ export interface CampaignTerminationEvidence {
   readonly finalPool: DepletionPoolStateEvidence;
 }
 
+/**
+ * Backtest-only battle evidence captured while a transition still owns its full
+ * resolution. Campaign history deliberately retains only presentation details.
+ */
+export interface BattleTraceEntry {
+  readonly kind: "general" | "boss";
+  readonly expeditionId: string;
+  readonly party: readonly {
+    readonly characterId: CharacterId;
+    readonly classId: ClassId;
+    readonly hpBefore: number;
+    readonly hpAfter: number;
+    readonly maxHp: number;
+    readonly abilityUsesRemainingBefore?: number | null;
+    readonly abilityUsesRemainingAfter?: number | null;
+  }[];
+  readonly battle: BattleResolution;
+}
+
 export interface CampaignRunTrace {
   readonly seed: string;
   readonly strategyId: StrategyPolicy["id"];
@@ -92,6 +113,7 @@ export interface CampaignRunTrace {
   readonly merchantGoldSpent: number;
   readonly merchantEffectsConsumed: number;
   readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
+  readonly battles: readonly BattleTraceEntry[];
   readonly depletion: readonly DepletionTraceEntry[];
   readonly terminationEvidence: CampaignTerminationEvidence | null;
   readonly termination: EndingKind | "run-error";
@@ -107,6 +129,11 @@ export interface ExpeditionBalanceTrace {
   readonly initialRiskLevel: RiskLevel;
   readonly currentRiskLevel: RiskLevel;
   readonly attemptNumber: number;
+  /** 원정 시작 시 확정된 파티 구성. 전투가 없는 회피 원정도 이 분류를 보존한다. */
+  readonly party?: readonly {
+    readonly characterId: CharacterId;
+    readonly classId: ClassId;
+  }[];
   readonly startAdvicePressure: 0;
   readonly maxAdvicePressure: AdvicePressure;
   readonly bossEntry: null | {
@@ -136,11 +163,22 @@ export interface CampaignRunFailure {
 
 export type CampaignRun = CampaignRunSuccess | CampaignRunFailure;
 
+/** 테스트가 전이 직후의 확정 결과와 backtest 관측값을 대조하는 데만 쓴다. */
+export interface CampaignTransitionObservation {
+  readonly actionType: CampaignTransition["type"];
+  readonly expeditionId: string | null;
+  readonly pendingOutcome: null | {
+    readonly eventKind: string;
+    readonly battle: BattleResolution | null;
+  };
+}
+
 export interface CampaignRunOptions {
   readonly seed: string;
   readonly strategy: StrategyPolicy;
   readonly accuracy: Accuracy;
   readonly stepLimit?: number;
+  readonly onTransition?: (transition: CampaignTransitionObservation) => void;
 }
 
 type MutableExpeditionBalanceTrace = {
@@ -168,6 +206,7 @@ type MutableTrace = {
   merchantGoldSpent: number;
   merchantEffectsConsumed: number;
   balanceExpeditions: MutableExpeditionBalanceTrace[];
+  battles: BattleTraceEntry[];
   depletion: DepletionTraceEntry[];
   terminationEvidence: CampaignTerminationEvidence | null;
   steps: number;
@@ -189,6 +228,7 @@ function initialTrace(options: CampaignRunOptions): MutableTrace {
     merchantGoldSpent: 0,
     merchantEffectsConsumed: 0,
     balanceExpeditions: [],
+    battles: [],
     depletion: [],
     terminationEvidence: null,
     steps: 0,
@@ -229,12 +269,28 @@ function freezeTrace(
     reactionCounts: { ...trace.reactionCounts },
     balanceExpeditions: trace.balanceExpeditions.map((expedition) => ({
       ...expedition,
+      party: expedition.party?.map((member) => ({ ...member })),
       endAdvicePressure: expedition.endAdvicePressure
         ?? (active?.expeditionId === expedition.expeditionId
           ? active.expedition.advicePressure
           : null),
       result: expedition.result ?? "interrupted",
       bossEntry: expedition.bossEntry === null ? null : { ...expedition.bossEntry },
+    })),
+    battles: trace.battles.map((entry) => ({
+      ...entry,
+      party: entry.party.map((member) => ({ ...member })),
+      battle: {
+        ...entry.battle,
+        actions: entry.battle.actions.map((action) => ({ ...action })),
+        party: entry.battle.party.map((member) => ({ ...member })),
+        enemies: entry.battle.enemies.map((enemy) => ({
+          ...enemy,
+          targetWeightMultipliers: enemy.targetWeightMultipliers === undefined
+            ? undefined
+            : { ...enemy.targetWeightMultipliers },
+        })),
+      },
     })),
     depletion: trace.depletion.map((entry) => ({ ...entry })),
     terminationEvidence: trace.terminationEvidence === null ? null : {
@@ -245,6 +301,46 @@ function freezeTrace(
       finalPool: poolStateEvidence(state),
     },
   };
+}
+
+function appendBattleTraceFor(
+  action: CampaignTransition,
+  before: CampaignStoreState,
+  after: CampaignStoreState,
+  trace: MutableTrace,
+): void {
+  const beforeActive = before.context.activeExpedition;
+  const afterActive = after.context.activeExpedition;
+  if (beforeActive === null || afterActive === null || beforeActive.expeditionId !== afterActive.expeditionId) return;
+
+  const kind = action.type === "CHOOSE_ADVICE"
+    ? "general"
+    : action.type === "ENTER_BOSS"
+      ? "boss"
+      : null;
+  if (kind === null) return;
+  const battle = kind === "general"
+    ? afterActive.pendingOutcome?.battle ?? null
+    : afterActive.expedition.bossResult?.battle ?? null;
+  if (battle === null) return;
+
+  const afterById = new Map(afterActive.partyMembers.map((member) => [member.id, member]));
+  const usesBefore = beforeActive.expedition.battleAbilityUsesRemainingByCharacterId;
+  const usesAfter = afterActive.expedition.battleAbilityUsesRemainingByCharacterId;
+  trace.battles.push({
+    kind,
+    expeditionId: beforeActive.expeditionId,
+    party: beforeActive.partyMembers.map((member) => ({
+      characterId: member.id,
+      classId: member.classId,
+      hpBefore: member.hp,
+      hpAfter: afterById.get(member.id)?.hp ?? member.hp,
+      maxHp: member.maxHp,
+      abilityUsesRemainingBefore: usesBefore[member.id] ?? null,
+      abilityUsesRemainingAfter: usesAfter[member.id] ?? null,
+    })),
+    battle,
+  });
 }
 
 function balanceTraceFor(trace: MutableTrace, expeditionId: string): MutableExpeditionBalanceTrace {
@@ -504,9 +600,22 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
     trace.actionTypes.push(action.type);
     const after = store.getState();
     if (after.rejected !== null) fail("rejected-transition", `${after.rejected.type}: ${after.rejected.reason}`);
+    const afterActive = after.context.activeExpedition;
+    const pendingOutcome = afterActive?.pendingOutcome ?? null;
+    options.onTransition?.({
+      actionType: action.type,
+      expeditionId: afterActive?.expeditionId ?? null,
+      pendingOutcome: pendingOutcome === null
+        ? null
+        : {
+          eventKind: pendingOutcome.event.kind,
+          battle: pendingOutcome.battle,
+        },
+    });
     const merchantDelta = merchantTraceDeltaFor(action, before, after);
     trace.merchantGoldSpent += merchantDelta.goldSpent;
     trace.merchantEffectsConsumed += merchantDelta.effectsConsumed;
+    appendBattleTraceFor(action, before, after, trace);
     appendDepletionFor(action, before, after, trace);
     const finalPool = poolStateEvidence(after);
     if (precedingPool.emergencyEligibleClassCount >= 3 && finalPool.emergencyEligibleClassCount < 3) {
@@ -592,6 +701,7 @@ export function runCampaign(options: CampaignRunOptions): CampaignRun {
           initialRiskLevel: dungeon.initialRiskLevel,
           currentRiskLevel: dungeon.riskLevel,
           attemptNumber: dungeon.attempts + 1,
+          party: active.partyMembers.map((member) => ({ characterId: member.id, classId: member.classId })),
           startAdvicePressure: 0,
           maxAdvicePressure: active.expedition.advicePressure,
           bossEntry: null,

@@ -20,7 +20,14 @@ export type {
 } from "./ids";
 
 export { canDeploy, canDeployEmergency, PERSONALITIES, TRUST_MAX, TRUST_MIN } from "./character";
-export type { Character, ClassDef, Personality, TrustChange } from "./character";
+export type {
+  Character,
+  ClassBattleAbilityDef,
+  ClassDef,
+  EmergencyHealAbilityDef,
+  Personality,
+  TrustChange,
+} from "./character";
 
 export {
   CHARACTER_POOL_SIZE,
@@ -157,6 +164,7 @@ export type {
   BossInfoTiming,
   BossInfoVerification,
   BossInfoVerificationAction,
+  BattleAbilityUsesRemaining,
   ExpeditionResult,
   ExpeditionState,
   ExpeditionStatus,
@@ -173,6 +181,7 @@ export type {
   BattleActionRecord,
   BattleEnemyInput,
   BattlePartyMember,
+  BattlePartyMemberAbilityState,
   BattleResolution,
 } from "./battle";
 

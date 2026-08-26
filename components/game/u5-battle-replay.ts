@@ -1,5 +1,5 @@
 import type { BossInfoPresentationCue, BossInfoVerification } from "@/lib/domain";
-import type { BattleResolution } from "@/lib/rules/battle-engine";
+import type { BattleActionRecord, BattleResolution } from "@/lib/rules/battle-engine";
 
 export interface U5BattleParticipantPresentation {
   readonly id: string;
@@ -40,8 +40,11 @@ export interface U5BattleReplayFrame {
   readonly actionIndex: number | null;
   readonly actorId: string | null;
   readonly targetId: string | null;
+  readonly actionKind: BattleActionRecord["kind"] | null;
   readonly damage: number | null;
+  readonly healing: number | null;
   readonly hpByParticipantId: Readonly<Record<string, number>>;
+  readonly battleAbilityUsesRemainingByParticipantId: Readonly<Record<string, number>>;
   readonly defeatedParticipantIds: readonly string[];
   /** 이 프레임에서 드러나는 보스 정보다. 없으면 빈 배열이다. */
   readonly cues: readonly U5BattleCueView[];
@@ -98,8 +101,11 @@ function snapshot(
   actionIndex: number | null,
   actorId: string | null,
   targetId: string | null,
+  actionKind: BattleActionRecord["kind"] | null,
   damage: number | null,
+  healing: number | null,
   hpByParticipantId: Readonly<Record<string, number>>,
+  battleAbilityUsesRemainingByParticipantId: Readonly<Record<string, number>>,
   defeatedParticipantIds: ReadonlySet<string>,
   cues: readonly U5BattleCueView[] = [],
 ): U5BattleReplayFrame {
@@ -109,8 +115,11 @@ function snapshot(
     actionIndex,
     actorId,
     targetId,
+    actionKind,
     damage,
+    healing,
     hpByParticipantId: { ...hpByParticipantId },
+    battleAbilityUsesRemainingByParticipantId: { ...battleAbilityUsesRemainingByParticipantId },
     defeatedParticipantIds: [...defeatedParticipantIds],
   };
 }
@@ -143,7 +152,50 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
   }
   for (const [participantId, participant] of participantsById) {
     if (initialHpByParticipantId[participantId] === undefined) initialHpByParticipantId[participantId] = participant.hp;
+    const initialHp = initialHpByParticipantId[participantId];
+    if (!Number.isSafeInteger(initialHp) || initialHp < 0 || initialHp > participant.maxHp) {
+      invalid(`시작 HP가 범위를 벗어난다: ${participantId}`);
+    }
   }
+
+  const finalAbilityUsesRemainingByParticipantId: Record<string, number> = {};
+  const healActionCountByActorId = new Map<string, number>();
+  for (const action of input.resolution.actions) {
+    if (action.kind === "heal") {
+      healActionCountByActorId.set(action.actorId, (healActionCountByActorId.get(action.actorId) ?? 0) + 1);
+    }
+  }
+  for (const member of input.resolution.party) {
+    const ability = member.battleAbility;
+    if (ability === undefined) continue;
+    if (ability.kind !== "emergencyHeal") {
+      invalid(`지원하지 않는 최종 전투 능력이다: ${member.id}`);
+    }
+    if (
+      !Number.isSafeInteger(ability.remainingUses)
+      || ability.remainingUses < 0
+      || ability.remainingUses > ability.usesPerExpedition
+    ) {
+      invalid(`최종 전투 능력 잔여 횟수가 범위를 벗어난다: ${member.id}`);
+    }
+    const healActionCount = healActionCountByActorId.get(member.id) ?? 0;
+    const initialUses = ability.remainingUses + healActionCount;
+    if (initialUses > ability.usesPerExpedition) {
+      invalid(`시작 전투 능력 잔여 횟수가 범위를 벗어난다: ${member.id}`);
+    }
+    finalAbilityUsesRemainingByParticipantId[member.id] = ability.remainingUses;
+  }
+  for (const actorId of healActionCountByActorId.keys()) {
+    if (finalAbilityUsesRemainingByParticipantId[actorId] === undefined) {
+      invalid(`치유 actor의 전투 능력 상태가 없다: ${actorId}`);
+    }
+  }
+  let currentAbilityUsesRemainingByParticipantId = Object.fromEntries(
+    Object.entries(finalAbilityUsesRemainingByParticipantId).map(([participantId, remainingUses]) => [
+      participantId,
+      remainingUses + (healActionCountByActorId.get(participantId) ?? 0),
+    ]),
+  );
 
   const participants = [...input.resolution.party.map((member) => [member, "party"] as const), ...input.resolution.enemies.map((enemy) => [enemy, "enemy"] as const)].map(([source, side]) => {
     const presentation = presentationById.get(source.id);
@@ -165,9 +217,11 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
     cueViews.filter((one) => one.phase === phase && one.actionIndex === actionIndex).map((one) => one.view);
 
   let currentHpByParticipantId: Record<string, number> = { ...initialHpByParticipantId };
-  const defeatedParticipantIds = new Set<string>();
+  const defeatedParticipantIds = new Set(
+    Object.entries(currentHpByParticipantId).filter(([, hp]) => hp === 0).map(([participantId]) => participantId),
+  );
     /* battleStart 큐는 어느 행동에도 매이지 않으므로 idle 프레임이 받는다. */
-  const frames: U5BattleReplayFrame[] = [snapshot("idle", null, null, null, null, currentHpByParticipantId, defeatedParticipantIds, cueViews.filter((one) => one.phase === "idle").map((one) => one.view))];
+  const frames: U5BattleReplayFrame[] = [snapshot("idle", null, null, null, null, null, null, currentHpByParticipantId, currentAbilityUsesRemainingByParticipantId, defeatedParticipantIds, cueViews.filter((one) => one.phase === "idle").map((one) => one.view))];
 
   input.resolution.actions.forEach((action, actionIndex) => {
     const actor = participantsById.get(action.actorId);
@@ -180,19 +234,59 @@ export function createU5BattleReplay(input: U5BattleReplayInput): U5BattleReplay
      * 으로 조용히 통과한다. 재생은 아무 일도 일어나지 않는 프레임 세 장을 낳는다. */
     if (defeatedParticipantIds.has(action.targetId)) invalid(`쓰러진 참가자를 다시 노린다: ${action.targetId}`);
     if (currentHpByParticipantId[action.targetId] !== action.targetHpBefore) invalid(`target HP chain이 맞지 않는다: ${action.targetId}`);
-    if (action.defeated !== (action.targetHpAfter === 0)) invalid(`defeated와 targetHpAfter가 맞지 않는다: ${action.targetId}`);
+    if (action.kind === "attack") {
+      if (!Number.isSafeInteger(action.damage) || action.damage < 0) invalid(`공격 피해가 유효하지 않다: ${action.targetId}`);
+      if (action.targetHpAfter !== Math.max(0, action.targetHpBefore - action.damage)) {
+        invalid(`공격 HP chain이 맞지 않는다: ${action.targetId}`);
+      }
+      if (action.defeated !== (action.targetHpAfter === 0)) invalid(`defeated와 targetHpAfter가 맞지 않는다: ${action.targetId}`);
+    } else {
+      if (action.abilityKind !== "emergencyHeal") invalid(`지원하지 않는 치유 action이다: ${action.actorId}`);
+      if (sideByParticipantId.get(action.actorId) !== "party") invalid(`치유 actor가 파티가 아니다: ${action.actorId}`);
+      if (sideByParticipantId.get(action.targetId) !== "party") invalid(`치유 target이 파티가 아니다: ${action.targetId}`);
+      if ([...input.resolution.enemies].every((enemy) => currentHpByParticipantId[enemy.id] === 0)) {
+        invalid(`승리 뒤 치유 행동이다: ${action.actorId}`);
+      }
+      if (!Number.isSafeInteger(action.healing) || action.healing <= 0) invalid(`치유량이 유효하지 않다: ${action.targetId}`);
+      const actorAbility = "battleAbility" in actor ? actor.battleAbility : undefined;
+      const maximumHealing = actorAbility === undefined
+        ? null
+        : Math.round(target.maxHp * actorAbility.healTargetMaxHpPercent / 100);
+      if (maximumHealing === null || action.healing > maximumHealing) {
+        invalid(`치유량이 능력 범위를 벗어난다: ${action.actorId}`);
+      }
+      const expectedAfter = Math.min(target.maxHp, action.targetHpBefore + action.healing);
+      if (action.targetHpAfter !== expectedAfter || action.healing !== expectedAfter - action.targetHpBefore) {
+        invalid(`치유 HP chain과 실제 회복량이 맞지 않는다: ${action.targetId}`);
+      }
+      const remainingUses = currentAbilityUsesRemainingByParticipantId[action.actorId];
+      if (remainingUses === undefined || remainingUses <= 0) {
+        invalid(`치유 frame의 잔여 횟수가 맞지 않는다: ${action.actorId}`);
+      }
+    }
 
-    frames.push(snapshot("attack", actionIndex, action.actorId, action.targetId, null, currentHpByParticipantId, defeatedParticipantIds, cuesFor("attack", actionIndex)));
-    frames.push(snapshot("impact", actionIndex, action.actorId, action.targetId, action.damage, currentHpByParticipantId, defeatedParticipantIds, cuesFor("impact", actionIndex)));
+    frames.push(snapshot("attack", actionIndex, action.actorId, action.targetId, action.kind, null, null, currentHpByParticipantId, currentAbilityUsesRemainingByParticipantId, defeatedParticipantIds, cuesFor("attack", actionIndex)));
+    frames.push(snapshot("impact", actionIndex, action.actorId, action.targetId, action.kind, action.kind === "attack" ? action.damage : null, action.kind === "heal" ? action.healing : null, currentHpByParticipantId, currentAbilityUsesRemainingByParticipantId, defeatedParticipantIds, cuesFor("impact", actionIndex)));
     currentHpByParticipantId = { ...currentHpByParticipantId, [action.targetId]: action.targetHpAfter };
-    if (action.defeated) defeatedParticipantIds.add(action.targetId);
-    frames.push(snapshot("settle", actionIndex, action.actorId, action.targetId, null, currentHpByParticipantId, defeatedParticipantIds, cuesFor("settle", actionIndex)));
+    if (action.kind === "attack" && action.defeated) defeatedParticipantIds.add(action.targetId);
+    if (action.kind === "heal") {
+      currentAbilityUsesRemainingByParticipantId = {
+        ...currentAbilityUsesRemainingByParticipantId,
+        [action.actorId]: currentAbilityUsesRemainingByParticipantId[action.actorId]! - 1,
+      };
+    }
+    frames.push(snapshot("settle", actionIndex, action.actorId, action.targetId, action.kind, null, null, currentHpByParticipantId, currentAbilityUsesRemainingByParticipantId, defeatedParticipantIds, cuesFor("settle", actionIndex)));
   });
 
   for (const [participantId, participant] of participantsById) {
     if (currentHpByParticipantId[participantId] !== participant.hp) invalid(`최종 HP가 resolution과 맞지 않는다: ${participantId}`);
   }
-  frames.push(snapshot("complete", null, null, null, null, currentHpByParticipantId, defeatedParticipantIds));
+  for (const [participantId, finalRemainingUses] of Object.entries(finalAbilityUsesRemainingByParticipantId)) {
+    if (currentAbilityUsesRemainingByParticipantId[participantId] !== finalRemainingUses) {
+      invalid(`최종 전투 능력 잔여 횟수가 resolution과 맞지 않는다: ${participantId}`);
+    }
+  }
+  frames.push(snapshot("complete", null, null, null, null, null, null, currentHpByParticipantId, currentAbilityUsesRemainingByParticipantId, defeatedParticipantIds));
 
   return {
     participants,

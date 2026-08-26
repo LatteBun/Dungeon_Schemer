@@ -31,6 +31,54 @@ const render = (over: Partial<PartyMemberCardView> = {}, props = {}) =>
   );
 
 describe("PartyMemberCard", () => {
+  it("능력 상태를 직업 라벨과 같은 인라인에 표시한다", () => {
+    const html = render({}, {
+      battleAbilityStatus: { label: "치유", remaining: 1, total: 2 },
+    });
+    const identity = html.match(/<header class="party-card__identity">[\s\S]*?<\/header>/)?.[0] ?? "";
+
+    expect(identity).toContain("<span>전사");
+    expect(identity).toContain('<span class="party-card__ability">치유 1\/2<\/span>');
+    expect(identity.match(/<span>/g)).toHaveLength(1);
+  });
+
+  it.each([
+    [2, "치유 2/2"],
+    [1, "치유 1/2"],
+    [0, "치유 0/2"],
+  ] as const)("활성 원정의 현재 횟수 %i를 분수 형식으로 표시한다", (remaining, expected) => {
+    expect(render({}, {
+      battleAbilityStatus: { label: "치유", remaining, total: 2 },
+    })).toContain(expected);
+  });
+
+  it("계약 시작 횟수는 같은 상태를 n회 형식으로 표시한다", () => {
+    const html = render({}, {
+      battleAbilityStatus: { label: "치유", remaining: 2, total: 2 },
+      battleAbilityStatusFormat: "initial",
+    });
+
+    expect(html).toContain("치유 2회");
+    expect(html).not.toContain("치유 2/2");
+  });
+
+  it("능력 prop이 없으면 기존 직업 라벨 DOM을 유지한다", () => {
+    const html = render();
+
+    expect(html).toContain("<span>전사</span><small>신중한</small>");
+    expect(html).not.toContain("party-card__ability");
+  });
+
+  it("능력 상태는 새 행이나 카드 목록 열을 추가하지 않는다", () => {
+    const classLine = partyCardCss.match(/\.party-card__identity > span\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(partyCardCss).toMatch(/\.party-card__identity\s*\{[^}]*display:\s*grid/);
+    expect(partyCardCss).toMatch(/\.party-list\s*\{[^}]*grid-template-columns:\s*repeat\(3,/);
+    expect(partyCardCss).not.toMatch(/\.party-card__ability\s*\{[^}]*display:\s*(?:block|grid|flex)/);
+    expect(classLine).toMatch(/white-space:\s*nowrap/);
+    expect(classLine).toMatch(/overflow:\s*hidden/);
+  });
+
   it("확인한 HP와 신뢰 변화량을 카드 앞면에 함께 남긴다", () => {
     const html = render({}, { settledResult: { hpDelta: -3, trustDelta: -2 } });
 

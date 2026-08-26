@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createStrategy } from "./strategies";
-import { merchantTraceDeltaFor, runCampaign } from "./campaign-driver";
+import { merchantTraceDeltaFor, runCampaign, type CampaignTransitionObservation } from "./campaign-driver";
 import { createCampaignStore } from "@/lib/store/campaign-store";
 import type { Accuracy } from "./public-state";
 
@@ -52,6 +52,64 @@ describe("백테스트 캠페인 driver", () => {
     expect(result.trace.balanceExpeditions.every((one) => one.maxAdvicePressure >= 0 && one.maxAdvicePressure <= 3)).toBe(true);
     expect(result.trace.balanceExpeditions.filter((one) => one.bossEntry !== null)
       .every((one) => one.bossEntry!.hp <= one.bossEntry!.maxHp)).toBe(true);
+    expect(result.trace.balanceExpeditions.every((one) => one.party !== undefined && one.party.length === 3
+      && one.party.every((member) => member.characterId.length > 0 && member.classId.length > 0))).toBe(true);
+  });
+
+  it("회피·비전투를 제외하고 확정 일반전과 보스전을 전이 직후 한 번씩만 관측한다", () => {
+    const result = runCampaign({ seed: "driver-battle-trace", strategy: createStrategy("survival"), accuracy: 1 as Accuracy });
+    if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
+
+    const battles = result.trace.battles;
+    expect(result.trace.nodeCategoryChoices.monster).toBeGreaterThan(0);
+    expect(result.trace.nodeCategoryChoices.rest + result.trace.nodeCategoryChoices.merchant + result.trace.nodeCategoryChoices.special)
+      .toBeGreaterThan(0);
+    expect(battles.filter((entry) => entry.kind === "boss")).toHaveLength(result.campaign.statistics.totalExpeditions);
+    expect(battles.every((entry) => entry.battle.party.every((member) => {
+      const partyMember = entry.party.find((candidate) => candidate.characterId === member.id);
+      return partyMember !== undefined && partyMember.hpAfter === member.hp;
+    }))).toBe(true);
+    expect(battles.every((entry) => entry.party.every((member) => {
+      const resolved = entry.battle.party.find((candidate) => candidate.id === member.characterId);
+      return member.abilityUsesRemainingBefore === null
+        ? member.abilityUsesRemainingAfter === null
+        : resolved?.battleAbility?.remainingUses === member.abilityUsesRemainingAfter;
+    }))).toBe(true);
+    const keys = battles.map((entry) => `${entry.kind}\u0000${entry.expeditionId}\u0000${JSON.stringify(entry.battle)}`);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("조언 직후 일반전·회피·비전투 사실과 전투 trace를 직접 대조한다", () => {
+    const transitions: CampaignTransitionObservation[] = [];
+    const result = runCampaign({
+      seed: "driver-battle-trace",
+      strategy: createStrategy("survival"),
+      accuracy: 0.7,
+      onTransition: (transition) => transitions.push(transition),
+    });
+    if (!result.ok) throw new Error(`${result.errorKind}: ${result.message}`);
+
+    const adviceTransitions = transitions.filter((transition) => transition.actionType === "CHOOSE_ADVICE");
+    const foughtMonsterTransitions = adviceTransitions.filter((transition) =>
+      transition.pendingOutcome?.eventKind === "monster" && transition.pendingOutcome.battle !== null,
+    );
+    const avoidedMonsterTransitions = adviceTransitions.filter((transition) =>
+      transition.pendingOutcome?.eventKind === "monster" && transition.pendingOutcome.battle === null,
+    );
+    const nonCombatTransitions = adviceTransitions.filter((transition) =>
+      transition.pendingOutcome !== null && transition.pendingOutcome.eventKind !== "monster",
+    );
+
+    expect(foughtMonsterTransitions.length).toBeGreaterThan(0);
+    expect(avoidedMonsterTransitions.length).toBeGreaterThan(0);
+    expect(nonCombatTransitions.length).toBeGreaterThan(0);
+
+    const generalBattleKeys = result.trace.battles
+      .filter((entry) => entry.kind === "general")
+      .map((entry) => `${entry.expeditionId}\u0000${JSON.stringify(entry.battle)}`);
+    const foughtMonsterKeys = foughtMonsterTransitions
+      .map((transition) => `${transition.expeditionId}\u0000${JSON.stringify(transition.pendingOutcome!.battle)}`);
+    expect(generalBattleKeys).toEqual(foughtMonsterKeys);
   });
 
   it("실제 Store 전이에서 원정과 월드턴 손실 원장을 기록한다", () => {
@@ -96,18 +154,16 @@ describe("백테스트 캠페인 driver", () => {
      * 잡힌다 — 게시판이 다른 던전을 걸기 시작하자 실제로 그렇게 됐다. 여기서
      * 보려는 것은 전멸이 원장에 남는가이므로 그 조건을 밖으로 드러낸다.
      */
-    const result = Array.from({ length: 40 }, (_, index) => runCampaign({
-      seed: `b1b-calibration-v1/${String(index).padStart(6, "0")}`,
+    const result = runCampaign({
+      seed: "b1b-calibration-v1/000078",
       strategy: createStrategy("survival"),
       accuracy: 0.7,
-    })).find((candidate) => candidate.ok
-      && candidate.campaign.ending?.kind === "exhausted"
-      && candidate.trace.terminationEvidence?.wipeSource != null);
+    });
 
-    expect(result).toBeDefined();
-    if (result === undefined || !result.ok) throw new Error("인력 소진 실행을 찾지 못했다");
+    if (!result.ok) throw new Error("인력 소진 실행을 찾지 못했다");
 
     expect(result.campaign.ending?.kind).toBe("exhausted");
+    expect(result.trace.terminationEvidence?.wipeSource).toBeDefined();
     expect(result.trace.terminationEvidence).toMatchObject({
       sourceLosses: expect.arrayContaining([
         expect.objectContaining({ source: "expedition-boss", deaths: expect.any(Number) }),

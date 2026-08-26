@@ -104,10 +104,15 @@
 - [U4 거미굴 양피지 지도 배경 설계](superpowers/specs/2026-08-26-lattebun-u4-spider-parchment-map-background-design.md): 거미굴 U4의 전용 양피지 배경, 레이어와 슬롯 비율 계약
 - [U4 거미굴 양피지 지도 배경 구현 계획](superpowers/plans/2026-08-26-lattebun-u4-spider-parchment-map-background.md): 자산·테마 매핑·결정적 프리뷰·브라우저 검증의 테스트 우선 실행 순서
 
+- [성직자 응급 치유 설계](superpowers/specs/2026-08-26-lattebun-cleric-emergency-heal-design.md): HP 50% 이하 생존자를 대상 최대 HP의 25%만큼 공격 대신 자동 치유하고, 전투별 추가 제한 없이 원정당 2회 자원을 이어 가는 직업 능력 계약
+- [성직자 응급 치유 구현 계획](superpowers/plans/2026-08-26-lattebun-cleric-emergency-heal.md): 변경 전 50·100·200시드 기준선부터 도메인·전투·원정 자원·U5·카드·paired 백테스트·공식 문서까지의 테스트 우선 실행 순서
+- [성직자 응급 치유 재조정 구현 계획](superpowers/plans/2026-08-26-lattebun-cleric-emergency-heal-rebalance.md): 구현과 production build를 포함한 검증 완료. 전투당 제한 제거와 대상 최대 HP 25% 회복을 타입·전투·U5·paired 백테스트에 반영한 후속 테스트 우선 실행 기록
 - [상단 상태 바 신뢰 0 인원 표시 설계](superpowers/specs/2026-08-26-lattebun-top-status-zero-trust-count-design.md): 살아 있는 신뢰 0 인원과 누적 고발 기준을 C6 selector에서 공통 상태 바로 전달하는 화면 계약
 - [상단 상태 바 신뢰 0 인원 표시 구현 계획](superpowers/plans/2026-08-26-lattebun-top-status-zero-trust-count.md): 필수 View 계약, 프리뷰 원본 구분, 읽기 전용 칩과 최대 7개 레이아웃 검증의 테스트 우선 실행 순서
 - [의심 인원 상태 칩과 경고 팝업 설계](superpowers/specs/2026-08-26-lattebun-suspicion-status-dialog-design.md): 누적 고발 위험을 설명하는 상단 상태 바 팝업 계약
 - [의심 인원 상태 칩 팝업 구현 계획](superpowers/plans/2026-08-26-lattebun-suspicion-status-dialog.md): 상태 칩 상호작용과 접근성 회귀 구현 순서
+- [남은 용사 상태 칩 설계](superpowers/specs/2026-08-26-lattebun-remaining-adventurers-status-design.md): 응급 편성 가능 인원과 인력 소진 안내 팝오버 계약
+- [남은 용사 상태 칩 구현 계획](superpowers/plans/2026-08-26-lattebun-remaining-adventurers-status.md): selector, View, 공용 팝오버와 최대 8칩 회귀의 테스트 우선 실행 순서
 - [전역 오디오·퀵 메뉴 설계](superpowers/specs/2026-08-26-sbh3821-global-audio-menu-design.md): 기본 OFF인 공통 BGM·UI 효과음, 세션 전투 속도, 전역 퀵 메뉴와 캠페인을 보존하는 업적 오버레이의 앱 공통 계약
 - [전역 오디오·퀵 메뉴 구현 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu.md): 설정 저장·결정적 WAV 생성·전역 재생기·업적 오버레이·브라우저 회귀를 순차 구현하는 테스트 우선 계획
 - [전역 오디오·퀵 메뉴 후속 개선 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu-follow-up.md): 세션 전투 속도 공유, 세로 점 메뉴 재구성, 승인된 `어두운 길드의 밤 1B` BGM과 낮춘 조작음 믹스를 적용하는 테스트 우선 계획
@@ -156,7 +161,7 @@
 - [B1 생존형 진행 정책 교정 구현 계획](superpowers/plans/2026-08-25-lattebun-b1-survival-progression-policy.md): 승급·잔여 던전 진단 기준선을 먼저 보존하고 생존형 정책을 테스트 우선으로 교정한 뒤 같은 50·200시드로 비교하는 실행 순서
 - [B1 위험도 곡선 v2 보정 설계](superpowers/specs/2026-08-25-lattebun-b1-risk-curve-v2-calibration-design.md): ★1 85~90%에서 ★5 55~65%까지의 새 첫 시도 목표와 보스 배율 단일 축, risk-curve 전용 gate 범위를 정의하는 후속 calibration 계약
 - [B1 위험도 곡선 v2 보정 구현 계획](superpowers/plans/2026-08-25-lattebun-b1-risk-curve-v2-calibration.md): focus별 gate 분리부터 독립 namespace, 테스트 수집 경계, 50·100·200시드 보스 배율 보정과 공식 문서 동기화까지의 테스트 우선 실행 순서
-- [B1 백테스트 최신 보고서](technical/BACKTEST_REPORT.md): `b1-risk-curve-v2` 200시드 결과, 위험도별 첫 시도 곡선과 잔여 `OBSERVE` gate
+- [B1 백테스트 최신 보고서](technical/BACKTEST_REPORT.md): `b1-risk-curve-v2` 200시드 결과와 성직자 치유 trace 지표, 구현 전후 50·100·200시드 paired calibration·구조 gate, 미실행 2,000시드 holdout
 - [C4 원정 정산 설계](superpowers/specs/2026-08-23-lattebun-c4-expedition-settlement-design.md): 정산 계약, 유품, 응급 편성, C7·C8·U6 경계
 - [C4 원정 정산 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-expedition-settlement.md): C4와 연계 계약의 테스트 우선 구현 순서
 - [C4 PR 리뷰 수정 구현 계획](superpowers/plans/2026-08-23-lattebun-c4-pr-review-fixes.md): 전멸 전용 다음 보상과 중상 경계 판정 수정 순서

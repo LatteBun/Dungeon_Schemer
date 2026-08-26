@@ -81,16 +81,20 @@ describe("U1 프리뷰 정의", () => {
       reputation: expect.any(Number),
       gold: expect.any(Number),
       canPromote: expect.any(Boolean),
+      remainingAdventurers: expect.any(Number),
       remainingDungeons: expect.any(Number),
       zeroTrust: {
         livingCount: expect.any(Number),
         threshold: DENOUNCE_THRESHOLD,
       },
     });
+    expect(U1_PREVIEW_STATUS.remainingAdventurers).toBe(12);
     expect(U1_PREVIEW_STATUS.zeroTrust).toEqual({
       livingCount: 7,
       threshold: DENOUNCE_THRESHOLD,
     });
+    expect(Number.isInteger(U1_PREVIEW_STATUS.remainingAdventurers)).toBe(true);
+    expect(U1_PREVIEW_STATUS.remainingAdventurers).toBeGreaterThanOrEqual(0);
     expect(U1_PREVIEW_STATUS.currentDungeon?.name).toBe("자카르의 불탄 우물");
   });
 });

@@ -86,8 +86,9 @@ function expectRuleError(run: () => unknown, expected: { code: string; details: 
 }
 
 function firstPartyAction(result: ReturnType<typeof resolveBossBattle>) {
-  const action = result.bossResult.battle.actions.find((candidate) => candidate.actorSide === "party");
-  if (action === undefined) throw new Error("party action이 없다");
+  const action = result.bossResult.battle.actions.find((candidate) =>
+    candidate.kind === "attack" && candidate.actorSide === "party");
+  if (action?.kind !== "attack") throw new Error("party attack이 없다");
   return action;
 }
 
@@ -108,6 +109,7 @@ function resolve(input: Partial<Parameters<typeof resolveBossBattle>[0]> = {}) {
     seed: "boss-adapter",
     pendingMerchantEffect: null,
     advicePressure: 0,
+    battleAbilityUsesRemainingByCharacterId: {},
     ...input,
   });
 }
@@ -172,6 +174,43 @@ describe("E4 보스 BattleEngine adapter", () => {
       .toBe(result.bossResult.cues.length);
     expect(resolve({ ...input, infoRecords: [...input.infoRecords].reverse() }).bossResult.cues)
       .toEqual(result.bossResult.cues);
+  });
+
+  it("보스 cue는 공격 축에 맞는 attack에만 붙고 치유 뒤 actionIndex도 전체 배열 위치를 쓴다", () => {
+    const cleric = member("member-1", {
+      classId: "cleric" as ClassId,
+      maxHp: 28,
+      hp: 10,
+    });
+    const outgoing = resolve({
+      dungeon: dungeon({ bossId: SPIDER_BOSSES[1].id }),
+      members: [cleric, member("wounded-ally", { hp: 1 })],
+      infoRecords: [morkanCocoonHelp],
+      battleAbilityUsesRemainingByCharacterId: { [cleric.id]: 1 },
+    });
+    const healIndex = outgoing.bossResult.battle.actions.findIndex((action) => action.kind === "heal");
+    const outgoingCue = outgoing.bossResult.cues.find((cue) => cue.axis === "outgoingDamage");
+    const outgoingAction = outgoingCue === undefined
+      ? undefined
+      : outgoing.bossResult.battle.actions[outgoingCue.actionIndex];
+
+    expect(healIndex).toBe(0);
+    expect(outgoing.bossResult.cues.some((cue) => cue.actionIndex === healIndex)).toBe(false);
+    expect(outgoingAction).toMatchObject({ kind: "attack", actorSide: "party" });
+    expect(outgoingCue?.actionIndex).toBeGreaterThan(healIndex);
+
+    for (const infoRecord of [ragnaTurningHelp, ragnaCrouchHelp]) {
+      const enemyAxis = resolve({
+        members: [member("member-1")],
+        infoRecords: [infoRecord],
+      });
+      for (const cue of enemyAxis.bossResult.cues) {
+        expect(enemyAxis.bossResult.battle.actions[cue.actionIndex]).toMatchObject({
+          kind: "attack",
+          actorSide: "enemy",
+        });
+      }
+    }
   });
 
   it("같은 적 action의 targetWeight가 incomingDamage보다 먼저 선택된다", () => {

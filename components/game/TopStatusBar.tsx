@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode, Ref } from "react";
 
 export interface TopStatusView {
@@ -8,6 +8,7 @@ export interface TopStatusView {
   reputation: number;
   gold: number;
   canPromote: boolean;
+  remainingAdventurers: number;
   remainingDungeons: number;
   zeroTrust: {
     livingCount: number;
@@ -72,31 +73,90 @@ function StatusItem({ label, value, iconSrc, onClick, testId, buttonRef, availab
   );
 }
 
+interface StatusInfoItemProps {
+  label: string;
+  value: ReactNode;
+  iconSrc?: string;
+  testId: string;
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  children: ReactNode;
+}
+
+function StatusInfoItem({
+  label,
+  value,
+  iconSrc,
+  testId,
+  isOpen,
+  onOpen,
+  onClose,
+  children,
+}: StatusInfoItemProps) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLElement>(null);
+  const closeAndRestoreFocus = useCallback(() => {
+    onClose();
+    requestAnimationFrame(() => triggerRef.current?.focus());
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!(event.target instanceof Node)) return;
+      if (triggerRef.current?.contains(event.target) || popoverRef.current?.contains(event.target)) return;
+      onClose();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeAndRestoreFocus();
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [closeAndRestoreFocus, isOpen, onClose]);
+
+  return (
+    <div className="game-shell__status-info-anchor">
+      <StatusItem
+        label={label}
+        value={value}
+        iconSrc={iconSrc}
+        onClick={onOpen}
+        testId={testId}
+        buttonRef={triggerRef}
+      />
+      {isOpen ? (
+        <section
+          ref={popoverRef}
+          className="game-shell__status-info-popover"
+          role="dialog"
+          aria-label={label}
+        >
+          <h2>{label}</h2>
+          {children}
+          <button type="button" onClick={closeAndRestoreFocus}>닫기</button>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
 interface TopStatusBarProps {
   status: TopStatusView;
   onOpenPromotion?: () => void;
 }
 
 export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
-  const [isZeroTrustInfoOpen, setZeroTrustInfoOpen] = useState(false);
-  const zeroTrustTriggerRef = useRef<HTMLButtonElement>(null);
-  const zeroTrustPopoverRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (!isZeroTrustInfoOpen) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (event.target instanceof Node && !zeroTrustTriggerRef.current?.contains(event.target) && !zeroTrustPopoverRef.current?.contains(event.target)) setZeroTrustInfoOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); closeZeroTrustInfo(); }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => { document.removeEventListener("pointerdown", onPointerDown); document.removeEventListener("keydown", onKeyDown); };
-  }, [isZeroTrustInfoOpen]);
-  const closeZeroTrustInfo = () => {
-    setZeroTrustInfoOpen(false);
-    requestAnimationFrame(() => zeroTrustTriggerRef.current?.focus());
-  };
+  const [activeInfoPopover, setActiveInfoPopover] = useState<"zeroTrust" | "remainingAdventurers" | null>(null);
+  const closeInfoPopover = useCallback(() => setActiveInfoPopover(null), []);
   const canOpenPromotion = onOpenPromotion !== undefined && status.nextPromotion !== undefined;
   /*
    * 얼마나 남았는지를 적는다.
@@ -156,14 +216,30 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
           testId={canOpenPromotion ? "u3-promotion-trigger" : undefined}
           available={status.canPromote}
         />
-        <StatusItem
+        <StatusInfoItem
           label="의심 인원"
           value={`${status.zeroTrust.livingCount} / ${status.zeroTrust.threshold}`}
           iconSrc="/assets/u2/status-trust.svg"
-          onClick={() => setZeroTrustInfoOpen(true)}
           testId="zero-trust-info-trigger"
-          buttonRef={zeroTrustTriggerRef}
-        />
+          isOpen={activeInfoPopover === "zeroTrust"}
+          onOpen={() => setActiveInfoPopover("zeroTrust")}
+          onClose={closeInfoPopover}
+        >
+          <p>신뢰를 완전히 잃은 용사가 다섯 명 이상이면, 이번 던전이 끝난 뒤 누적 고발이 시작됩니다.</p>
+          <p>결국 고블린은 처형되고 당신의 길잡이 일도 끝나겠죠. 다만 죽은 용사는 집계에서 제외됩니다. 신뢰를 잃은 자가 돌아오지 못하게 하는 편이 나을지도 모릅니다.</p>
+        </StatusInfoItem>
+        <StatusInfoItem
+          label="남은 용사"
+          value={`${status.remainingAdventurers}명`}
+          iconSrc="/assets/u2/status-adventurers.svg"
+          testId="remaining-adventurers-info-trigger"
+          isOpen={activeInfoPopover === "remainingAdventurers"}
+          onOpen={() => setActiveInfoPopover("remainingAdventurers")}
+          onClose={closeInfoPopover}
+        >
+          <p>서로 다른 직업의 용사 세 명을 더는 모을 수 없으면, 이번 던전이 끝난 뒤 원정대를 꾸리지 못해 길잡이 일도 끝납니다.</p>
+          <p>중상을 입은 용사도 마지막 원정에는 나설 수 있지만, 죽거나 신뢰를 완전히 잃은 용사는 돌아오지 않습니다.</p>
+        </StatusInfoItem>
         <StatusItem
           label="남은 던전"
           value={status.remainingDungeons}
@@ -176,18 +252,6 @@ export function TopStatusBar({ status, onOpenPromotion }: TopStatusBarProps) {
           />
         )}
       </dl>
-      {isZeroTrustInfoOpen ? <section
-        ref={zeroTrustPopoverRef}
-        className="game-shell__zero-trust-popover"
-        role="dialog"
-        aria-label="의심 인원"
-        aria-modal="true"
-      >
-        <h2>의심 인원</h2>
-        <p>신뢰를 완전히 잃은 용사가 다섯 명 이상이면, 이번 던전이 끝난 뒤 누적 고발이 시작됩니다.</p>
-        <p>결국 고블린은 처형되고 당신의 길잡이 일도 끝나겠죠. 다만 죽은 용사는 집계에서 제외됩니다. 신뢰를 잃은 자가 돌아오지 못하게 하는 편이 나을지도 모릅니다.</p>
-        <button type="button" autoFocus onClick={closeZeroTrustInfo}>닫기</button>
-      </section> : null}
     </header>
   );
 }

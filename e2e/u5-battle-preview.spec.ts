@@ -37,7 +37,7 @@ async function expectPlaybackControls(entryName: string, page: Page, expectsHpRe
   await expect(settledCard).toHaveCount(1);
   await expect(settledCard.locator(".party-card__settled-result--trust")).toHaveText("신뢰 −2");
   if (expectsHpResult) {
-    await expect(settledCard.locator(".party-card__settled-result--hp")).toHaveText(/HP −\d+/);
+    await expect(settledCard.locator(".party-card__settled-result--hp")).toHaveText(/HP (?:−|\+)\d+/);
   } else {
     await expect(page.locator(".party-card__settled-result--hp")).toHaveCount(0);
   }
@@ -66,8 +66,51 @@ async function expectPlaybackControls(entryName: string, page: Page, expectsHpRe
 }
 
 test.describe("U5-2 전투 프리뷰", () => {
+  test("치유 기도는 동작 줄이기에서도 회복 수치·HP·잔여 횟수와 완료 전환을 유지한다", async ({ page }) => {
+    const failures = watchBrowserErrors(page);
+    await page.goto("/u5-2-test");
+    /* SSR과 첫 hydration은 같은 기본값으로 끝내고, 그 뒤 사용자 설정 변경을 재현한다. */
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.getByRole("button", { name: "E3 실제 일반전" }).click();
+
+    const action = page.locator(".u5-battle-heal-action");
+    await expect(action).toContainText("치유 기도", { timeout: 10_000 });
+    await expect(action).toContainText("남은 횟수 2");
+    const recovery = page.locator('.u5-battle-healing[aria-label="6 회복"]');
+    await expect(recovery).toBeVisible();
+    await expect(recovery).toHaveText("+6");
+    expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
+    expect(await recovery.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBe(0.00001);
+    await expect(page.getByTestId("u5-battle-scene")).not.toContainText("피해를 받습니다");
+
+    const target = recovery.locator("xpath=ancestor::article");
+    const targetId = await target.getAttribute("data-participant-id");
+    expect(targetId).not.toBeNull();
+    const targetHp = page.locator(`[data-participant-id="${targetId}"] .u5-battle-hp__numbers`);
+    const hpBeforeSettle = await targetHp.innerText();
+    await expect(action).toContainText("남은 횟수 1");
+    await expect.poll(() => targetHp.innerText()).not.toBe(hpBeforeSettle);
+
+    const overflow = await page.evaluate(() => ({
+      pageX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      pageY: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      sceneX: document.querySelector<HTMLElement>(".u5-scene")!.scrollWidth
+        - document.querySelector<HTMLElement>(".u5-scene")!.clientWidth,
+      sceneY: document.querySelector<HTMLElement>(".u5-scene")!.scrollHeight
+        - document.querySelector<HTMLElement>(".u5-scene")!.clientHeight,
+    }));
+    expect(overflow).toEqual({ pageX: 0, pageY: 0, sceneX: 0, sceneY: 0 });
+
+    await page.getByRole("button", { name: "전투 건너뛰기" }).click();
+    const reaction = page.getByRole("button", { name: "반응 확인" });
+    await expect(reaction).toBeVisible({ timeout: 10_000 });
+    await reaction.click();
+    await expect(page.getByRole("button", { name: "다시 보기" })).toBeVisible({ timeout: 10_000 });
+    expectNoBrowserErrors(failures, "U5-2 동작 줄이기 치유");
+  });
+
   test("실제 일반전은 건너뛰기와 다시 보기를 전환한다", async ({ page }) => {
-    await expectPlaybackControls("E3 실제 일반전", page, false);
+    await expectPlaybackControls("E3 실제 일반전", page, true);
   });
 
   test("실제 보스전은 건너뛰기와 다시 보기를 전환한다", async ({ page }) => {

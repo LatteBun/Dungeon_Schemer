@@ -47,6 +47,19 @@ describe("U4 preview data", () => {
     expect(preview.party).toHaveLength(3);
     expect(new Set(preview.party.map((member) => member.classId)).size).toBe(3);
 
+    /* Break caught: preview가 활성 원정의 능력 맵을 빼먹으면 성직자 카드의
+     * 현재 횟수가 사라진다. */
+    for (const member of preview.party) {
+      if (member.classId === "cleric") {
+        expect(member.battleAbilityStatus).toMatchObject({ remaining: 2, total: 2 });
+      } else {
+        expect(member.battleAbilityStatus).toBeUndefined();
+      }
+    }
+    expect(Object.keys(preview.battleAbilityUsesRemainingByCharacterId).sort()).toEqual(
+      preview.party.filter((member) => member.classId === "cleric").map((member) => member.id).sort(),
+    );
+
     const normalNodes = preview.map.nodes.filter((node) => node.kind === "normal");
     expect(normalNodes.every((node) => preview.publicKindByNodeId[node.id] !== undefined)).toBe(true);
   });
