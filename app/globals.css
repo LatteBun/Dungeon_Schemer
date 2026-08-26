@@ -173,7 +173,18 @@ body {
   min-width: 0;
 }
 
-.game-shell__zero-trust-popover {
+.game-shell__status-info-anchor {
+  position: relative;
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.game-shell__status-info-anchor > .game-shell__status-chip {
+  width: 100%;
+}
+
+.game-shell__status-info-popover {
   position: absolute;
   z-index: 20;
   top: calc(100% + 0.5rem);
@@ -188,9 +199,9 @@ body {
   box-shadow: 0 1rem 3rem rgb(0 0 0 / 72%);
 }
 
-.game-shell__zero-trust-popover h2 { margin: 0 0 0.75rem; color: #e8c27a; }
-.game-shell__zero-trust-popover p { margin: 0 0 0.8rem; line-height: 1.6; }
-.game-shell__zero-trust-popover button { float: right; }
+.game-shell__status-info-popover h2 { margin: 0 0 0.75rem; color: #e8c27a; }
+.game-shell__status-info-popover p { margin: 0 0 0.8rem; line-height: 1.6; }
+.game-shell__status-info-popover button { float: right; }
 
 .game-shell__status-item {
   display: flex;
