@@ -181,6 +181,22 @@ describe("캠페인 되살리기", () => {
     if (replayed.ok) return;
     expect(replayed.failedAt).toBe(0);
   });
+
+  it("저장 replay의 일반 예외를 실패 위치로 반환한다", () => {
+    const opened = advanceRun(initialRunState("damaged"), OPEN_BOARD);
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) return;
+    const actions = [
+      OPEN_BOARD,
+      { type: "SELECT_CONTRACT", offerId: opened.state.campaign.offers[0]!.id },
+      { type: "START_EXPEDITION", expeditionId: "broken" },
+    ] as unknown as CampaignTransition[];
+
+    expect(replayRun("damaged", actions)).toMatchObject({
+      ok: false,
+      failedAt: 2,
+    });
+  });
 });
 
 describe("스토어가 남기는 기록", () => {
