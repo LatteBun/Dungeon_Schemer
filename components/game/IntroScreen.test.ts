@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { IntroScreen } from "./IntroScreen";
 
 const status = {
@@ -11,6 +12,7 @@ const status = {
   gold: 10,
   canPromote: false,
   remainingDungeons: 15,
+  zeroTrust: { livingCount: 0, threshold: DENOUNCE_THRESHOLD },
   nextPromotion: { rank: "B", reputationRequired: 60 },
 };
 

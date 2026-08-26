@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import {
   U1_PREVIEW_CHOICES,
   U1_PREVIEW_NOTICES,
@@ -81,6 +82,15 @@ describe("U1 프리뷰 정의", () => {
       gold: expect.any(Number),
       canPromote: expect.any(Boolean),
       remainingDungeons: expect.any(Number),
+      zeroTrust: {
+        livingCount: expect.any(Number),
+        threshold: DENOUNCE_THRESHOLD,
+      },
     });
+    expect(U1_PREVIEW_STATUS.zeroTrust).toEqual({
+      livingCount: 7,
+      threshold: DENOUNCE_THRESHOLD,
+    });
+    expect(U1_PREVIEW_STATUS.currentDungeon?.name).toBe("자카르의 불탄 우물");
   });
 });

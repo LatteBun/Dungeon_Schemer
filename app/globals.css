@@ -126,7 +126,7 @@ body {
 :root {
   --status-bar-padding-block: clamp(0.65rem, 0.6cqw, 1rem);
   --status-bar-padding-inline: clamp(0.8rem, 2cqw, 1.5rem);
-  --status-list-gap: clamp(0.45rem, 1.1cqw, 0.8rem);
+  --status-list-gap: clamp(0.45rem, 1.1cqw, 0.75rem);
   --status-chip-min-width: clamp(8.7rem, 14cqw, 11.3rem);
   --status-chip-min-height: clamp(3rem, 3cqw, 4.35rem);
   --status-chip-gap: clamp(0.5rem, 0.5cqw, 0.8rem);
@@ -172,6 +172,25 @@ body {
   margin: 0;
   min-width: 0;
 }
+
+.game-shell__zero-trust-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  translate: -50% 0;
+  width: min(34rem, 70cqw);
+  border: 1px solid #a77b3c;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  color: #f4ead2;
+  background: #171008;
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 72%);
+}
+
+.game-shell__zero-trust-popover h2 { margin: 0 0 0.75rem; color: #e8c27a; }
+.game-shell__zero-trust-popover p { margin: 0 0 0.8rem; line-height: 1.6; }
+.game-shell__zero-trust-popover button { float: right; }
 
 .game-shell__status-item {
   display: flex;

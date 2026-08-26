@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { presentShuffledAdvice } from "@/lib/rules/advice-evaluation";
 import { eventsForTheme } from "@/lib/content/event-registry";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
 import { U5_PREVIEW_ENTRIES, U5_PREVIEW_SOURCE } from "./u5-preview-data";
 
 /**
@@ -11,6 +12,12 @@ import { U5_PREVIEW_ENTRIES, U5_PREVIEW_SOURCE } from "./u5-preview-data";
  */
 
 describe("U5 프리뷰 데이터", () => {
+  it("상태 바의 누적 고발 기준은 도메인 상수와 같다", () => {
+    for (const entry of U5_PREVIEW_ENTRIES) {
+      expect(entry.status.zeroTrust.threshold).toBe(DENOUNCE_THRESHOLD);
+    }
+  });
+
   it("아홉 상태를 담는다", () => {
     expect(U5_PREVIEW_ENTRIES).toHaveLength(9);
     expect(new Set(U5_PREVIEW_ENTRIES.map((entry) => entry.id)).size).toBe(9);

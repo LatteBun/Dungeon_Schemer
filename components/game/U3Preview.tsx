@@ -14,7 +14,7 @@ import { initializeCampaign } from "@/lib/rules/campaign-init";
 import { createBoardOffers } from "@/lib/rules/board";
 import { transitionCampaign } from "@/lib/rules/campaign-transition";
 import { U3BoardScreen } from "./U3BoardScreen";
-import type { TopStatusView } from "./TopStatusBar";
+import { statusFor } from "./campaign-adapters";
 import { createU3BoardView } from "./u3-board-model";
 import { createU3PromotionView } from "./u3-promotion-model";
 
@@ -64,21 +64,7 @@ export function U3Preview() {
     return transition;
   }
 
-  const status: TopStatusView = {
-    rank: campaign.rank,
-    reputation: campaign.reputation,
-    gold: campaign.gold,
-    canPromote: eligibility?.canPromoteByReputation === true || eligibility?.canPromoteByGold === true,
-    remainingDungeons: campaign.dungeons.filter(
-      (dungeon) => dungeon.status !== "cleared",
-    ).length,
-    ...(eligibility === null ? {} : {
-      nextPromotion: {
-        rank: eligibility.toRank,
-        reputationRequired: eligibility.reputationRequired,
-      },
-    }),
-  };
+  const status = statusFor(campaign, null);
 
   return (
     <div className="u3-preview">

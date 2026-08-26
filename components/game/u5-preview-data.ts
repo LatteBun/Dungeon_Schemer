@@ -15,6 +15,8 @@ import {
   resolveMonsterEventBattle,
 } from "@/lib/rules/expedition-events";
 import { SPIDER_THEME } from "@/lib/content/themes";
+import { DENOUNCE_THRESHOLD } from "@/lib/domain";
+import { countLivingZeroTrust } from "@/lib/rules/ending";
 import type {
   CampaignDungeon,
   Character,
@@ -220,6 +222,10 @@ function status(over: Partial<TopStatusView> = {}): TopStatusView {
     gold: campaign.gold,
     canPromote: eligibility !== null && (eligibility.canPromoteByReputation || eligibility.canPromoteByGold),
     remainingDungeons: campaign.dungeons.filter((candidate) => candidate.status !== "cleared").length,
+    zeroTrust: {
+      livingCount: countLivingZeroTrust(campaign),
+      threshold: DENOUNCE_THRESHOLD,
+    },
     currentDungeon: { name: dungeon.name, riskLevel: dungeon.riskLevel },
     ...(eligibility === null ? {} : {
       nextPromotion: { rank: eligibility.toRank, reputationRequired: eligibility.reputationRequired },
