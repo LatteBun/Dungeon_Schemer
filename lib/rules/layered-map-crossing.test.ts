@@ -25,7 +25,11 @@ describe("layered map crossing solver", () => {
   it("is deterministic and supports partial, safe, and unavoidable edges", () => {
     const solver = createLayeredOrderSolver(rows);
     const safe = [{ from: A, to: D }];
-    expect(solver.solve(safe)).toEqual(solver.solve(safe));
+    const safeResult = solver.solve(safe);
+    expect(safeResult.crossingCount).toBe(0);
+    expect(safeResult.rows).toEqual(rows);
+    expect(safeResult).toEqual(solver.solve(safe));
+    expect(solver.solve([]).crossingCount).toBe(0);
     expect(solver.solve([
       { from: A, to: C }, { from: A, to: D },
       { from: B, to: C }, { from: B, to: D },
@@ -41,6 +45,7 @@ describe("layered map crossing solver", () => {
     expect(() => createLayeredOrderSolver([[]])).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
     expect(() => createLayeredOrderSolver([[A, A]])).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
     expect(() => createLayeredOrderSolver([[A, B, C, D, ENTRY, BOSS, id("x")]])).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
+    expect(() => createLayeredOrderSolver([[A, B, C, D, ENTRY, BOSS]])).not.toThrow();
     expect(() => createLayeredOrderSolver([[A], [A]])).toThrowError(expect.objectContaining({ code: "INVALID_GENERATION" }));
   });
 
