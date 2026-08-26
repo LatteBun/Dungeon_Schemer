@@ -24,6 +24,17 @@ export const PERSONALITIES = [
 export const TRUST_MIN = 0;
 export const TRUST_MAX = 100;
 
+export interface EmergencyHealAbilityDef {
+  readonly kind: "emergencyHeal";
+  readonly name: string;
+  readonly healAmount: number;
+  readonly usesPerExpedition: number;
+  readonly maxUsesPerBattle: number;
+  readonly triggerAtOrBelowHpPercent: number;
+}
+
+export type ClassBattleAbilityDef = EmergencyHealAbilityDef;
+
 /**
  * 직업은 열린 목록이다. 콘텐츠 데이터로 관리하며
  * 새 직업을 추가할 때 규칙을 고치지 않는다.
@@ -38,6 +49,8 @@ export interface ClassDef {
   attack: number;
   /** 보스가 대상을 고를 때의 상대 가중치. 클수록 자주 맞는다. */
   hitWeight: number;
+  /** 직업별 선택적 단일 전투 능력. */
+  battleAbility?: ClassBattleAbilityDef;
 }
 
 /**

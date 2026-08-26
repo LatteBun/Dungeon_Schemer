@@ -1,4 +1,5 @@
 import type { ClassDef, ClassId } from "@/lib/domain";
+import { validateClasses } from "@/lib/content/class-validation";
 
 /**
  * 초기 직업 5종.
@@ -25,10 +26,18 @@ export const CLASSES: readonly ClassDef[] = [
   {
     id: "cleric" as ClassId,
     name: "성직자",
-    description: "파티를 지탱하지만 스스로는 약하다",
+    description: "부상자를 치유해 파티를 지탱하지만 스스로는 약하다",
     maxHp: 28,
     attack: 5,
     hitWeight: 1,
+    battleAbility: {
+      kind: "emergencyHeal",
+      name: "치유 기도",
+      healAmount: 5,
+      usesPerExpedition: 2,
+      maxUsesPerBattle: 1,
+      triggerAtOrBelowHpPercent: 50,
+    },
   },
   {
     id: "mage" as ClassId,
@@ -47,3 +56,5 @@ export const CLASSES: readonly ClassDef[] = [
     hitWeight: 2,
   },
 ] as const;
+
+validateClasses(CLASSES);
