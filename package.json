@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "audio:generate": "node scripts/generate-audio-assets.mjs",
     "backtest:structure": "B1_SOURCE_REVISION=$(git rev-parse --short HEAD) B1_BACKTEST_MODE=calibration B1_BACKTEST_SEEDS=50 vitest run --config vitest.backtest.config.ts",
     "backtest:tune": "B1_SOURCE_REVISION=$(git rev-parse --short HEAD) B1_BACKTEST_MODE=calibration B1_BACKTEST_SEEDS=100 vitest run --config vitest.backtest.config.ts",
     "backtest:quick": "B1_SOURCE_REVISION=$(git rev-parse --short HEAD) B1_BACKTEST_MODE=calibration B1_BACKTEST_SEEDS=200 vitest run --config vitest.backtest.config.ts",

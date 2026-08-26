@@ -12,7 +12,6 @@ import { rankCrestSrc } from "./u6-settlement-model";
 
 export interface U6EndingScreenProps {
   ending: U6EndingView;
-  onReturnToBoard?: () => void;
 }
 
 const ASSET = "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL";
@@ -70,7 +69,7 @@ function ResultRow({ icon, label, value, tone }: {
   );
 }
 
-export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps) {
+export function U6EndingScreen({ ending }: U6EndingScreenProps) {
   const completed = isNormalCompletion(ending.kind);
 
   return (
@@ -256,17 +255,23 @@ export function U6EndingScreen({ ending, onReturnToBoard }: U6EndingScreenProps)
       </p>
 
       {/*
-        * 돌아가는 버튼에는 제 판이 있다.
+        * 나가는 자리에는 제 판이 있다.
         *
         * `button_back` 이 그 용도로 그려져 있는데 쓰지 않고 있었다. 그림을 판으로
         * 깔고 글자를 그 위에 얹는다.
+        *
+        * 이것은 `next/link` 가 아니라 평범한 `a` 여야 한다. 캠페인 스토어는
+        * `CampaignStoreProvider` 가 첫 렌더에서 한 번만 만들고 `seed` 가 바뀌어도
+        * 다시 만들지 않는다. 클라이언트 이동으로 `/campaign` 에 가면 서버가 새
+        * 시드를 뽑아도 스토어는 끝난 캠페인을 그대로 들고 있어서 아무 일도
+        * 일어나지 않는다. 문서를 새로 불러야 새 판이 선다.
         */}
-      <button type="button" className="u6-ending-cta" onClick={onReturnToBoard}>
+      <a className="u6-ending-cta" href="/campaign">
         <img className="u6-ending-cta__plate" src={`${ASSET}/controls/button_back.png`} alt="" aria-hidden="true" />
         <img src={`${ASSET}/controls/icon_button_handshake.png`} alt="" aria-hidden="true" width={140} height={91} />
-        <strong>길드 게시판으로 돌아가기</strong>
+        <strong>새 캠페인 시작</strong>
         <img className="u6-ending-cta__arrow" src={`${ASSET}/controls/icon_arrow.png`} alt="" aria-hidden="true" width={96} height={59} />
-      </button>
+      </a>
     </div>
   );
 }

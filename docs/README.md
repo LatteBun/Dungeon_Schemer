@@ -101,6 +101,13 @@
 
 ## 이번 개편 설계
 
+- [전역 오디오·퀵 메뉴 설계](superpowers/specs/2026-08-26-sbh3821-global-audio-menu-design.md): 기본 OFF인 공통 BGM·UI 효과음, 세션 전투 속도, 전역 퀵 메뉴와 캠페인을 보존하는 업적 오버레이의 앱 공통 계약
+- [전역 오디오·퀵 메뉴 구현 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu.md): 설정 저장·결정적 WAV 생성·전역 재생기·업적 오버레이·브라우저 회귀를 순차 구현하는 테스트 우선 계획
+- [전역 오디오·퀵 메뉴 후속 개선 계획](superpowers/plans/2026-08-26-sbh3821-global-audio-menu-follow-up.md): 세션 전투 속도 공유, 세로 점 메뉴 재구성, 승인된 `어두운 길드의 밤 1B` BGM과 낮춘 조작음 믹스를 적용하는 테스트 우선 계획
+- [고정 캐릭터 로스터 성별·이름 정비 설계](superpowers/specs/2026-08-26-lattebun-character-roster-gender-names-design.md): 성별 15명씩과 유럽 판타지풍 이름 30개를 확정하고 도메인·UI 비전파 경계를 정의한 콘텐츠 계약
+- [고정 캐릭터 로스터 성별·이름 정비 구현 계획](superpowers/plans/2026-08-26-lattebun-character-roster-gender-names.md): 로스터 테스트·콘텐츠·공식 설정집·live 전용 자산 회귀를 테스트 우선으로 반영하는 실행 순서
+- [U5 진행 기록 내부 스크롤 설계](superpowers/specs/2026-08-26-lattebun-u5-progress-log-scroll-design.md): 진행 기록과 생태 내용이 콘솔 높이를 넘을 때 필터는 고정하고 내용만 스크롤하며, 평소 숨고 hover·focus에서만 드러나는 얇은 스크롤바 계약
+- [U5 진행 기록 내부 스크롤 구현 계획](superpowers/plans/2026-08-26-lattebun-u5-progress-log-scroll.md): 접근성·CSS 실패 계약부터 긴 기록의 native 스크롤과 hover·focus scrollbar 브라우저 검증까지의 테스트 우선 실행 순서
 - [캠페인 기본 진입 무작위 시드 설계](superpowers/specs/2026-08-26-lattebun-campaign-random-seed-design.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 탐색 계약
 - [캠페인 기본 진입 무작위 시드 구현 계획](superpowers/plans/2026-08-26-lattebun-campaign-random-seed.md): `/campaign` 주소를 유지하면서 새 진입마다 무작위 캠페인 시드를 만들고 명시적 시드의 재현성을 보존하는 테스트 우선 실행 순서
 - [던전 계약 보상 랜덤화 설계](superpowers/specs/2026-08-26-lattebun-dungeon-reward-randomization-design.md): 위험도별 기대값을 유지하는 독립 균등 보상, 공고 확정·계약 snapshot·정산 소비와 미래 보상 제거 계약

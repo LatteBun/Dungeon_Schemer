@@ -16,7 +16,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Dungeon Schemer",
     short_name: "Dungeon Schemer",
-    description: "길드가 기억하지 않는 길을 기록하라",
+    description: "그들은 당신의 말을 믿는다",
     start_url: "/",
     display: "fullscreen",
     orientation: "landscape",

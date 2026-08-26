@@ -44,15 +44,6 @@ export function nextU5BattlePlaybackRate(current: U5BattlePlaybackRate): U5Battl
   return current === 1 ? 2 : 1;
 }
 
-export function useU5BattlePlaybackRate(): U5BattlePlaybackRateControl {
-  const [playbackRate, setPlaybackRate] = useState<U5BattlePlaybackRate>(1);
-
-  return {
-    playbackRate,
-    togglePlaybackRate: () => setPlaybackRate(nextU5BattlePlaybackRate),
-  };
-}
-
 export function u5BattlePlaybackForSignature(
   playback: U5BattlePlaybackState,
   signature: string,
@@ -61,6 +52,7 @@ export function u5BattlePlaybackForSignature(
     ? playback
     : { signature, frameIndex: 0, replayingFromStart: false };
 }
+
 export function u5ReplaySignature(replay: U5BattleReplay | undefined): string {
   if (replay === undefined) return "none";
   return JSON.stringify({
