@@ -1,5 +1,5 @@
 import type { AdviceOutcome, CampaignState, EndingKind, GuideRank, InfoReaction, RiskLevel } from "@/lib/domain";
-import type { CampaignRun, CampaignTerminationEvidence, DepletionSource, DepletionTraceEntry, ExpeditionBalanceTrace, RunErrorKind } from "./campaign-driver";
+import type { BattleTraceEntry, CampaignRun, CampaignTerminationEvidence, DepletionSource, DepletionTraceEntry, ExpeditionBalanceTrace, RunErrorKind } from "./campaign-driver";
 import type { Accuracy, PublicNodeCategory, StrategyId } from "./public-state";
 
 export type CombinationId = `${StrategyId}@${Accuracy}`;
@@ -67,6 +67,8 @@ export interface CampaignRunMetrics {
   readonly adviceTotal: number;
   readonly errorKind: RunErrorKind | null;
   readonly balanceExpeditions: readonly ExpeditionBalanceTrace[];
+  /** Paired pre/post ability comparisons consume this run-level raw evidence. */
+  readonly battles: readonly BattleTraceEntry[];
   readonly depletion: readonly DepletionTraceEntry[];
   readonly terminationEvidence: CampaignTerminationEvidence | null;
   readonly termination: CampaignTerminationReason;
@@ -223,6 +225,7 @@ function baseFailure(run: Extract<CampaignRun, { ok: false }>): CampaignRunMetri
     adviceHits: run.trace.adviceSelections.filter((selection) => selection.hit).length,
     adviceTotal: run.trace.adviceSelections.length, errorKind: run.errorKind,
     balanceExpeditions: run.trace.balanceExpeditions,
+    battles: run.trace.battles,
     depletion: run.trace.depletion,
     terminationEvidence: run.trace.terminationEvidence,
     termination: terminationForEnding(run.trace.termination),
@@ -283,6 +286,7 @@ function successfulMetrics(campaign: CampaignState, run: Extract<CampaignRun, { 
     adviceTotal: run.trace.adviceSelections.length,
     errorKind: null,
     balanceExpeditions: run.trace.balanceExpeditions,
+    battles: run.trace.battles,
     depletion: run.trace.depletion,
     terminationEvidence: run.trace.terminationEvidence,
     termination: terminationForEnding(run.trace.termination),

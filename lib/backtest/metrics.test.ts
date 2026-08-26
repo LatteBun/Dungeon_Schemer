@@ -159,6 +159,7 @@ describe("백테스트 통계", () => {
     expect(metrics.totalExpeditions).toBeGreaterThan(0);
     expect(metrics.adviceTotal).toBe(run.ok ? run.trace.adviceSelections.length : 0);
     expect(metrics.depletion).toEqual(run.trace.depletion);
+    expect(metrics.battles).toEqual(run.trace.battles);
     expect(metrics.termination).toBeDefined();
   });
 

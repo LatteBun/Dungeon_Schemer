@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { B1_RISK_CURVE_V2_CALIBRATION_SELECTION } from "@/lib/balance/campaign-balance";
+import { writeBattleAbilitySnapshot } from "./battle-ability-comparison";
 import { B1B_HOLDOUT_APPROVED, evaluateB1BAcceptance, type B1BAcceptanceGate, type BacktestFocus } from "./acceptance";
 import { runCampaign } from "./campaign-driver";
 import { aggregateRuns, metricsForRun, type BacktestAggregate, type CampaignRunMetrics } from "./metrics";
@@ -137,7 +138,7 @@ export function buildCalibrationEvidence(
   };
 }
 
-type BacktestEnvironment = Partial<Pick<NodeJS.ProcessEnv, "B1_BACKTEST_MODE" | "B1_BACKTEST_FOCUS" | "B1_BACKTEST_NAMESPACE" | "B1_BACKTEST_SEEDS" | "NODE_ENV">>;
+type BacktestEnvironment = Partial<Pick<NodeJS.ProcessEnv, "B1_BACKTEST_MODE" | "B1_BACKTEST_FOCUS" | "B1_BACKTEST_NAMESPACE" | "B1_BACKTEST_SEEDS" | "B1_BACKTEST_SNAPSHOT_PATH" | "NODE_ENV">>;
 
 export function optionsFromEnvironment(env?: NodeJS.ProcessEnv): BacktestSuiteOptions;
 export function optionsFromEnvironment(env?: BacktestEnvironment): BacktestSuiteOptions;
@@ -187,6 +188,11 @@ export function assertBacktestPasses(
   throw new Error(`B1 backtest 강제 gate 실패: ${failedGates.map((gate) => `${gate.id} (${gate.evidence})`).join("; ")}`);
 }
 
+export function writeBacktestSnapshotIfRequested(path: string | undefined, aggregate: BacktestAggregate): void {
+  if (path === undefined) return;
+  writeBattleAbilitySnapshot(path, aggregate.runs);
+}
+
 function runCli(): void {
   const options = optionsFromEnvironment();
   const aggregate = runBacktestSuite(options);
@@ -202,6 +208,7 @@ function runCli(): void {
     calibrationEvidence: buildCalibrationEvidence(options, aggregate),
   });
   writeFileSync(resolve(process.cwd(), "docs/technical/BACKTEST_REPORT.md"), report, "utf8");
+  writeBacktestSnapshotIfRequested(process.env.B1_BACKTEST_SNAPSHOT_PATH, aggregate);
   const acceptanceGates = evaluateB1BAcceptance(aggregate, {
     mode: options.mode,
     seedsPerCombination: options.seedsPerCombination,

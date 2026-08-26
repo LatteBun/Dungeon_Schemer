@@ -1,5 +1,8 @@
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { assertBacktestPasses, buildCalibrationEvidence, campaignSeed, optionsFromEnvironment, runBacktestSuite, shouldFailBacktest, validateBacktestSuiteOptions } from "./backtest.run";
+import { assertBacktestPasses, buildCalibrationEvidence, campaignSeed, optionsFromEnvironment, runBacktestSuite, shouldFailBacktest, validateBacktestSuiteOptions, writeBacktestSnapshotIfRequested } from "./backtest.run";
 
 describe("B1 backtest seed 계약", () => {
   it("B1-B calibration namespace와 번호를 고정 폭으로 조합한다", () => {
@@ -121,5 +124,23 @@ describe("B1-B backtest 실행 종료 판정", () => {
       [{ id: "accuracy-interval", passed: false, enforced: true, evidence: "survival@0.7 이탈" }],
       [],
     )).toThrow("B1 backtest 강제 gate 실패: accuracy-interval (survival@0.7 이탈)");
+  });
+});
+
+describe("B1 backtest 기준선 기록", () => {
+  it("snapshot 경로가 있을 때만 집계 실행을 JSON으로 기록한다", () => {
+    const directory = mkdtempSync(join(tmpdir(), "dungeon-schemer-backtest-run-"));
+    const path = join(directory, "baseline.json");
+    const aggregate = runBacktestSuite({
+      mode: "calibration", focus: "risk-curve", seedsPerCombination: 2, namespace: "b1-risk-curve-v2-calibration",
+    });
+    try {
+      writeBacktestSnapshotIfRequested(undefined, aggregate);
+      expect(existsSync(path)).toBe(false);
+      writeBacktestSnapshotIfRequested(path, aggregate);
+      expect(existsSync(path)).toBe(true);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
