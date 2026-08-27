@@ -12,8 +12,8 @@ function view(kind: EndingKind) {
   return found;
 }
 
-const render = (kind: EndingKind) =>
-  renderToStaticMarkup(createElement(U6EndingScreen, { ending: view(kind) }));
+const render = (kind: EndingKind, onStartNewCampaign: () => void = () => {}) =>
+  renderToStaticMarkup(createElement(U6EndingScreen, { ending: view(kind), onStartNewCampaign }));
 
 describe("U6EndingScreen", () => {
   it("표제와 부제를 함께 보여준다", () => {
@@ -112,6 +112,7 @@ describe("U6EndingScreen", () => {
     const html = renderToStaticMarkup(
       createElement(U6EndingScreen, {
         ending: { ...view("unemployed"), turningPoint: null },
+        onStartNewCampaign: () => {},
       }),
     );
 
@@ -122,25 +123,25 @@ describe("U6EndingScreen", () => {
   /*
    * 문구만 보지 않는다.
    *
-   * 예전 테스트는 「길드 게시판으로 돌아가기」 라는 글자가 있는지만 봤다. 그
+   * 맨 처음 이 자리는 「길드 게시판으로 돌아가기」 라는 글자만 검사했다. 그
    * 버튼은 `onClick` 에 아무도 넘기지 않는 prop 이 걸려 있어 눌러도 아무 일이
-   * 없었는데, 글자는 그대로였으므로 테스트는 계속 통과했다. 갈 곳을 함께 본다.
+   * 없었는데, 글자는 그대로였으므로 테스트가 계속 통과했다.
    */
   it("새 캠페인으로 나가는 자리를 둔다", () => {
-    const html = render("completed");
-    expect(html).toContain("새 캠페인 시작");
-    expect(html).toContain('href="/campaign"');
+    expect(render("completed")).toContain("새 캠페인 시작");
   });
 
   /*
-   * 캠페인 스토어는 첫 렌더에서 한 번만 만들어지고 `seed` 가 바뀌어도 다시
-   * 만들어지지 않는다. 클라이언트 이동으로는 끝난 캠페인이 그대로 남으므로
-   * 이 자리는 문서를 새로 부르는 평범한 링크여야 한다.
+   * 주소로 나가지 않는다.
+   *
+   * 문서를 새로 부르면 휴대폰에서 전체 화면과 가로 잠금이 풀려 「가로로 돌려
+   * 주세요」가 다시 뜬다. 이 화면은 이미 `/campaign` 이라 주소로는 새 판을 세울
+   * 수도 없다. 스토어를 갈아 끼우는 것이 유일한 길이다.
    */
-  it("끝난 판을 들고 가는 버튼이나 클라이언트 이동으로 두지 않는다", () => {
+  it("링크가 아니라 단추다", () => {
     const html = render("completed");
-    expect(html).not.toMatch(/<button[^>]*class="[^"]*u6-ending-cta/);
-    expect(html).toMatch(/<a[^>]*class="u6-ending-cta"[^>]*href="\/campaign"/);
+    expect(html).toMatch(/<button[^>]*class="u6-ending-cta"/);
+    expect(html).not.toContain('href="/campaign"');
   });
 
   it("상단 상태 바를 두지 않는다", () => {

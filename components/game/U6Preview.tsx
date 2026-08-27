@@ -36,7 +36,13 @@ export function U6Preview({ initialId = "settlement-partial" }: U6PreviewProps) 
           settlement={entry.settlement}
         />
       ) : null}
-      {entry.ending ? <U6EndingScreen ending={entry.ending} /> : null}
+      {entry.ending ? (
+        <U6EndingScreen
+          ending={entry.ending}
+          /* 프리뷰에는 캠페인 스토어가 없다. 세울 새 판도 없으므로 아무것도 하지 않는다. */
+          onStartNewCampaign={() => {}}
+        />
+      ) : null}
     </div>
   );
 }

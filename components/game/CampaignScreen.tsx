@@ -35,6 +35,9 @@ import { createU6SettlementView } from "./u6-settlement-model";
 import { createU6EndingView } from "./u6-ending-adapter";
 import { getGuidePromotionEligibility } from "@/lib/rules/promotion";
 import { CampaignCompletionRecorder } from "./CampaignCompletionRecorder";
+import { createSeed } from "@/lib/rng";
+import { initialRunState } from "@/lib/store/campaign-run";
+import { discardSavedCampaignRun } from "@/lib/store/campaign-run-storage";
 
 /**
  * `phase` 가 화면을 정한다.
@@ -79,6 +82,26 @@ function CurrentScreen() {
   const context = useCampaignStore((state) => state.context);
   const last = useCampaignStore((state) => state.last);
   const dispatch = useCampaignStore((state) => state.dispatch);
+  const restore = useCampaignStore((state) => state.restore);
+
+  /*
+   * 엔딩에서 새 판으로 갈아 끼운다.
+   *
+   * 주소를 다시 부르지 않는다. 이 화면은 이미 `/campaign` 이고, 문서를 새로
+   * 부르면 휴대폰에서 전체 화면과 가로 잠금이 풀려 「가로로 돌려 주세요」가 다시
+   * 뜬다.
+   *
+   * 시드는 여기서 새로 뽑는다. 서버가 준 시드는 지금 판을 세울 때 이미 썼으므로,
+   * 그대로 다시 쓰면 방금 끝낸 것과 같은 판이 선다.
+   *
+   * 이어하기 저장도 함께 버린다. 남겨 두면 다음에 들어올 때 방금 버린 판이
+   * 되살아난다. 새 판의 첫 조작이 곧 새 저장을 적는다.
+   */
+  const startNewCampaign = () => {
+    discardSavedCampaignRun();
+    const seed = createSeed();
+    restore(seed, initialRunState(seed), []);
+  };
 
   const screen = screenForPhase(campaign.phase);
   const active = context.activeExpedition;
@@ -178,7 +201,12 @@ function CurrentScreen() {
   }
 
   if (screen === "ending" && campaign.ending !== null) {
-    return <U6EndingScreen ending={createU6EndingView(campaign, campaign.ending)} />;
+    return (
+      <U6EndingScreen
+        ending={createU6EndingView(campaign, campaign.ending)}
+        onStartNewCampaign={startNewCampaign}
+      />
+    );
   }
 
   return <EndingUnavailable reason={`이 단계를 그릴 수 없다: ${campaign.phase}`} />;

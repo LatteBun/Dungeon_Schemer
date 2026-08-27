@@ -9,25 +9,16 @@ import {
   type U6EndingView,
 } from "./u6-ending-model";
 import { rankCrestSrc } from "./u6-settlement-model";
-import { clearCampaignRun } from "@/lib/store/campaign-run-storage";
-
-/**
- * 이어하기 저장을 지운다.
- *
- * 실패해도 막지 않는다. 사생활 보호 모드에서 `localStorage` 가 던지는데, 그때
- * 새 캠페인으로 못 가게 하는 것은 과한 대가다. 그런 브라우저는 애초에 저장이
- * 없으므로 되살아날 판도 없다.
- */
-function discardSavedRun(): void {
-  try {
-    if (typeof window !== "undefined") clearCampaignRun(window.localStorage);
-  } catch {
-    /* 지우지 못해도 나가는 것은 막지 않는다. */
-  }
-}
 
 export interface U6EndingScreenProps {
   ending: U6EndingView;
+  /**
+   * 새 판으로 갈아 끼운다.
+   *
+   * 스토어를 쥔 쪽이 넘긴다. 이 화면은 이미 `/campaign` 이라 주소로는 새 판을
+   * 세울 수 없다.
+   */
+  readonly onStartNewCampaign: () => void;
 }
 
 const ASSET = "/assets/u6/DUNGEON_SCHEMER_RESULT_ASSETS_ALL";
@@ -85,7 +76,7 @@ function ResultRow({ icon, label, value, tone }: {
   );
 }
 
-export function U6EndingScreen({ ending }: U6EndingScreenProps) {
+export function U6EndingScreen({ ending, onStartNewCampaign }: U6EndingScreenProps) {
   const completed = isNormalCompletion(ending.kind);
 
   return (
@@ -276,21 +267,18 @@ export function U6EndingScreen({ ending }: U6EndingScreenProps) {
         * `button_back` 이 그 용도로 그려져 있는데 쓰지 않고 있었다. 그림을 판으로
         * 깔고 글자를 그 위에 얹는다.
         *
-        * 나가기 전에 이어하기 저장을 지운다. 지우지 않으면 `/campaign` 이 끝난
-        * 판을 되살려서, 새 캠페인을 누른 사람이 같은 엔딩 화면으로 돌아온다.
-        *
-        * 이것은 `next/link` 가 아니라 평범한 `a` 여야 한다. 캠페인 스토어는
-        * `CampaignStoreProvider` 가 첫 렌더에서 한 번만 만들고 `seed` 가 바뀌어도
-        * 다시 만들지 않는다. 클라이언트 이동으로 `/campaign` 에 가면 서버가 새
-        * 시드를 뽑아도 스토어는 끝난 캠페인을 그대로 들고 있어서 아무 일도
-        * 일어나지 않는다. 문서를 새로 불러야 새 판이 선다.
+        * 문서를 새로 부르지 않는다. 휴대폰에서 전체 화면과 가로 잠금은 문서에
+        * 매여 있어서, 문서가 바뀌면 둘 다 풀리고 「가로로 돌려 주세요」가 다시
+        * 뜬다. 이 화면은 이미 `/campaign` 이라 주소로는 새 판을 세울 수 없으므로,
+        * 스토어를 새 판으로 갈아 끼운다. 화면은 `phase` 가 정하니 인트로가
+        * 저절로 나온다.
         */}
-      <a className="u6-ending-cta" href="/campaign" onClick={discardSavedRun}>
+      <button className="u6-ending-cta" type="button" onClick={onStartNewCampaign}>
         <img className="u6-ending-cta__plate" src={`${ASSET}/controls/button_back.png`} alt="" aria-hidden="true" />
         <img src={`${ASSET}/controls/icon_button_handshake.png`} alt="" aria-hidden="true" width={140} height={91} />
         <strong>새 캠페인 시작</strong>
         <img className="u6-ending-cta__arrow" src={`${ASSET}/controls/icon_arrow.png`} alt="" aria-hidden="true" width={96} height={59} />
-      </a>
+      </button>
     </div>
   );
 }
