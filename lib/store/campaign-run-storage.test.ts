@@ -337,3 +337,65 @@ describe("스토어가 남기는 기록", () => {
     expect(store.getState().recordedActions()).toHaveLength(1);
   });
 });
+
+/*
+ * 엔딩 화면의 「새 캠페인 시작」이 하는 일이다.
+ *
+ * 그 화면은 이미 `/campaign` 이라 주소로는 새 판을 세울 수 없고, 문서를 새로
+ * 부르면 휴대폰에서 전체 화면과 가로 잠금이 풀린다. 스토어를 갈아 끼우는 것이
+ * 유일한 길이므로, 그 한 걸음이 실제로 새 판을 세우는지 고정한다.
+ *
+ * 엔딩까지 실제로 몰고 가지는 않는다. 캠페인 하나를 끝내려면 원정을 여러 번
+ * 돌려야 해서 이 자리에 두기에 무겁고, 무엇보다 `restore` 는 앞선 상태가
+ * 무엇이든 통째로 갈아 끼우므로 진행 중인 판으로 확인해도 같은 것을 지킨다.
+ */
+describe("진행하던 판에서 새 판으로 갈아 끼우기", () => {
+  /** 인트로를 벗어나 공고 하나를 고른 상태까지 몬다. */
+  function inProgress(seed: string) {
+    const store = createCampaignStore(seed);
+    store.getState().dispatch({ type: "OPEN_BOARD" });
+    const offer = store.getState().campaign.offers.find((one) => one.lockReason === null);
+    if (offer !== undefined) store.getState().dispatch({ type: "SELECT_CONTRACT", offerId: offer.id });
+    return store;
+  }
+
+  it("진행하던 판을 인트로로 되돌리고 기록을 비운다", () => {
+    const store = inProgress("reset-a");
+    const before = store.getState().campaign;
+
+    /* 정말 움직인 판인지 먼저 확인한다. 아니면 이 검사는 아무것도 지키지 못한다. */
+    expect(before.phase).not.toBe("intro");
+    expect(store.getState().recordedActions().length).toBeGreaterThan(0);
+
+    const seed = "갈아-끼운-시드";
+    store.getState().restore(seed, initialRunState(seed), []);
+
+    const after = store.getState().campaign;
+    expect(after.phase).toBe("intro");
+    expect(after.ending).toBeNull();
+    expect(after.seed).toBe(seed);
+    expect(after.seed).not.toBe(before.seed);
+    expect(store.getState().recordedActions()).toHaveLength(0);
+  });
+
+  it("갈아 끼운 판은 처음부터 시작한 판과 같다", () => {
+    const store = inProgress("reset-b");
+    const seed = "같은-시드";
+    store.getState().restore(seed, initialRunState(seed), []);
+
+    expect(store.getState().campaign).toEqual(initialRunState(seed).campaign);
+  });
+
+  /* 갈아 끼운 뒤의 첫 조작은 새 시드로 저장되어야 한다. */
+  it("갈아 끼운 뒤 저장은 새 시드를 적는다", () => {
+    const seen: string[] = [];
+    const store = createCampaignStore("옛-시드", (runSeed) => { seen.push(runSeed); });
+    store.getState().dispatch({ type: "OPEN_BOARD" });
+
+    const seed = "새-시드";
+    store.getState().restore(seed, initialRunState(seed), []);
+    store.getState().dispatch({ type: "OPEN_BOARD" });
+
+    expect(seen).toEqual(["옛-시드", "새-시드"]);
+  });
+});

@@ -330,6 +330,7 @@ describe("엔딩이 실제 캠페인으로 그려진다", () => {
 
     const markup = renderToStaticMarkup(createElement(U6EndingScreen, {
       ending: createU6EndingView(campaign, ending),
+      onStartNewCampaign: () => {},
     }));
 
     assertClean(markup, "엔딩");
@@ -345,6 +346,7 @@ describe("엔딩이 실제 캠페인으로 그려진다", () => {
       const campaign = ended(seed).state().campaign;
       const markup = renderToStaticMarkup(createElement(U6EndingScreen, {
         ending: createU6EndingView(campaign, campaign.ending!),
+        onStartNewCampaign: () => {},
       }));
       assertClean(markup, `엔딩(${seed})`);
       kinds.add(campaign.ending!.kind);
