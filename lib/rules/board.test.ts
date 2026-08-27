@@ -339,3 +339,43 @@ describe("첫 게시판이 캠페인마다 다르다", () => {
     }
   });
 });
+
+/*
+ * C2 설계 §2 의 우선순위다.
+ *
+ * > 가능한 한 많은 완전 3인 파티를 만들도록 남은 후보 수가 많은 직업을 우선하며,
+ * > 동률의 직업·같은 직업의 캐릭터 순서는 `party` 스트림으로 정한다.
+ *
+ * 앞의 절(칸수 최대)만 지키고 뒤의 절(흔한 직업 우선)이 코드에 없었다. 그래서
+ * 칸수가 같으면 섞어 둔 목록에서 먼저 나온 조합이 그냥 이겼고, 게시판 다섯 공고가
+ * 통째로 같은 직업 조합이 되었다 — 120 개 시드를 재 보니 전부 그랬다.
+ */
+describe("게시판 파티 조합", () => {
+  function combosOf(seed: string) {
+    const state = initializeCampaign(seed);
+    const offers = createBoardOffers(state);
+    return {
+      count: offers.length,
+      combos: new Set(offers.map((offer) => offer.party.memberIds
+        .map((id) => String(state.pool.byId[id]?.classId))
+        .sort()
+        .join("/"))),
+    };
+  }
+
+  it("한 게시판을 같은 직업 조합으로만 채우지 않는다", () => {
+    for (const seed of ["variety-0", "variety-1", "variety-2", "variety-3"]) {
+      const { count, combos } = combosOf(seed);
+
+      expect(count).toBeGreaterThan(1);
+      expect(combos.size).toBeGreaterThan(1);
+    }
+  });
+
+  /* 다양성을 얻자고 공고 수를 잃으면 안 된다. 칸수 최대가 여전히 앞선다. */
+  it("공고 수는 여전히 최대로 채운다", () => {
+    for (const seed of ["variety-0", "variety-5", "variety-9"]) {
+      expect(combosOf(seed).count).toBe(5);
+    }
+  });
+});

@@ -130,9 +130,32 @@ function bestClassPlan(
   const cached = memo.get(key);
   if (cached !== undefined) return cached;
 
+  /*
+   * 남은 후보가 많은 직업부터 본다.
+   *
+   * C2 설계 §2 가 「가능한 한 많은 완전 3인 파티를 만들도록 남은 후보 수가 많은
+   * 직업을 우선」한다고 적어 두었는데, 그 우선순위가 코드에 없었다. 섞어 둔
+   * 목록을 앞에서부터 훑으며 칸수만 보았으므로, 칸수가 같으면 목록에서 먼저 나온
+   * 조합이 그냥 이겼다.
+   *
+   * 그 결과 귀한 직업이 앞쪽 조합에 묶이면 게시판 전체가 같은 조합으로 채워졌다.
+   * 실제로 성직자 4 · 도적 6 · 궁수 5 · 전사 6 · 마법사 6 인 판에서 다섯 공고 중
+   * 넷이 성직자/도적/궁수 였다.
+   *
+   * 칸수를 최대로 하는 것은 그대로다. 그 안에서 시작 조합만 흔한 직업 쪽으로
+   * 잡는다. 동률은 `party` 스트림이 정해 둔 차례를 따라 재현성을 지킨다.
+   */
+  const usable = combinations
+    .map((combination, order) => ({ combination, order }))
+    .filter(({ combination }) => combination.every((classId) => (remaining.get(classId) ?? 0) > 0))
+    .sort((left, right) => {
+      const spare = (one: ClassTriple) => one.reduce((total, classId) => total + (remaining.get(classId) ?? 0), 0);
+      const delta = spare(right.combination) - spare(left.combination);
+      return delta !== 0 ? delta : left.order - right.order;
+    });
+
   let best: readonly ClassTriple[] = [];
-  for (const combination of combinations) {
-    if (combination.some((classId) => (remaining.get(classId) ?? 0) === 0)) continue;
+  for (const { combination } of usable) {
     const next = new Map(remaining);
     for (const classId of combination) {
       next.set(classId, (next.get(classId) ?? 0) - 1);
