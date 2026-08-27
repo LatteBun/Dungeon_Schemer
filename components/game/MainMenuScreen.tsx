@@ -34,17 +34,19 @@ export function MainMenuScreen({ canResume = false }: MainMenuScreenProps) {
             * 버리지 않으면 `/campaign` 이 저장된 판을 되살려서, 새로 시작을 누른
             * 사람이 하던 판으로 돌아온다.
             *
-            * `next/link` 가 아니라 평범한 `a` 다. 캠페인 스토어는 첫 렌더에서 한
-            * 번만 만들어지므로 클라이언트 이동으로는 새 판이 서지 않는다. 문서를
-            * 새로 불러야 한다.
+            * 문서를 새로 부르지 않는다. 휴대폰에서 전체 화면과 가로 잠금은
+            * 문서에 매여 있어서, 문서가 바뀌면 둘 다 풀린다. 그러면 새 캠페인을
+            * 누른 사람에게 「가로로 돌려 주세요」가 다시 뜬다. 여기서는 화면이
+            * 바뀌므로 스토어도 새로 만들어져, 클라이언트 이동만으로 새 판이 선다.
             */}
-          <a
+          <Link
             className="main-menu-screen__action main-menu-screen__start"
             href="/campaign"
+            prefetch={false}
             onClick={discardSavedCampaignRun}
           >
             새 캠페인 시작
-          </a>
+          </Link>
 
           {/*
             * 이어할 판이 없으면 아예 두지 않는다.
@@ -56,9 +58,9 @@ export function MainMenuScreen({ canResume = false }: MainMenuScreenProps) {
             * 판이 있는 사람은 붙는 순간 단추가 하나 늘어난다.
             */}
           {canResume ? (
-            <a className="main-menu-screen__action" href="/campaign">
+            <Link className="main-menu-screen__action" href="/campaign" prefetch={false}>
               이어하기
-            </a>
+            </Link>
           ) : null}
 
           <Link

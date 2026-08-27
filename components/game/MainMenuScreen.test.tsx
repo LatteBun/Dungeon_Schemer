@@ -56,14 +56,19 @@ describe("메인 메뉴 화면", () => {
   });
 
   /*
-   * 새로 시작하는 자리는 `next/link` 가 아니라 평범한 `a` 여야 한다. 캠페인
-   * 스토어는 첫 렌더에서 한 번만 만들어지므로, 클라이언트 이동으로는 저장을
-   * 버려도 새 판이 서지 않는다.
+   * 문서를 새로 부르지 않는다.
+   *
+   * 휴대폰에서 전체 화면과 가로 잠금은 문서에 매여 있어서, 문서가 바뀌면 둘 다
+   * 풀린다. 그러면 새 캠페인을 누른 사람에게 「가로로 돌려 주세요」가 다시 뜬다.
+   * 화면이 바뀌면 스토어도 새로 만들어지므로 클라이언트 이동만으로 새 판이 선다.
    */
-  it("새 캠페인은 문서를 새로 부르는 링크로 나간다", () => {
-    const html = render();
-    expect(html).toMatch(/<a[^>]*class="main-menu-screen__action main-menu-screen__start"[^>]*href="\/campaign"/);
-    expect(html).not.toMatch(/class="[^"]*main-menu-screen__start[^"]*"[^>]*data-prefetch/);
+  it("메뉴의 캠페인 링크는 클라이언트 이동이다", () => {
+    const html = render(true);
+    const anchors = html.match(/<a[^>]*href="\/campaign"[^>]*>/g) ?? [];
+
+    expect(anchors).toHaveLength(2);
+    /* 대역이 붙이는 표시다. 진짜 `a` 였다면 이 표시가 없다. */
+    for (const anchor of anchors) expect(anchor).toContain("data-prefetch");
   });
 
   describe("이어하기", () => {
